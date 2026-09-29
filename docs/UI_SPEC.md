@@ -19,8 +19,8 @@ When this document and Figma disagree, Figma variables and styles win for values
 | Page | Contents |
 | --- | --- |
 | [00 · Shared — Brand & Sample Data](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=52-240) | `Brand/Portal logo` component and the sample character portraits used by both platforms |
-| [01 · Android — M3 Expressive](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=0-1) | Android screens + Android components |
-| [02 · iOS — Liquid Glass](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=4-134) | iOS screens + iOS components |
+| [01 · Android — M3 Expressive](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=0-1) | Android screens, components, and the [launcher icon board](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=59-240) |
+| [02 · iOS — Liquid Glass](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=4-134) | iOS screens, components, and the [app icon board](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=59-930) |
 
 The portraits on the shared page (`13:130`) are **sample data only**: ten 300 × 300 API avatars used as mock content. The apps load images from the API at runtime (§5). Image fills are shared across the whole file, so screens on every page reference the portraits by image hash, not through these frames.
 
@@ -34,7 +34,7 @@ Both flows are wired as clickable prototypes: open a page, press **Present**, an
 | 02 · Discovery (list) | [`20:1735`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=20-1735) | [`29:381`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=29-381) |
 | 03 · Detail | [`21:1217`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=21-1217) | [`26:452`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=26-452) |
 
-Both frames are 9:19.5. Only **Dark** appearance is drawn; Android Light values exist as a variable mode (§3.1).
+Both frames are 9:19.5. The app has a **single appearance** with no light/dark variants (§3.1, §9).
 
 ### 1.2 Local components
 
@@ -51,11 +51,15 @@ Both frames are 9:19.5. Only **Dark** appearance is drawn; Android Light values 
 | `iOS/Glass search field` | `22:281` | Prop `Placeholder`. |
 | `iOS/Glass icon button` | `25:287` | Variants `Style = Glass · Prominent`; prop `Symbol`. |
 | `iOS/Glass tab bar` | `25:288` | Four tabs, Characters selected. |
+| `Android/Launcher icon/Background` · `/Foreground` | `59:242` · `59:263` | Adaptive icon layers, 108 dp canvas (see §10.1). |
+| `Android/Launcher icon` | `59:282` | Composite of background + foreground. |
+| `Android/Play Store icon` | `59:515` | 512 × 512 store listing icon. |
+| `iOS/App icon` | `59:844` | Single 1024 × 1024 master (see §10.2). |
 
 Library kits attached to the file and used as building blocks:
 
 - **Material 3 Design Kit:** status bar, app bar (Search), filter chip, navigation bar, icon button, extended FAB, icons.
-- **iOS and iPadOS 27:** status bar, home indicator, and the `Liquid Glass – Regular – Small` material.
+- **iOS and iPadOS 27:** status bar, home indicator, the `Liquid Glass – Regular – Small` material, and the `App Icon/iPhone` template (Home Screen preview).
 
 Every Material 3 kit instance is re-bound to the local `Multiverse · M3 Scheme` variables, so kit components carry the brand palette.
 
@@ -73,9 +77,11 @@ Every Material 3 kit instance is re-bound to the local `Multiverse · M3 Scheme`
 
 All tokens exist as Figma variables. Code syntax is pre-filled (`ANDROID`: `MaterialTheme.colorScheme.*` / `MultiverseColors.*`; `iOS`: `Color.*`).
 
-### 3.1 Android colour scheme — `Multiverse · M3 Scheme` (modes: Light, Dark)
+### 3.1 Android colour scheme — `Multiverse · M3 Scheme` (single mode: `Multiverse`)
 
-Generated with Google's `material-color-utilities` (DynamicScheme, spec **2025**, variant Tonal Spot):
+The app has **one visual appearance**. There are no light/dark variants, and the colour scheme does not follow the system setting or the wallpaper (no Material You dynamic colour).
+
+The scheme was generated with Google's `material-color-utilities` (DynamicScheme, spec **2025**, variant Tonal Spot, dark tones) and is used as a fixed palette:
 
 | Palette | Hue source | Chroma |
 | --- | --- | --- |
@@ -87,28 +93,28 @@ Generated with Google's `material-color-utilities` (DynamicScheme, spec **2025**
 
 The slightly violet neutral hue gives the "Space Black" surfaces. There are 50 roles in total; the roles used by the designs are:
 
-| Role | Light | Dark | Used for |
-| --- | --- | --- | --- |
-| Primary | `#436A00` | `#A4D661` | FAB, selected nav, splash wordmark accent |
-| On Primary | `#EFFFD3` | `#2C4800` | FAB label/icon |
-| Primary Container | `#BFF27A` | `#497401` | Splash cookie shape, "Episodes" stat tile |
-| On Primary Container | `#395B00` | `#FFFFFF` | Text on primary container |
-| Secondary Container | `#D1E9CF` | `#2C402E` | Selected chip, list-item icon container, loading indicator container |
-| On Secondary Container | `#425743` | `#AEC5AD` | Icons on secondary container |
-| Secondary Fixed Dim | `#C3DBC1` | `#C3DBC1` | "Species" stat tile |
-| On Secondary Fixed | `#304431` | `#304431` | Text on secondary fixed dim |
-| Tertiary | `#6647C7` | `#A68CFF` | Splash nebula |
-| Tertiary Container | `#997BFE` | `#997BFE` | "Dimension" stat tile |
-| On Tertiary Container | `#12003E` | `#12003E` | Text on tertiary container |
-| Surface | `#FDF8FE` | `#0F0E12` | Screen background |
-| Surface Container Low | `#F7F2FA` | `#141318` | — |
-| Surface Container | `#F2ECF6` | `#1A191F` | Detail info list, bottom navigation |
-| Surface Container High | `#ECE6F1` | `#211E26` | Default card container (before dynamic colour resolves) |
-| Surface Container Highest | `#E6E0EC` | `#27242D` | Status badge (90%), hero icon buttons (72%) |
-| On Surface | `#34313A` | `#E9E3EF` | Primary text |
-| On Surface Variant | `#615D68` | `#AEA9B4` | Secondary text |
-| Outline Variant | `#B5B0BB` | `#494650` | Dividers |
-| Error | `#A73B21` | `#F97758` | Error states (§8) |
+| Role | Value | Used for |
+| --- | --- | --- |
+| Primary | `#A4D661` | FAB, selected nav, splash wordmark accent |
+| On Primary | `#2C4800` | FAB label/icon |
+| Primary Container | `#497401` | Splash cookie shape, launcher icon foreground, "Episodes" stat tile |
+| On Primary Container | `#FFFFFF` | Text on primary container |
+| Secondary Container | `#2C402E` | Selected chip, list-item icon container, loading indicator container |
+| On Secondary Container | `#AEC5AD` | Icons on secondary container |
+| Secondary Fixed Dim | `#C3DBC1` | "Species" stat tile |
+| On Secondary Fixed | `#304431` | Text on secondary fixed dim |
+| Tertiary | `#A68CFF` | Splash nebula |
+| Tertiary Container | `#997BFE` | "Dimension" stat tile |
+| On Tertiary Container | `#12003E` | Text on tertiary container |
+| Surface | `#0F0E12` | Screen background |
+| Surface Container Low | `#141318` | — |
+| Surface Container | `#1A191F` | Detail info list, bottom navigation |
+| Surface Container High | `#211E26` | Default card container (before dynamic colour resolves) |
+| Surface Container Highest | `#27242D` | Status badge (90%), hero icon buttons (72%) |
+| On Surface | `#E9E3EF` | Primary text |
+| On Surface Variant | `#AEA9B4` | Secondary text |
+| Outline Variant | `#494650` | Dividers |
+| Error | `#F97758` | Error states (§8) |
 
 ### 3.2 Brand, status and glass — `Multiverse · Brand`
 
@@ -129,8 +135,8 @@ The slightly violet neutral hue gives the "Space Black" surfaces. There are 50 r
 | `Glass/Tint Green` | `#97CE4C` @ 30% | Selected segment, symbol wells |
 | `Glass/Tint Violet` | `#7B4DFF` @ 40% | Reserved |
 | `Glass/Shadow` | `#000000` @ 35% | Glass drop shadow |
-| `Label/Primary` | `#FFFFFF` | iOS dark primary label |
-| `Label/Secondary` | `#EBEBF5` @ 68% | iOS dark secondary label |
+| `Label/Primary` | `#FFFFFF` | iOS primary label |
+| `Label/Secondary` | `#EBEBF5` @ 68% | iOS secondary label |
 | `Label/Tertiary` | `#EBEBF5` @ 36% | — |
 
 The rim is a vertical gradient: white 55% → 6% → 25%. It gives each glass surface a lit top edge.
@@ -271,7 +277,7 @@ Android card containers are tinted from each character's portrait, as the M3 bri
 
 1. Quantize the decoded bitmap (`QuantizerCelebi`, 128 colours), then `Score` it to get the source colour. Fall back to Portal Green.
 2. Build `TonalPalette.fromHueAndChroma(hue, chroma.coerceIn(24.0, 48.0))`.
-3. Container = **tone 30** (Dark) or **tone 90** (Light). Text stays On Surface; meta uses On Surface @80%, which keeps it at 4.5:1 or better.
+3. Container = **tone 30**. Text stays On Surface; meta uses On Surface @80%, which keeps it at 4.5:1 or better.
 4. Compute off the main thread and memoize per image URL (LRU). Show Surface Container High until it resolves, then animate the colour over 300 ms.
 5. Coil hardware bitmaps can't be read. Request a software bitmap only for extraction (`allowHardware(false)` on that request), or copy it once.
 
@@ -295,7 +301,7 @@ On iOS, glass surfaces do not need an accent: the glass picks up the portrait's 
 | Mark | Portal logo (160 dp) on an M3 Expressive **Cookie-9** shape (240 dp, Primary Container), Portal Glow | Portal logo (176 pt) seen through a 212 pt **Liquid Glass lens** (continuous corner 60, `Liquid Glass/Clear`) that refracts it |
 | Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
 | Progress | Contained M3 Expressive loading indicator, 82 dp from the bottom | None (static, per HIG) |
-| Implementation | `installSplashScreen()` for the system icon phase, then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
+| Implementation | `installSplashScreen()` for the system icon phase (it shows the launcher icon's foreground, see §10.1), then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
 
 Exit when the first page of characters is ready or after 1.2 s, whichever is later, with a maximum of 3 s; then cross-fade (350–400 ms) to Discovery. On a cold start with no network, go to Discovery and show its error state (§8).
 
@@ -406,11 +412,46 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
   - Android styles use `sp`.
   - iOS uses Dynamic Type, including the editorial display via `@ScaledMetric`.
   - Grids drop to 1 column at the largest accessibility sizes.
-- **Dark / Light:** Android ships both schemes (Light is defined but not drawn). The iOS design is dark-first; its Light appearance is a follow-up.
+- **Single appearance:** the app looks the same regardless of the system light/dark setting.
+  - Android: `MultiverseTheme` always applies the one colour scheme, never the wallpaper's Material You colours. Draw edge-to-edge with light system-bar icons (`SystemBarStyle.dark(...)`) and turn off force-dark (`android:forceDarkAllowed="false"`).
+  - iOS: `.preferredColorScheme(.dark)` at the root plus `UIUserInterfaceStyle = Dark` in `Info.plist`. Glass materials, the status bar and system sheets then always render light-on-dark.
+  - Contrast checks therefore cover a single palette.
 
-## 10. Implementation checklist
+## 10. App icons
 
-- [ ] Android theme generated from `Multiverse · M3 Scheme` (Light + Dark), `Multiverse · Brand` and the type scale (§3)
+Both icons are built on the portal mark (`Brand/Portal logo`), so the app is recognisable on both platforms and each icon matches its platform's splash screen.
+
+### 10.1 Android — adaptive launcher icon
+
+The masters are 432 px, which is the 108 dp canvas at xxxhdpi. Launchers show only the central 72 dp, cropped to their own mask shape. Anything essential stays inside the 66 dp safe circle.
+
+| Layer | Figma | Content | Export |
+| --- | --- | --- | --- |
+| Background | `Android/Launcher icon/Background` | Space Black `#07060B`, Cosmic Violet and Portal Green nebula glows, sparse stars; full bleed | SVG → `res/drawable/ic_launcher_background.xml` |
+| Foreground | `Android/Launcher icon/Foreground` | M3 Expressive Cookie-9 shape (`#497401`, 66 dp) with the portal (44 dp); transparent elsewhere | SVG → `res/drawable/ic_launcher_foreground.xml` |
+
+- **Wiring:** `mipmap-anydpi-v26/ic_launcher.xml` (and `ic_launcher_round.xml`) is an `<adaptive-icon>` with `<background>` and `<foreground>` only. With `minSdk` 26 or higher, no legacy PNG mipmaps are needed.
+- **No monochrome layer (decision):** the app ships no themed icon, in line with its single appearance. When the user turns on themed icons (Android 13+), launchers keep showing the full-colour icon; some newer Android versions may generate a tinted version automatically.
+- **Mask previews:** circle, squircle, rounded square and teardrop, so the design is checked against common launcher shapes.
+- **System splash (Android 12+):** set `windowSplashScreenAnimatedIcon` to the foreground drawable and `windowSplashScreenBackground` to `#0F0E12`. The cookie and portal fit inside the 160 dp splash icon circle, so the handoff to the in-app splash (§6.1) is seamless.
+- **Play Store:** `Android/Play Store icon`, a 512 × 512 32-bit PNG. It is a full-bleed square; Google Play applies the rounded mask and shadow, so the file must not include them.
+
+### 10.2 iOS — app icon (iOS 26+ Liquid Glass)
+
+`iOS/App icon` is a single square, unmasked 1024 × 1024 master. The system applies the rounded mask and the glass lighting.
+
+**Design:** a Cosmic Violet → Space Black gradient with a Portal Green aurora and stars. The portal fills about 70% of the tile and sits under a glass dome with a specular sheen and rim.
+
+- **One appearance only (decision):** the app ships no Dark, Clear or Tinted variants. The icon is already dark, so it is used on both light and dark Home Screens. If the user picks the Clear or Tinted Home Screen style, iOS derives those versions from this icon automatically.
+- **Build with Icon Composer (Xcode 26):** create a `.icon` file with three layers: Background, Portal and Dome. Icon Composer adds the real Liquid Glass lighting. The Figma master is the source for each layer. If you use an `AppIcon` asset catalog instead, fill only the Any slot.
+- **Previews on the board:**
+  - a squircle-masked tile
+  - a Home Screen row using the iOS 27 kit `App Icon/iPhone` template, placing the icon next to the Photos, Weather and Music icons
+
+## 11. Implementation checklist
+
+- [ ] Android theme generated from `Multiverse · M3 Scheme` (single scheme, no dynamic colour), `Multiverse · Brand` and the type scale (§3)
+- [ ] Single appearance enforced on both platforms (§9)
 - [ ] iOS `Color`/`Font` extensions matching the §3 tokens
 - [ ] Coil / URLCache image pipeline per §5.2; dynamic-colour extraction per §5.4
 - [ ] Discovery with filters wired to the API, paging and search debounce
@@ -418,3 +459,4 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 - [ ] Shared-element (Android) and zoom (iOS) transitions with Reduce Motion fallbacks
 - [ ] §8 states, then drawn in Figma for sign-off
 - [ ] Screenshot tests compared with the Figma frames in §1.1
+- [ ] Launcher icons: Android adaptive icon (background + foreground, with system splash wiring) and single-appearance iOS Icon Composer icon, per §10

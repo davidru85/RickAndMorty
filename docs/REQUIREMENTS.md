@@ -20,6 +20,7 @@ Specification of functional and non-functional requirements for the Rick and Mor
 
 ## 3. Non-Functional Requirements
 - **UX/UI:** Image-oriented design, high visual fidelity.
+- **Appearance:** Single visual design. No light/dark theme variants; the UI ignores the system appearance setting (see `UI_SPEC.md` §9).
 - **Architecture:** Adherence to SOLID principles.
 - **Performance:** Efficient image loading and caching.
 - **Tech Stack:** Jetpack Compose.

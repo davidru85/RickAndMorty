@@ -56,16 +56,19 @@ The adapter sits behind `CharacterRemoteDataSource`, so the choice stays local t
 | `:shared:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `EpisodeSummary`, `CharacterFilter`), repository interfaces, use cases | — |
 | `:shared:data` | `commonMain` + platform engines | REST adapter (DTOs, mappers), response cache, favorites store, repository implementations, `ApiFailure` mapping | `:shared:domain` |
 | `:shared:presentation` | `commonMain` | ViewModels (`androidx.lifecycle` KMP), `UiState`/intents, display formatters (status labels, "Unknown" casing, dimension derivation) | `:shared:domain` |
-| `:android:designsystem` | Android | `MultiverseTheme` (M3 colour scheme Light/Dark, Roboto Flex type scale, shapes), `MultiverseColors` (brand + status), components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons | Compose only |
+| `:android:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme with no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors` (brand + status), components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons | Compose only |
 | `:android:feature:characters` | Android | Discovery and Detail screens, filters, shared-element transitions, `CharacterAccentResolver` | `:shared:presentation`, `:android:designsystem` |
-| `:androidApp` | Android | `Application`, DI graph, `NavHost`, splash, Coil `ImageLoader` | all Android modules |
+| `:androidApp` | Android | `Application`, DI graph, `NavHost`, splash, Coil `ImageLoader`, adaptive launcher icon (`mipmap-anydpi-v26`) | all Android modules |
 | `iosApp/DesignSystem` | Swift package | `Color`/`Font` tokens, `GlassCharacterCard`, `GlassSegmentedControl`, `GlassInfoRow`, `GlassIconButton`, `PortalLogo` | SwiftUI only |
-| `iosApp/Features` | iOS app | SwiftUI screens bound to the shared ViewModels, `NavigationStack`, image cache | `Shared.framework`, `DesignSystem` |
+| `iosApp/Features` | iOS app | SwiftUI screens bound to the shared ViewModels, `NavigationStack`, image cache, app icon (Icon Composer `.icon`) | `Shared.framework`, `DesignSystem` |
 
 **Design-system rule:** design-system modules never depend on domain types. Components take primitives (strings, colours, image URL, status enum mirror), which keeps them previewable, screenshot-testable and 1:1 with the Figma components listed in `UI_SPEC.md` §1.2.
 
 **Shared brand assets:** the Figma page `00 · Shared — Brand & Sample Data` holds the platform-neutral assets (`UI_SPEC.md` §1):
 - **Portal logo:** exported once as SVG. It becomes a VectorDrawable in `:android:designsystem` and a vector asset (preserve vector data) in the iOS `DesignSystem` asset catalog. Each platform wraps it in its own `PortalLogo` component, and the splash treatments stay platform-specific.
+- **App icons:** both are built on the portal logo but live on the platform pages, because each follows its own platform format (`UI_SPEC.md` §10).
+  - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The same foreground drives the Android 12+ system splash.
+  - iOS: the single 1024 px master (no Dark, Clear or Tinted variants) feeds an Icon Composer `.icon` file in the iOS app target.
 - **Sample portraits:** mock content only, never bundled in the release apps. The apps always load portraits from the API through the image cache. The same files may be used as local fixtures for previews and screenshot tests (§8), so those never hit the network.
 
 ## 4. Presentation layer
@@ -140,7 +143,7 @@ The Episodes, Locations and Favorites tabs are reserved routes (Could-Have) and 
 ### 4.3 Design tokens pipeline
 
 Figma variables are the source of truth. There are three collections:
-- `Multiverse · M3 Scheme` (Light/Dark)
+- `Multiverse · M3 Scheme` (one mode: the app has a single appearance)
 - `Multiverse · Brand`
 - `Multiverse · Dimensions`
 
@@ -158,8 +161,8 @@ The M3 brief asks for card containers tinted from each character's portrait (`UI
 
 ```kotlin
 interface CharacterAccentResolver {
-    /** Tone-30 (dark) / tone-90 (light) container colour derived from the portrait, or null. */
-    suspend fun accentFor(imageUrl: String, dark: Boolean): Color?
+    /** Tone-30 container colour derived from the portrait, or null. */
+    suspend fun accentFor(imageUrl: String): Color?
 }
 ```
 
@@ -233,7 +236,7 @@ classDiagram
 
     class CharacterAccentResolver {
         <<interface>>
-        +accentFor(imageUrl, dark) Color?
+        +accentFor(imageUrl) Color?
     }
 
     CharacterListViewModel --> GetCharacterPage
@@ -274,7 +277,7 @@ Every `ApiFailure` (`API_SPECS.md` §6) maps to one of the states designed in `U
 This section covers the architectural testing seams only; the QA agent owns the full plan.
 
 - **`:shared:*`:** ViewModel tests with fake repositories (state sequences, debounce, cancellation, page reset); formatter and mapper tests.
-- **`:android:designsystem`:** screenshot tests per component and screen, in Dark and Light, compared with the Figma frames in `UI_SPEC.md` §1.1; semantics tests for merged card descriptions and status labels.
+- **`:android:designsystem`:** screenshot tests per component and screen, compared with the Figma frames in `UI_SPEC.md` §1.1. Each is rendered with the system in both light and dark mode, and both results must be identical (single appearance). Semantics tests cover merged card descriptions and status labels.
 - **iOS:** snapshot tests of `DesignSystem` views, including Reduce Transparency and the largest Dynamic Type size.
 - **Tokens:** a parity test against the `tokens.json` export (§4.3).
 - **Fixtures:** previews and screenshot tests use the sample portraits from the shared Figma page (§3) as local image fixtures, with a fake image loader instead of the network.
