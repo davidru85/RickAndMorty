@@ -81,7 +81,7 @@ Filtering, paging, enrichment, favourites and display formatting must behave ide
 
 ### 2.1 The `IC-###` namespace
 
-- `IC-###` is the identifier for one internal contract. It is allocated in this file only, in ascending order, and never reused: a contract that stops existing has its id retired with it.
+- `IC-###` is the identifier for one internal contract. It is allocated in this file only, in ascending order, and never reused: a contract that stops existing has its id retired with it. A retired id is kept in place, marked `Withdrawn` with the reason and the convention that replaced it, and the surrounding ids are never renumbered (`IC-006` is the first precedent).
 - An id names a *contract*, not a file: two closely coupled declarations that always change together (for example a state class and its intent type) `MAY` share one id when they are listed in one table row, and their members are then addressed as `IC-018` (state + intents).
 - A contract that is canonically declared in another document is still listed here with an id (§4). The id is the stable reference; the owning document is named in the row.
 - The ids are referenced by other families the same way `REQ-*` and `DEC-###` are: permanently, and never renumbered (`DEC-046`).
@@ -212,6 +212,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
   - A wire type `MUST NOT` appear in a signature declared in §5 or §6 of this file, in a UI-state type, or in any public signature outside `:core:data` (`REQ-NFR-001`, `AC-REQ-NFR-001-2`).
   - A wire type `MUST NOT` be cached as a domain value: the cache stores the decoded-and-validated shape the app consumes, and mappers run before anything is written (`API_SPECS.md` §7.1).
   - JSON field names and nullability follow `API_SPECS.md`; a DTO `MUST NOT` be reshaped by a contract change here.
+- **Traceability:** `API_SPECS.md` §4.7, §5.1, §5.5, `REQ-NFR-001`, `AC-REQ-NFR-001-2`, `DEC-030`.
 
 ## 5. Data and domain seam contracts (owned here)
 
@@ -728,7 +729,7 @@ The risk this file must close is drift between a Kotlin state contract and the S
 | Rendering parity | One snapshot per `LoadState` on each platform against the same fixture data; the states themselves are specified in `ERROR_FLOW.md` and `UI_SPEC.md` §8, not here (`TEST-UI-016`) |
 | Bridging regressions | An iOS test that mutates shared state and asserts the Swift-observed value changes, so a broken observation path cannot pass |
 
-No dedicated Kotlin-to-Swift parity test id exists in `TESTING.md`; if a single case should own this check, that document's owner allocates the id. Until then the checks above are the parity evidence, and a contract change under §8.2 `MUST` name the iOS test that covers it.
+`TESTING.md` allocates `TEST-UNIT-042` to the Kotlin-to-Swift parity check, wired to `REQ-PLAT-001` and `REQ-NFR-005`. The checks above are the parity evidence for that case; a contract change under §8.2 `MUST` name the iOS test that covers it.
 
 ### 9.5 What this file does not verify
 

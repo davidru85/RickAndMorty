@@ -105,9 +105,9 @@ No build files and no source code exist on 2026-09-29, so every `Tool:` and `Tes
 
 ### 2.5 Errors as values, exceptions at the seams
 
-- Failures are values, not exceptions: domain and data code returns the `DataResult`/`ApiException` pair (`IC-003`, `IC-006`) whose failure classification is `ApiFailure` (`IC-004`). The failure → state → copy chain is owned by `ERROR_FLOW.md` and MUST NOT be re-derived in code.
-- A platform or HTTP exception (Ktor, `IOException`, a decoding exception, a `SerializationException`) MUST NOT cross a repository seam; it is mapped to `ApiException` in `:core:data` (`CONTRACTS.md` §3.2).
-- A failure value is never dropped. If the user-visible behaviour is already defined and no state change follows, the failure is logged through the logging contract (`OBSERVABILITY.md` §2); "caught and ignored" is not a pattern.
+- Failures are values, not exceptions: a repository returns the sealed `DataResult` (`IC-003`) — `DataResult.Success` or `DataResult.Failure` — whose failure classification is `ApiFailure` (`IC-004`). An expected remote failure MUST NOT be thrown across a seam. The failure → state → copy chain is owned by `ERROR_FLOW.md` and MUST NOT be re-derived in code.
+- A platform or HTTP exception (Ktor, `IOException`, a decoding exception, a `SerializationException`) MUST NOT cross a repository seam; it is caught in `:core:data` and mapped to `DataResult.Failure` (`CONTRACTS.md` §3.2).
+- A `DataResult.Failure` is never dropped. If the user-visible behaviour is already defined and no state change follows, the failure is logged through the logging contract (`OBSERVABILITY.md` §2); "caught and ignored" is not a pattern. A failure is never silently converted into a successful empty result.
 - Retry and cache policy are decided in the data layer (`API_SPECS.md` §6.3, §7.3). A state holder MUST NOT implement its own retry loop or its own freshness check.
 
 **Enforcement:** `Test:` `TEST-UNIT-010`, `TEST-UNIT-022`; `Tool:` detekt (swallowed-exception rules); `Review:` a caught exception with no mapped outcome.
