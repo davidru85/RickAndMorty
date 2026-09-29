@@ -42,7 +42,7 @@ Both frames are 9:19.5. The app has a **single appearance** with no light/dark v
 | --- | --- | --- |
 | `Brand/Portal logo` | `16:13` | On the shared page; instanced by both splash screens. |
 | `Android/Status badge` | `16:23` | Variants `Status = Alive · Dead · Unknown`. |
-| `Android/Character card` | `16:40` | Variants `Height = Regular · Tall`; props `Name`, `Meta`; nested `Status badge` exposed. |
+| `Android/Character card` | `16:40` | Variants `Height = Regular · Tall`; props `Name`, `Species`; nested `Status badge` exposed. |
 | `Android/Info list item` | `16:41` | Props `Label`, `Value`, `Icon` (instance swap). |
 | `Android/Stat tile` | `16:48` | Props `Value`, `Label`; color and corners overridden per tile. |
 | `iOS/Glass character card` | `22:264` | Variants `Status = Alive · Dead · Unknown`; props `Name`, `Subtitle`. |
@@ -171,9 +171,9 @@ The rim is a vertical gradient: white 55% → 6% → 25%. It gives each glass su
 | Headline Small Emphasized | Bold | 24 / 32 | 0 | Stat values |
 | Title Medium Emphasized | Bold | 16 / 24 | 0.15 | Card name |
 | Title Medium | Medium | 16 / 24 | 0.15 | List-item value, detail meta |
-| Title Small | Medium | 14 / 20 | 0.1 | Section header ("About", in Primary) |
+| Title Small | Medium | 14 / 20 | 0.1 | Reserved (section headers); not used on current screens |
 | Body Medium | Regular | 14 / 20 | 0.25 | Supporting text |
-| Body Small | Regular | 12 / 16 | 0.4 | Card meta |
+| Body Small | Regular | 12 / 16 | 0.4 | Card species |
 | Label Large Emphasized | Bold | 14 / 20 | 0.1 (+8 px on "EXPLORER") | Splash sub-wordmark |
 | Label Medium | Medium | 12 / 16 | 0.5 | Badges, list labels, stat labels |
 
@@ -218,7 +218,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | --- | --- | --- |
 | Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse", trailing `mic` icon button for voice search (§6.2). No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
 | Filter chips | Elevated style, 32 dp, 16 dp start inset. Exactly four single-select options: **All** (selected, check icon) · Alive · Dead · Unknown. They fit the screen width, so no scrolling. Equivalent to the iOS segmented control | `ElevatedFilterChip`s in a `Row`; selecting one deselects the others |
-| Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Name in Title Medium Emphasized (1 line, ellipsis), meta "Species · Gender" in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
+| Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Shows exactly photo, name, status (badge) and species (§6.2). Name in Title Medium Emphasized, up to 2 lines so the full name fits (ellipsis only beyond that); species in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
 | Staggered grid | 2 fixed columns, 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(StaggeredGridCells.Fixed(2))` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
 | Navigation bar | 4 destinations: Characters (`groups`), Episodes (`play_arrow`), Locations (`language`), Favorites (`favorite`); container Surface Container | `NavigationBar`; Characters is the only MVP destination, the others are Could-Have |
@@ -226,7 +226,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Stat tiles | Row of 3, 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
 | Extended FAB | Medium (80 dp), Primary colour, `favorite` icon + "Favorite", Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area | M3 Expressive medium extended FAB |
-| Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs | `ContainedLoadingIndicator` |
+| Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs. Used only for paging (§8), not on the splash | `ContainedLoadingIndicator` |
 
 ### 4.2 iOS (SwiftUI, Liquid Glass)
 
@@ -235,13 +235,13 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Large title | "Characters" + "826 across the multiverse" (Subheadline, secondary). The count comes from `info.count`, never hard-coded | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
 | Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", trailing `mic.fill` for voice search (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
-| Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Glass bar: 165 × 58, corner 20, 6 pt inset — name (Headline, 1 line) and status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
+| Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
 | Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab in Portal Glow | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)` |
 | Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol) | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
 | Glass status capsule | Dot + "Alive" (Footnote Emphasized), clear glass | `Label` + `.glassEffect(.clear, in: .capsule)` |
 | Frosted panel | 370 wide, continuous corner 34, 20 pt padding. Stats row (3 columns: Title 2 value, Caption 1 label, 1 pt separators), divider, then 3 `Glass info row`s | `.glassEffect(in: .rect(cornerRadius: 34, style: .continuous))` |
 | Glass info row | 38 pt symbol well (Glass/Tint Green, symbol in Portal Glow) + label (Footnote, secondary) + value (Headline) | `LabeledContent` / custom `HStack` |
-| Floating accessory | 370 × 52 capsule: `play.rectangle.on.rectangle.fill` + "Appears in N episodes" + `chevron.right` | Glass `Button` in `.safeAreaInset(edge: .bottom)` |
+| Episode count line | Informative only: `play.rectangle.on.rectangle.fill` + "Appears in N episodes", Subheadline in `Label/Secondary`, aligned with the panel content. No glass container, no chevron, not interactive | Plain `Label` below the panel (not a `Button`) |
 
 ## 5. Imagery and dynamic colour
 
@@ -299,7 +299,8 @@ On iOS, glass surfaces do not need an accent: the glass picks up the portrait's 
 | Background | Surface, violet (Tertiary) and green (Primary) radial nebula glows, sparse starfield | Space Black, three aurora orbs (Cosmic Violet, Portal Green, Nebula Violet), starfield |
 | Mark | Portal logo (160 dp) on an M3 Expressive **Cookie-9** shape (240 dp, Primary Container), Portal Glow | Portal logo (176 pt) seen through a 212 pt **Liquid Glass lens** (continuous corner 60, `Liquid Glass/Clear`) that refracts it |
 | Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
-| Progress | Contained M3 Expressive loading indicator, 82 dp from the bottom | None (static, per HIG) |
+| Motion | The portal rotates clockwise, starting very slowly and accelerating gradually (§7) | Same: the portal rotates behind the glass lens (§7) |
+| Progress | None | None |
 | Implementation | `installSplashScreen()` for the system icon phase (it shows the launcher icon's foreground, see §10.1), then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
 
 Exit when the first page of characters is ready or after 1.2 s, whichever is later, with a maximum of 3 s; then cross-fade (350–400 ms) to Discovery. On a cold start with no network, go to Discovery and show its error state (§8).
@@ -321,6 +322,27 @@ Neither platform has top-bar action buttons: no menu or avatar on Android, and n
 
 Behaviour:
 
+- **Identical copy on both platforms:**
+
+  | Element | Text |
+  | --- | --- |
+  | Title | "Characters" |
+  | Count line | "{count} characters across the multiverse" (`count` from `info.count`) |
+  | Search placeholder | "Search characters" |
+  | Filter options | "All" · "Alive" · "Dead" · "Unknown" |
+  | Navigation | "Characters" · "Episodes" · "Locations" · "Favorites" |
+
+- **Card data:** every card shows exactly the same four items on both platforms. Only the layout differs.
+
+  | Item | Content |
+  | --- | --- |
+  | Photo | Character image |
+  | Name | Full name, including the surname when there is one, never cut short. Long names wrap to a second line |
+  | Status | Alive / Dead / Unknown |
+  | Species | The API `species` field, never `type`; "unknown" is shown as "Unknown" |
+
+  No gender, type or origin on the cards.
+- **Prototype content:** the characters shown in the Android and iOS prototypes don't need to be the same. Both apps render the same API data at runtime.
 - **Filters are identical on both platforms:**
   - the same four single-select options (All · Alive · Dead · Unknown)
   - the same default (All)
@@ -350,9 +372,9 @@ Behaviour:
 | Top controls | Back and Share icon buttons (tonal, over the image) | Glass Back; trailing Share (Glass) and **Favorite** (Glass Prominent, `heart.fill`) |
 | Title | Status badge, name (Display Medium Emphasized), "Species · Gender · Origin" | Glass status capsule, name (Editorial Display + text shadow), "Species · Gender" |
 | Stats | Connected tiles: Episodes count · Dimension (from origin) · Species | Stats row inside the frosted panel |
-| Info | About: Origin (`language`), Last known location (`location_on`), First seen in (`play_arrow`) | Glass info rows: `globe.americas.fill`, `mappin.and.ellipse`, `play.tv.fill` |
+| Info | Info list with no section heading: Origin (`language`), Last known location (`location_on`), First seen in (`play_arrow`) | Glass info rows: `globe.americas.fill`, `mappin.and.ellipse`, `play.tv.fill` |
 | Favorite | Medium Extended FAB "Favorite", Primary + Portal Glow; collapses to an icon FAB on scroll | Integrated prominent glass button (top-right) |
-| Extra | — | Floating accessory "Appears in N episodes" → episode list (Could-Have) |
+| Extra | — | Informative line "Appears in N episodes" below the panel. It isn't tappable and repeats the Episodes stat |
 
 Data binding (see the domain model in `API_SPECS.md` §3):
 
@@ -380,7 +402,7 @@ Android:
 | Card → Detail | Container transform: card portrait → hero, 450 ms, Emphasized Decelerate; corner radius 20 → 0. The rest of the card fades through. Compose: `SharedTransitionLayout` + `Modifier.sharedElement(key = "portrait-$id")` |
 | Detail → Card | Reverse; supports predictive back (the hero scales with the gesture) |
 | Favorite | `favorite` outline → filled; spring (stiffness ≈ 380, damping 0.6); one-off Primary ripple |
-| Splash | Portal rotates 360° over 1600 ms, linear; the loading indicator morphs shapes |
+| Splash | Portal rotates clockwise, starting very slowly and accelerating: 360° over 1.2 s, ease-in cubic `CubicBezierEasing(0.32f, 0f, 0.67f, 0f)`. If data is still loading, it keeps spinning at the final speed (≈ 900°/s) until the splash exits. No loading indicator |
 | Chips / filters | Grid content cross-fades; items animate placement (`Modifier.animateItem()`) |
 
 iOS:
@@ -391,7 +413,7 @@ iOS:
 | Card parallax | Portrait translates at 0.85× scroll within its 14 pt overscan |
 | Segmented control | Selection capsule glides with a spring (response 0.35, damping 0.8); glass morphs between segments |
 | Favorite | `.symbolEffect(.bounce, value: isFavorite)` + `.sensoryFeedback(.success, trigger:)` |
-| Splash | Aurora orbs drift slowly (20 s loop, ease-in-out); the lens light angle shifts subtly |
+| Splash | Same rotation as Android: the portal spins clockwise behind the glass lens, 360° over 1.2 s, `.timingCurve(0.32, 0, 0.67, 0, duration: 1.2)`, then keeps the final speed. Aurora orbs drift slowly (20 s loop, ease-in-out) |
 
 **Reduce Motion (both platforms):**
 - Replace shared-element and zoom transitions with cross-fades.
@@ -416,7 +438,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 - **Touch targets:** 48 dp (Android) / 44 pt (iOS) minimum. Glass buttons are 50 pt.
 - **Status:** always a text label with the dot, announced as "Status: Alive".
 - **Voice search:** the mic buttons are labelled "Search by voice" and announce when listening starts and stops.
-- **Screen readers:** each card is one merged node, "Rick Sanchez, Human, Male, Alive, button". The portrait is decorative within the card. The Favorite control exposes its toggled state.
+- **Screen readers:** each card is one merged node, "Rick Sanchez, Alive, Human, button". The portrait is decorative within the card. The Favorite control exposes its toggled state.
 - **Text scaling:**
   - Android styles use `sp`.
   - iOS uses Dynamic Type, including the editorial display via `@ScaledMetric`.

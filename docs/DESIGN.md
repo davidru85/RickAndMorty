@@ -88,7 +88,7 @@ enum class StatusFilter { All, Alive, Dead, Unknown }
 data class CharacterCardUi(
     val id: CharacterId,
     val name: String,
-    val meta: String,                 // "Human · Male"
+    val species: String,              // API `species` ("unknown" → "Unknown"); cards show photo, name, status, species
     val status: CharacterStatus,
     val imageUrl: String,             // also the image cache key and colour-extraction key
 )
