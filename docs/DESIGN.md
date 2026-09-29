@@ -134,13 +134,19 @@ The list ViewModel applies the rules from `API_SPECS.md` §8: 300 ms debounce, `
 | `Splash` | In-app composable after `installSplashScreen()` | Root view before the stack |
 | `CharacterList` | Start destination, bottom navigation "Characters" | `TabView` → "Characters" tab root |
 | `CharacterDetail(id)` | `@Serializable data class CharacterDetail(val id: String)` | `Route.detail(CharacterId)` |
+| `Episodes` · `Locations` · `Favorites` | Top-level destinations in the navigation bar | `TabView` tabs |
 
 The card-to-detail transition is part of the architecture, not decoration:
 - **Android:** `SharedTransitionLayout` wraps the `NavHost`. The portrait uses the shared key `"portrait-$id"`, and predictive back is supported.
 - **iOS:** a `@Namespace` is passed from the grid to the detail for `.matchedTransitionSource` / `.navigationTransition(.zoom)`.
 - **Both:** to work, the detail must render the pre-filled `header` immediately, before the network responds (`API_SPECS.md` §8: "Reuse list data during navigation").
 
-The Episodes, Locations and Favorites tabs are reserved routes (Could-Have) and are not wired in the MVP.
+The Episodes, Locations and Favorites tabs are wired in the MVP but show placeholder screens (`UI_SPEC.md` §6.4). Each platform has one reusable empty-state component with identical copy.
+- Episodes and Locations are "coming soon" screens with no ViewModel or data.
+- Favorites observes `ObserveFavoriteIds` (§4.5) and shows its empty state while the set is empty.
+- "Browse characters" switches to the Characters tab rather than pushing a route.
+
+The real Episodes and Locations screens remain Could-Have.
 
 ### 4.3 Design tokens pipeline
 

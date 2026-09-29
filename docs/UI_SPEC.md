@@ -26,13 +26,16 @@ The portraits on the shared page (`13:130`) are **sample data only**: ten 300 ×
 
 ### 1.1 Screens
 
-Both flows are wired as clickable prototypes: open a page and press **Present**. The Splash simulates a 2 s data load (the portal spins as the loading indicator), then moves to Discovery; tap Rick's card to open Detail.
+Both flows are wired as clickable prototypes: open a page and press **Present**. The Splash simulates a 2 s data load (the portal spins as the loading indicator), then moves to Discovery. Tap Rick's card to open Detail. The navigation tabs switch between Discovery and the three placeholder sections, whose "Browse characters" button returns to Discovery.
 
 | Screen | Android (412 × 892 dp) | iOS (402 × 874 pt, iPhone 17 Pro) |
 | --- | --- | --- |
 | 01 · Splash | [`20:1620`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=20-1620) | [`29:291`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=29-291) |
 | 02 · Discovery (list) | [`20:1735`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=20-1735) | [`29:381`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=29-381) |
 | 03 · Detail | [`21:1217`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=21-1217) | [`26:452`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=26-452) |
+| 04 · Episodes (placeholder) | [`101:499`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-499) | [`102:269`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-269) |
+| 05 · Locations (placeholder) | [`101:568`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-568) | [`102:322`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-322) |
+| 06 · Favorites (empty state) | [`101:637`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-637) | [`102:375`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-375) |
 
 Both frames are 9:19.5. The app has a **single appearance** with no light/dark variants (§3.1, §9).
 
@@ -50,7 +53,10 @@ Both frames are 9:19.5. The app has a **single appearance** with no light/dark v
 | `iOS/Glass segmented control` | `22:271` | All · Alive · Dead · Unknown. |
 | `iOS/Glass search field` | `22:281` | Prop `Placeholder`. |
 | `iOS/Glass icon button` | `25:287` | Variants `Style = Glass · Prominent`; prop `Symbol`. |
-| `iOS/Glass tab bar` | `25:288` | Four tabs, Characters selected. |
+| `iOS/Glass tab bar` | `102:255` | Variants `Selected = Characters · Episodes · Locations · Favorites`. |
+| `iOS/Glass text button` | `102:197` | Capsule glass prominent button (Portal Green); prop `Label`. |
+| `iOS/Empty state` | `102:256` | Props `Symbol`, `Heading`, `Body`; includes the glass text button (§6.4). |
+| `Android/Empty state` | `101:483` | Props `Heading`, `Body`, `Icon` (instance swap); Cookie-9 illustration + M3 filled button (§6.4). |
 | `Android/Launcher icon/Background` · `/Foreground` | `59:242` · `59:263` | Adaptive icon layers, 108 dp canvas (see §10.1). |
 | `Android/Launcher icon` | `59:282` | Composite of background + foreground. |
 | `Android/Play Store icon` | `59:515` | 512 × 512 store listing icon. |
@@ -221,7 +227,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Shows exactly photo, name, status (badge) and species (§6.2). Name in Title Medium Emphasized, up to 2 lines so the full name fits (ellipsis only beyond that); species in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
 | Staggered grid | 2 fixed columns, 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(StaggeredGridCells.Fixed(2))` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
-| Navigation bar | 4 destinations: Characters (`groups`), Episodes (`play_arrow`), Locations (`language`), Favorites (`favorite`); container Surface Container | `NavigationBar`; Characters is the only MVP destination, the others are Could-Have |
+| Navigation bar | 4 destinations: Characters (`groups`), Episodes (`play_arrow`), Locations (`language`), Favorites (`favorite`); container Surface Container | `NavigationBar`; the selected item follows the current section. Episodes, Locations and Favorites open placeholder screens (§6.4) |
 | Detail icon buttons | 48 dp touch target, 40 dp container at Surface Container Highest @72% over the image | `FilledTonalIconButton` with custom container colour |
 | Stat tiles | Row of 3, 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
@@ -236,7 +242,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", trailing `mic.fill` for voice search (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
-| Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab in Portal Glow | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)` |
+| Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab in Portal Glow (one variant per selected tab) | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)` |
 | Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol). Favorite uses Glass + `heart` when unmarked (as drawn) and Prominent + `heart.fill` when marked | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
 | Glass status capsule | Dot + "Alive" (Footnote Emphasized), clear glass | `Label` + `.glassEffect(.clear, in: .capsule)` |
 | Frosted panel | 370 wide, continuous corner 34, 20 pt padding. Stats row (3 columns: Title 2 value, Caption 1 label, 1 pt separators), divider, then 3 `Glass info row`s | `.glassEffect(in: .rect(cornerRadius: 34, style: .continuous))` |
@@ -387,14 +393,47 @@ Data binding (see the domain model in `API_SPECS.md` §3):
 
 On iOS, the title block, panel and accessory are a bottom-anchored stack, so the layout adapts to Dynamic Type sizes.
 
+### 6.4 Episodes, Locations and Favorites (placeholders)
+
+These three tabs don't have their final content yet:
+- Episodes and Locations show a "coming soon" placeholder.
+- Favorites shows its empty state, because the Favorite action already exists on Detail.
+
+The text and information are **identical on both platforms**:
+
+| Screen | Title | Heading | Body | Button |
+| --- | --- | --- | --- | --- |
+| Episodes | "Episodes" | "Episodes are on their way" | "Soon you'll be able to browse every episode, from the Pilot to the latest season." | "Browse characters" |
+| Locations | "Locations" | "Locations are on their way" | "Soon you'll be able to explore every planet, dimension and space station in the multiverse." | "Browse characters" |
+| Favorites | "Favorites" | "No favorites yet" | "Tap the heart on a character's page to keep them here." | "Browse characters" |
+
+Presentation per platform:
+
+| | Android (`Android/Empty state`) | iOS (`iOS/Empty state`) |
+| --- | --- | --- |
+| Title | Display Small Emphasized, same position as the Discovery headline | Large Title, same position as Discovery |
+| Illustration | M3 Expressive Cookie-9 (160 dp) with the section's icon (64 dp). Container colour per section: Episodes Secondary Container, Locations Tertiary Container, Favorites Primary Container | 120 pt glass symbol well (`Liquid Glass/Regular`) with a 48 pt SF Symbol in Portal Glow: `play.tv.fill`, `globe.europe.africa.fill`, `heart` |
+| Heading / body | Headline Small Emphasized / Body Medium, centred, 320 dp wide | Title 2 / Subheadline (secondary), centred, 320 pt wide |
+| Button | M3 filled button, Medium | `iOS/Glass text button` (glass prominent, Portal Green) |
+| Navigation | Navigation bar with the section's item selected | Glass tab bar variant for the section |
+
+Behaviour:
+- **Browse characters:** selects the Characters tab (Discovery). It doesn't push a new screen.
+- **Favorites:** when the user has favourites, this screen becomes the list of favourite characters, using the same cards as Discovery. The empty state only shows while the list is empty.
+- **When Episodes and Locations are built:** their placeholders are replaced by real screens with the same title and navigation.
+- **Accessibility:** the illustration is decorative. The heading and body are read in order, followed by the button.
+
 ## 7. Navigation and motion
 
 ```mermaid
 flowchart LR
-    Splash -->|data ready or 1.2 s · fade| Discovery
+    Splash -->|data loaded, min 1.2 s · fade| Discovery
     Discovery -->|tap card · shared element| Detail
     Detail -->|back · predictive back| Discovery
-    Discovery -.->|Could-Have| Episodes & Locations & Favorites
+    Discovery <-->|tab| Episodes
+    Discovery <-->|tab| Locations
+    Discovery <-->|tab| Favorites
+    Episodes & Locations & Favorites -->|Browse characters| Discovery
 ```
 
 Android:
