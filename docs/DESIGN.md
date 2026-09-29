@@ -77,12 +77,12 @@ The adapter sits behind `CharacterRemoteDataSource`, so the choice stays local t
 
 ```kotlin
 data class CharacterFilter(
-    val query: String = "",
+    val query: String = "",                        // name search
     val status: StatusFilter = StatusFilter.All,   // "All" sends no status parameter
-    val species: String? = null,
-    val gender: CharacterGender? = null,
 )
 
+// Same four options on both platforms (Android filter chips, iOS segmented control).
+// Species/gender filters exist in the API but are intentionally not exposed.
 enum class StatusFilter { All, Alive, Dead, Unknown }
 
 data class CharacterCardUi(
@@ -120,7 +120,7 @@ data class CharacterDetailUiState(
 ```
 
 Intents:
-- `CharacterListIntent`: `QueryChanged`, `StatusSelected`, `SpeciesSelected`, `GenderSelected`, `LoadNextPage`, `Refresh`, `Retry`
+- `CharacterListIntent`: `QueryChanged`, `StatusSelected`, `LoadNextPage`, `Refresh`, `Retry`
 - `CharacterDetailIntent`: `ToggleFavorite`, `Retry`
 
 The list ViewModel applies the rules from `API_SPECS.md` §8: 300 ms debounce, `distinctUntilChanged`, cancellation, page reset and single-page prefetch.

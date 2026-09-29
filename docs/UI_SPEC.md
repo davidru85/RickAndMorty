@@ -216,8 +216,8 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | Compose implementation |
 | --- | --- | --- |
-| Top app bar with search | 64 dp; leading menu icon, search bar "Search the multiverse", trailing 32 dp avatar | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
-| Filter chips | Elevated style, 32 dp. Order: **All** (selected, check icon) · Alive · Dead · Unknown · Species ▾ (· Gender ▾ off-screen). Horizontally scrollable, 16 dp start inset | `ElevatedFilterChip` in a `LazyRow`; "Species"/"Gender" open a menu |
+| Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse". No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
+| Filter chips | Elevated style, 32 dp, 16 dp start inset. Exactly four single-select options: **All** (selected, check icon) · Alive · Dead · Unknown. They fit the screen width, so no scrolling. Equivalent to the iOS segmented control | `ElevatedFilterChip`s in a `Row`; selecting one deselects the others |
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Name in Title Medium Emphasized (1 line, ellipsis), meta "Species · Gender" in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
 | Staggered grid | 2 fixed columns, 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(StaggeredGridCells.Fixed(2))` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
@@ -232,7 +232,6 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | SwiftUI implementation |
 | --- | --- | --- |
-| Toolbar buttons | 50 pt circular glass; `line.3.horizontal.decrease` (filters), `person.crop.circle` | `ToolbarItem` (automatically glass on iOS 26) or `.buttonStyle(.glass)` |
 | Large title | "Characters" + "826 across the multiverse" (Subheadline, secondary). The count comes from `info.count`, never hard-coded | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
 | Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", `mic.fill` | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
@@ -312,20 +311,25 @@ Content order, top to bottom:
 | | Android | iOS |
 | --- | --- | --- |
 | 1 | Status bar | Status bar |
-| 2 | App bar with search | Toolbar glass buttons |
-| 3 | Headline + count | Large title + count |
-| 4 | Filter chips | Glass search field |
-| 5 | Staggered grid | Glass segmented control |
-| 6 | Navigation bar | Grid of glass cards |
-| 7 | — | Floating glass tab bar |
+| 2 | App bar with search | Large title + count |
+| 3 | Headline + count | Glass search field |
+| 4 | Filter chips | Glass segmented control |
+| 5 | Staggered grid | Grid of glass cards |
+| 6 | Navigation bar | Floating glass tab bar |
+
+Neither platform has top-bar action buttons: no menu or avatar on Android, and no toolbar buttons on iOS.
 
 Behaviour:
 
+- **Filters are identical on both platforms:**
+  - the same four single-select options (All · Alive · Dead · Unknown)
+  - the same default (All)
+  - Android shows them as filter chips, iOS as a segmented control
 - **Filters map directly to API query parameters:**
   - status → `status`
-  - species / gender → `species` / `gender`
   - search → `name`
   - "All" sends no `status`
+- **Not offered:** species and gender filters. The API supports them (`API_SPECS.md` §4.4), but the UI deliberately limits filtering to status plus name search.
 - **The selected filter must match the content.** Both designs show "All" selected with mixed statuses.
 - **Paging:** incremental; prefetch the next page near the end.
 - **Search:** 300 ms debounce; a new query resets to page 1.
