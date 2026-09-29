@@ -26,7 +26,7 @@ The portraits on the shared page (`13:130`) are **sample data only**: ten 300 ×
 
 ### 1.1 Screens
 
-Both flows are wired as clickable prototypes: open a page, press **Present**, and tap Rick's card.
+Both flows are wired as clickable prototypes: open a page and press **Present**. The Splash simulates a 2 s data load (the portal spins as the loading indicator), then moves to Discovery; tap Rick's card to open Detail.
 
 | Screen | Android (412 × 892 dp) | iOS (402 × 874 pt, iPhone 17 Pro) |
 | --- | --- | --- |
@@ -225,7 +225,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Detail icon buttons | 48 dp touch target, 40 dp container at Surface Container Highest @72% over the image | `FilledTonalIconButton` with custom container colour |
 | Stat tiles | Row of 3, 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
-| Extended FAB | Medium (80 dp), Primary colour, `favorite` icon + "Favorite", Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area | M3 Expressive medium extended FAB |
+| Extended FAB | Medium (80 dp), Primary colour, "Favorite" label, Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area. Unmarked (as drawn): outline `favorite` icon. Marked: filled heart | M3 Expressive medium extended FAB |
 | Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs. Used only for paging (§8), not on the splash | `ContainedLoadingIndicator` |
 
 ### 4.2 iOS (SwiftUI, Liquid Glass)
@@ -237,7 +237,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
 | Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab in Portal Glow | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)` |
-| Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol) | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
+| Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol). Favorite uses Glass + `heart` when unmarked (as drawn) and Prominent + `heart.fill` when marked | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
 | Glass status capsule | Dot + "Alive" (Footnote Emphasized), clear glass | `Label` + `.glassEffect(.clear, in: .capsule)` |
 | Frosted panel | 370 wide, continuous corner 34, 20 pt padding. Stats row (3 columns: Title 2 value, Caption 1 label, 1 pt separators), divider, then 3 `Glass info row`s | `.glassEffect(in: .rect(cornerRadius: 34, style: .continuous))` |
 | Glass info row | 38 pt symbol well (Glass/Tint Green, symbol in Portal Glow) + label (Footnote, secondary) + value (Headline) | `LabeledContent` / custom `HStack` |
@@ -299,11 +299,13 @@ On iOS, glass surfaces do not need an accent: the glass picks up the portrait's 
 | Background | Surface, violet (Tertiary) and green (Primary) radial nebula glows, sparse starfield | Space Black, three aurora orbs (Cosmic Violet, Portal Green, Nebula Violet), starfield |
 | Mark | Portal logo (160 dp) on an M3 Expressive **Cookie-9** shape (240 dp, Primary Container), Portal Glow | Portal logo (176 pt) seen through a 212 pt **Liquid Glass lens** (continuous corner 60, `Liquid Glass/Clear`) that refracts it |
 | Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
-| Motion | The portal rotates clockwise, starting very slowly and accelerating gradually (§7) | Same: the portal rotates behind the glass lens (§7) |
-| Progress | None | None |
+| Loading indicator | The rotating portal: it starts very slowly, accelerates, then spins at a constant speed until the data has loaded (§7). No other progress UI | Same: the portal rotates behind the glass lens (§7). No other progress UI |
 | Implementation | `installSplashScreen()` for the system icon phase (it shows the launcher icon's foreground, see §10.1), then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
 
-Exit when the first page of characters is ready or after 1.2 s, whichever is later, with a maximum of 3 s; then cross-fade (350–400 ms) to Discovery. On a cold start with no network, go to Discovery and show its error state (§8).
+The splash stays on screen while the first page of characters loads, with the spinning portal as the loading indicator.
+- **Timing:** it lasts at least 1.2 s so the acceleration completes, and at most 3 s; then it cross-fades (350–400 ms) to Discovery.
+- **Prototype:** both Figma prototypes simulate a 2 s load.
+- **No network on a cold start:** go to Discovery and show its error state (§8).
 
 ### 6.2 Discovery (character list)
 
@@ -342,7 +344,7 @@ Behaviour:
   | Species | The API `species` field, never `type`; "unknown" is shown as "Unknown" |
 
   No gender, type or origin on the cards.
-- **Prototype content:** the characters shown in the Android and iOS prototypes don't need to be the same. Both apps render the same API data at runtime.
+- **Prototype content:** both prototypes show the same six characters in the same order: Rick Sanchez, Morty Smith, Birdperson, Krombopulos Michael, Mr. Meeseeks, Squanchy. At runtime both apps render the same API data.
 - **Filters are identical on both platforms:**
   - the same four single-select options (All · Alive · Dead · Unknown)
   - the same default (All)
@@ -373,7 +375,7 @@ Behaviour:
 | Title | Status badge, name (Display Medium Emphasized), "Species · Gender · Origin" | Glass status capsule, name (Editorial Display + text shadow), "Species · Gender" |
 | Stats | Connected tiles: Episodes count · Dimension (from origin) · Species | Stats row inside the frosted panel |
 | Info | Info list with no section heading: Origin (`language`), Last known location (`location_on`), First seen in (`play_arrow`) | Glass info rows: `globe.americas.fill`, `mappin.and.ellipse`, `play.tv.fill` |
-| Favorite | Medium Extended FAB "Favorite", Primary + Portal Glow; collapses to an icon FAB on scroll | Integrated prominent glass button (top-right) |
+| Favorite | Medium Extended FAB "Favorite", Primary + Portal Glow; collapses to an icon FAB on scroll. Drawn **unmarked** (outline heart); marked = filled heart | Integrated glass button (top-right). Drawn **unmarked** (Glass + `heart`); marked = Prominent Portal Green + `heart.fill` |
 | Extra | — | Informative line "Appears in N episodes" below the panel. It isn't tappable and repeats the Episodes stat |
 
 Data binding (see the domain model in `API_SPECS.md` §3):
@@ -402,7 +404,7 @@ Android:
 | Card → Detail | Container transform: card portrait → hero, 450 ms, Emphasized Decelerate; corner radius 20 → 0. The rest of the card fades through. Compose: `SharedTransitionLayout` + `Modifier.sharedElement(key = "portrait-$id")` |
 | Detail → Card | Reverse; supports predictive back (the hero scales with the gesture) |
 | Favorite | `favorite` outline → filled; spring (stiffness ≈ 380, damping 0.6); one-off Primary ripple |
-| Splash | Portal rotates clockwise, starting very slowly and accelerating: 360° over 1.2 s, ease-in cubic `CubicBezierEasing(0.32f, 0f, 0.67f, 0f)`. If data is still loading, it keeps spinning at the final speed (≈ 900°/s) until the splash exits. No loading indicator |
+| Splash | Portal rotates clockwise, starting very slowly and accelerating: 360° over 1.2 s, ease-in cubic `CubicBezierEasing(0.32f, 0f, 0.67f, 0f)`. It then keeps spinning at that final speed (≈ 900°/s) until the data has loaded. This rotation is the splash loading indicator. Prototype keyframes: 0° → −360° at 1.2 s (ease-in) → −1080° at 2 s (linear) |
 | Chips / filters | Grid content cross-fades; items animate placement (`Modifier.animateItem()`) |
 
 iOS:
@@ -413,11 +415,12 @@ iOS:
 | Card parallax | Portrait translates at 0.85× scroll within its 14 pt overscan |
 | Segmented control | Selection capsule glides with a spring (response 0.35, damping 0.8); glass morphs between segments |
 | Favorite | `.symbolEffect(.bounce, value: isFavorite)` + `.sensoryFeedback(.success, trigger:)` |
-| Splash | Same rotation as Android: the portal spins clockwise behind the glass lens, 360° over 1.2 s, `.timingCurve(0.32, 0, 0.67, 0, duration: 1.2)`, then keeps the final speed. Aurora orbs drift slowly (20 s loop, ease-in-out) |
+| Splash | Same rotation as Android: the portal spins clockwise behind the glass lens, 360° over 1.2 s, `.timingCurve(0.32, 0, 0.67, 0, duration: 1.2)`, then constant speed until the data has loaded (a `TimelineView` drives the angle). It is the loading indicator. Aurora orbs drift slowly (20 s loop, ease-in-out) |
 
 **Reduce Motion (both platforms):**
 - Replace shared-element and zoom transitions with cross-fades.
-- Disable parallax, rotation and aurora drift.
+- Disable parallax and aurora drift.
+- The splash portal doesn't spin; because it's the loading indicator, it pulses its opacity gently (0.6 ↔ 1, 1.2 s) instead.
 
 ## 8. States (not drawn in Figma yet)
 
@@ -434,6 +437,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 
 ## 9. Accessibility
 
+- **Splash loading:** the spinning portal is exposed as an indeterminate progress indicator labelled "Loading characters". On Android use `Modifier.semantics { progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate }`; on iOS use `.accessibilityLabel` with the `.updatesFrequently` trait.
 - **Contrast:** body text is at least 4.5:1 (checked on dynamic tints at tone 30 and on Surface). Large display text is at least 3:1. On iOS glass over imagery, rely on the text shadow and dim layer. With **Reduce Transparency**, swap glass for an opaque `.thickMaterial` (iOS) / Surface Container (Android).
 - **Touch targets:** 48 dp (Android) / 44 pt (iOS) minimum. Glass buttons are 50 pt.
 - **Status:** always a text label with the dot, announced as "Status: Alive".
