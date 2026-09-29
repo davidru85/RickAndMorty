@@ -121,6 +121,8 @@ data class CharacterDetailUiState(
 
 Intents:
 - `CharacterListIntent`: `QueryChanged`, `StatusSelected`, `LoadNextPage`, `Refresh`, `Retry`
+
+Voice search is a platform concern with no shared code. The Android recognizer (`RecognizerIntent`) and the iOS one (Speech framework) only return text, which the screen sends as a regular `QueryChanged`. The ViewModel can't tell typed and dictated queries apart, so debounce and cancellation apply equally (`UI_SPEC.md` §6.2).
 - `CharacterDetailIntent`: `ToggleFavorite`, `Retry`
 
 The list ViewModel applies the rules from `API_SPECS.md` §8: 300 ms debounce, `distinctUntilChanged`, cancellation, page reset and single-page prefetch.

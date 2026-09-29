@@ -15,6 +15,7 @@ Specification of functional and non-functional requirements for the Rick and Mor
 - [ ] Response caching
 
 ### Could-Have
+- [ ] Voice search (speech-to-text) in the search field, on both platforms
 - [ ] Advanced animations
 - [ ] Local database persistence
 

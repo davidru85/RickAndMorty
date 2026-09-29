@@ -216,7 +216,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | Compose implementation |
 | --- | --- | --- |
-| Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse". No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
+| Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse", trailing `mic` icon button for voice search (§6.2). No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
 | Filter chips | Elevated style, 32 dp, 16 dp start inset. Exactly four single-select options: **All** (selected, check icon) · Alive · Dead · Unknown. They fit the screen width, so no scrolling. Equivalent to the iOS segmented control | `ElevatedFilterChip`s in a `Row`; selecting one deselects the others |
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Name in Title Medium Emphasized (1 line, ellipsis), meta "Species · Gender" in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
@@ -233,7 +233,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Component | Spec | SwiftUI implementation |
 | --- | --- | --- |
 | Large title | "Characters" + "826 across the multiverse" (Subheadline, secondary). The count comes from `info.count`, never hard-coded | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
-| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", `mic.fill` | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
+| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", trailing `mic.fill` for voice search (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Glass bar: 165 × 58, corner 20, 6 pt inset — name (Headline, 1 line) and status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
 | Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab in Portal Glow | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)` |
@@ -333,6 +333,10 @@ Behaviour:
 - **The selected filter must match the content.** Both designs show "All" selected with mixed statuses.
 - **Paging:** incremental; prefetch the next page near the end.
 - **Search:** 300 ms debounce; a new query resets to page 1.
+- **Voice search (speech-to-text):** both platforms have a mic at the trailing end of the search field. Tapping it dictates the query; the transcript replaces the text and follows the same debounce and page reset as typing.
+  - **Android:** launch the system recognizer with `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` via `rememberLauncherForActivityResult`. The system UI records the audio, so the app needs no `RECORD_AUDIO` permission. Hide the mic when `SpeechRecognizer.isRecognitionAvailable()` is false. On Android 11+ that check needs a `<queries>` entry for the `android.speech.RecognitionService` intent in the manifest.
+  - **iOS:** use the Speech framework (`SFSpeechRecognizer` + `AVAudioEngine`), on-device when `supportsOnDeviceRecognition` is true. It requires `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription`. While listening, `mic.fill` animates with `.symbolEffect(.variableColor)`; tapping again stops. Hide the mic if the recognizer is unavailable or permission is denied.
+  - Recognition uses the device language. Character names are proper nouns, so an imperfect transcript is corrected by typing; no custom vocabulary.
 - **Scroll:**
   - Android: the app bar gets a Surface Container fill on scroll (Elevation "On-scroll").
   - iOS: the large title collapses into the inline title, and glass content scrolls under the tab bar.
@@ -411,6 +415,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 - **Contrast:** body text is at least 4.5:1 (checked on dynamic tints at tone 30 and on Surface). Large display text is at least 3:1. On iOS glass over imagery, rely on the text shadow and dim layer. With **Reduce Transparency**, swap glass for an opaque `.thickMaterial` (iOS) / Surface Container (Android).
 - **Touch targets:** 48 dp (Android) / 44 pt (iOS) minimum. Glass buttons are 50 pt.
 - **Status:** always a text label with the dot, announced as "Status: Alive".
+- **Voice search:** the mic buttons are labelled "Search by voice" and announce when listening starts and stops.
 - **Screen readers:** each card is one merged node, "Rick Sanchez, Human, Male, Alive, button". The portrait is decorative within the card. The Favorite control exposes its toggled state.
 - **Text scaling:**
   - Android styles use `sp`.
