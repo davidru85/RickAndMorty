@@ -1,0 +1,56 @@
+# docs/figma/ — Rendered design exports
+
+- **Status:** Active (directory established; exports pending)
+- **Last verified:** 2026-09-29
+- **Owner:** UI/UX Designer
+- **Authoritative for:** nothing. This directory holds rendered PNG exports of the Figma source so that reviewers can see the design without a Figma account.
+- **Inputs:** the Figma file [Rick & Morty](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty)
+
+## Why this directory exists
+
+The Figma source file requires project membership and returns **403** to anonymous clients (verified 2026-09-29). `UI_SPEC.md` §1, §1.1 and §1.2 reference it by node id, which makes the visual specification unverifiable for anyone without access — and a reviewer cloning this repository is exactly that person (`RISK-008`, `CONF-05` → `DEC-045`).
+
+Committed exports fix that: the reviewer sees the design in the repository, the screenshot tests compare against a stable committed reference, and the Figma links in `UI_SPEC.md` become a convenience rather than a dependency.
+
+## Expected export set
+
+| File | Source frame | Node |
+| --- | --- | --- |
+| `01-splash-android.png` | 01 · Splash (Android) | `20:1620` |
+| `01-splash-ios.png` | 01 · Splash (iOS) | `29:291` |
+| `02-discovery-android.png` | 02 · Discovery (Android) | `20:1735` |
+| `02-discovery-ios.png` | 02 · Discovery (iOS) | `29:381` |
+| `03-detail-android.png` | 03 · Detail (Android) | `21:1217` |
+| `03-detail-ios.png` | 03 · Detail (iOS) | `26:452` |
+| `04-episodes-android.png` · `04-episodes-ios.png` | 04 · Episodes placeholder | `101:499` · `102:269` |
+| `05-locations-android.png` · `05-locations-ios.png` | 05 · Locations placeholder | `101:568` · `102:322` |
+| `06-favorites-android.png` · `06-favorites-ios.png` | 06 · Favorites empty state | `101:637` · `102:375` |
+| `10-launcher-android.png` | Android launcher icon board | `59:240` |
+| `10-appicon-ios.png` | iOS app icon board | `59:930` |
+
+Naming follows the screen numbering in `UI_SPEC.md` §1.1 and §10. Export at 2× the frame size, with the frame background included, so the files are directly comparable with the Android and iOS screenshot baselines described in `TESTING.md`.
+
+## Export procedure
+
+1. Open the Figma file with project access (the file is not public).
+2. Select each frame listed above and export it as PNG at 2×.
+3. Name the files exactly as in the table and place them in this directory.
+4. Add the exports in the same change that updates `README.md` §3, which currently states that screenshots are pending.
+5. Record the export date in the *Export log* below. Exports are a snapshot: when Figma changes, re-export and regenerate the affected screenshot baselines in the same pull request.
+
+## Export log
+
+| Date | Exported by | Files | Figma version note |
+| --- | --- | --- | --- |
+| — | — | none yet | The exports have not been produced. The Figma file requires access this environment does not have. |
+
+## Current state and fallback
+
+This directory is intentionally empty of images. Until the exports exist:
+
+- `README.md` §3 states that screenshots are pending and must not be read as already present;
+- `UI_SPEC.md` §1.1 remains the textual reference, with Figma node ids that a reader with access can open;
+- the Android and iOS screenshot baselines required by `TESTING.md` are recorded from the running apps once the implementation exists, and are compared with Figma manually at review (DEC-024) — they do not depend on this directory;
+- the pending export task is tracked in `BACKLOG.md` and recorded as an open gap in `DOCUMENTATION_AUDIT.md`.
+
+Do not substitute downloaded mock portraits or generated imagery for the exports: the screens must be rendered from the actual Figma frames, or the comparison claim becomes false.

@@ -1,3 +1,14 @@
+- **Status:** Superseded as a specification — historical input, kept for provenance
+- **Last verified:** 2026-09-29
+- **Owner:** UI/UX Designer
+- **Authoritative for:** nothing. This is the prompt used to generate the iOS Figma page. The normative visual specification is `../UI_SPEC.md`.
+- **Inputs:** `../../assessment.md`
+
+> **Not normative.** Where this brief disagrees with `../UI_SPEC.md`, `UI_SPEC.md` wins. Known divergences:
+> - The brief's "Dynamic filtering using elegant, pill-shaped segmented controls" is narrowed by `UI_SPEC.md` §6.2 to exactly four status options, with no species or gender filters.
+> - The brief assumes an iOS-native design without naming a platform floor; the project sets iOS 18.0 minimum with Liquid Glass behind an availability check (`DEC-008`).
+> - Figma library kit references in the brief differ in version from the APIs used in code; `UI_SPEC.md` §4.2 is the binding component specification.
+
 ### ROLE
 Act as a Senior Product Designer specializing in iOS development and Apple's Human Interface Guidelines (HIG). Your goal is to generate high-fidelity, professional UI/UX prototypes for an iOS application.
 
