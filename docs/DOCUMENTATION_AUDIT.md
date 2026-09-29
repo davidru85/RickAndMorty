@@ -148,7 +148,7 @@ None. Every conflict identified in this audit is either resolved (§6.1) or reco
 | Check | Method | Result |
 | --- | --- | --- |
 | Internal Markdown links | Scripted resolution of every relative link against the filesystem, over all Markdown files | 0 broken links (4 earlier failures were `DOCUMENTATION_AUDIT.md` itself, written by this audit) |
-| Requirement identifier uniqueness and coverage | Scripted extraction of `REQ-*`, `AC-*`, `DEC-*`, `TEST-*`, `TASK-*`, `IC-*`, `API-*` across all documents | 28 requirements, 66 acceptance criteria, 54 decisions, 76 test ids, 73 task ids, 20 contracts, 18 API contract ids; no undefined references outside the declared set |
+| Requirement identifier uniqueness and coverage | Scripted extraction of `REQ-*`, `AC-*`, `DEC-*`, `TEST-*`, `TASK-*`, `IC-*`, `API-*` across all documents | 28 requirements, 66 acceptance criteria, 54 decisions, 80 test ids, 73 task ids, 20 contracts, 18 API contract ids; no undefined references, and no test id claimed by two requirements |
 | Acceptance criteria coverage | Every requirement checked for at least one `AC-<REQ>-n` | All 28 requirements have acceptance criteria |
 | Task coverage | Every requirement id referenced from `BACKLOG.md` | Present for all Must/Should requirements |
 | Test coverage | Every requirement id referenced from `TESTING.md` traceability | Present for all Must/Should requirements |
@@ -178,3 +178,4 @@ Next actions, in order: create the Gradle build and version catalog (`GAP-001`);
 | Date | Change | Reference |
 | --- | --- | --- |
 | 2026-09-29 | Audit created. 24 documents authored, 9 amended, 2 renamed, 6 rejected; all conflicts closed and 9 gaps recorded. | DEC-021, DEC-046, DEC-052, DEC-053, DEC-054 |
+| 2026-09-29 | Post-audit reconciliation: `TEST-UNIT-014`…`016` collisions between `REQUIREMENTS.md` and `TESTING.md` resolved by allocating `TEST-UNIT-043`…`045` for `REQ-NFR-009`…`011` and `REQ-FUNC-014`; `API-CHAR-005` declared in the `API_SPECS.md` identifier index; the Paging 3 contradiction in `API_SPECS.md` §8 removed; `DESIGN.md` §6 diagram aligned to the `CONTRACTS.md` state names. | DEC-016, DEC-021, DEC-052 |

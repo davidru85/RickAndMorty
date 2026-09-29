@@ -187,7 +187,7 @@ Every change `MUST` be delivered through a branch and a pull request that is rev
 
 - `AC-REQ-FUNC-014-1` `main` builds at every commit; work happens on `feat|fix|docs|test|build|chore/<slug>` branches.
 - `AC-REQ-FUNC-014-2` An agent may open a pull request but `MUST NOT` merge, tag or release it.
-- Task: `TASK-014` · Decision: `DEC-041`, `DEC-049` · Tests: gate configuration in `TESTING.md` §14
+- Task: `TASK-014` · Decision: `DEC-041`, `DEC-049` · Tests: `TEST-UNIT-045`
 
 ### 5.2 Should have
 
@@ -243,7 +243,7 @@ The codebase `MUST` be organised as one module per user-facing capability (`:fea
 - `AC-REQ-NFR-009-1` No feature module depends on another feature module; a dependency-analysis check fails the build on a forbidden edge.
 - `AC-REQ-NFR-009-2` Each feature module contains its own `domain` and `presentation` packages and declares its own navigation destination; no feature module owns the app-wide `NavHost`.
 - `AC-REQ-NFR-009-3` `:core:domain` depends on nothing, `:core:data` and `:core:presentation` depend only on `:core:domain`, and `:core:designsystem` depends on Compose only.
-- Reference: `DESIGN.md` §3, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) · Decision: `DEC-052` · Tests: `TEST-UNIT-014`
+- Reference: `DESIGN.md` §3, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) · Decision: `DEC-052` · Tests: `TEST-UNIT-017`, `TEST-UNIT-043`
 
 #### REQ-NFR-010 — Test-driven development protocol
 Every behaviour change `MUST` follow the TDD protocol: write the failing test and observe the failure, commit the red phase, implement until the test passes, commit the green phase, refactor with the suite green, commit the refactor phase, then push. Squash merging is `MUST NOT` be used, because it would destroy the phase sequence.
@@ -251,7 +251,7 @@ Every behaviour change `MUST` follow the TDD protocol: write the failing test an
 - `AC-REQ-NFR-010-1` Each behaviour change has three commits with the `test:`, `feat:`/`fix:` and `refactor:` prefixes, or a recorded justification that a phase produced no change.
 - `AC-REQ-NFR-010-2` The pull request records the observed red failure and the observed green pass; a green suite alone is not evidence of the protocol being followed.
 - `AC-REQ-NFR-010-3` Documentation, build, CI and tooling changes are exempt and state the exemption explicitly.
-- Reference: `CONTRIBUTING.md`, `DEFINITION.md` §3, `TESTING.md` · Decision: `DEC-053` · Tests: `TEST-UNIT-015`
+- Reference: `CONTRIBUTING.md`, `DEFINITION.md` §3, `TESTING.md` · Decision: `DEC-053` · Tests: `TEST-UNIT-041`
 
 #### REQ-NFR-011 — Mandatory full test suite on every pull request
 The complete test suite `MUST` be executed and pass on both platforms before a pull request is approved or merged, and no test suite `MUST` be waived at release time.
@@ -259,7 +259,7 @@ The complete test suite `MUST` be executed and pass on both platforms before a p
 - `AC-REQ-NFR-011-1` The required checks include shared and platform unit tests, Compose semantics and accessibility tests, Roborazzi screenshot verification, Swift snapshot tests, formatting, static analysis and dependency analysis.
 - `AC-REQ-NFR-011-2` The contract suite runs inside the pull request in fixture/replay mode so the gate never depends on the live service; the live-network run is a separate scheduled signal.
 - `AC-REQ-NFR-011-3` The red commit of the TDD protocol is not a gate violation: the gate evaluates the final state of the pull request.
-- Reference: `DEFINITION.md` §3, `TESTING.md` §14 · Decision: `DEC-054` · Tests: `TEST-UNIT-016`
+- Reference: `DEFINITION.md` §3, `TESTING.md` §14 · Decision: `DEC-054` · Tests: `TEST-UNIT-044`, `TEST-UNIT-015`
 
 #### REQ-NFR-002 — Dependency restraint
 Every third-party dependency `MUST` be justified in `DESIGN.md` §3 or an ADR, and `MUST NOT` exceed two solutions for the same concern.
@@ -302,7 +302,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 
 - `AC-REQ-NFR-007-1` The documented commands in `CONTRIBUTING.md` run the full local gate.
 - `AC-REQ-NFR-007-2` Branch protection requires every mandatory check; a failing, skipped or missing check blocks approval.
-- Reference: `DEFINITION.md` §3 (DoD) · DEC-032, DEC-054 · Tests: `TEST-UNIT-016`
+- Reference: `DEFINITION.md` §3 (DoD) · DEC-032, DEC-054 · Tests: `TEST-UNIT-015`, `TEST-UNIT-044`
 
 ## 7. Platform requirements
 
@@ -393,6 +393,8 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 - Every Must/Should requirement has at least one acceptance criterion.
 - Every Must/Should requirement has at least one task in `BACKLOG.md`.
 - Every Must/Should requirement has at least one test ID in `TESTING.md`.
+
+**Identifier gaps are deliberate.** Identifiers are never reused or renumbered, so a requirement that is withdrawn leaves its number unused (`REQ-NFR-008` is such a gap, left by the rewording of the quality-gate requirements). A gap is not a missing requirement; the coverage checks above operate on declared ids only.
 
 ## 16. Change log
 

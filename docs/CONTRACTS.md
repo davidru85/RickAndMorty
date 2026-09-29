@@ -110,7 +110,8 @@ CharacterSummary, CharacterDetails       API_SPECS.md §3           :core:domain
 CharacterPage, LocationSummary           API_SPECS.md §3           :core:domain  commonMain
 EpisodeSummary, CharacterStatus          API_SPECS.md §3           :core:domain  commonMain
 CharacterGender                          API_SPECS.md §3           :core:domain  commonMain
-DataResult<T>, DataSource, ApiWarning    API_SPECS.md §3           :core:domain  commonMain
+DataResult<T> (sealed), DataSource,        API_SPECS.md §3           :core:domain  commonMain
+  ApiWarning
 ApiFailure (+ every variant)             API_SPECS.md §6           :core:domain  commonMain
 REST DTOs, GraphQL envelopes             API_SPECS.md §4.7, §5.1   :core:data    commonMain (never outside)
 CharacterRepository                      CONTRACTS.md IC-007       :core:domain  commonMain
@@ -162,6 +163,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
   - An id is the canonical server string in every layer: REST integer ids are converted with `toString()` exactly once, in the mapper (`API_SPECS.md` §3).
   - An id `MUST NOT` be derived from an array index or from a position in a batch response, on any code path.
   - Value-class identity is the only identity: two ids are equal iff their strings are equal; no case folding, trimming or numeric coercion is applied.
+- **Traceability:** `API_SPECS.md` §3, `REQ-NFR-001`, `AC-REQ-NFR-001-1`.
 
 ### IC-002 — Domain models
 
@@ -173,6 +175,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
   - An empty `type` is absent in the domain (`null`), and a `LocationSummary` with an empty reference URL is valid and has no id (`API_SPECS.md` §4.7).
   - A missing or unparsable `createdAt` maps to `null` and `MUST NOT` prevent the rest of the character from rendering.
   - `CharacterPage.page` is the requested page number; `pageCount`, `totalCount` and `nextPage` remain `null` when the server has not established them. Consumers `MUST NOT` substitute `0` for a null count (`REQ-FUNC-001`, `AC-REQ-FUNC-001-3`).
+- **Traceability:** `API_SPECS.md` §3, §4.7, §5.3, `REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-023`, `REQ-NFR-004`, `AC-REQ-NFR-004-2`.
 
 ### IC-003 — Result envelope and cache provenance
 
@@ -188,6 +191,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
   - `warnings` is available on both outcomes and is non-empty only for a response that was usable but incomplete; it carries `ApiWarning` entries (`API_SPECS.md` §3). A warning `MUST NOT` be rendered as a failure, and a response carrying warnings `MUST NOT` be written to any cache (`API_SPECS.md` §7.2, `REQ-FUNC-020`).
   - `source` is decided by the data layer only. A UI-state consumer reads it; it never computes it.
   - A consumer handles the sealed hierarchy exhaustively; a `when` over `DataResult` `MUST NOT` fall through to a default branch in shared code.
+- **Traceability:** `API_SPECS.md` §3, §6.2, §7.1–§7.3, `REQ-FUNC-020`, `REQ-FUNC-022`, `REQ-REL-004`, `DEC-012`, `DEC-018`.
 
 ### IC-004 — Failure taxonomy
 
@@ -198,6 +202,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
   - `CancellationException` is never a failure value: it propagates unchanged (`ERROR_FLOW.md` §6, `AC-REQ-FUNC-022-2`).
   - `ApiFailure.GraphQl` is never produced by the REST adapter (`DEC-011`, `ERROR_FLOW.md` §2).
   - The failure → state → copy chain is owned by `ERROR_FLOW.md` (DEC-021) and `MUST NOT` be restated in a contract: contracts carry the failure, they do not decide the copy.
+- **Traceability:** `API_SPECS.md` §6, `ERROR_FLOW.md` §2, §4, `REQ-FUNC-022`, `AC-REQ-FUNC-022-1`, `AC-REQ-FUNC-022-2`.
 
 ### IC-005 — Wire types
 
@@ -213,6 +218,7 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
 ### IC-006 — Withdrawn: failure signalling across a seam
 
 - **Status:** Withdrawn, 2026-09-29. The id is retired and is not reallocated; the `IC-###` sequence continues at `IC-007`, so no existing id is renumbered.
+- **Invariants:** none — the id no longer names a live contract. The invariants that survive it are the `Carried forward` items below, which are now stated by `IC-003`.
 - **Former contract:** `class ApiException(val failure: ApiFailure) : Exception()`, thrown by a data-layer seam to signal a mapped remote failure.
 - **Withdrawn because:** failure is now a value, not thrown control flow. The convention was replaced by the sealed `DataResult` declared in `API_SPECS.md` §3 and used by `IC-003`, `IC-007` and `IC-011`:
   - an error is representable in the type system and cannot be silently swallowed by an empty `catch`;
@@ -681,8 +687,8 @@ Test ids and layers are owned by `TESTING.md`; this section states which mechani
 
 | Contract | Mechanism | Notes |
 | --- | --- | --- |
-| `IC-006` | A fake seam that throws a mapped `ApiException`; a test asserting a `CancellationException` passes through unwrapped | No network, no platform type |
-| `IC-007` | Fake remote source + fake cache storage; assertions on empty-result success, enrichment bounds, deduplication and failure propagation | `TEST-UNIT-001`, `TEST-UNIT-005`, `TEST-UNIT-011`, `TEST-UNIT-021` |
+| `IC-003` (with `IC-007`, `IC-011`) | Sealed-outcome tests over fakes: `Success` carries a fully mapped value and may carry warnings; `Failure` carries the `ApiFailure` and no value; `Failure.source` is never a cache hit; a `CancellationException` propagates and produces no `Failure`; the hierarchy is handled exhaustively | No network, no platform type |
+| `IC-007` | Fake remote source + fake cache storage; assertions on empty-result success, enrichment bounds, deduplication, `Failure` propagation and cancellation pass-through | `TEST-UNIT-001`, `TEST-UNIT-005`, `TEST-UNIT-011`, `TEST-UNIT-021` |
 | `IC-008` | `FakeFavoritesStore` (in-memory, `Flow`-backed) reused across a simulated restart | `TEST-UNIT-004` |
 | `IC-009` | Fake repository; assertions that a use case does not swallow failure or cancellation | `TEST-UNIT-003`, `TEST-UNIT-011` |
 | `IC-010` | Pure value tests: equality, cache-key distinction per filter combination, blank-query rule | `TEST-UNIT-020` |
@@ -734,7 +740,7 @@ Failure copy, rendered visuals and retry affordances are verified where they are
 
 | # | Assumption | Why it is stated rather than resolved |
 | --- | --- | --- |
-| A1 | The failure-signalling convention is a typed exception carrying the failure (`IC-006`), because `IC-003` fixes repository returns to `DataResult<T>` and `API_SPECS.md` §3 gives `DataResult` no failure variant | No existing document names the wrapper. If the project prefers a result type instead, that is a contract change under §8 and must move `API_SPECS.md` §3 and `DESIGN.md` §6 with it |
+| A1 | **Resolved 2026-09-29:** failure signalling is a sealed `DataResult` (`Success`/`Failure`), not a thrown exception — `IC-006` is withdrawn. `API_SPECS.md` §3 owns the declaration; `IC-003` owns the consumer invariants | Recorded here because it reverses the convention first drafted for this file. Reasons: errors stay representable in the type system, no Kotlin exception crosses the Kotlin → Swift interop boundary (`DEC-013`), `when` handling is exhaustive, and `source`/`warnings` remain available on both outcomes (`IC-006`) |
 | A2 | `IC-012` stores bytes plus a validator, and the freshness policy lives above the seam | `API_SPECS.md` §7 owns the policy but does not describe the storage shape; this keeps the policy out of the storage contract |
 | A3 | `IC-020` pins determinism only; the favourites ordering is not fixed by any requirement | `UI_SPEC.md` §6.4 specifies the empty and populated cases but not an order. The concrete order is recorded when `:feature:favorites` is implemented |
 | A4 | `IC-017` returns `CopyKey` for user-visible text and `String` for data-derived text | `ERROR_FLOW.md` §3 invariant 3 requires copy to be resolved from localisable resources; a formatter therefore must not embed English |
@@ -745,17 +751,19 @@ Failure copy, rendered visuals and retry affordances are verified where they are
 
 | # | Document and section | Drift | Suggested action for that document's owner |
 | --- | --- | --- | --- |
-| D1 | `DESIGN.md` §3.2 | Names the discovery state and intent types `DiscoveryUiState`/`DiscoveryIntent`, while `DESIGN.md` §4.1 and `ERROR_FLOW.md` §1.2 name `CharacterListUiState`/`CharacterListIntent`. This file declares `CharacterListUiState`/`CharacterListIntent` canonical (`IC-018`) | Align `DESIGN.md` §3.2 to `IC-018`, or supersede `IC-018` with a renamed contract in one change |
-| D2 | `DESIGN.md` §4.1 | Its ownership note correctly delegates the signatures here, but the section still contains the full type block, so the same declarations exist twice | Reduce §4.1 to the data flow plus a link and the `IC-###` ids (§1.2 rule O2) |
-| D3 | `ERROR_FLOW.md` §1.2 | Delegates `LoadState`, the state class names and the intent names to `DESIGN.md` §4.1, which no longer owns them | Point that row at this file (`IC-015`, `IC-018`, `IC-019`) |
-| D4 | `TESTING.md` §1 P3 | Cites the `LoadState` precedence as living in `DESIGN.md` §4.1; the precedence is now an invariant of `IC-018` | Point the citation at `IC-018` |
-| D5 | `DESIGN.md` §8 | The architectural testing-hooks section still names the module paths that `DEC-052` superseded | Realign to the `:core:*`/`:feature:*` layout of `adr/0001-module-boundaries.md` |
-| D6 | `DESIGN.md` §3.2 | Its discovery source-set sketch names a `WatchCharacterPage` use case; this file declares no such case — the pager state is observed through `IC-014` and mapped to `IC-018` | Either supersede `IC-014`/`IC-018` with a `WatchCharacterPage` contract, or drop the name from the sketch |
+| D1 | `DESIGN.md` §3.2 | Named the discovery state and intent types `DiscoveryUiState`/`DiscoveryIntent`, while `DESIGN.md` §4.1 and `ERROR_FLOW.md` §1.2 name `CharacterListUiState`/`CharacterListIntent` | **Resolved 2026-09-29:** `CharacterListUiState`/`CharacterListIntent` (`IC-018`) is the single name repo-wide; `DESIGN.md` §3.2, §4.1 and §6 are aligned to it |
+| D2 | `DESIGN.md` §4.1 | Its ownership note correctly delegates the signatures here, but the section still contains the full type block, so the same declarations exist twice | **Resolved 2026-09-29:** `DESIGN.md` §4.1 is now an ownership note plus a contract → type → consumer table, and it cites `IC-015`, `IC-016`, `IC-018`, `IC-019` |
+| D3 | `ERROR_FLOW.md` §1.2 | Delegates `LoadState`, the state class names and the intent names to `DESIGN.md` §4.1, which no longer owns them | Open — the row still points at `DESIGN.md` §4.1 although that section now forwards to this file; pointing it directly at `IC-015`, `IC-018`, `IC-019` would remove the hop |
+| D4 | `TESTING.md` §1 P3 | Cites the `LoadState` precedence as living in `DESIGN.md` §4.1; the precedence is now an invariant of `IC-018` | Open — same indirect hop as D3; `TESTING.md` §3.2 and §13.1 already cite this file by `IC-###` id |
+| D5 | `DESIGN.md` §8 | The architectural testing-hooks section still names the module paths that `DEC-052` superseded | **Resolved 2026-09-29:** `DESIGN.md` §8 names `:core:*`/`:feature:*` and points the state types at this file |
+| D6 | `DESIGN.md` §3.2 | Its discovery source-set sketch named a `WatchCharacterPage` use case that no document defined | **Resolved 2026-09-29:** the name is removed from `DESIGN.md`; this file declares no such use case — the pager state is observed through `IC-014` and mapped into `IC-018` |
 
-Each row is a coordination item, not a change made by this file: this file does not edit documents it does not own.
+Rows marked **Resolved** were corrected in the owning document; the remaining open rows are coordination items for that document's owner. This file edits only what it owns.
 
 ## 11. Change log
 
 | Date | Change | Decision |
 | --- | --- | --- |
-| 2026-09-29 | Document created on the `docs/documentation-system` branch: `IC-###` scheme and reference rules, the one-owner map, reference-only entries for the `API_SPECS.md` declarations, the data/domain seam contracts (`ApiException`, `CharacterRepository`, `FavoritesRepository`, use cases, filters, `CharacterRemoteDataSource`, `CacheStorage`, `FavoritesLocalDataSource`, `CharacterPager`), the presentation contracts (`LoadState`, `CharacterCardUi`, formatters and copy keys, the list/detail/favorites state and intent types), platform consumption rules, change and Swift-compatibility rules, the verification strategy and the assumptions/drift register. Module names follow the feature-per-module layout of `DEC-052`. | `DEC-013`, `DEC-015`, `DEC-016`, `DEC-017`, `DEC-018`, `DEC-021`, `DEC-052`, `DEC-053`, `DEC-054` |
+| 2026-09-29 | Document created on the `docs/documentation-system` branch: `IC-###` scheme and reference rules, the one-owner map, reference-only entries for the `API_SPECS.md` declarations, the data/domain seam contracts (`CharacterRepository`, `FavoritesRepository`, use cases, filters, `CharacterRemoteDataSource`, `CacheStorage`, `FavoritesLocalDataSource`, `CharacterPager`), the presentation contracts (`LoadState`, `CharacterCardUi`, formatters and copy keys, the list/detail/favorites state and intent types), platform consumption rules, change and Swift-compatibility rules, the verification strategy and the assumptions/drift register. Module names follow the feature-per-module layout of `DEC-052`. | `DEC-013`, `DEC-015`, `DEC-016`, `DEC-017`, `DEC-018`, `DEC-021`, `DEC-052`, `DEC-053`, `DEC-054` |
+| 2026-09-29 | Failure signalling changed from a thrown `ApiException` to a sealed `DataResult` (`Success`/`Failure`); `IC-006` withdrawn and its id retired as a gap rather than reallocated, so `IC-007`…`IC-020` keep their numbers. `IC-003` rewritten around the sealed envelope; `IC-007`, `IC-009`, `IC-011` and `IC-014` reworded from throwing/returning to `DataResult` outcomes; §3, §9.1 and §10.1 updated. `API_SPECS.md` §3 owns the declaration. | `DEC-013`, `ADR-0003` |
+| 2026-09-29 | Drift register updated against the realigned documents: D1, D2, D5 and D6 marked resolved; D3 and D4 narrowed to the remaining indirect citation hop through `DESIGN.md` §4.1. | `DEC-046`, `DEC-052` |

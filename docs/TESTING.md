@@ -2,7 +2,7 @@
 
 - **Status:** Active — target state. The repository contains no test code yet (§Preamble, *Current state vs target state*).
 - **Last verified:** 2026-09-29
-- **Owner:** QA & Validation Agent (`AGENTS.md` §6)
+- **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`DESIGN.md`](DESIGN.md), [`UI_SPEC.md`](UI_SPEC.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), `ERROR_FLOW.md`, `CONTRACTS.md`, `PERFORMANCE.md`, `DEFINITION.md`, `CONTRIBUTING.md`, `GUIDELINES.md`, [`../AGENTS.md`](../AGENTS.md)
 - **Normative terms:** `MUST` mandatory · `SHOULD` strong recommendation · `MAY` optional.
@@ -63,7 +63,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 | --- | --- | --- |
 | P1 | Tests exist for behaviour, not for coverage | A test `MUST` assert an observable behaviour, boundary, invariant, state transition, precedence relation or error outcome of the component it names. |
 | P2 | No tautological tests | A test `MUST NOT` assert an implementation constant against itself, assert that a mock returned what the mock was configured with, assert only "did not throw", or snapshot an empty or unconfigured tree. |
-| P3 | State transitions and precedence are first-class | Where two outcomes can apply, the test `MUST` pin which one wins — for example the `ApiFailure` evaluation order in `API_SPECS.md` §6.1–§6.2 and the `LoadState` precedence in `DESIGN.md` §4.1. |
+| P3 | State transitions and precedence are first-class | Where two outcomes can apply, the test `MUST` pin which one wins — for example the `ApiFailure` evaluation order in `API_SPECS.md` §6.1–§6.2 and the `LoadState` precedence owned by `IC-018` in `CONTRACTS.md`. |
 | P4 | Incidental behaviour is not pinned | An existing test that pins incidental behaviour (wording, copy of a message, log phrasing, an internal call sequence, a default that no requirement names) `MUST` be deleted, never re-pinned, when the behaviour changes legitimately. |
 | P5 | Bugs leave a regression test | A bug fix `SHOULD` leave a failing-before/passing-after test, written as a `TEST-###` case. Where impractical (platform timing, visual drift), the bug report records the manual reproduction that was used instead. |
 | P6 | Determinism | Tests `MUST NOT` depend on wall-clock time, real network I/O, real image decoding, real storage or a real device clock (§5). |
@@ -152,7 +152,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Detail model | List-provided header usable before any network response (`AC-REQ-FUNC-002-1`); `episodeSummaries == null` hides "First seen in" while the episode count still renders (`AC-REQ-FUNC-023-2`) | `TEST-UNIT-002`, `TEST-UNIT-011` |
 | State holders (shared logic) | Debounce 300 ms, `distinctUntilChanged`, page reset on query/status change, cancellation of the superseded request, blank query sends no `name` parameter, exactly four status options with `All` the default (`REQ-FUNC-003`, `REQ-FUNC-004`) | `TEST-UNIT-003` |
 | Favorites logic | Toggle parity, optimistic state, empty set semantics (`REQ-FUNC-006`) | `TEST-UNIT-004` |
-| Failure mapping | Full `ApiFailure` matrix against `ERROR_FLOW.md`; precedence when several mappings apply; `CancellationException` never surfaced (`AC-REQ-FUNC-022-2`) | `TEST-UNIT-010` |
+| Failure mapping | Full `ApiFailure` matrix against `ERROR_FLOW.md` and its `API-ERR-###` rows; precedence when several mappings apply; `CancellationException` never surfaced (`AC-REQ-FUNC-022-2`) | `TEST-UNIT-010` |
 | Cache | Freshness, stale-while-revalidate and offline windows with an injected fake clock; `DataResult.source` and `isStale`; errors, empty bodies and partial GraphQL responses never cached (`AC-REQ-FUNC-020-3`, `AC-REQ-REL-004-1`) | `TEST-UNIT-009`, `TEST-UNIT-023` |
 | Cache identity | Key isolation across pages, filters, protocols and GraphQL field selections (`REQ-REL-001`) | `TEST-UNIT-020` |
 | Request coalescing | Two concurrent identical loads produce one network call (`REQ-REL-002`) | `TEST-UNIT-021` |
@@ -167,6 +167,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Platform purity and layering | `:core:domain` has no dependency at all; no DTO outside `:core:data` and the feature data packages; no platform UI code in shared source sets; no module graph violation of the rules in §13.1 (`REQ-NFR-001`, `REQ-PLAT-001`) | `TEST-UNIT-012`, `TEST-UNIT-017` |
 | Security and observability policies | The build, dependency and policy checks of §3.3 — `TEST-UNIT-025`…`034` (host allow-list, secret scan, persisted-field inventory, no mic/speech permission, log redaction, advisory register, reporting route, logging contract, debug surface, no analytics) | `TEST-UNIT-025` … `TEST-UNIT-034` |
 | Test-first discipline | Repository-history check used as review evidence for `DEC-053`: a behaviour-changing PR carries a phase sequence whose red commit added the test and whose message states the observed failure; the exception list is documentation, build/CI configuration and tooling | `TEST-UNIT-041` §1.1 |
+| Kotlin→Swift parity | The iOS feature packages call every member of the `IC-###` types they consume (a rename or removal fails the iOS build), each sealed-hierarchy and enum case is constructed once in an iOS test so a new case cannot fall through silently, and a bridging test mutates shared state and asserts the Swift-observed value changes (`CONTRACTS.md` §9.4) | `TEST-UNIT-042` |
 
 ### 3.3 Build, dependency, platform and policy checks
 
@@ -185,6 +186,9 @@ These run with the shared suites (no emulator, no network) even though several o
 | `TEST-UNIT-025` … `TEST-UNIT-034` | The security and observability policies of §3.2, one assertion per row: host allow-list, secret scan, persisted-field inventory, absence of microphone/speech permissions in both shipped apps, log redaction, advisory register, vulnerability-reporting route, single logging contract, debug-only diagnostics, no analytics artefact |
 | `TEST-UNIT-035`, `TEST-UNIT-036` | Token parity against `tokens.json`, and copy-key parity across the canonical key list, the Android resources and the iOS resources |
 | `TEST-UNIT-041` | The repository history of a behaviour-changing change carries the `DEC-053` phase sequence, used as review evidence and never as a substitute for the observed red failure |
+| `TEST-UNIT-043` | Each `:feature:*` module contains its own `domain` and `presentation` packages and declares its own navigation destination; no feature module owns the app-wide `NavHost` (`AC-REQ-NFR-009-2`) |
+| `TEST-UNIT-044` | The required-check set of §14.2 is present and blocking in the workflow configuration, and the contract suite runs in fixture/replay mode rather than live-network mode (`AC-REQ-NFR-011-1`, `AC-REQ-NFR-011-2`) |
+| `TEST-UNIT-045` | A behaviour change reaches `main` only through a branch and a pull request, and no workflow step merges, tags or releases automatically (`AC-REQ-FUNC-014-1`, `AC-REQ-FUNC-014-2`) |
 
 Assertions about the build that a Gradle task cannot express (branch protection naming every required check, for example) stay human actions and are recorded as such in §14.2.
 
@@ -515,7 +519,7 @@ Production source layout and code style are owned by `GUIDELINES.md`; this block
 
 ## 14. CI gates
 
-`DEC-054` supersedes `DEC-028`: CI is mandatory and blocking for every pull request, on both platforms, and the change is not approvable while any required check is failing, skipped or absent. The gate **definition** — the authoritative required-check list — lives in `DEFINITION.md`; this section states the test-side composition and the decision that shapes it.
+`DEC-054` supersedes `DEC-028`: CI is mandatory and blocking for every pull request, on both platforms, and the change is not approvable while any required check is failing, skipped or absent. This section is **authoritative for the required-check list**; `DEFINITION.md` §7 classifies the gate and states whether it blocks, and `CONTRIBUTING.md` §5 reproduces the check names for the pull request template, as `DEFINITION.md` §7 requires.
 
 ### 14.1 The gate evaluates the final state of the pull request
 
@@ -562,7 +566,7 @@ While a test that backs a `REQ-` row is quarantined, failing, or absent, that re
 | Two strikes | A test that fails non-deterministically twice without a relevant code change `MUST` be quarantined within one working day. Leaving it in the blocking gate degrades the signal for every other change. |
 | Quarantine mechanics | The test is annotated with its `TEST-###` id and a link to its tracking issue, and moved out of the blocking job (quarantine source set or an exclusion filter). Its id stays reserved and `MUST NOT` be reassigned. |
 | Required-set effect | While quarantined, the case is excluded from the required set of §14.2, and the exclusion is recorded with its justification, owner and deadline. This is the **only** exemption `DEC-054` permits: otherwise a check that is failing, skipped or absent makes the pull request non-approvable. |
-| Mandatory metadata | Every quarantined test has: the `TEST-###` id, an `@owner` (a role from `AGENTS.md`), a tracking item in `BACKLOG.md` with a GitHub Issue (`DEC-044`) opened from the bug-report template (`DEC-051`), the observed failure evidence, and a **removal deadline of at most 14 days**. |
+| Mandatory metadata | Every quarantined test has: the `TEST-###` id, an `@owner` (a role from `AGENTS.md` §3), a tracking item in `BACKLOG.md` with a GitHub Issue (`DEC-044`) opened from the bug-report template (`DEC-051`), the observed failure evidence, and a **removal deadline of at most 14 days**. |
 | No silent expiry | A quarantined test whose deadline passes is escalated: either it is fixed, or it is deleted along with its id and the traceability row in §16 is updated to reflect the loss of coverage. Quarantine is not a parking space. |
 | No evidence from quarantine | A quarantined test `MUST NOT` be cited as evidence for any acceptance criterion. While a test that backs a `REQ-` row is quarantined, that requirement is **unverified**, and the milestone DoD in `DEFINITION.md` counts it as such. |
 | Quarantine budget | More than five quarantined tests at once `SHOULD` stop new feature work until the count drops, because the suite can no longer be trusted as a gate. |
@@ -591,14 +595,18 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-021` — Image caching | Should | `TEST-INT-002` |
 | `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010` |
 | `REQ-FUNC-023` — Detail enrichment | Should | `TEST-UNIT-011`, `TEST-CONTRACT-002` |
+| `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017` |
 | `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034` |
 | `REQ-NFR-003` — Performance budgets | Must | `TEST-PERF-001`, `TEST-PERF-002`, `TEST-PERF-003` |
 | `REQ-NFR-004` — Resilience | Must | `TEST-CONTRACT-003`, `TEST-CONTRACT-004`, `TEST-CONTRACT-005` |
-| `REQ-NFR-005` — Verification depth | Must | All `TEST-UNIT-###`, `TEST-CONTRACT-###`, `TEST-INT-###`, `TEST-UI-###` ids in this document, including the test-first discipline check `TEST-UNIT-041`, the no-network guard `TEST-UNIT-024` and the live probes `TEST-CONTRACT-006` |
+| `REQ-NFR-005` — Verification depth | Must | All `TEST-UNIT-###`, `TEST-CONTRACT-###`, `TEST-INT-###`, `TEST-UI-###` ids in this document, including the test-first discipline check `TEST-UNIT-041`, the Kotlin→Swift parity check `TEST-UNIT-042`, the no-network guard `TEST-UNIT-024` and the live probes `TEST-CONTRACT-006` |
 | `REQ-NFR-006` — Reproducible builds | Must | `TEST-UNIT-014`, `TEST-UNIT-018` |
-| `REQ-NFR-007` — Quality gates | Must | `TEST-UNIT-015`, every blocking row of §14 |
-| `REQ-PLAT-001` — Shared multiplatform code | Must | `TEST-UNIT-017` |
+| `REQ-NFR-007` — Quality gates | Must | `TEST-UNIT-015`, `TEST-UNIT-044`, every blocking row of §14 |
+| `REQ-NFR-009` — Feature-per-module structure | Must | `TEST-UNIT-017`, `TEST-UNIT-043` |
+| `REQ-NFR-010` — Test-driven development protocol | Must | `TEST-UNIT-041` |
+| `REQ-NFR-011` — Mandatory full test suite on every pull request | Must | `TEST-UNIT-044`, `TEST-UNIT-015` |
+| `REQ-PLAT-001` — Shared multiplatform code | Must | `TEST-UNIT-017`, `TEST-UNIT-042` |
 | `REQ-PLAT-002` — Native Android app, SDK levels | Must | `TEST-UNIT-018` |
 | `REQ-PLAT-003` — Native iOS app, deployment target, Liquid Glass | Must | `TEST-UI-010` |
 | `REQ-PLAT-004` — Android before iOS, per-platform DoD | Must | `TEST-UNIT-019` |
@@ -655,7 +663,7 @@ The complete set of allocated ids and the module that owns each. Level names mat
 | `TEST-UNIT-009`…`016` | `:core:data` (009, 010, 011, 016), build root (012–015) | unit | Cache policy, failure mapping, detail enrichment mappers, pager, layering, dependency restraint, version pinning, quality-gate configuration |
 | `TEST-UNIT-017`…`024` | Build root (017–019), `:core:data` (020–023), build root (024) | unit | Platform purity, SDK configuration, milestone independence, cache identity, request coalescing, retry boundaries, freshness with a fake clock, no-network guard |
 | `TEST-UNIT-025`…`034` | Build root (025, 026, 030), `:core:data` (027), both app shells (028, 033), `:core:presentation` + `:core:data` (029, 032, 034) | unit | Security and observability policy checks: host allow-list, secret scan, persisted-field inventory, microphone/speech absence, log redaction, advisory register, reporting route, logging contract, debug surface, analytics absence |
-| `TEST-UNIT-035`…`041` | `:core:designsystem` + iOS `DesignSystem` (035), `:core:presentation` (036), `:feature:discovery` (037–038), `:feature:character-detail` (039), `:feature:favorites` (040), build root (041) | unit | Token parity, copy-key parity, feature cache policies, feature favorites, test-first discipline |
+| `TEST-UNIT-035`…`042` | `:core:designsystem` + iOS `DesignSystem` (035), `:core:presentation` (036), `:feature:discovery` (037–038), `:feature:character-detail` (039), `:feature:favorites` (040), build root (041), `iosApp/Tests` (042) | unit | Token parity, copy-key parity, feature cache policies, feature favorites, test-first discipline, Kotlin→Swift contract parity |
 | `TEST-CONTRACT-001`…`005` | `:core:data` common test (001–004), parity suite (005) | contract | REST page/detail/batch decoding, detail edge cases, resilience bodies, GraphQL envelopes, REST↔GraphQL domain parity |
 | `TEST-CONTRACT-006` | `contract-live` | contract | Live observation probes |
 | `TEST-INT-001`…`004` | `:core:data` platform test source sets | integration | HTTP cache policy and `404` hardening, image cache independence, favorites store contract, platform storage |
@@ -673,3 +681,5 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 | 2026-09-29 | Module names, source-set layout and coverage scopes moved to the feature-per-module layout; `:core:testing` owns the shared fakes and fixtures; `TEST-UNIT-037`…`041` added and wired into the matrix. §13.1 now carries the dependency rules that constrain tests. | `DEC-052` (supersedes `DEC-019`) |
 | 2026-09-29 | Test-first workflow added (§1.1, P10): observed red before green, phase-per-commit, which layer owns the red test, and how the cycle interacts with snapshots and the quarantine policy. | `DEC-053` |
 | 2026-09-29 | CI section rewritten: the full suite is required on every pull request on both platforms, contract tests run in fixture/replay mode in the gate with live-network mode as a scheduled signal, branch protection is named as the human action, and quarantine is the only permitted exclusion. | `DEC-054` (supersedes `DEC-028`) |
+| 2026-09-29 | Cross-document alignment after the sibling documents landed: `TEST-UNIT-042` allocated for the Kotlin→Swift contract-parity check that `CONTRACTS.md` §9.4 asked this document to own; §1 P3 now cites the `LoadState` precedence that `IC-018` owns instead of `DESIGN.md` §4.1; `TEST-UNIT-010` is stated against the `API-ERR-###` rows of `ERROR_FLOW.md`. | `DEC-052`, `DEC-053`, `DEC-054` |
+| 2026-09-29 | §14 declared authoritative for the required-check list, which is what `DEFINITION.md` §7 and `HANDOFF.md` already assign to this document; `DEFINITION.md` §7 keeps the gate classification. Header `Owner:` corrected to the `AGENTS.md` §3.6 role name used by the sibling documents. | `DEC-054` |

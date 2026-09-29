@@ -47,7 +47,7 @@ A few rules carry both a `Tool:` and a `Review:` line: the tool catches the mech
 
 ### 1.3 Tools, their concerns and where they run
 
-The names below are the only tool names used in this document. Exact commands are owned by `README.md` §8 and the required-check list by `CONTRIBUTING.md` §5.3.
+The names below are the only tool names used in this document. Exact commands are owned by `README.md` §9 and the required-check list by `CONTRIBUTING.md` §5.3.
 
 | Tool | Owns | Applies to |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ The names below are the only tool names used in this document. Exact commands ar
 No build files and no source code exist on 2026-09-29, so every `Tool:` and `Test:` line is a statement about the target build. Two consequences are stated rather than hidden:
 
 - Until the tool configuration lands, the mechanical rules are unenforced; the change that introduces a tool `MUST` prove it blocks a seeded violation (`TECHNICAL_PLAN.md`, phase P2).
-- `AGENTS.md` §8 still names the superseded modules in its architecture bullet; `adr/0001-module-boundaries.md` is authoritative for the module set in the meantime.
+- The earlier module names (`:shared:*`, `:android:designsystem`, `:android:feature:characters`) survive only as history in `DECISION_BOARD.md` §3 and in change-log entries; `adr/0001-module-boundaries.md` and `DESIGN.md` §3 carry the current module set, and `AGENTS.md` §8 is aligned with them.
 
 ## 2. Kotlin: language and correctness rules
 
@@ -196,7 +196,7 @@ Because the layering here is a package convention rather than a compiler edge, i
 
 - `androidMain`/`iosMain` contain the `actual` declarations required by §3.5, the platform engines (OkHttp, Darwin), the storage implementations, the image pipeline, the state holders and the UI.
 - A platform source set MUST NOT contain behaviour that both platforms need. If a rule would have to be re-implemented in the second platform, it belongs in `commonMain` (`DEC-013`, `CONTRACTS.md` §7.1 R5).
-- DTOs (`RestCharacterDto`, `RestPageDto`, GraphQL envelopes — `API_SPECS.md` §4.7, §5.1) live in `:core:data` only and MUST NOT appear in a public signature outside it (`AC-REQ-NFR-001-2`). A DTO reaching a screen, a state class or a design-system component is a defect.
+- DTOs (`RestCharacterDto`, `RestPageDto`, GraphQL envelopes — `API_SPECS.md` §4.7, §5.1) live in `:core:data` only and MUST NOT appear in a public signature outside it (`REQ-NFR-001`, `AC-REQ-NFR-001-2`). A DTO reaching a screen, a state class or a design-system component is a defect. The exact surface the automated check inspects is defined by the purity assertion in `TESTING.md` §3.2; this rule states the intent.
 
 **Enforcement:** `Test:` `TEST-UNIT-012`, `TEST-UNIT-017`; `Tool:` detekt (import rules); `Review:` duplicated platform behaviour.
 
@@ -592,7 +592,7 @@ Diagrams use Mermaid, in the document that owns the topic (`DEC-050`). A diagram
 
 Documentation is written in English (`DEC-047`). `README.es.md` is the only translated document, and it changes when `README.md` changes.
 
-**Enforcement:** `Review:` at review (DOC3/DOC7 in `DEFINITION.md` §6).
+**Enforcement:** `Review:` at review (`DEC-047`; language is a review rule, not a mechanical check).
 
 ## 10. Accessibility coding rules
 
@@ -639,7 +639,7 @@ Text scales with the platform setting: Android styles use `sp`, iOS uses Dynamic
 
 Automated checks cover the assertions that can be made deterministically (labels, merged nodes, toggled state, target sizes, scaling, the Reduce preferences). The recorded manual checklist covers what automation cannot: traversal order, announcement quality and on-device behaviour (`DEC-023`, `TESTING.md` §9.2). A coding change that adds an interactive element adds its checklist entry and its automated assertion where one applies.
 
-**Enforcement:** `DEFINITION.md` §4.1 M1-5; `TESTING.md` §9.
+**Enforcement:** `DEFINITION.md` §4.1 M1-5 (the milestone accessibility criterion); `TESTING.md` §9.
 
 ## 11. Security-sensitive coding
 

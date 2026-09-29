@@ -683,7 +683,7 @@ Use Coil's memory and disk cache for the `image` URL. Preserve the same URL as t
 - Surface an empty search as normal UI state, not a generic error.
 - Keep prior content visible for recoverable refresh failures and expose a retry action.
 
-Paging 3 is appropriate for REST if the app already uses it. A small custom pager is also acceptable because the page contract is simple; dependency choice must be justified. Retrofit/OkHttp plus one serializer is sufficient for REST. Apollo Kotlin is sufficient for GraphQL. A community Rick and Morty SDK is unnecessary.
+Paging 3 is **not** used: the page contract is server-controlled and simple, and there is no iOS equivalent, so the platform-neutral custom pager in `:core:data` is the shipped choice (DEC-016, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md)). Retrofit/OkHttp and Apollo are likewise not shipped: the multiplatform stack is Ktor with one serializer (DEC-011). A community Rick and Morty SDK is unnecessary.
 
 ## 9. Security and observability
 
