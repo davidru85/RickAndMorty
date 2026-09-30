@@ -1,13 +1,17 @@
 # API_SPECS.md - REST and GraphQL Technical Specification
 
-- **Status:** implementation contract
+- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
 - **Last verified:** 2026-09-29
+- **Owner:** API Architect (see `AGENTS.md`)
+- **Authoritative for:** the remote data contract — endpoints, DTOs, failure taxonomy, retry, response and image caching policy, contract identifiers.
+- **Not authoritative for:** architecture (`DESIGN.md`), internal Kotlin seams (`CONTRACTS.md`), failure-to-copy behaviour (`ERROR_FLOW.md`), UI (`UI_SPEC.md`).
+- **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`DESIGN.md`](DESIGN.md), [`adr/`](adr/)
 - **Primary source:** [official API documentation](https://rickandmortyapi.com/documentation)
 - **GraphQL schema source:** [official `typeDefs.js`](https://github.com/afuh/rick-and-morty-api/blob/master/graphql/typeDefs.js)
 
 ## 1. Purpose and scope
 
-This document defines the remote data contract for the Android character review app. It covers both public interfaces offered by The Rick and Morty API:
+This document defines the remote data contract for the Multiverse Explorer client (Android and iOS, over the shared Kotlin Multiplatform core). It covers both public interfaces offered by The Rick and Morty API:
 
 - REST: `https://rickandmortyapi.com/api`
 - GraphQL: `https://rickandmortyapi.com/graphql`
@@ -127,19 +131,32 @@ Apply the same pattern to gender. Treat an empty `type` as absent in the domain,
 
 `episodeSummaries == null` means enrichment was not requested; an empty list means enrichment completed and the character has no known appearances. REST always supplies `episodeIds` from URLs and fills summaries only after a batch episode request. The documented GraphQL detail operation supplies both in one response.
 
-The repository returns data-source metadata separately from the model:
+The repository returns the outcome as a sealed value rather than throwing: an expected remote failure is data, not control flow. This keeps errors visible to the compiler, avoids Kotlin exceptions crossing the Kotlin→Swift boundary for the iOS state holders (`DEC-013`), and leaves the data-source metadata available on both outcomes.
 
 ```kotlin
-data class DataResult<T>(
-    val value: T,
-    val source: DataSource,
-    val isStale: Boolean,
-    val warnings: List<ApiWarning> = emptyList(),
-)
+sealed interface DataResult<out T> {
+    val source: DataSource
+    val warnings: List<ApiWarning>
+
+    data class Success<T>(
+        val value: T,
+        override val source: DataSource,
+        val isStale: Boolean,                      // cached entry served past freshness
+        override val warnings: List<ApiWarning> = emptyList(),
+    ) : DataResult<T>
+
+    data class Failure(
+        val failure: ApiFailure,
+        override val source: DataSource,           // the source that produced the failure, never a cache hit
+        override val warnings: List<ApiWarning> = emptyList(),
+    ) : DataResult<Nothing>
+}
 
 enum class DataSource { NETWORK, MEMORY_CACHE, DISK_CACHE }
 data class ApiWarning(val code: String, val detail: String? = null)
 ```
+
+Invariants: a `Failure` never carries a partial value; `isStale` exists on `Success` only; `CancellationException` is rethrown and never converted into a `Failure`; warnings never replace required data. The normative interface signatures are in [`CONTRACTS.md`](CONTRACTS.md).
 
 ## 4. REST API
 
@@ -599,20 +616,20 @@ Response caching and image caching are separate concerns. JSON responses must ne
 
 ### 7.1 REST cache
 
-Use a bounded OkHttp disk cache (recommended initial budget: 20 MiB). Cache keys are the complete normalized URL, including resource path, page, and every filter value.
+**The shipped cache is application-level and lives in `:core:data` (`DEC-018`, [`adr/0005-caching-strategy.md`](adr/0005-caching-strategy.md)).** It stores successfully decoded responses under an explicit key and owns the freshness policy; it does not delegate freshness to the HTTP layer. Rationale: `DataResult.source`, `isStale` and the "never cache errors or partial responses" rules are application semantics that an HTTP cache cannot express, and an app-level cache is testable in `commonTest` with an injected clock.
 
-Live REST responses were observed with `ETag` and `Cache-Control: public, max-age=7776000, immutable`. These headers are not documented guarantees. App policy is:
+Cache key: the complete normalized request identity — resource path, page, every filter value (canonical lowercase) and the protocol — so that pages and filter combinations can never collide (`REQ-REL-001`).
 
-- respect server freshness and validators when present;
-- only promote successfully decoded `GET` responses into any application-level cache; OkHttp may independently retain the raw HTTP response;
-- never cache application-generated errors or malformed bodies;
-- allow an explicit pull-to-refresh to revalidate/bypass freshness;
-- when offline, allow a successfully decoded stale response up to 30 days beyond freshness and mark it `isStale = true`;
-- if no cache entry exists, return `Offline` rather than an empty list;
-- do not globally force-cache server failures;
-- deduplicate concurrent identical requests in the repository.
+Because freshness is app-owned, the Ktor engine's own cache is **disabled** for JSON responses: the server's `Cache-Control: public, max-age=7776000, immutable` (observed 2026-09-29, not a documented guarantee) would otherwise pin a character page for 90 days and make the app's freshness tests meaningless. The engine cache, where used at all, must not retain JSON API responses; images are cached by the platform image loader (§7.4).
 
-The server currently marks even some `404` responses cacheable for a long period. A network-response interceptor must replace cache headers on REST `404` responses with `Cache-Control: no-store` before OkHttp evaluates storage; not adding the response to a domain cache is insufficient. Cover this behavior with an integration test so a transient miss cannot hide later data.
+App policy:
+
+- freshness windows: fresh for 24 h, stale-while-revalidate online up to 7 d, stale offline fallback up to 30 d (`DEC-012`); these are injectable configuration, never constants in the transport layer;
+- only successfully decoded, domain-valid responses enter the cache; errors, empty bodies and partial GraphQL responses are never stored;
+- an explicit pull-to-refresh revalidates over the network regardless of freshness, retaining the previous content if it fails;
+- an offline read of an entry past freshness but inside the 30 d window is returned with `isStale = true`; with no entry at all the repository fails with `Offline` rather than an empty page;
+- **hard requirement:** the REST `404` returned for a filtered list with no matches is cacheable *by the server's headers* (observed: `Cache-Control: public, max-age=7776000, immutable`). It must never be stored, and the response must be rewritten to `Cache-Control: no-store` before any HTTP layer can evaluate it. Excluding it from the app cache is not sufficient on its own — a stale `404` would hide later data. This behaviour is covered by an integration test (`TEST-INT-001`);
+- concurrent identical requests are deduplicated in the repository (`REQ-REL-002`);
 
 ### 7.2 GraphQL cache
 
@@ -666,7 +683,7 @@ Use Coil's memory and disk cache for the `image` URL. Preserve the same URL as t
 - Surface an empty search as normal UI state, not a generic error.
 - Keep prior content visible for recoverable refresh failures and expose a retry action.
 
-Paging 3 is appropriate for REST if the app already uses it. A small custom pager is also acceptable because the page contract is simple; dependency choice must be justified. Retrofit/OkHttp plus one serializer is sufficient for REST. Apollo Kotlin is sufficient for GraphQL. A community Rick and Morty SDK is unnecessary.
+Paging 3 is **not** used: the page contract is server-controlled and simple, and there is no iOS equivalent, so the platform-neutral custom pager in `:core:data` is the shipped choice (DEC-016, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md)). Retrofit/OkHttp and Apollo are likewise not shipped: the multiplatform stack is Ktor with one serializer (DEC-011). A community Rick and Morty SDK is unnecessary.
 
 ## 9. Security and observability
 
@@ -679,7 +696,7 @@ Paging 3 is appropriate for REST if the app already uses it. A small custom page
 - Metrics should distinguish network, memory cache, disk cache, stale fallback, empty result, timeout, decoding failure, and cancellation.
 - No API keys or secrets are required; none should be added to the repository.
 
-The live GraphQL gateway exposes rate-limit headers, but no stable public quota is documented. Do not assume a numeric allowance. Handle `429`, honor `Retry-After` when present, debounce searches, and keep request volume low.
+Rate-limit headers were **not** observed on a normal GraphQL query during the 2026-09-29 verification (only edge-cache headers such as `x-cache` and `x-served-by` were present). No numeric quota is documented or assumed. Handle `429`, honor `Retry-After` when present, debounce searches, and keep request volume low.
 
 ## 10. Verification strategy
 
@@ -718,32 +735,71 @@ The live GraphQL gateway exposes rate-limit headers, but no stable public quota 
 - Concurrent identical requests are deduplicated.
 - Image requests hit Coil memory/disk cache independently of response caching.
 
-Use MockWebServer for transport/cache integration and pure mapper tests for DTO conversion. Inject clock, connectivity state, and dispatchers for deterministic tests.
+Use Ktor's `MockEngine` with the committed JSON fixtures for transport, mapping and cache-policy integration tests, so the same suites run in `commonTest` on both platforms (`DEC-030`, `TESTING.md` §4). `MockWebServer` is retained only where the OkHttp engine's own behaviour must be exercised and `MockEngine` cannot reach it — the REST `404` cache-header rewrite in §7.1 — and that check lives in the Android source set. Pure mapper tests need no HTTP layer at all. Inject clock, connectivity state and dispatchers for deterministic tests.
 
 ## 11. Requirements traceability
 
-| Requirement | Source | API decision |
+Every row cites the requirement identifier that now owns the obligation. The pre-audit table cited line numbers in a 27-line draft; those line references no longer exist.
+
+| Requirement | Source | API decision in this document |
 | --- | --- | --- |
-| List all characters | `assessment.md:4`, `REQUIREMENTS.md:8` | Paginated character list; incremental loading until `next == null`. |
-| Character detail | `assessment.md:4`, `REQUIREMENTS.md:9` | Single character REST/GraphQL operation keyed by ID. |
-| Search/filter | `assessment.md:21`, `REQUIREMENTS.md:13` | Server-side character filters, debounce, cancellation, page reset. |
-| Error handling | `assessment.md:18`, `REQUIREMENTS.md:14` | Protocol-aware domain failures, retry boundaries, cached fallback. |
-| Response caching | `assessment.md:19`, `REQUIREMENTS.md:15` | HTTP cache for REST; normalized/application cache for GraphQL. |
-| Image caching | `assessment.md:17`, `REQUIREMENTS.md:24` | Coil memory/disk cache, separate from JSON responses. |
-| Performance | `assessment.md:10` | Paging, minimal GraphQL selections, batch enrichment, deduplication. |
-| Tests | `assessment.md:20` | Contract, mapping, transport, parity, and cache test suites. |
-| Dependency restraint | `assessment.md:7` | Ship one protocol stack for the MVP; no community API SDK. |
-| SOLID/clean code | `assessment.md:8,23`, `REQUIREMENTS.md:23` | DTO/generated types in data layer; shared domain/repository contract. |
+| `REQ-FUNC-001` — Paginated character list | `assessment.md:4` | §4.3 pagination; incremental loading until `info.next == null`; `API-CHAR-001`…`003` |
+| `REQ-FUNC-002` — Character detail | `assessment.md:4` | §4.4 single-character operation keyed by canonical ID; `API-CHAR-004` |
+| `REQ-FUNC-003` — Name search | `assessment.md:21` | §4.4 `name` parameter, §6.3 policy, §8 debounce and cancellation |
+| `REQ-FUNC-004` — Status filter | `assessment.md:21` | §4.4 canonical lowercase `status` values; `All` sends no parameter |
+| `REQ-FUNC-005` — Image-first presentation | `assessment.md:9` | §7.4 single 300 × 300 source; no higher-resolution request |
+| `REQ-FUNC-020` — Response caching | `assessment.md:19` | §7.1 app-level cache and freshness policy; `API-CACHE-###` |
+| `REQ-FUNC-021` — Image caching | `assessment.md:17` | §7.4 image cache, separate from JSON responses |
+| `REQ-FUNC-022` — Error handling | `assessment.md:18` | §6 failure taxonomy, §6.1 REST mapping, §6.2 GraphQL mapping, §6.3 retry policy; `API-ERR-###` |
+| `REQ-FUNC-023` — Detail enrichment | `assessment.md:4`, `assessment.md:10` | §4.6 batch episode request; never one request per episode |
+| `REQ-NFR-002` — Dependency restraint | `assessment.md:7` | §2 one protocol stack; no community API SDK |
+| `REQ-NFR-003` — Performance budgets | `assessment.md:10` | §8 incremental loading, single-page prefetch, deduplication, bounded concurrency |
+| `REQ-NFR-005` — Verification depth | `assessment.md:20` | §10.1–§10.3 contract, mapping, transport, parity and cache suites |
+| `REQ-NFR-001` / `REQ-NFR-009` — Layering and module structure | `assessment.md:8,23` | §3 DTOs and generated types confined to `:core:data`; shared domain/repository contract |
+| `REQ-SEC-001` — HTTPS and host restriction | `assessment.md:7` | §9 HTTPS-only, host allow-list, no foreign-host pagination or relation URLs |
+| `REQ-SEC-005` — Log redaction | `assessment.md:7` | §9 permitted log fields; no response bodies, image bytes or raw search text |
 
-## 12. Open implementation decisions
+## 13. Contract identifier index
 
-These choices belong to the later architecture/implementation phase and do not alter the external contract:
+Stable identifiers for the rules this document owns. Other documents must reference these ids instead of restating a rule.
 
-- select REST (recommended MVP) or GraphQL as the shipped adapter;
-- choose Retrofit serializer or Apollo normalized-cache storage;
-- decide whether Paging 3 is justified;
-- confirm cache budgets against the target device profile;
-- decide whether enriched episode/location content is in the first release;
-- align `UI_SPEC.md` with the API's single 300 x 300 character image source.
+| ID | Rule | Section |
+| --- | --- | --- |
+| `API-CHAR-001` | List characters through `GET /character` with server-controlled page size (20) and optional combined filters. | §4.3, §4.4 |
+| `API-CHAR-002` | `info.next == null` is the authoritative end-of-pagination signal; page numbers are parsed and rebuilt against the configured base URL, never followed as returned hosts. | §4.3 |
+| `API-CHAR-003` | Single character through `GET /character/{id}`; `404` maps to `NotFound(CharacterId)`. | §4.4 |
+| `API-CHAR-004` | Filter parameters use canonical lowercase values (`alive`, `dead`, `unknown`; `female`, `male`, `genderless`, `unknown`); blank filters are omitted and a changed filter resets to page 1. | §4.4 |
+| `API-CHAR-005` | A filtered list with no matches returns HTTP `404` and maps to an **empty result**, not an error; the same `404` must be rewritten to `Cache-Control: no-store` and never stored. | §4.4, §6.1, §7.1 |
+| `API-CHAR-006` | Batch retrieval requires at least two IDs; one ID uses the single-character endpoint and empty input performs no request; chunks are bounded at 20 IDs. | §4.2, §4.4 |
+| `API-LOC-001` | Location list filters are `page`, `name`, `type`, `dimension`; retrieval is optional for the MVP because character payloads already carry origin and last-known-location summaries. | §4.5 |
+| `API-EPI-001` | Episode list filters are `page`, `name`, `episode`; `air_date` is a display string, not ISO-8601. | §4.6, §4.7 |
+| `API-EPI-002` | Episode enrichment for a detail screen uses one batch request built from the character's episode URLs, never one request per episode. | §4.6 |
+| `API-CACHE-001` | The shipped cache is application-level in `:core:data`: explicit key (path + page + normalized filters + protocol), injected clock, freshness 24 h / 7 d / 30 d, `isStale` surfaced on the result. | §7.1 |
+| `API-CACHE-002` | Only successfully decoded, domain-valid responses are cached; errors, empty bodies and partial GraphQL responses are never stored. | §7.1, §7.2 |
+| `API-CACHE-003` | The engine-level HTTP cache must not retain JSON API responses, because the server's 90-day `immutable` directive would defeat app-owned freshness. | §7.1 |
+| `API-CACHE-004` | Images are cached by the platform image loader under the image URL as key, independently of JSON response caching. | §7.4 |
+| `API-ERR-001`…`API-ERR-017` | One identifier per failure class in the taxonomy: connectivity/DNS/socket, connect timeout, read timeout, TLS, `400` other, `408`, `429`, `404` detail, `404` filtered list, `404` paging end, `5xx`, empty body, malformed JSON/schema, GraphQL errors-only envelope, GraphQL partial-data-plus-errors, GraphQL depth/validation rejection, cancellation. | §6, §6.1, §6.2 |
+| `API-GQL-001` | The GraphQL contract uses `POST` with `operationName`, `query` and `variables`; HTTP success alone is not application success. | §5.1 |
+| `API-GQL-002` | GraphQL `ID` values decode to canonical string identifiers; a null root field without errors maps to `NotFound` for a single-resource query. | §5.4, §6.2 |
+| `API-GQL-003` | Named, static operations with one relationship level of nesting; no recursive relationship queries. | §5.6 |
 
-Any change to the selected protocol, required fields, caching policy, or error semantics must update this document and its contract tests together.
+## 14. Resolved implementation decisions
+
+The choices that previously sat here as open questions are decided; their rationale lives in the ADRs and their status in [`DECISION_BOARD.md`](DECISION_BOARD.md). This section records only how each one lands on this document.
+
+| Question | Resolution | Effect on this document |
+| --- | --- | --- |
+| Shipped protocol | REST (`DEC-011`, [`adr/0004-rest-client.md`](adr/0004-rest-client.md)); GraphQL stays documented as the alternative, not shipped | §2 stands; §5 is specification-only |
+| HTTP client and serializer | Ktor 3.6.0 + kotlinx.serialization everywhere (`DEC-011`) | §6.3 retry policy is implemented as a Ktor plugin, not an OkHttp interceptor; §7.1 is written for the app-level cache |
+| Paging | Shared custom pager in `:core:data` (`DEC-016`, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md)); Paging 3 rejected | §8 paging rules are implemented by that pager |
+| Cache storage and budgets | Application-level cache with explicit keys and an injected clock (`DEC-018`, [`adr/0005-caching-strategy.md`](adr/0005-caching-strategy.md)); exact byte budget is a configuration value settled during implementation | §7.1 owns the policy; §7.4 images remain a separate concern |
+| Enriched episode/location content | Episode enrichment is in scope (`REQ-FUNC-023`); location residents are never fetched | §4.6 batch rule and §8 "avoid N+1" stand |
+| Image resolution | The single documented 300 × 300 source is accepted; no higher-resolution request is made (`CON-002`, `UI_SPEC.md` §5.1) | §7.4 stands |
+
+Any change to the selected protocol, required fields, caching policy or error semantics updates this document and its contract tests together.
+
+## 15. Change log
+
+| Date | Change | Decision |
+| --- | --- | --- |
+| 2026-09-29 | Scope widened from "Android character review app" to the two-platform KMP client. §7.1 rewritten from an OkHttp disk cache to the app-level cache with explicit freshness, keying and the `404` `no-store` requirement. §9 rate-limit-header claim corrected against the live probe. §11 traceability re-pointed at stable requirement ids. §12 open decisions replaced by the resolved-decision table. §13 contract identifier index added. | DEC-011, DEC-012, DEC-018, DEC-052 |

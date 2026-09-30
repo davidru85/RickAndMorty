@@ -1,0 +1,166 @@
+# HANDOFF.md — Current State and Continuation Guide
+
+- **Status:** Active. Describes the repository as of 2026-09-29; must be updated on every handoff (`AGENTS.md` §5.7).
+- **Last verified:** 2026-09-29
+- **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
+- **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
+- **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
+- **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
+
+> Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+## 1. Current state (2026-09-29)
+
+The repository contains **documentation only**. There is no source code, no Gradle build, no Gradle wrapper, no Xcode project, no CI workflow, no `.gitignore`, no version catalog and no test of any kind. Nothing in this repository has ever been compiled, run or measured.
+
+| Area | State | Notes |
+| --- | --- | --- |
+| Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
+| Documentation system | Being established | Set authored on the branch `docs/documentation-system`; inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` |
+| Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
+| Decisions | Recorded | `DEC-001`…`DEC-054` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
+| Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
+| Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
+| Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md` |
+| Build, CI, tooling | Not started | No workflow, no pinned dependency graph, no `.gitignore` |
+| Screenshots | Not started | Figma exports under `docs/figma/` and in-app screenshots of the running apps |
+
+### 1.1 Verified versus intended
+
+**Verified (observed in this repository, or against a live system on 2026-09-29):**
+
+- The repository tree, its contents and its 14-commit history on `main` (all dated 2026-09-29).
+- The live behaviour of the remote API recorded with that date in `docs/API_SPECS.md` §1.1: list totals and page size, `404` for a filtered empty result that is itself cacheable and immutable, immutable detail `404`, out-of-range page `404`, batch requests returning only existing resources, one identifier yielding an object and two an array, GraphQL null for a missing character, `info.next` as `Int`, the empty-filter GraphQL shape, and `400 GRAPHQL_VALIDATION_FAILED` for an unknown field.
+- Toolchain versions and platform API availability checked on 2026-09-29 and recorded in `local://decision-brief.md` §4 (not committed to the repository).
+- Documentation checks on this repository: link resolution, identifier uniqueness and ordering, and consistency review. See §7.
+
+**Intended, not verified (documented target state):**
+
+- Everything about the applications: architecture, module boundaries, contracts, screens, motion, copy, error states, accessibility behaviour, performance budgets, security posture, logging.
+- Every command in §8 and in `README.md` §8–§9 — the build they call does not exist.
+- Every `AC-*` acceptance criterion, every `TASK-###` and every `TEST-*` — none has been exercised.
+- The Figma-derived visual specification: the Figma file itself could not be fetched anonymously on 2026-09-29 (HTTP 403), so its content is reproduced from the design work, not re-verified from the source.
+
+No build, test, linter, formatter, benchmark or application run has ever been executed here. Statements to the contrary would be false.
+
+## 2. Completed work
+
+1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
+2. **Decision baseline.** `DEC-001`…`DEC-054` are recorded with category, status, urgency, blocking impact and ADR pointer, together with rejected and superseded alternatives and deferred decisions (`docs/DECISION_BOARD.md`).
+3. **Requirements with acceptance criteria.** `docs/REQUIREMENTS.md` carries stable identifiers, `AC-<REQ-ID>-n` criteria, MoSCoW priorities, scope, non-goals, deferred items, constraints, risks and assessment traceability.
+4. **Process baseline.** The TDD phase-and-commit protocol (DEC-053, amending DEC-041), the mandatory both-platform pull-request gate (DEC-054, superseding DEC-028) and the definitions of Ready and Done are decided and documented.
+5. **Figma-aligned visual baseline.** The Figma file map, tokens, per-platform component specifications, screens, motion, states, iconography and accessibility expectations are written down (`docs/UI_SPEC.md`), on the basis of the two design briefs in `docs/design/`.
+
+## 3. In progress and not started
+
+- **Plan:** the M0→M3 milestone plan, sequencing and quality gates live in `docs/TECHNICAL_PLAN.md`, authored in the same change as this file. Treat that document, not this summary, as the plan.
+- **Work index:** the first implementation tasks with their acceptance criteria live in `docs/BACKLOG.md`, authored in the same change. Take work from there, not from this file.
+- **Module layout changed and not yet propagated:** the repository owner replaced the eight-module layout with **feature-per-module plus Clean Architecture packages inside each feature** (DEC-052, superseding DEC-019). The core modules are `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem` (Android) and `:core:testing`; the feature modules are `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes` and `:feature:locations`; the app shells are `:androidApp` and the `iosApp` target with one Swift package per feature plus `iosApp/DesignSystem`. `docs/DESIGN.md` §3, `docs/CONTRACTS.md`, `AGENTS.md` §8 and the command tables in `README.md` §8–§9 were written against the previous names and are being updated in the same change; until they are, treat DEC-052 as authoritative for module names and dependency direction.
+- **Not started, and named here because they block the first milestone:**
+  - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
+  - `.gitignore`;
+  - the version catalog and the pinned dependency set;
+  - the `tokens.json` parity test — DEC-022;
+  - rendered PNG exports under `docs/figma/` — DEC-045;
+  - `README.es.md` review as the only translation — DEC-047.
+
+## 4. Next recommended actions, in priority order
+
+Each action names the first concrete step and the document that owns it. A task is not started until its first failing test exists (DEC-053); the exceptions are documentation, build/CI configuration and tooling changes, and their use must be stated explicitly.
+
+1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
+2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
+3. **Create the build skeleton before any feature code.** First step: add `.gitignore`, the Gradle wrapper, the version catalog, the module declarations and the `VERSION` file, and make `./gradlew help` succeed. Owner: `docs/TECHNICAL_PLAN.md`, task in `docs/BACKLOG.md`.
+4. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
+5. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
+6. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
+7. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
+8. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
+
+Working rules that apply to every action above: read the precedence chain before touching a file (`AGENTS.md` §2); one owner per file; update the owning document in the same change (DEC-046); never claim a result you did not observe (`AGENTS.md` §4.2); merge without squashing and keep the phase commits (DEC-053); never merge while a required check is failing, skipped or absent (DEC-054).
+
+## 5. Unresolved decisions and deferred items
+
+Do not implement a deferred item. The authoritative lists are:
+
+- `docs/DECISION_BOARD.md` §4 — decisions with status `Deferred`, with the condition that reopens each one.
+- `docs/REQUIREMENTS.md` §1.3 — deferred scope items `DEF-001`…`DEF-004`, with their re-entry conditions. `docs/REQUIREMENTS.md` §14 records that nothing there is blocking.
+
+Two consequences worth knowing before planning work: voice search is deferred and no microphone or speech permission may be added (`REQ-SEC-004`); Episodes and Locations ship as placeholders (`DEC-005`).
+
+## 6. Known risks
+
+Product, contract and delivery risks are owned by `docs/REQUIREMENTS.md` §13 as `RISK-###`, with likelihood, impact, mitigation and owner. Do not restate or duplicate them here.
+
+Two **operational** risks are specific to taking this repository over and are not covered there:
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| The Figma source file requires project access and returned HTTP 403 to an anonymous client on 2026-09-29. | `docs/UI_SPEC.md` cites Figma pages and node identifiers that a new contributor cannot open; the design becomes uncorroborable. | Obtain read access before design-dependent work; commit the rendered PNG exports under `docs/figma/` (DEC-045) so the specification stays checkable without access. |
+| Several toolchain components are pinned pre-release (Material 3 Expressive `1.5.0-alpha29`; alpha-only `androidx.lifecycle` KMP and DataStore KMP — `CON-004`). | An upgrade can break the build or change rendering, and the pinned versions age quickly. | Keep versions pinned and centralised in the version catalog, record the accepted alpha risk per `docs/adr/0008-alpha-dependencies.md`, and let the mandatory gate (DEC-054) catch breakage at upgrade time rather than at review time. |
+
+One further operational note: `main` is the only integrated branch, and it has no branch protection yet. The current documentation change lives on `docs/documentation-system` until it merges. Until protection is enabled, nothing prevents a non-conforming change from reaching trunk by accident; enabling it is a repository setting and therefore a human action (DEC-049).
+
+## 7. Validation status
+
+**What has been verified in this repository, and how:**
+
+- **Link checking** — relative links between documents were resolved by inspection as part of the documentation review; the inventory and any unresolved finding are in `docs/DOCUMENTATION_AUDIT.md`.
+- **Identifier uniqueness** — `LOG-####` entries are sequential and unique; the requirements, decision, risk, contract and test identifier schemes are checked for uniqueness and cross-reference by the same review, which is the check class recorded in `docs/DOCUMENTATION_AUDIT.md` §6.
+- **Consistency review** — statements that a document does not own were traced to their owner and de-duplicated; conflicts found are recorded as `CONF-###` in `docs/DOCUMENTATION_AUDIT.md` rather than silently resolved.
+- **Remote contract verification** — live probes against the public API on 2026-09-29; the observed results and their date are in `docs/API_SPECS.md` §1.1.
+- **Repository history** — read from the repository itself, not recalled.
+
+**What has NOT been verified:** no build has been run; no test has been executed; no linter, formatter, static analysis, dependency analysis, benchmark or accessibility check has been run; the Android app and the iOS app have never been compiled, installed or launched; no requirement has been demonstrated by an observing run. Every command in §8 and in `README.md` §8–§9 is unexercised, and every `AC-*` criterion in `docs/REQUIREMENTS.md` is currently unproven. The first runnable verification in this project's history will be the first CI run after the build skeleton lands.
+
+## 8. Relevant commands (not yet runnable)
+
+The intended interface, recorded so the plan and the documentation stay concrete. None of these commands has been executed — there is no Gradle wrapper, no build script and no Xcode project. Module names below follow DEC-052; the equivalent table in `README.md` §8–§9 still uses the previous names and is being updated.
+
+| Purpose | Command |
+| --- | --- |
+| Build the Android debug app | `./gradlew :androidApp:assembleDebug` |
+| Install on a connected device or emulator | `./gradlew :androidApp:installDebug` |
+| Build the shared framework for the iOS simulator | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` |
+| Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` |
+| Shared and unit tests | `./gradlew test` |
+| Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` |
+| Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` |
+| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` |
+| iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
+| Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` |
+| Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` |
+
+The complete required-check list for a pull request, and what each check blocks, are owned by `docs/TESTING.md` and `docs/DEFINITION.md`. As of DEC-054 every check in that list is blocking on both platforms, including the iOS suites; the red commit of a TDD cycle is expected to fail tests, because the gate evaluates the final state of the pull request.
+
+## 9. Credentials and prerequisites
+
+**No credentials are required, and none exist.** The API is public, unauthenticated and read-only; no API key, token, secret, keystore or environment variable is needed to build or run the application, and committing one is prohibited (`AGENTS.md` §4.2, `REQ-SEC-002`).
+
+Two prerequisites involve an account or access decision, and neither is a secret:
+
+| Prerequisite | Need | Status |
+| --- | --- | --- |
+| Figma file (`nFQdxd23Kk4rNI7G4iHDUr`) | Read access, so the design of record can be opened and the PNG exports can be produced | Not held by default — the file returned HTTP 403 to an anonymous client on 2026-09-29 |
+| Package registry | None beyond network access: Kotlin, AndroidX, Ktor, Coil, Koin and the test tooling come from public repositories, and no private feed or license is involved | Satisfied by the public repositories; no account required |
+
+Local toolchain prerequisites (JDK, Android SDK, Xcode, Kotlin supplied by the Gradle toolchain) are listed in `README.md` §6. A macOS host is required to run the iOS suites, which DEC-054 makes mandatory on every pull request.
+
+## 10. Key documentation links
+
+| Document | Why you need it |
+| --- | --- |
+| [`README.md`](../README.md) | Project overview, features, structure, setup, intended commands |
+| [`AGENTS.md`](../AGENTS.md) | Precedence, roles, permissions, workflow, escalation, completion rules |
+| [`REQUIREMENTS.md`](REQUIREMENTS.md) | What the product must do, with acceptance criteria, scope, risks |
+| [`DESIGN.md`](DESIGN.md) | Architecture, modules, state contracts, navigation |
+| [`API_SPECS.md`](API_SPECS.md) | Remote contract, DTOs, errors, caching policy |
+| [`UI_SPEC.md`](UI_SPEC.md) | Tokens, components, screens, motion, accessibility |
+| [`DECISION_BOARD.md`](DECISION_BOARD.md) | Every decision, its status, its ADR, and what is deferred |
+| [`TECHNICAL_PLAN.md`](TECHNICAL_PLAN.md) | Milestones, sequencing, quality gates |
+| [`BACKLOG.md`](BACKLOG.md) | The canonical work index with task-level acceptance criteria |
+| [`TESTING.md`](TESTING.md) | Test strategy, layers, tooling, required CI checks, traceability |
+| [`DEFINITION.md`](DEFINITION.md) | Ready, Done, pull-request and release gates |
+| [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) | Inventory, ownership, open gaps and conflicts |
+| [`PROJECT_LOG.md`](PROJECT_LOG.md) | Why the project evolved as it did (`LOG-####`) |

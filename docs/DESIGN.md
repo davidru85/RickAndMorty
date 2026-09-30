@@ -1,8 +1,55 @@
 # DESIGN.md - System Architecture Design
 
-- **Status:** architecture baseline, aligned with the Figma designs
-- **Last updated:** 2026-09-29
-- **Inputs:** `REQUIREMENTS.md`, `API_SPECS.md`, `UI_SPEC.md`, design briefs in `docs/design/`
+- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
+- **Last verified:** 2026-09-29
+- **Owner:** System Architect (see `AGENTS.md`)
+- **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
+- **Not authoritative for:** requirement IDs and acceptance criteria (`REQUIREMENTS.md`), internal interface signatures and invariants (`CONTRACTS.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), visual specification (`UI_SPEC.md`).
+- **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`UI_SPEC.md`](UI_SPEC.md), [`CONTRACTS.md`](CONTRACTS.md), [`adr/`](adr/), design briefs in `docs/design/`
+
+## 0. System overview
+
+**Context.** A reviewer or a phone user reaches the public Rick and Morty API through one product: a character browser. There is no backend, no account and no server-side component owned by this project.
+
+```mermaid
+flowchart TB
+    subgraph Users
+        RU[Reviewer]
+        PU[Phone user]
+    end
+    subgraph Delivery
+        APK[Android APK]
+        IPA[iOS app]
+    end
+    subgraph "This repository"
+        SH[":core:domain, :core:data, :core:presentation, :core:designsystem"]
+        AU[":androidApp + :feature:* (Android UI)<br/>+ :core:designsystem"]
+        IU["iosApp: Features/* + DesignSystem"]
+    end
+    RU --> APK
+    RU --> IPA
+    PU --> APK
+    PU --> IPA
+    APK --> AU --> SH
+    IPA --> IU --> SH
+    SH -->|"HTTPS, JSON, GET"| API[("rickandmortyapi.com<br/>REST + GraphQL")]
+    SH -->|"favourites, cached responses"| STORE[("Local storage<br/>DataStore / UserDefaults + cache files")]
+```
+
+**Containers and responsibilities.**
+
+| Container | Responsibility | Technology | Owns |
+| --- | --- | --- | --- |
+| Shared Kotlin core | Domain model, remote access, cache, paging, favourites, UI-state primitives, formatters, copy keys | Kotlin Multiplatform, Ktor, kotlinx.serialization | `:core:*` modules (§3.1) |
+| Feature modules | One module per user-facing capability, each with its own domain, presentation and UI packages | Kotlin Multiplatform + Jetpack Compose / SwiftUI | `:feature:*` modules (§3.2) |
+| Android app | App shell, navigation graph, DI wiring, splash, image pipeline, accent extraction | Jetpack Compose, Material 3 Expressive, Coil, Koin | `:androidApp` |
+| iOS app | App shell, shared graph bootstrap, navigation composition, image pipeline | SwiftUI, Koin (shared graph), `URLCache` | `iosApp` targets |
+| External API | Character, location and episode data | Public REST/GraphQL, HTTPS, unauthenticated | Not owned; contract in `API_SPECS.md` |
+| Local storage | Favourites, cached responses | DataStore (Android), `UserDefaults` + files (iOS) | Not sensitive data (`SECURITY.md` §3) |
+
+**Runtime data flow (one screen load).** Screen intent → platform state holder → use case → repository → cache decision → (remote fetch) → mapper → `DataResult` → state object → recomposition/rendering. Error paths follow `ERROR_FLOW.md`.
+
+A full C4-style deployment view is not warranted: there is no server, no queue and no third-party service beyond the public API and the platform app stores.
 
 ## 1. Architectural pattern
 
@@ -34,38 +81,133 @@ The design briefs define one product with two native clients:
 
 | Platform | UI stack | Design language | Priority |
 | --- | --- | --- | --- |
-| Android | Jetpack Compose | Material 3 Expressive | Primary deliverable (`REQUIREMENTS.md`: Jetpack Compose) |
-| iOS | SwiftUI | Liquid Glass | Counterpart; the brief frames it as part of a Kotlin Multiplatform (KMP) project |
+| Android | Jetpack Compose | Material 3 Expressive | Primary deliverable, milestone M1 (`REQUIREMENTS.md`: Jetpack Compose) |
+| iOS | SwiftUI | Liquid Glass on iOS 26+, material fallback below | Milestone M2; the brief frames it as part of a Kotlin Multiplatform (KMP) project |
+
+Platform floors: Android `minSdk` 26, `compileSdk`/`targetSdk` 37; iOS minimum deployment target 18.0 with `glassEffect` guarded by an availability check (DEC-008, DEC-009, `REQ-PLAT-002`, `REQ-PLAT-003`). Phone portrait only (DEC-027). See [`adr/0002-platform-targets.md`](adr/0002-platform-targets.md).
 
 The split between shared and native code:
 
-- **Shared via KMP:** domain, data and presentation state (ViewModels + `UiState`). Both designs render the same information architecture (`UI_SPEC.md` §2), so filtering, paging, search debounce, detail enrichment and display formatting must behave identically on both platforms. Only rendering differs.
+- **Shared via KMP:** domain, data and the presentation-state contract (`UiState` data classes, display formatters, canonical copy keys). Both designs render the same information architecture (`UI_SPEC.md` §2), so filtering, paging, search debounce, detail enrichment and display formatting must behave identically on both platforms. Only rendering differs. **State holders are not shared** (DEC-013): each platform owns its ViewModel (`:feature:*`, `androidMain`) or `ObservableObject` (SwiftUI) over the shared state types.
 - **Native per platform:** UI, design system, navigation, image loading and portrait colour extraction (these depend on platform bitmaps and toolkits).
-- **Android stays unblocked:** Android can ship alone by building the shared modules plus `:androidApp`. The iOS app is additive.
+- **Android stays unblocked:** Android ships alone by building the `:core:*` modules, the Android-side `:feature:*` modules and `:androidApp`. The iOS app is additive (DEC-040, `REQ-PLAT-004`).
 
-**Networking impact.** `API_SPECS.md` recommends Retrofit/OkHttp, which are JVM-only. A shared REST adapter therefore uses **Ktor client + kotlinx.serialization**:
-- On Android, the OkHttp engine keeps the HTTP cache policy from `API_SPECS.md` §7.1.
-- On iOS, the Darwin engine uses `URLCache`.
-
-The adapter sits behind `CharacterRemoteDataSource`, so the choice stays local to the data layer. This is decision **D1** (§9).
+**Networking impact (resolved).** The shared data layer uses **Ktor client + kotlinx.serialization**, with the OkHttp engine on Android and the Darwin engine on iOS (DEC-011, [`adr/0004-rest-client.md`](adr/0004-rest-client.md)). Retrofit/OkHttp and Apollo are retired; `API_SPECS.md` §7 and §14 are written against Ktor. The adapter sits behind `CharacterRemoteDataSource`, so the engine choice stays local to `:core:data`.
 
 ## 3. Module boundaries
 
+**Strategy: feature-per-module with Clean Architecture inside each module (DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md)).** Each user-facing capability is its own Gradle/Swift module that contains its own domain, presentation and UI layers as packages. Shared infrastructure lives in `:core:*`. A feature module never depends on another feature module.
+
+```mermaid
+flowchart TB
+    subgraph Core
+        CD[":core:domain"]
+        CDA[":core:data"]
+        CP[":core:presentation"]
+        CDS[":core:designsystem"]
+        CT[":core:testing"]
+    end
+    subgraph Features
+        FD[":feature:discovery"]
+        FC[":feature:character-detail"]
+        FF[":feature:favorites"]
+        FE[":feature:episodes"]
+        FL[":feature:locations"]
+    end
+    APP[":androidApp"]
+    IOS["iosApp targets<br/>Features/* + DesignSystem"]
+    CDA --> CD
+    CP --> CD
+    FD --> CD
+    FD --> CDA
+    FD --> CP
+    FD --> CDS
+    FC --> CD
+    FC --> CDA
+    FC --> CP
+    FC --> CDS
+    FF --> CD
+    FF --> CDA
+    FF --> CP
+    FF --> CDS
+    FE --> CDS
+    FL --> CDS
+    APP --> FD
+    APP --> FC
+    APP --> FF
+    APP --> FE
+    APP --> FL
+    APP --> CDS
+    IOS --> FD
+    IOS --> FC
+    IOS --> FF
+    IOS --> FE
+    IOS --> FL
+    FD -. test only .-> CT
+    FC -. test only .-> CT
+    FF -. test only .-> CT
+```
+
+### 3.1 Core modules (cross-feature infrastructure)
+
 | Module | Target | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| `:shared:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `EpisodeSummary`, `CharacterFilter`), repository interfaces, use cases | — |
-| `:shared:data` | `commonMain` + platform engines | REST adapter (DTOs, mappers), response cache, favorites store, repository implementations, `ApiFailure` mapping | `:shared:domain` |
-| `:shared:presentation` | `commonMain` | ViewModels (`androidx.lifecycle` KMP), `UiState`/intents, display formatters (status labels, "Unknown" casing, dimension derivation) | `:shared:domain` |
-| `:android:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme with no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors` (brand + status), components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons | Compose only |
-| `:android:feature:characters` | Android | Discovery and Detail screens, filters, shared-element transitions, `CharacterAccentResolver` | `:shared:presentation`, `:android:designsystem` |
-| `:androidApp` | Android | `Application`, DI graph, `NavHost`, splash, Coil `ImageLoader`, adaptive launcher icon (`mipmap-anydpi-v26`) | all Android modules |
-| `iosApp/DesignSystem` | Swift package | `Color`/`Font` tokens, `GlassCharacterCard`, `GlassSegmentedControl`, `GlassInfoRow`, `GlassIconButton`, `PortalLogo` | SwiftUI only |
-| `iosApp/Features` | iOS app | SwiftUI screens bound to the shared ViewModels, `NavigationStack`, image cache, app icon (Icon Composer `.icon`) | `Shared.framework`, `DesignSystem` |
+| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`), `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | — |
+| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, REST DTOs, mappers, app-level response cache, shared pager, favorites stores, repository implementations, failure mapping, retry/timeout policy. | `:core:domain` |
+| `:core:presentation` | `commonMain` | Cross-feature presentation primitives only: `LoadState`, display formatters ("Unknown" casing, status labels, dimension derivation), canonical copy keys. No screen-specific state. | `:core:domain` |
+| `:core:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme, no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors`, components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons, empty-state component. | Compose only |
+| `:core:testing` | KMP | Shared fakes (fake repositories, fake `CacheStorage`, fake favorites store, fake clock, fake image loader), JSON fixtures, `TestDispatcher` helpers. Test source sets only — never shipped. | `:core:domain`, `:core:data` |
 
-**Design-system rule:** design-system modules never depend on domain types. Components take primitives (strings, colours, image URL, status enum mirror), which keeps them previewable, screenshot-testable and 1:1 with the Figma components listed in `UI_SPEC.md` §1.2.
+### 3.2 Feature modules (one per user-facing capability)
+
+Every feature module repeats the same internal structure: Clean Architecture layers as **packages inside the module**.
+
+```text
+:feature:discovery/
+├── src/commonMain/kotlin/<app>/feature/discovery/
+│   ├── domain/         # feature use cases (for example GetCharacterPage) + feature models
+│   ├── presentation/   # CharacterListUiState, CharacterListIntent (IC-018; shared by both platforms)
+│   └── navigation/     # the feature's route declaration
+├── src/androidMain/kotlin/.../discovery/ui/   # Compose screen + DiscoveryViewModel
+├── src/iosMain/ or Swift package                # iOS consumes presentation/ state contract
+└── src/commonTest/                              # feature tests, fakes from :core:testing
+```
+
+| Module | Responsibility | Notes |
+| --- | --- | --- |
+| `:feature:discovery` | Character list: paging, 300 ms debounced name search, status filter, loading/empty/stale/error states, the staggered grid, the shared-element source of the card portrait. | Owns `CharacterListUiState`/`CharacterListIntent` (`IC-018`); feature use cases stay here. |
+| `:feature:character-detail` | Detail screen: hero, stats, info list, enrichment-aware rows, favourite toggle, the shared-element destination. | Owns `CharacterDetailUiState`/`CharacterDetailIntent`; reads the list-provided header for the instant transition. |
+| `:feature:favorites` | Favorites list over the stored ID set, plus its designed empty state. | Reads `ObserveFavoriteIds` from `:core:domain`; renders the same card component as Discovery by consuming `:core:presentation` state types. |
+| `:feature:episodes` | Episodes "coming soon" placeholder only. | No data layer in the MVP (DEC-005). |
+| `:feature:locations` | Locations "coming soon" placeholder only. | No data layer in the MVP (DEC-005). |
+
+iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Discovery`, `Features/CharacterDetail`, `Features/Favorites`, `Features/Episodes`, `Features/Locations`, plus `DesignSystem`. Each Swift feature package holds its views and its `ObservableObject` (or `@Observable`) state holder, consuming the state contract published by the matching Kotlin feature module (DEC-013).
+
+### 3.3 Application shells
+
+| Module | Responsibility |
+| --- | --- |
+| `:androidApp` | `Application`, Koin graph assembly, app-wide `NavHost` composing every feature's route declaration, splash, Coil `ImageLoader`, adaptive launcher icon (`mipmap-anydpi-v26`). |
+| `iosApp` app target | App entry point, shared Koin graph bootstrap, `TabView`/`NavigationStack` composition of the feature packages, app icon (Icon Composer `.icon`). |
+
+### 3.4 Dependency rules (enforced)
+
+1. `:core:domain` depends on nothing.
+2. `:core:data` depends only on `:core:domain`.
+3. `:core:presentation` depends only on `:core:domain`.
+4. `:core:designsystem` depends on Compose only — never on domain types.
+5. `:feature:*` may depend on `:core:domain`, `:core:data`, `:core:presentation` and — from Android UI code only — `:core:designsystem`.
+6. **No `:feature:*` module may depend on another `:feature:*` module.** Anything a feature needs from another feature moves to `:core:*`.
+7. Navigation: each feature declares its own destination; the application shell composes the graph. No feature owns the app-wide `NavHost`.
+8. Use-case placement: feature-specific use cases live in the feature's `domain` package; only genuinely cross-feature use cases live in `:core:domain`.
+9. Test source sets may depend on `:core:testing`; production source sets may not.
+
+**Enforcement:** `dependency-analysis`/Gradle module-graph checks plus a CI rule reject a forbidden edge; `GUIDELINES.md` states the rule and its enforcement (`DEC-032`).
+
+**Design-system rule:** `:core:designsystem` and the iOS `DesignSystem` package never depend on domain types. Components take primitives (strings, colours, image URL, status enum mirror), which keeps them previewable, screenshot-testable and 1:1 with the Figma components listed in `UI_SPEC.md` §1.2.
 
 **Shared brand assets:** the Figma page `00 · Shared — Brand & Sample Data` holds the platform-neutral assets (`UI_SPEC.md` §1):
-- **Portal logo:** exported once as SVG. It becomes a VectorDrawable in `:android:designsystem` and a vector asset (preserve vector data) in the iOS `DesignSystem` asset catalog. Each platform wraps it in its own `PortalLogo` component, and the splash treatments stay platform-specific.
+- **Portal logo:** exported once as SVG. It becomes a VectorDrawable in `:core:designsystem` and a vector asset (preserve vector data) in the iOS `DesignSystem` asset catalog. Each platform wraps it in its own `PortalLogo` component, and the splash treatments stay platform-specific.
 - **App icons:** both are built on the portal logo but live on the platform pages, because each follows its own platform format (`UI_SPEC.md` §10).
   - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The same foreground drives the Android 12+ system splash.
   - iOS: the single 1024 px master (no Dark, Clear or Tinted variants) feeds an Icon Composer `.icon` file in the iOS app target.
@@ -75,57 +217,21 @@ The adapter sits behind `CharacterRemoteDataSource`, so the choice stays local t
 
 ### 4.1 UI state contract (shared)
 
-```kotlin
-data class CharacterFilter(
-    val query: String = "",                        // name search
-    val status: StatusFilter = StatusFilter.All,   // "All" sends no status parameter
-)
+**Ownership:** the normative signatures live in [`CONTRACTS.md`](CONTRACTS.md) (`IC-015`, `IC-018`, `IC-019`, and the filter/formatter contracts). This section shows how state flows through the architecture — change a type in `CONTRACTS.md`, never here.
 
-// Same four options on both platforms (Android filter chips, iOS segmented control).
-// Species/gender filters exist in the API but are intentionally not exposed.
-enum class StatusFilter { All, Alive, Dead, Unknown }
+Both platforms consume the same state types unchanged (DEC-013, DEC-015). Each platform wraps them in its own state holder:
 
-data class CharacterCardUi(
-    val id: CharacterId,
-    val name: String,
-    val species: String,              // API `species` ("unknown" → "Unknown"); cards show photo, name, status, species
-    val status: CharacterStatus,
-    val imageUrl: String,             // also the image cache key and colour-extraction key
-)
+| Contract (`CONTRACTS.md`) | Type | Consumed by |
+| --- | --- | --- |
+| `IC-018` | `CharacterListUiState` | `:feature:discovery` — Android `DiscoveryViewModel`, iOS `Features/Discovery` `ObservableObject` |
+| `IC-019` | `CharacterDetailUiState` | `:feature:character-detail` — Android `CharacterDetailViewModel`, iOS `Features/CharacterDetail` `ObservableObject` |
+| `IC-015` | `LoadState` | Both state types above |
+| `IC-013` | `CharacterFilter` + `StatusFilter` | Discovery filters, used identically by both platforms |
+| `IC-016` | `CharacterCardUi` | Cards in Discovery and Favorites, and the detail header |
 
-sealed interface LoadState {
-    data object Loading : LoadState
-    data object Content : LoadState
-    data object Empty : LoadState     // includes the REST 404-on-empty-filter case
-    data class Error(val failure: ApiFailure) : LoadState
-}
+Intents are sealed types declared with their state (`IC-018`, `IC-019`). Discovery intents: `QueryChanged`, `StatusSelected`, `LoadNextPage`, `Refresh`, `Retry`. Detail intents: `ToggleFavorite`, `Retry`.
 
-data class CharacterListUiState(
-    val filter: CharacterFilter = CharacterFilter(),
-    val items: List<CharacterCardUi> = emptyList(),
-    val totalCount: Int? = null,      // headline "826 beings…" comes from info.count
-    val loadState: LoadState = LoadState.Loading,
-    val isAppending: Boolean = false,
-    val isStale: Boolean = false,     // cached data shown while offline
-)
-
-data class CharacterDetailUiState(
-    val header: CharacterCardUi?,     // pre-filled from the list for an instant transition
-    val episodeCount: Int? = null,
-    val dimension: String? = null,
-    val info: List<InfoRowUi> = emptyList(),   // Origin, Last known location, First seen in
-    val isFavorite: Boolean = false,
-    val loadState: LoadState = LoadState.Loading,
-)
-```
-
-Intents:
-- `CharacterListIntent`: `QueryChanged`, `StatusSelected`, `LoadNextPage`, `Refresh`, `Retry`
-
-Voice search is a platform concern with no shared code. The Android recognizer (`RecognizerIntent`) and the iOS one (Speech framework) only return text, which the screen sends as a regular `QueryChanged`. The ViewModel can't tell typed and dictated queries apart, so debounce and cancellation apply equally (`UI_SPEC.md` §6.2).
-- `CharacterDetailIntent`: `ToggleFavorite`, `Retry`
-
-The list ViewModel applies the rules from `API_SPECS.md` §8: 300 ms debounce, `distinctUntilChanged`, cancellation, page reset and single-page prefetch.
+The Discovery state holder applies the rules from `API_SPECS.md` §8: 300 ms debounce, `distinctUntilChanged`, cancellation, page reset and single-page prefetch.
 
 ### 4.2 Navigation
 
@@ -137,16 +243,16 @@ The list ViewModel applies the rules from `API_SPECS.md` §8: 300 ms debounce, `
 | `Episodes` · `Locations` · `Favorites` | Top-level destinations in the navigation bar | `TabView` tabs |
 
 The card-to-detail transition is part of the architecture, not decoration:
-- **Android:** `SharedTransitionLayout` wraps the `NavHost`. The portrait uses the shared key `"portrait-$id"`, and predictive back is supported.
-- **iOS:** a `@Namespace` is passed from the grid to the detail for `.matchedTransitionSource` / `.navigationTransition(.zoom)`.
-- **Both:** to work, the detail must render the pre-filled `header` immediately, before the network responds (`API_SPECS.md` §8: "Reuse list data during navigation").
+- **Android:** `SharedTransitionLayout` wraps the app-wide `NavHost` in `:androidApp`, composed from each feature's declared destination. The portrait uses the shared key `"portrait-$id"`, and predictive back is supported. The shared element crosses the `:feature:discovery` → `:feature:character-detail` boundary as a keyed modifier supplied by `:core:designsystem`, not as a module dependency between the two features (rule 6 in §3.4).
+- **iOS:** a `@Namespace` is passed from the Discovery view to the detail view for `.matchedTransitionSource` / `.navigationTransition(.zoom)`.
+- **Both:** to work, the detail must render the pre-filled `header` immediately, before the network responds (`API_SPECS.md` §8: "Reuse list data during navigation"). Discovery publishes the selected `CharacterCardUi` through a shared navigation hand-off in `:core:presentation`, so neither feature depends on the other.
 
-The Episodes, Locations and Favorites tabs are wired in the MVP but show placeholder screens (`UI_SPEC.md` §6.4). Each platform has one reusable empty-state component with identical copy.
-- Episodes and Locations are "coming soon" screens with no ViewModel or data.
-- Favorites observes `ObserveFavoriteIds` (§4.5) and shows its empty state while the set is empty.
-- "Browse characters" switches to the Characters tab rather than pushing a route.
+The Episodes, Locations and Favorites destinations are wired in the MVP but Episodes and Locations show placeholder screens (`UI_SPEC.md` §6.4). Each platform has one reusable empty-state component with identical copy: `:core:designsystem` (Android) and `iosApp/DesignSystem` (iOS).
+- Episodes and Locations are "coming soon" screens with no use case or data layer (DEC-005).
+- `:feature:favorites` observes `ObserveFavoriteIds` (§4.5) and shows its empty state while the set is empty.
+- "Browse characters" switches to the Characters destination rather than pushing a route.
 
-The real Episodes and Locations screens remain Could-Have.
+Real Episodes and Locations screens remain deferred (DEF-002, DEF-003).
 
 ### 4.3 Design tokens pipeline
 
@@ -165,7 +271,7 @@ A unit test compares them with a committed `tokens.json` export of the Figma var
 
 ### 4.4 Portrait accent colour (Android)
 
-The M3 brief asks for card containers tinted from each character's portrait (`UI_SPEC.md` §5.4). This is a UI concern, so it lives in `:android:feature:characters`:
+The M3 brief asks for card containers tinted from each character's portrait (`UI_SPEC.md` §5.4). This is a UI concern, so it lives in `:feature:discovery` (Android UI source set):
 
 ```kotlin
 interface CharacterAccentResolver {
@@ -182,17 +288,19 @@ iOS needs no equivalent: its glass surfaces take colour from the portrait by ref
 
 ### 4.5 Favorites
 
-Both designs add a Favorite action (Android extended FAB, iOS prominent glass button) and a Favorites tab. `REQUIREMENTS.md` does not list the feature. It maps to the Could-Have "Local database persistence" and needs a requirements update (D4).
+Both designs add a Favorite action (Android extended FAB, iOS prominent glass button) and a Favorites destination. This is a committed MVP feature (`REQ-FUNC-006`, DEC-004), implemented in its own `:feature:favorites` module with the detail-screen toggle in `:feature:character-detail`.
 
-- **Domain:** `FavoritesRepository` with the use cases `ObserveFavoriteIds(): Flow<Set<CharacterId>>` and `ToggleFavorite(id)`.
-- **Data:** a set of IDs in multiplatform DataStore is enough. The UI shows the favourite state instantly and re-fetches details through the normal cached path, so no database is required.
+- **Domain:** `FavoritesRepository` with `ObserveFavoriteIds(): Flow<Set<CharacterId>>` and `ToggleFavorite(id)`; `ObserveFavoriteIds` is cross-feature, so it lives in `:core:domain`, and `ToggleFavorite` is used by the detail feature (contract in [`CONTRACTS.md`](CONTRACTS.md)).
+- **Data:** `:core:data` stores the ID set behind `FavoritesLocalDataSource` with `expect/actual` implementations — DataStore on Android, `UserDefaults` on iOS (DEC-017, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md)). Multiplatform DataStore and SQLDelight were rejected as alpha and unnecessary respectively.
+- The UI shows the favourite state instantly and re-fetches details through the normal cached path, so no database is required.
 
 ## 5. Dependency injection
 
-- **Framework:** Koin, because it is multiplatform. Hilt is Android-only and cannot provide the shared graph to iOS. If the project stays Android-only, Hilt is an acceptable substitute (D2).
+- **Framework:** Koin 4.2.2, runtime DSL (DEC-014, [`adr/0006-presentation-state.md`](adr/0006-presentation-state.md)). Koin is multiplatform, so one graph serves Android and iOS; Hilt is Android-only and cannot provide the shared graph (rejected), and the Koin compiler plugin is not used.
+- **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`) and the app shell starts the graph by loading every feature module plus `coreModule`. This keeps a feature's wiring inside the feature.
 - **Singletons:** Ktor `HttpClient`, response cache, favorites store, repositories, Coil `ImageLoader` (Android), `CharacterAccentResolver`.
-- **Factories:** use cases.
-- **ViewModel scope:** `CharacterListViewModel`, `CharacterDetailViewModel` (Android: `koinViewModel()`; iOS: exposed through a small `KoinHelper` factory and observed from SwiftUI).
+- **Factories:** feature use cases.
+- **State-holder scope:** `DiscoveryViewModel` (in `:feature:discovery`, Android) and `CharacterDetailViewModel` (in `:feature:character-detail`, Android) are resolved with `koinViewModel()`. On iOS the shared graph is started from the app target and each feature package resolves its own dependencies into its `ObservableObject`; there is no `StateFlow`-to-Swift bridge (DEC-013).
 
 ## 6. Class diagram
 
@@ -200,7 +308,7 @@ Both designs add a Favorite action (Android extended FAB, iOS prominent glass bu
 classDiagram
     direction LR
 
-    class CharacterListViewModel {
+    class DiscoveryViewModel {
         +state: StateFlow~CharacterListUiState~
         +onIntent(CharacterListIntent)
     }
@@ -247,7 +355,7 @@ classDiagram
         +accentFor(imageUrl) Color?
     }
 
-    CharacterListViewModel --> GetCharacterPage
+    DiscoveryViewModel --> GetCharacterPage
     CharacterDetailViewModel --> GetCharacterDetails
     CharacterDetailViewModel --> ObserveFavoriteIds
     CharacterDetailViewModel --> ToggleFavorite
@@ -264,38 +372,48 @@ classDiagram
     FavoritesRepositoryImpl --> FavoritesLocalDataSource
 ```
 
-`CharacterAccentResolver` is Android-only (`:android:feature:characters`). It is injected into the Compose screen, not into a ViewModel, because it depends on the image pipeline.
+`CharacterAccentResolver` is Android-only (`:feature:discovery`, Android UI source set). It is injected into the Compose screen, not into a state holder, because it depends on the image pipeline.
 
-## 7. Failure → UI mapping
+## 7. Failure → state (type mapping only)
 
-Every `ApiFailure` (`API_SPECS.md` §6) maps to one of the states designed in `UI_SPEC.md` §8:
+**The full failure→state→copy chain is owned by [`ERROR_FLOW.md`](ERROR_FLOW.md)** (DEC-021): the taxonomy, retryability, recovery actions, user-facing copy and the logging of failures live there. This section keeps only the architectural mapping from `ApiFailure` to the `LoadState` a screen renders.
 
 | Failure | With cached data | Without cached data |
 | --- | --- | --- |
-| `Offline`, `Timeout` | Keep content, `isStale = true`, "Showing saved results" + Retry | Error state "Portal link lost" + Retry |
-| `NotFound` on a filtered list (REST 404) | — | `LoadState.Empty` ("No one in this dimension matches…"), **not** an error |
-| `NotFound` on a detail | — | Error state with Back |
-| `RateLimited(retryAfter)` | Keep content; retry after `Retry-After` | Error state with the countdown in the message |
-| `Server`, `MalformedResponse`, `EmptyBody`, `Unknown` | Keep content + Retry | Generic error state + Retry |
+| `Offline`, `Timeout` | Keep content, `isStale = true` | `LoadState.Error` |
+| `NotFound` on a filtered list (REST 404) | — | `LoadState.Empty` (**not** an error) |
+| `NotFound` on a detail | — | `LoadState.Error` with a back affordance |
+| `RateLimited(retryAfter)` | Keep content; retry after `Retry-After` | `LoadState.Error` |
+| `Server`, `MalformedResponse`, `EmptyBody`, `Unknown` | Keep content | `LoadState.Error` |
 
-`CancellationException` is never mapped: obsolete searches simply stop.
+`CancellationException` is never mapped: obsolete searches and closed screens simply stop.
 
 ## 8. Testing hooks
 
-This section covers the architectural testing seams only; the QA agent owns the full plan.
+This section covers the architectural testing seams only; `TESTING.md` owns the full strategy and the TDD workflow (DEC-053: red → commit → green → commit → refactor → commit → push).
 
-- **`:shared:*`:** ViewModel tests with fake repositories (state sequences, debounce, cancellation, page reset); formatter and mapper tests.
-- **`:android:designsystem`:** screenshot tests per component and screen, compared with the Figma frames in `UI_SPEC.md` §1.1. Each is rendered with the system in both light and dark mode, and both results must be identical (single appearance). Semantics tests cover merged card descriptions and status labels.
-- **iOS:** snapshot tests of `DesignSystem` views, including Reduce Transparency and the largest Dynamic Type size.
+- **`:core:*` and `:feature:*`:** repository, cache, pager, mapper, formatter and failure-mapping tests with fakes from `:core:testing`; engine-level tests through Ktor `MockEngine` with committed fixtures. No test performs real network I/O. Feature use cases and each feature's shared state contract are testable in that feature module's `commonTest`; the Android ViewModel is tested in the feature's Android unit tests and the iOS `ObservableObject` in its Swift package. State types follow `CONTRACTS.md` (`IC-018`, `IC-019`).
+- **`:core:designsystem`:** screenshot tests per component and screen, compared with the Figma frames in `UI_SPEC.md` §1.1. Each is rendered with the system in both light and dark mode, and both results must be identical (single appearance). Semantics tests cover merged card descriptions and status labels.
+- **iOS:** snapshot tests of `DesignSystem` views and of each feature's screens, including Reduce Transparency and the largest Dynamic Type size.
 - **Tokens:** a parity test against the `tokens.json` export (§4.3).
 - **Fixtures:** previews and screenshot tests use the sample portraits from the shared Figma page (§3) as local image fixtures, with a fake image loader instead of the network.
+- **Module graph:** a dependency-analysis check asserts the rules in §3.4, including the prohibition on feature-to-feature edges.
 
-## 9. Open decisions
+## 9. Decisions
 
-| ID | Decision | Recommendation | Affects |
-| --- | --- | --- | --- |
-| D1 | REST client for shared data | Ktor + kotlinx.serialization (OkHttp engine on Android, Darwin on iOS) | `API_SPECS.md` §8, §12 (currently Retrofit/OkHttp) |
-| D2 | DI framework | Koin (multiplatform); Hilt only if Android-only | §5 |
-| D3 | Sharing depth | Share ViewModels (`androidx.lifecycle` KMP) and bridge `StateFlow` to Swift (e.g. SKIE); fallback: share domain/data only | §3, §4.1 |
-| D4 | Favorites scope | Could-Have backed by multiplatform DataStore; add to `REQUIREMENTS.md` | §4.5 |
-| D5 | Pager | Small custom pager (the page contract is simple); Paging 3 only if its multiplatform artifacts are justified | `API_SPECS.md` §8 |
+Architecture and tooling decisions are recorded with their status in [`DECISION_BOARD.md`](DECISION_BOARD.md) and their rationale in [`adr/`](adr/). The previously open items in this section are resolved:
+
+| Former ID | Question | Resolution |
+| --- | --- | --- |
+| D1 | REST client for shared data | Ktor + kotlinx.serialization everywhere — DEC-011, [`adr/0004-rest-client.md`](adr/0004-rest-client.md) |
+| D2 | DI framework | Koin 4.2.2, runtime DSL — DEC-014, [`adr/0006-presentation-state.md`](adr/0006-presentation-state.md) |
+| D3 | Sharing depth | Shared domain/data/state contract; platform-owned state holders; no SKIE — DEC-013, [`adr/0003-ui-sharing-strategy.md`](adr/0003-ui-sharing-strategy.md) |
+| D4 | Favorites scope | Committed MVP feature backed by `expect/actual` stores — DEC-004, DEC-017, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md) |
+| D5 | Pager | Custom shared pager — DEC-016, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md) |
+| — | Module structure | Feature-per-module with Clean Architecture per feature — DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) |
+
+## 10. Change log
+
+| Date | Change | Decision |
+| --- | --- | --- |
+| 2026-09-29 | Restructured to feature-per-module with Clean Architecture inside each feature module; platform floors, Ktor, Koin, favorites and pager questions resolved into decisions; failure chain delegated to `ERROR_FLOW.md`; system overview added. | DEC-011…DEC-021, DEC-052 |

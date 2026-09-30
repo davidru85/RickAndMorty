@@ -1,0 +1,237 @@
+# OBSERVABILITY.md — Logging Contract, Redaction and Debug Diagnostics
+
+- **Status:** Active — target state; no code exists yet (see `DOCUMENTATION_AUDIT.md` §5)
+- **Last verified:** 2026-09-29
+- **Owner:** Security Reviewer (see `../AGENTS.md` §3.7) — this document decides *what may be recorded*
+- **Authoritative for:** the shared logging contract (levels, permitted fields, prohibited fields), the `LOG-###` structured event catalogue, redaction rules and their enforcement, the debug-only diagnostics surface, and the metrics vocabulary produced by the logging contract.
+- **Not authoritative for:** the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract and its cache policy (`API_SPECS.md` §6–§7, §9), the security policy and prohibitions (`SECURITY.md` §7), the test strategy and test ids (`TESTING.md`), the gate (`DEFINITION.md`), requirements (`REQUIREMENTS.md`).
+- **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) §11 (`REQ-OBS-001`…`REQ-OBS-003`) and §10 (`REQ-SEC-005`), [`API_SPECS.md`](API_SPECS.md) §9 and §6 (`ApiFailure`, `DataResult`, `DataSource`), [`SECURITY.md`](SECURITY.md) §7, [`DESIGN.md`](DESIGN.md) §3–§7, [`DECISION_BOARD.md`](DECISION_BOARD.md) (DEC-038, DEC-039, DEC-052, DEC-053, DEC-054)
+- **Normative terms:** `MUST` mandatory · `SHOULD` strong recommendation · `MAY` optional.
+
+> `SECURITY.md` is authoritative for policy and prohibitions; this document is authoritative for what may be recorded and how. Requirements are owned by `REQUIREMENTS.md` and are referenced here by ID, never restated.
+
+The contract is implemented once and consumed by both platforms. The implementing role is the Implementation Engineer (`../AGENTS.md` §3.5): the logger lives in the shared core (`:core:data` for network/cache/pager events, `:core:presentation` for state-level events) and each app shell provides only the platform sink.
+
+## 1. Purpose, scope and the absence of analytics
+
+This document replaces the proposed `ANALYTICS.md`. That file is **not created** (`README.md` §12), because there is no analytics to document.
+
+Explicit statements of scope:
+
+- **No analytics, tracking, advertising, attribution or telemetry SDK is included, and none may be added** (`REQ-OBS-003`, `NG-006`, DEC-038). The dependency graph `MUST NOT` contain such an artifact; `TEST-UNIT-034` asserts it (`AC-REQ-OBS-003-1`).
+- **No `EVT-###` event namespace exists.** DEC-038 dropped it, and this document does not reintroduce it. There is no event-schema registry, no event name taxonomy, no funnel, session, user-property or conversion model, and no remote ingestion endpoint. Nothing in this repository defines a "send to the backend" path, because there is no backend.
+- **No identifier that could join a user across sessions or devices exists in this app**: no account id, no device id, no advertising id, no installation id, no fingerprint, no persistent client id. A correlation id (§2) is process-local and request-scoped.
+- **No log leaves the device.** There is no remote sink, no collector, no crash reporter and no upload path (`SECURITY.md` §7).
+- **Nothing is persisted.** The app writes no log file, no log database and no log buffer beyond what the platform's own sink retains, which is outside the app's control.
+
+The identifiers in this document therefore describe **local diagnostics only**. They are not an analytics contract and MUST NOT be treated as one.
+
+## 2. The shared logging contract
+
+### 2.1 One interface
+
+Both platforms `MUST` log through a single shared abstraction — one interface with a level set and a fixed field envelope. Platform code `MUST NOT` call `android.util.Log`, `os.Logger`/`print`, or a platform crash reporter directly for app diagnostics; the app shells provide an implementation of the shared interface that writes to the platform sink (`Logcat` on Android, `os.Logger` on iOS). `TEST-UNIT-032` asserts that both platforms use the contract with permitted fields only (`AC-REQ-OBS-001-1`).
+
+```kotlin
+// :core:data / :core:presentation — shape only; canonical signatures belong to CONTRACTS.md
+enum class LogLevel { DEBUG, INFO, WARN, ERROR }
+
+interface AppLogger {
+    fun log(level: LogLevel, event: LogEvent)
+}
+
+/** Sealed set of permitted envelopes; see §3 for the catalogue. */
+sealed interface LogEvent {
+    val correlationId: String?          // request-scoped, never user-derived
+    val durationMs: Long?               // monotonic elapsed time, never wall clock
+    val cacheSource: CacheSource?       // NONE | NETWORK | MEMORY_CACHE | DISK_CACHE
+    val isStale: Boolean
+    val errorClass: ApiFailureKind?     // the failure *type*, never its message
+}
+```
+
+Rules for the interface itself:
+
+- It `MUST` be callable from any dispatcher and `MUST NOT` block the caller (§7).
+- It `MUST NOT` accept a free-form string message from a feature; a feature selects an event from the catalogue and supplies only permitted fields.
+- It `MUST NOT` accept a `Throwable` at release level. Debug builds `MAY` accept an exception **type** (`errorClass`, `cause`), never a stack trace at release level.
+- Levels mean exactly: `DEBUG` — debug-build detail; `INFO` — a normal lifecycle or cache event; `WARN` — a degraded but handled condition; `ERROR` — a user-visible failure. A `LogLevel` mapping `MUST NOT` be inferred from the exception type alone.
+- Release builds emit `ERROR` only (DEC-039); `DEBUG`/`INFO`/`WARN` calls are compiled or filtered out, not merely dropped at runtime.
+
+### 2.2 Permitted field list
+
+This is the canonical permitted list (`AC-REQ-OBS-001-1`). A field outside it is prohibited by default: adding one is a change to this document first.
+
+| Field | Type | Allowed values / form | Never contains |
+| --- | --- | --- | --- |
+| `level` | enum | `DEBUG`, `INFO`, `WARN`, `ERROR` | — |
+| `protocol` | enum | `REST`, `GRAPHQL` | — |
+| `operation` | enum | named operation: `CHARACTER_LIST`, `CHARACTER_DETAIL`, `EPISODE_BATCH` | A request body, a GraphQL document, a raw URL |
+| `pathTemplate` | string | a compile-time constant template: `/character`, `/character/{id}`, `/episode/{ids}` | Any interpolated id, page number or query string |
+| `page` | int? | the numeric page index | — |
+| `filterNames` | sorted set of names | from the allow-list `name`, `status` | Filter **values**, including the search text and the selected status |
+| `statusFamily` | enum | `2XX`, `4XX`, `5XX`, `NO_RESPONSE` | The exact status code, the status message, the response body |
+| `cacheSource` | enum | `NETWORK`, `MEMORY_CACHE`, `DISK_CACHE`, `NONE` | Any cache key, path or file size |
+| `isStale` | bool | — | — |
+| `durationMs` | long? | monotonic elapsed milliseconds | A wall-clock timestamp |
+| `correlationId` | string? | client-generated, request-scoped (§4.1 rule 5) | Anything derived from user input |
+| `outcome` | enum | `SUCCESS`, `EMPTY`, `FAILURE`, `CANCELLED` | — |
+| `errorClass` | enum | one of `OFFLINE`, `TIMEOUT`, `NOT_FOUND`, `INVALID_REQUEST`, `RATE_LIMITED`, `SERVER`, `MALFORMED_RESPONSE`, `EMPTY_BODY`, `UNKNOWN` — the REST families of `ApiFailure` (`API_SPECS.md` §6.1) | The failure message, the exception's text, a stack trace |
+| `screen` | enum | `SPLASH`, `DISCOVERY`, `CHARACTER_DETAIL`, `FAVORITES`, `EPISODES`, `LOCATIONS` | A route string carrying an id |
+| `component` | enum | `RESPONSE_CACHE`, `IMAGE_CACHE`, `FAVORITES_STORE`, `PAGER` | A store path or key |
+| `retryAfterSeconds` | long? | server-advised delay, already a number | The `Retry-After` header's raw text |
+| `appVersion`, `platform`, `buildType` | string | build constants (`VERSION`, `android`/`ios`, `debug`/`release`) | — |
+| `cause` | enum | **debug builds only**: the exception **type** | The message, the payload, a stack trace |
+
+### 2.3 Prohibited list
+
+The following `MUST NOT` reach any sink, on any platform, at any level, in any build type, including the debug diagnostics surface (`REQ-SEC-005`, DEC-039):
+
+- Search text or any part of it, in any encoding, including a hash, prefix, length or word count.
+- Filter values (the selected `status`, species, gender or type).
+- A raw query string or a full URL with parameters.
+- Response bodies, JSON fragments, or any field value decoded from a response.
+- Image bytes, bitmap data, colour-extraction pixel data, or a base64 rendering of any of these.
+- Stack traces at release level; exception messages at release level.
+- API keys, tokens or credentials (none exist — `SECURITY.md` §4).
+- Anything read from the favourites store beyond an aggregate count.
+- Any identifier that could join a user across sessions or devices (§1).
+
+The rationale for the prohibitions is owned by `SECURITY.md` §7.2: a value that reaches a sink leaves the app's control and cannot be retracted.
+
+## 3. Structured event catalogue
+
+Every event has a stable `LOG-###` id. The catalogue is closed: a feature `MUST NOT` emit an event that is not in this table without first extending it.
+
+Legend for the **Visibility** column: `D` = debug builds only, `R` = present in release builds (errors only, DEC-039).
+
+| Id | Event | Level | Fields | Where emitted | Visibility |
+| --- | --- | --- | --- | --- | --- |
+| `LOG-001` | Request started | `DEBUG` | `operation`, `pathTemplate`, `page`, `filterNames`, `protocol`, `correlationId` | `:core:data`, HTTP client layer | D |
+| `LOG-002` | Request completed | `INFO` | `operation`, `pathTemplate`, `page`, `statusFamily`, `durationMs`, `correlationId`, `outcome` | `:core:data`, HTTP client layer | D |
+| `LOG-003` | Request failed | `ERROR` | `operation`, `pathTemplate`, `page`, `statusFamily`, `errorClass`, `durationMs`, `correlationId`, `outcome=FAILURE` | `:core:data`, failure mapper before repository return | R |
+| `LOG-004` | Foreign host rejected | `ERROR` | `operation`, `errorClass=INVALID_REQUEST`, `screen`, `correlationId` | `:core:data`, URL allow-list guard (`SECURITY.md` §5.1) | R |
+| `LOG-005` | Cache hit | `DEBUG` | `cacheSource` (`MEMORY_CACHE` or `DISK_CACHE`), `operation`, `page`, `isStale`, `correlationId` | `:core:data`, response cache read | D |
+| `LOG-006` | Cache miss | `DEBUG` | `cacheSource=NONE`, `operation`, `page`, `correlationId` | `:core:data`, response cache read | D |
+| `LOG-007` | Stale fallback served | `WARN` | `cacheSource=DISK_CACHE`, `isStale=true`, `operation`, `page`, `errorClass`, `correlationId` | `:core:data`, cache read when a fetch fails with data available | D |
+| `LOG-008` | Cache write skipped | `DEBUG` | `component=RESPONSE_CACHE`, `outcome`, `errorClass`, `correlationId` | `:core:data`, cache write guard (`AC-REQ-FUNC-020-3`) | D |
+| `LOG-009` | Cache entry discarded | `WARN` | `component=RESPONSE_CACHE`, `errorClass=MALFORMED_RESPONSE`, `correlationId` | `:core:data`, cache decode guard | D |
+| `LOG-010` | Page loaded | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome`, `durationMs`, `cacheSource`, `correlationId` | feature `:feature:discovery` pager | D |
+| `LOG-011` | Pagination exhausted | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome=SUCCESS` | feature pager when `info.next == null` | D |
+| `LOG-012` | Duplicate request deduplicated | `DEBUG` | `operation`, `page`, `filterNames`, `correlationId` | `:core:data`, single-flight/dedupe guard (`REQ-REL-002`) | D |
+| `LOG-013` | Retry scheduled | `WARN` | `operation`, `errorClass`, `statusFamily`, `retryAfterSeconds`, `correlationId` | `:core:data`, retry policy (`REQ-REL-003`) | D |
+| `LOG-014` | Request cancelled | `DEBUG` | `operation`, `outcome=CANCELLED`, `correlationId` | `:core:data`, cancellation path | D |
+| `LOG-015` | Image request started | `DEBUG` | `component=IMAGE_CACHE`, `screen`, `cacheSource` | Android image-loader interceptor / iOS image-cache wrapper | D |
+| `LOG-016` | Image cache outcome | `DEBUG` | `component=IMAGE_CACHE`, `cacheSource`, `durationMs`, `errorClass` | Android image-loader interceptor / iOS image-cache wrapper | D |
+| `LOG-017` | Image load failed | `WARN` | `component=IMAGE_CACHE`, `errorClass`, `screen` | Android image-loader error path / iOS image-cache error path | D |
+| `LOG-018` | Favorites toggled | `INFO` | `component=FAVORITES_STORE`, `outcome` | `:core:data`, favourites store after a successful write | D |
+| `LOG-019` | Favorites store degraded | `ERROR` | `component=FAVORITES_STORE`, `errorClass=UNKNOWN`, `screen` | `:core:data`, `expect/actual` store read/write failure (`SECURITY.md` §6.3) | R |
+| `LOG-020` | App start | `INFO` | `appVersion`, `platform`, `buildType` | app shell (`:androidApp` `Application` / iOS app entry point) | D |
+| `LOG-021` | Screen data source resolved | `DEBUG` | `screen`, `cacheSource`, `isStale`, `outcome` | feature state holders | D |
+| `LOG-022` | Unknown remote enum value preserved | `DEBUG` | `operation`, `pathTemplate`, `outcome=SUCCESS` | `:core:data`, tolerant mapper (`AC-REQ-NFR-004-2`) | D |
+
+Rules:
+
+1. An event `MUST NOT` carry a field that is not listed for it. `LOG-003` carries `errorClass`; `LOG-002` explicitly does not, because a completed request is not a failure.
+2. `LOG-018` carries **no id**. The favourite character id is user-adjacent state and is not needed to diagnose the store; the aggregate count is available to the debug surface instead (§5).
+3. The three `R` rows are the complete release-visible set. A new release-visible event is a change to `SECURITY.md`'s obligations and to this table in the same change.
+4. The catalogue describes diagnostics, not product analytics (§1). No row exists for "user opened a screen", "search performed" or "session started".
+
+## 4. Redaction rules and enforcement
+
+### 4.1 The rules
+
+1. **A query string never reaches a sink.** No log call, no diagnostics surface and no error message may contain a request URL with parameters, a query string, or any value that was an input to building one (`REQ-SEC-005`).
+2. Redaction happens **at the call site and at the boundary**: the shared logger `MUST` reject-and-drop a field value that fails its allow-list validation rather than logging it, and `MUST NOT` rely on a sink-side filter in the platform. A dropped field `MUST` be counted internally, not printed.
+3. Paths are logged as **templates**, never as interpolated URLs. `/character/{id}` is permitted; `/character/1` is not.
+4. Filter names are logged as **names only**, from the fixed allow-list in §2.2, and never alongside their values.
+5. The `correlationId` is generated client-side, is request-scoped, is not persisted and `MUST NOT` be derived from user input (`SECURITY.md` §7.3).
+6. Failure handling logs the **failure type**, not the failure's message. Server-supplied human-readable text is not logged and not treated as control flow (`API_SPECS.md` §6.1).
+7. Release builds apply a hard level filter of `ERROR` **and** the §2.3 prohibitions independently. Lowering the level `MUST NOT` be possible at runtime, from a build flag, from a remote configuration or from a debug menu in release.
+
+### 4.2 Enforcement
+
+| Rule | Enforced by |
+| --- | --- |
+| A query string never reaches a log sink (`AC-REQ-SEC-005-1`) | `TEST-UNIT-029` |
+| Both platforms use the one contract with permitted fields only (`AC-REQ-OBS-001-1`) | `TEST-UNIT-032` |
+| Release builds emit errors only and contain no debug surface (`AC-REQ-OBS-002-1`) | `TEST-UNIT-033` |
+| No analytics artifact in the dependency graph (`AC-REQ-OBS-003-1`) | `TEST-UNIT-034` |
+| A new field or event exists in this document | Review; `SECURITY.md` §7.1 |
+
+`TEST-UNIT-029` `MUST` exercise the real path — a search request carrying a distinctive query value — and assert that the value appears in no captured sink record, including `DEBUG`-level records. A test that only inspects the contract type is not sufficient evidence.
+
+Because `TEST-UNIT-029` and `TEST-UNIT-032` guard a behaviour change, they are written first and observed failing before the logging implementation exists (DEC-053, `DEFINITION.md` Done gate); the merge gate evaluates the final pull-request state, not the red commit (DEC-054).
+
+## 5. Debug-only diagnostics surface
+
+`REQ-OBS-002` requires a diagnostics surface in debug builds that exposes the last failure and the current data source. This section defines its content and its gating.
+
+| Item | Shown | Format |
+| --- | --- | --- |
+| Last failure | the `ApiFailure` type (`errorClass`) and the screen it occurred on | enum name, no message |
+| Current data source | `NETWORK`, `MEMORY_CACHE`, `DISK_CACHE` or none yet | enum name |
+| Last request timing | `durationMs` of the most recent request, plus `statusFamily` | number + enum |
+| Cache state | per-operation entry count, fresh/stale counts, whether an entry exists for the current screen | aggregate numbers only |
+| Stale indicator | whether the currently displayed content is stale | boolean |
+| Pager state | current page, whether a next page exists, whether an append is in flight | numbers/booleans |
+| Favourites store | aggregate count only | number |
+| Build envelope | `appVersion`, `platform`, `buildType` | build constants |
+
+Rules:
+
+- **Gating.** The surface is compiled from a debug-only source set / platform build configuration and `MUST NOT` be reachable in a release artifact. It `MUST NOT` be a runtime flag, an intent extra, a hidden gesture or a build-config boolean that ships in release. `TEST-UNIT-033` asserts its absence from the release variant (`AC-REQ-OBS-002-1`).
+- **Redaction applies in full.** The surface may present only the fields in §2.2 plus the aggregates above. It `MUST NOT` show filter values, search text, response content, image data, cache keys or store paths.
+- **No export.** The surface `MUST NOT` offer copy-to-clipboard, share, file export or "send diagnostics". Screenshots of a debug build are the developer's responsibility.
+- **Acceptance criterion.** `AC-REQ-OBS-002-1`: the surface is absent from release builds. `REQ-OBS-002` additionally requires it to expose the last failure and the current data source for the current screen in a debug build, which the items above provide.
+- The surface `MUST NOT` change any behaviour: it is a read-only view over state the app already holds. Toggling it `MUST NOT` trigger a request.
+
+## 6. Metrics vocabulary
+
+`API_SPECS.md` §9 requires the diagnostics to distinguish **network, memory cache, disk cache, stale fallback, empty result, timeout, decoding failure and cancellation**. That list is produced by the logging contract, not by a separate metrics system — there is no metrics SDK and no metrics endpoint (§1). Each item maps to the event that carries it:
+
+| `API_SPECS.md` §9 item | Carrier | Discrimination |
+| --- | --- | --- |
+| Network | `LOG-002`, `LOG-003`, `LOG-010` | `cacheSource=NETWORK` |
+| Memory cache | `LOG-005` | `cacheSource=MEMORY_CACHE` |
+| Disk cache | `LOG-005`, `LOG-007` | `cacheSource=DISK_CACHE` |
+| Stale fallback | `LOG-007` | `isStale=true` with `errorClass` set |
+| Empty result | `LOG-002`, `LOG-010` | `outcome=EMPTY` (REST filtered `404` maps here, not to `FAILURE` — `ERROR_FLOW.md`) |
+| Timeout | `LOG-003`, `LOG-013` | `errorClass=TIMEOUT` |
+| Decoding failure | `LOG-003`, `LOG-009` | `errorClass=MALFORMED_RESPONSE` |
+| Cancellation | `LOG-014` | `outcome=CANCELLED` |
+
+Rules and honest limits:
+
+- Counting is done by aggregating local events in a debug build or by a test harness; the app `MUST NOT` ship a metrics counter, an aggregation buffer, a timer or a sampling mechanism. Any number a developer reports is derived from the events above, and `PERFORMANCE.md` owns the measured performance budgets (`REQ-NFR-003`).
+- `durationMs` is elapsed monotonic time around the operation it labels — a request duration for `LOG-002`/`LOG-003`, a decode or cache-write duration where labelled. It `MUST NOT` be used as a performance budget figure; budgets are measured per `PERFORMANCE.md`.
+- A metric that cannot be derived from this table is a gap in this document: extend the table (and the catalogue if needed) rather than instrumenting privately.
+- Rate-limit signals are represented by `errorClass=RATE_LIMITED` plus `retryAfterSeconds`; no numeric quota is assumed, because none is documented (`API_SPECS.md` §9).
+
+## 7. Failure handling of observability itself
+
+Observability `MUST NOT` become a failure source.
+
+1. **Never throw.** A log call `MUST NOT` throw into its caller. A validation failure, a serialisation failure or a sink failure in the logger is swallowed and, at most, counted internally. Logging is never a reason a feature fails.
+2. **Never block the UI.** Log calls `MUST` be non-blocking and `MUST NOT` perform I/O on the main thread. A sink that cannot keep up drops records rather than applying backpressure to the caller.
+3. **Never allocate avoidably.** Event payloads `MUST` be constructed only when the level is enabled; a disabled `DEBUG` event must not build strings, format durations or interpolate a template.
+4. **Drop, do not grow.** There is no in-memory log queue with unbounded growth, no log file and no retry of a failed emit. If the sink is unavailable, records are lost, and that is acceptable (§1).
+5. **Release builds log errors only** (DEC-039). The release threshold is fixed at compile time and `MUST NOT` be changeable at runtime.
+6. **A logging defect is a defect.** A call that violates §2.3 is a review blocker, and the fix is removal at the call site — never a wider sink filter.
+
+## 8. Traceability
+
+| Requirement / acceptance criterion | Section here | Test |
+| --- | --- | --- |
+| `REQ-OBS-001` / `AC-REQ-OBS-001-1` | §2 | `TEST-UNIT-032` |
+| `REQ-OBS-002` / `AC-REQ-OBS-002-1` | §5 | `TEST-UNIT-033` |
+| `REQ-OBS-003` / `AC-REQ-OBS-003-1` | §1 | `TEST-UNIT-034` |
+| `REQ-SEC-005` / `AC-REQ-SEC-005-1` | §4 | `TEST-UNIT-029` |
+| `API_SPECS.md` §9 metrics list | §6 | `TEST-UNIT-032` (field contract), `TEST-UNIT-029` (redaction) |
+| DEC-039 release-level rule | §2.1, §7 | `TEST-UNIT-033` |
+
+## 9. Change log
+
+| Date | Change | Reference |
+| --- | --- | --- |
+| 2026-09-29 | Created as the replacement for the never-created `ANALYTICS.md`: shared logging contract with permitted and prohibited fields, `LOG-001`…`LOG-022` catalogue, redaction enforcement, debug diagnostics surface and the metrics mapping for `API_SPECS.md` §9. No analytics SDK and no `EVT-###` namespace. | DEC-038, DEC-039, DEC-052, DEC-053, DEC-054 |

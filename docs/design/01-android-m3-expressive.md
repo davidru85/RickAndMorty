@@ -1,3 +1,14 @@
+- **Status:** Superseded as a specification — historical input, kept for provenance
+- **Last verified:** 2026-09-29
+- **Owner:** UI/UX Designer
+- **Authoritative for:** nothing. This is the prompt used to generate the Android Figma page. The normative visual specification is `../UI_SPEC.md`.
+- **Inputs:** `../../assessment.md`
+
+> **Not normative.** Where this brief disagrees with `../UI_SPEC.md`, `UI_SPEC.md` wins. Two known divergences:
+> - The brief asks for filter chips for Status, **Species** and **Gender**; `UI_SPEC.md` §6.2 deliberately ships exactly four status options and no species/gender filters.
+> - The brief asks for M3 **Dynamic Color** ("Material You"); `UI_SPEC.md` §3.1 ships a single fixed colour scheme with no dynamic colour and no light/dark variants.
+> The briefs live in this folder as provenance for the Figma file, not as requirements.
+
 ### ROLE
 Act as a Senior Product Designer specializing in Android Native development and Material Design 3 (Material You) design systems. Your goal is to generate high-fidelity, professional UI/UX prototypes for a premium Android application.
 

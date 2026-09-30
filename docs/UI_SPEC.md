@@ -1,16 +1,19 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
-- **Status:** design baseline for implementation
-- **Last updated:** 2026-09-29
-- **Inputs:** `REQUIREMENTS.md`, `DESIGN.md`, `API_SPECS.md`, design briefs in `docs/design/`
-- **Source of truth:** Figma file [Rick & Morty](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty)
+- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
+- **Last verified:** 2026-09-29
+- **Owner:** UI/UX Designer (see `AGENTS.md`)
+- **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
+- **Not authoritative for:** behaviour requirements (`REQUIREMENTS.md`), architecture (`DESIGN.md`), failure handling (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`).
+- **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`DESIGN.md`](DESIGN.md), [`API_SPECS.md`](API_SPECS.md), design briefs in `docs/design/`, committed exports in `docs/figma/`
+- **Source of truth:** Figma file [Rick & Morty](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty). It requires project access; rendered exports live in [`docs/figma/`](figma/README.md).
 
 This document translates the "image-oriented" requirement into an implementable visual spec for two native clients of **Multiverse Explorer**:
 
 | Platform | Design language | Brief | Figma page |
 | --- | --- | --- | --- |
-| Android (Jetpack Compose) | Material 3 Expressive | [`01 · Android — M3 Expressive.md`](design/01%20·%20Android%20—%20M3%20Expressive.md) | [01 · Android — M3 Expressive](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=0-1) |
-| iOS (SwiftUI) | Liquid Glass (iOS 26+) | [`02 · iOS — Liquid Glass.md`](design/02%20·%20iOS%20—%20Liquid%20Glass.md) | [02 · iOS — Liquid Glass](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=4-134) |
+| Android (Jetpack Compose) | Material 3 Expressive | [`01-android-m3-expressive.md`](design/01-android-m3-expressive.md) (historical input) | [01 · Android — M3 Expressive](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=0-1) |
+| iOS (SwiftUI) | Liquid Glass (iOS 26+, material fallback below) | [`02-ios-liquid-glass.md`](design/02-ios-liquid-glass.md) (historical input) | [02 · iOS — Liquid Glass](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=4-134) |
 
 When this document and Figma disagree, Figma variables and styles win for values; this document wins for behavior.
 
@@ -222,7 +225,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | Compose implementation |
 | --- | --- | --- |
-| Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse", trailing `mic` icon button for voice search (§6.2). No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
+| Top app bar with search | 64 dp. Search bar only: 380 dp wide with 16 dp margins, leading `search` icon, placeholder "Search the multiverse". No trailing mic while voice search is deferred (§6.2). No navigation icon (the navigation bar covers top-level destinations) and no avatar (the app has no user accounts) | M3 `SearchBar` in the top app bar slot; expands to full-screen search |
 | Filter chips | Elevated style, 32 dp, 16 dp start inset. Exactly four single-select options: **All** (selected, check icon) · Alive · Dead · Unknown. They fit the screen width, so no scrolling. Equivalent to the iOS segmented control | `ElevatedFilterChip`s in a `Row`; selecting one deselects the others |
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Shows exactly photo, name, status (badge) and species (§6.2). Name in Title Medium Emphasized, up to 2 lines so the full name fits (ellipsis only beyond that); species in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
@@ -238,8 +241,8 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | SwiftUI implementation |
 | --- | --- | --- |
-| Large title | "Characters" + "826 across the multiverse" (Subheadline, secondary). The count comes from `info.count`, never hard-coded | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
-| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters", trailing `mic.fill` for voice search (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
+| Large title | "Characters" + "{count} across the multiverse" (Subheadline, secondary). The count comes from `info.count` at runtime and is never hardcoded; the Figma frame shows the value observed on 2026-09-29 | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
+| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters". No trailing `mic.fill` while voice search is deferred (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
 | Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab (symbol + label) in Portal Glow, every unselected tab always in white (`Label/Primary`), never dimmed or black (one variant per selected tab) | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)`; unselected items forced to white through `UITabBarAppearance` (`normal.iconColor` and `normal.titleTextAttributes`), because the system default is a dimmed secondary colour |
@@ -263,7 +266,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Platform | Library | Policy |
 | --- | --- | --- |
-| Android | Coil (memory + disk cache) | Memory → disk → network. Default memory budget; disk budget per `API_SPECS.md` §12. Decode at native 300 px (card and hero sizes exceed the source at xxhdpi). |
+| Android | Coil (memory + disk cache) | Memory → disk → network. Default Coil memory budget; the disk byte budget is a configuration value settled during implementation (`API_SPECS.md` §14). Decode at native 300 px (card and hero sizes exceed the source at xxhdpi). |
 | iOS | `URLCache` (≈ 50 MB memory / 200 MB disk) + `NSCache` for decoded `UIImage`s | Memory → disk → network. No third-party loader is needed for the MVP (dependency restraint). |
 
 ### 5.3 Upscaling mitigation
@@ -363,10 +366,11 @@ Behaviour:
 - **The selected filter must match the content.** Both designs show "All" selected with mixed statuses.
 - **Paging:** incremental; prefetch the next page near the end.
 - **Search:** 300 ms debounce; a new query resets to page 1.
-- **Voice search (speech-to-text):** both platforms have a mic at the trailing end of the search field. Tapping it dictates the query; the transcript replaces the text and follows the same debounce and page reset as typing.
-  - **Android:** launch the system recognizer with `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` via `rememberLauncherForActivityResult`. The system UI records the audio, so the app needs no `RECORD_AUDIO` permission. Hide the mic when `SpeechRecognizer.isRecognitionAvailable()` is false. On Android 11+ that check needs a `<queries>` entry for the `android.speech.RecognitionService` intent in the manifest.
-  - **iOS:** use the Speech framework (`SFSpeechRecognizer` + `AVAudioEngine`), on-device when `supportsOnDeviceRecognition` is true. It requires `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription`. While listening, `mic.fill` animates with `.symbolEffect(.variableColor)`; tapping again stops. Hide the mic if the recognizer is unavailable or permission is denied.
+- **Voice search (speech-to-text) — DEFERRED (`DEC-002`, `REQ-FUNC-030`), not part of M1/M2.** The specification below is retained so the design is not lost, but the mic affordance `MUST NOT` be rendered and no microphone or speech permission `MUST` be requested (`REQ-SEC-004`) until a new decision reactivates it. Both search-field specifications in §4.1/§4.2 therefore ship without the trailing `mic` control.
+  - **When implemented, Android:** launch the system recognizer with `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` via `rememberLauncherForActivityResult`. The system UI records the audio, so the app needs no `RECORD_AUDIO` permission. Hide the mic when `SpeechRecognizer.isRecognitionAvailable()` is false. On Android 11+ that check needs a `<queries>` entry for the `android.speech.RecognitionService` intent in the manifest.
+  - **When implemented, iOS:** use the Speech framework (`SFSpeechRecognizer` + `AVAudioEngine`), on-device when `supportsOnDeviceRecognition` is true. It requires `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription`. While listening, `mic.fill` animates with `.symbolEffect(.variableColor)`; tapping again stops. Hide the mic if the recognizer is unavailable or permission is denied.
   - Recognition uses the device language. Character names are proper nouns, so an imperfect transcript is corrected by typing; no custom vocabulary.
+  - The transcript replaces the query text and follows the same debounce and page reset as typing.
 - **Scroll:**
   - Android: the app bar gets a Surface Container fill on scroll (Elevation "On-scroll").
   - iOS: the large title collapses into the inline title, and glass content scrolls under the tab bar.
@@ -480,7 +484,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 - **Contrast:** body text is at least 4.5:1 (checked on dynamic tints at tone 30 and on Surface). Large display text is at least 3:1. On iOS glass over imagery, rely on the text shadow and dim layer. With **Reduce Transparency**, swap glass for an opaque `.thickMaterial` (iOS) / Surface Container (Android).
 - **Touch targets:** 48 dp (Android) / 44 pt (iOS) minimum. Glass buttons are 50 pt.
 - **Status:** always a text label with the dot, announced as "Status: Alive".
-- **Voice search:** the mic buttons are labelled "Search by voice" and announce when listening starts and stops.
+- **Voice search:** deferred with the feature (`DEC-002`). When implemented, the mic buttons are labelled "Search by voice" and announce when listening starts and stops.
 - **Screen readers:** each card is one merged node, "Rick Sanchez, Alive, Human, button". The portrait is decorative within the card. The Favorite control exposes its toggled state.
 - **Text scaling:**
   - Android styles use `sp`.
