@@ -145,7 +145,7 @@ flowchart LR
     └── templates/                # Backlog item, test case, PR, bug report
 ```
 
-The build will add `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}`, `androidApp/`, `iosApp/`, a `benchmark` module and the CI workflows. Each feature module contains its own Clean Architecture layers as packages. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
+The build adds `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}` and `androidApp/` (TASK-014), and will add `core/ios` (the iOS framework export module, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)), `iosApp/`, a `benchmark` module and the CI workflows (`CONF-41` still needs the decision for the benchmark and `contract-live` artifacts). Each feature module contains its own Clean Architecture layers as packages. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
 
 ## 6. Prerequisites
 
@@ -178,7 +178,7 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 | Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-09-30 — succeeded, no Android Lint error |
 | Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-09-30 — succeeded with no `iosApp/` present and from a clean clone |
 | Install on a connected device/emulator | `./gradlew :androidApp:installDebug` | Not run — the skeleton's APK has no activity yet (TASK-044) |
-| Build the shared framework for iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` | Blocked — see `CONF-40` in [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §6.3 |
+| Build the shared framework for iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Not run — `:core:ios` does not exist yet (`TASK-078`); the module is the one producer of the framework the iOS app links (`DEC-058`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)) |
 | Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run — `iosApp/` does not exist (TASK-051) |
 
 ## 9. Test and quality commands

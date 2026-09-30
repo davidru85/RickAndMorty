@@ -10,6 +10,8 @@
 
 > `DEC-019` (keep the eight-module structure) is **Superseded** by `DEC-052`. The module names in this ADR are authoritative; `DESIGN.md` §3 is being realigned to them and currently still shows the superseded layout.
 
+> **Amended 2026-09-30 by [ADR-0012](0012-ios-framework-export.md) (`DEC-058`):** one module is added to the set above — `:core:ios`, a Kotlin Multiplatform module with the two Apple targets and no Android variant, whose only purpose is to export the five `:feature:*` and the four other `:core:*` modules to Swift as a single framework. It removes no module, changes no other module's responsibility, and adds no permitted edge from an existing module: instead it adds one consumer at the edge of the graph (`iosApp` → `:core:ios` → the shared modules). Every rule and rationale below is unchanged.
+
 > **Amended 2026-09-30 by [ADR-0010](0010-settings-destination.md) (`DEC-055`):** `:feature:settings` and `iosApp/Features/Settings` replace `:feature:locations` and `iosApp/Features/Locations` wherever this ADR lists them. ADR-0010 is authoritative for that one module. Every other boundary, rule and rationale below is unchanged.
 
 ## Owners
@@ -79,6 +81,7 @@ flowchart TD
         locations[":feature:locations"]
     end
     subgraph Core
+        coreIos[":core:ios (export only)"]
         corePres[":core:presentation"]
         coreData[":core:data"]
         coreDomain[":core:domain"]
@@ -118,6 +121,15 @@ flowchart TD
     favorites --> coreDomain
     coreData --> coreDomain
     corePres --> coreDomain
+    iosApp --> coreIos
+    coreIos --> discovery
+    coreIos --> detail
+    coreIos --> favorites
+    coreIos --> episodes
+    coreIos --> locations
+    coreIos --> corePres
+    coreIos --> coreData
+    coreIos --> coreDomain
     iosApp --> iosDiscovery
     iosApp --> iosDetail
     iosApp --> iosFavorites
