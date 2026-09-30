@@ -136,6 +136,31 @@ internal object CatalogSource {
         return line
     }
 
+    /** A version-catalog declaration found in a settings file, with its line. */
+    data class CatalogDeclaration(val line: Int, val name: String, val source: String?)
+
+    /**
+     * The version catalogs a settings file declares. The only catalog this build permits is
+     * `libs`, sourced from the root `gradle/libs.versions.toml` (DEC-060); the reader records
+     * every `create("…")` call and the file it imports, so P7 can reject the rest.
+     */
+    fun catalogsIn(settings: File): List<CatalogDeclaration> {
+        val declarations = mutableListOf<CatalogDeclaration>()
+        val text = settings.readText()
+        val code = KotlinSourceMask.mask(text, maskStrings = false)
+        CREATE_CALL.findAll(code).forEach { match ->
+            val line = BuildScripts.lineOf(code, match.range.first)
+            val name = match.groupValues[1]
+            // The `from(files("…"))` of the same statement, if any.
+            val tail = code.substring(match.range.last + 1, minOf(code.length, match.range.last + 1 + 200))
+            val source = SOURCE_CALL.find(tail)?.groupValues?.get(1)
+            declarations += CatalogDeclaration(line = line, name = name, source = source)
+        }
+        return declarations
+    }
+
+    private val CREATE_CALL = Regex("\\bcreate\\s*\\(\\s*\"([^\"]+)\"")
+    private val SOURCE_CALL = Regex("\\bfrom\\s*\\(\\s*files\\s*\\(\\s*\"([^\"]+)\"")
     private val RICH_KEYS = setOf("require", "strictly", "prefer", "reject", "rejectAll")
     private val HEADER = Regex("^\\[(versions|libraries|plugins)(?:\\.([A-Za-z0-9_.\\-]+))?]$")
     private val ASSIGNMENT = Regex("^([A-Za-z0-9_.\\-]+)\\s*=\\s*(.*)$")

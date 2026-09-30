@@ -67,10 +67,15 @@ abstract class DependencyPinsTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val projectBuildFiles: ConfigurableFileCollection
 
-    /** Roots that must not exist: a Groovy settings file, a `buildSrc` directory. */
+    /** Paths that must not exist: a Groovy settings file, either `buildSrc` directory. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val legacyBuildRoots: ConfigurableFileCollection
+    abstract val forbiddenRoots: ConfigurableFileCollection
+
+    /** The main and included settings files, for P7's cross-build catalog check. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val settingsFiles: ConfigurableFileCollection
 
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
@@ -256,6 +261,28 @@ abstract class DependencyPinsTask : DefaultTask() {
         catalog.get().catalogNames.filter { it != LIB_CATALOG }.forEach { name ->
             log.add(TEST_ID, name, "the build declares a second version catalog; every external version lives in `$LIB_CATALOG` (DEC-060)")
         }
+
+        // The included build has its own settings model, so a catalog declared there is
+        // invisible to the main build's `VersionCatalogsExtension` (F-02).
+        val root = rootDirectory.get().asFile
+        settingsFiles.files.sortedBy { it.path }.forEach { file ->
+            val location = file.location(root)
+            CatalogSource.catalogsIn(file).forEach { declaration ->
+                when {
+                    declaration.name != LIB_CATALOG -> log.add(
+                        TEST_ID,
+                        "$location:${declaration.line}",
+                        "declares version catalog `${declaration.name}`; both Gradle builds must consume only `$LIB_CATALOG` from `gradle/libs.versions.toml` (DEC-060)",
+                    )
+
+                    declaration.source != null && !declaration.source.endsWith(EXPECTED_CATALOG_SOURCE) -> log.add(
+                        TEST_ID,
+                        "$location:${declaration.line}",
+                        "imports `$LIB_CATALOG` from `${declaration.source}`; both Gradle builds must consume `$EXPECTED_CATALOG_SOURCE` (DEC-060)",
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -265,22 +292,44 @@ abstract class DependencyPinsTask : DefaultTask() {
      */
     private fun kotlinDslAndNoBuildSrc(log: ViolationLog) {
         val root = rootDirectory.get().asFile
+
+        // Main-build projects, plus the included build's scripts, must be Kotlin DSL.
         projectBuildFiles.files.sortedBy { it.path }.forEach { file ->
             if (!file.name.endsWith(".gradle.kts")) {
                 log.add(TEST_ID, file.location(root), "the build must use Kotlin DSL scripts (DEC-057, DEC-061)")
             }
         }
-        legacyBuildRoots.files.sortedBy { it.path }.forEach { file ->
-            if (file.name == "buildSrc") {
-                log.add(TEST_ID, "buildSrc", "build logic lives in `build-logic/` (DEC-057); `buildSrc` is not scanned by the policy")
-            } else {
-                log.add(TEST_ID, file.location(root), "the build must use Kotlin DSL scripts (DEC-057, DEC-061)")
+        buildLogicScripts.files.sortedBy { it.path }.forEach { file ->
+            if (file.name.endsWith(".gradle")) {
+                log.add(TEST_ID, file.location(root), "the build must use Kotlin DSL scripts; Groovy build logic is not covered by P4 (DEC-057, DEC-061)")
+            }
+        }
+
+        // Forbidden directories, tracked even while absent so that creating one invalidates a
+        // reusable configuration-cache entry.
+        forbiddenRoots.files.sortedBy { it.path }.forEach { path ->
+            if (!path.exists()) return@forEach
+            when {
+                path.name == "buildSrc" && path.parentFile == root ->
+                    log.add(TEST_ID, "buildSrc", "build logic lives in `build-logic/` (DEC-057); `buildSrc` is not scanned by the policy")
+
+                path.name == "buildSrc" ->
+                    log.add(
+                        TEST_ID,
+                        path.location(root),
+                        "build logic lives in `build-logic/convention`; nested `buildSrc` is forbidden and is not covered by the catalog policy (DEC-057, DEC-061)",
+                    )
+
+                else -> log.add(TEST_ID, path.location(root), "the build must use Kotlin DSL scripts (DEC-057, DEC-061)")
             }
         }
     }
 
     private companion object {
         const val TEST_ID = "TEST-UNIT-014"
+
+        /** DEC-060: the only catalog is `libs`, sourced from this file. */
+        const val EXPECTED_CATALOG_SOURCE = "gradle/libs.versions.toml"
 
         /** DEC-060: the Compose BOM is the only BOM in the catalog. */
         const val COMPOSE_BOM_ACCESSOR = "libs.androidx.compose.bom"

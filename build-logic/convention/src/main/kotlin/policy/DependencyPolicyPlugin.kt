@@ -46,9 +46,9 @@ class DependencyPolicyPlugin : Plugin<Project> {
 
         // The main build's scripts, taken from the build model: the settings files and
         // every declared project's own build file. A nested checkout is not a project.
-        val settingsFiles = SETTINGS_NAMES.map { rootDir.resolve(it) }.filter { it.isFile }
+        val mainSettingsFiles = SETTINGS_NAMES.map { rootDir.resolve(it) }.filter { it.isFile }
         val projectBuildFiles = target.allprojects.map { it.buildFile }.filter { it.isFile }
-        val mainBuildScripts = target.files(settingsFiles, projectBuildFiles)
+        val mainBuildScripts = target.files(mainSettingsFiles, projectBuildFiles)
 
         // Build state and IDE output are never sources.
         val buildLogicScripts = target.fileTree(buildLogicDir) {
@@ -71,10 +71,18 @@ class DependencyPolicyPlugin : Plugin<Project> {
             file.relativeTo(rootDir).invariantSeparatorsPath to projectPathOf(file, rootDir)
         }
 
-        // Roots that must not exist: a Groovy settings file, and a `buildSrc` directory.
-        val legacyBuildRoots = target.files(
-            SETTINGS_NAMES.filter { it.endsWith(".gradle") }.mapNotNull { rootDir.resolve(it).takeIf { f -> f.isFile } },
-            listOfNotNull(rootDir.resolve("buildSrc").takeIf { it.exists() }),
+        // Paths that must not exist. They are declared even while absent, so creating one
+        // invalidates a reusable configuration-cache entry (F-03).
+        val forbiddenRoots = target.files(
+            SETTINGS_NAMES.filter { it.endsWith(".gradle") }.map { rootDir.resolve(it) },
+            rootDir.resolve("buildSrc"),
+            buildLogicDir.resolve("buildSrc"),
+        )
+
+        // Both settings files, for the cross-build catalog check (F-02).
+        val settingsFiles = target.files(
+            SETTINGS_NAMES.map { rootDir.resolve(it) }.filter { it.isFile },
+            buildLogicDir.resolve("settings.gradle.kts"),
         )
 
         val pins = target.tasks.register<DependencyPinsTask>("verifyDependencyPins") {
@@ -89,7 +97,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
             this.buildLogicScripts.from(buildLogicScripts)
             this.policySources.from(buildLogicSources)
             this.projectBuildFiles.from(projectBuildFiles)
-            this.legacyBuildRoots.from(legacyBuildRoots)
+            this.forbiddenRoots.from(forbiddenRoots)
+            this.settingsFiles.from(settingsFiles)
         }
 
         val rationale = target.tasks.register<DependencyRationaleTask>("verifyDependencyRationale") {
