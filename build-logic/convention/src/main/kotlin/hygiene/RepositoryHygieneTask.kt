@@ -13,14 +13,14 @@ import java.io.File
  *
  * One run does four things:
  *
- * 1. it holds the repository-path rules `HYG-01`…`HYG-07` over the tracked tree and the
- *    ignore rules;
+ * 1. it holds the repository-path rules `HYG-01`…`HYG-07` over the tracked tree, the ignore
+ *    rules and **every historical path occurrence** reachable from every local ref;
  * 2. it scans the **commit-eligible working set** — every tracked file plus every untracked,
  *    non-ignored file — for the twelve credential classes;
- * 3. it scans **every unique blob reachable from every local ref** for the same classes, after
- *    the caller has fetched, so history is not silently missing;
+ * 3. it scans **every unique blob reachable from every local ref** for the same classes,
+ *    including a blob a local ref points to directly with no tree path;
  * 4. it fails closed on any Git error, a shallow checkout, a symlink that would leave the
- *    repository, a submodule and any object it cannot classify.
+ *    repository, a submodule and any object or record it cannot parse.
  *
  * Nothing it reports ever contains the text it matched: a finding names a rule id, a
  * root-relative location, a line number where one exists and the blob identity for history.
@@ -39,7 +39,6 @@ abstract class RepositoryHygieneTask : DefaultTask() {
     fun verify() {
         val root = repositoryRoot.get().asFile
         val git = openRepository(root)
-
         val log = HygieneViolationLog()
 
         // HYG-06 — an incomplete checkout cannot certify anything, so it fails before scanning.
@@ -66,7 +65,8 @@ abstract class RepositoryHygieneTask : DefaultTask() {
         logger.lifecycle(
             "verifyRepositoryHygiene passed: ${workingSet.size} commit-eligible path(s) scanned, " +
                 "${history.objectsConsidered} reachable object(s) considered, " +
-                "${history.blobsScanned} unique blob(s) scanned from all local refs, " +
+                "${history.blobsScanned} unique blob(s) scanned and verified from all local refs, " +
+                "${history.historicalPaths} historical path occurrence(s) classified, " +
                 "${HygieneRules.RULE_IDS.size} credential rule classes, ${HygieneRules.REQUIRED_IGNORED.size} " +
                 "ignore sentinels, 0 findings (TEST-UNIT-026, REQ-SEC-002, AC-REQ-SEC-002-1).",
         )
@@ -121,10 +121,15 @@ abstract class RepositoryHygieneTask : DefaultTask() {
         throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
     }
 
-    /** HYG-03 — no tracked path belongs to a prohibited class. */
+    /**
+     * HYG-03 — no tracked path belongs to a prohibited class. The class set is the one the
+     * rule names: build output, IDE/user state, machine-local configuration, signing material
+     * and every credential-carrier path, so a tracked `.env` or key container is reported here
+     * as well as by its owning `SEC-026-*` rule.
+     */
     private fun checkTrackedPaths(modes: Map<String, String>, log: HygieneViolationLog) {
         modes.keys.forEach { path ->
-            HygieneRules.classifyProhibited(path)?.let { className ->
+            HygieneRules.classifyTrackedProhibited(path)?.let { className ->
                 log.add(
                     "HYG-03",
                     path,
@@ -192,42 +197,19 @@ abstract class RepositoryHygieneTask : DefaultTask() {
     }
 
     /**
-     * Every unique blob reachable from every local ref, scanned exactly once. Paths are checked
-     * first (HYG-04), then the bytes are scanned for content rules.
+     * The whole reachable history. Every historical path occurrence is classified (`HYG-04`,
+     * `HYG-07`), and every unique object Git classifies as a blob is scanned once for content,
+     * including a blob a local ref reaches directly with no tree path.
      */
     private fun scanHistory(git: GitRepository, log: HygieneViolationLog): HistoryCounts {
-        val reachable = try {
-            git.reachableObjects()
+        val history = try {
+            git.historyScan()
         } catch (e: GitRepository.GitFailure) {
-            throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
+            throw GradleException("HYG-04: ${e.message} (TEST-UNIT-026)", e)
         }
 
-        val ids = reachable.map { it.id }.distinct().sorted()
-        val infos = try {
-            git.checkObjects(ids)
-        } catch (e: GitRepository.GitFailure) {
-            throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
-        }
-        val missing = ids.filterNot { it in infos }
-        if (missing.isNotEmpty()) {
-            throw GradleException(
-                "HYG-06: Git could not classify ${missing.size} reachable object(s), starting with " +
-                    "`${missing.first()}`; the history scan is incomplete (TEST-UNIT-026).",
-            )
-        }
-
-        // Blob id -> the historical paths that ever carried it; and the full historical path set.
-        val pathsByBlob = linkedMapOf<String, MutableSet<String>>()
-        val historyPaths = sortedSetOf<String>()
-        reachable.forEach { entry ->
-            val path = entry.path ?: return@forEach
-            historyPaths += path
-            if (infos[entry.id]?.type == "blob") pathsByBlob.getOrPut(entry.id) { sortedSetOf() } += path
-        }
-
-        // HYG-04 — a prohibited or credential-carrier path in reachable history is a finding, and
-        // the credential class that owns the name is reported with it so both families agree.
-        historyPaths.forEach { path ->
+        // HYG-04/HYG-07 — exhaustive historical path occurrences, not one name per object.
+        history.paths.forEach { path ->
             val className = HygieneRules.classifyProhibited(path)
             val reason = when {
                 HygieneRules.isCarrier(path) -> "is a credential-carrier path"
@@ -242,24 +224,49 @@ abstract class RepositoryHygieneTask : DefaultTask() {
                 }
             }
         }
+        history.gitlinkPaths.forEach { path ->
+            log.add(
+                "HYG-07",
+                path,
+                "is a submodule/gitlink entry in reachable history; a submodule hides a second history " +
+                    "that this check does not scan",
+            )
+        }
 
-        // Deterministic blob order, one `cat-file --batch` process for the whole history. The ids
-        // are consumed in the same order the stream yields blobs, so identity needs no re-read.
-        val blobIds = pathsByBlob.keys.sorted()
-        val identity = blobIds.iterator()
-        try {
-            git.forEachBlob(blobIds) { bytes ->
-                val blobId = if (identity.hasNext()) identity.next() else null
-                val location = blobId?.let { id ->
-                    pathsByBlob[id]?.firstOrNull()?.let { "$it@" } ?: ""
-                } ?: ""
-                scanBytes(bytes, location = location, blobId = blobId, log = log)
+        val ids = try {
+            git.reachableObjectIds()
+        } catch (e: GitRepository.GitFailure) {
+            throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
+        }
+        val infos = try {
+            git.checkObjects(ids)
+        } catch (e: GitRepository.GitFailure) {
+            throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
+        }
+        val missing = ids.filterNot { it in infos }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "HYG-06: Git could not classify ${missing.size} reachable object(s), starting with " +
+                    "`${missing.first().take(12)}`; the history scan is incomplete (TEST-UNIT-026).",
+            )
+        }
+
+        // Every reachable blob is scanned, not only those a tree path names (F-01).
+        val blobIds = infos.filterValues { it.type == "blob" }.keys.sorted()
+        val consumed = try {
+            git.forEachBlob(blobIds) { blobId, bytes ->
+                val hint = history.blobPathHint[blobId]
+                scanBytes(bytes, location = hint?.let { "$it " } ?: "", blobId = blobId, log = log)
             }
         } catch (e: GitRepository.GitFailure) {
             throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
         }
 
-        return HistoryCounts(objectsConsidered = ids.size, blobsScanned = blobIds.size)
+        return HistoryCounts(
+            objectsConsidered = ids.size,
+            blobsScanned = consumed,
+            historicalPaths = history.paths.size,
+        )
     }
 
     /**
@@ -285,5 +292,9 @@ abstract class RepositoryHygieneTask : DefaultTask() {
     }
 
     /** Safe aggregate counts, never content. */
-    private data class HistoryCounts(val objectsConsidered: Int, val blobsScanned: Int)
+    private data class HistoryCounts(
+        val objectsConsidered: Int,
+        val blobsScanned: Int,
+        val historicalPaths: Int,
+    )
 }

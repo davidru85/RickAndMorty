@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.CodingErrorAction
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -13,10 +16,15 @@ import java.nio.file.Paths
  *
  * Every Git command is run with an argument array — never an interpolated shell string —
  * and every result is read as bytes, so path names containing spaces, tabs, newlines or
- * non-ASCII bytes survive unchanged. Git is invoked through [ProcessBuilder] rather than
- * Gradle's `Exec` support so that configuration cache never has to carry a captured
+ * non-ASCII characters survive unchanged. Git is invoked through [ProcessBuilder] rather
+ * than Gradle's `Exec` support so that configuration cache never has to carry a captured
  * process result, and so that a large blob stream can be read without materialising it as
  * one string.
+ *
+ * Every parser here fails **closed**: an unexpected output shape, an undecodable path, a
+ * non-zero exit with empty stderr, a truncated or over-long batch stream, or a response
+ * that does not match its request raises [GitFailure] rather than being read as an empty
+ * or partial result. A clean run therefore never means "the command produced nothing".
  *
  * The identity contract is the Git top level, not the working directory: when Git reports
  * a top level different from the Gradle root, the repository is not the one being built
@@ -31,6 +39,11 @@ internal class GitRepository private constructor(private val root: File) {
     class ExternalSymlink(val relativePath: String) : IOException()
 
     companion object {
+
+        private const val ZERO_ID = "0000000000000000000000000000000000000000"
+        private const val GITLINK_MODE = "160000"
+        private const val MAX_BLOB_BYTES = 256L * 1024 * 1024
+        private val OBJECT_TYPES = setOf("blob", "tree", "commit", "tag")
 
         fun open(projectRoot: File): GitRepository {
             val workTree = canonical(projectRoot)
@@ -89,7 +102,7 @@ internal class GitRepository private constructor(private val root: File) {
             }
         }
 
-        /** NUL-separated byte records, lossless for every legal path name. */
+        /** NUL-separated records, lossless for every legal path name. */
         private fun splitNul(bytes: ByteArray): List<ByteArray> {
             val records = mutableListOf<ByteArray>()
             var start = 0
@@ -102,6 +115,17 @@ internal class GitRepository private constructor(private val root: File) {
             if (start < bytes.size) records += bytes.copyOfRange(start, bytes.size)
             return records
         }
+
+        /** Strict UTF-8: a byte sequence Git could not have produced as a path fails closed. */
+        private fun decode(bytes: ByteArray, what: String): String = try {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+        } catch (e: CharacterCodingException) {
+            throw GitFailure("$what is not a decodable text sequence; refusing to guess")
+        }
     }
 
     /** The raw bytes a Git command produced, decoded leniently for reporting only. */
@@ -109,15 +133,18 @@ internal class GitRepository private constructor(private val root: File) {
         fun text(): String = String(bytes, Charsets.UTF_8)
     }
 
-    fun root(): File = root
-
     /**
-     * `git rev-parse --is-shallow-repository` (HYG-06). A shallow checkout hides history,
-     * so a clean result there would be a false guarantee.
+     * `git rev-parse --is-shallow-repository` (HYG-06). A shallow checkout hides history, so
+     * a clean result there would be a false guarantee. Any answer that is not exactly `true`
+     * or `false` is a failure, never silently read as "not shallow".
      */
-    fun isShallow(): Boolean =
-        git("rev-parse", "--is-shallow-repository", errorMessage = "cannot read the checkout depth")
-            .text().trim() == "true"
+    fun isShallow(): Boolean = when (
+        val value = git("rev-parse", "--is-shallow-repository", errorMessage = "cannot read the checkout depth").text().trim()
+    ) {
+        "true" -> true
+        "false" -> false
+        else -> throw GitFailure("Git returned an unexpected answer for the checkout depth; the scan cannot proceed (HYG-06)")
+    }
 
     /**
      * The commit-eligible working set: tracked files plus untracked, non-ignored files, with
@@ -134,19 +161,24 @@ internal class GitRepository private constructor(private val root: File) {
             errorMessage = "cannot enumerate the commit-eligible working set",
         ).bytes
         val paths = sortedSetOf<String>()
-        splitNul(bytes).forEach { paths += String(it, Charsets.UTF_8) }
+        splitNul(bytes).forEach { paths += decode(it, "a commit-eligible path") }
         return paths.toList()
     }
 
-    /** The index mode per path, so a symlink or gitlink is detected before its bytes are read. */
+    /** The index mode per tracked path, so a symlink or gitlink is detected before it is read. */
     fun indexModes(): Map<String, String> {
         val bytes = git("ls-files", "-s", "-z", errorMessage = "cannot read the index").bytes
         val modes = linkedMapOf<String, String>()
         splitNul(bytes).forEach { record ->
-            val text = String(record, Charsets.UTF_8)
+            val text = decode(record, "an index entry")
             val tab = text.indexOf('\t')
-            if (tab <= 0) return@forEach
-            val mode = text.substring(0, tab).trim().substringBefore(' ')
+            if (tab <= 0) throw GitFailure("the index contains a record without a path separator; refusing to skip it")
+            val header = text.substring(0, tab).trim().split(' ').filter { it.isNotEmpty() }
+            if (header.size != 3) throw GitFailure("the index contains a malformed record; refusing to skip it")
+            val mode = header[0]
+            if (mode.length != 6 || !mode.all { it in "01234567" }) {
+                throw GitFailure("the index contains an entry with an unreadable mode; refusing to skip it")
+            }
             modes[text.substring(tab + 1)] = mode
         }
         return modes
@@ -161,13 +193,14 @@ internal class GitRepository private constructor(private val root: File) {
             "-z",
             errorMessage = "cannot list tracked ignored paths",
         ).bytes
-        return splitNul(bytes).map { String(it, Charsets.UTF_8) }.sorted()
+        return splitNul(bytes).map { decode(it, "a tracked ignored path") }.sorted()
     }
 
     /**
      * Resolves candidate paths against the ignore rules exactly as Git does, tracked or not,
-     * and reports the deciding rule. `check-ignore` exits 0 when at least one path is
-     * ignored, 1 when none is, and 128 on a real error; only the last is a failure.
+     * and reports the deciding rule. `check-ignore` exits 0 when at least one path is ignored,
+     * 1 when none is, and 128 on a real error; only the last is a failure. A record set whose
+     * size is not a multiple of the four `-z -v` fields is a failure, never a partial read.
      */
     fun ignoreStatus(candidates: List<String>): Map<String, IgnoreMatch> {
         if (candidates.isEmpty()) return emptyMap()
@@ -194,14 +227,19 @@ internal class GitRepository private constructor(private val root: File) {
             val detail = String(stderr.toByteArray(), Charsets.UTF_8).trim()
             throw GitFailure("cannot evaluate the ignore rules: git exited with status $status: $detail")
         }
-        val matches = linkedMapOf<String, IgnoreMatch>()
         val records = splitNul(stdout.toByteArray())
+        if (records.size % 4 != 0) {
+            throw GitFailure("the ignore-rule output has an unexpected shape; refusing to read it partially")
+        }
+        val matches = linkedMapOf<String, IgnoreMatch>()
         var index = 0
-        while (index + 3 < records.size) {
-            matches[String(records[index + 3], Charsets.UTF_8)] = IgnoreMatch(
-                source = String(records[index], Charsets.UTF_8),
-                line = String(records[index + 1], Charsets.UTF_8).trim().toIntOrNull() ?: 0,
-                pattern = String(records[index + 2], Charsets.UTF_8),
+        while (index < records.size) {
+            val line = decode(records[index + 1], "an ignore-rule line number").trim().toIntOrNull()
+                ?: throw GitFailure("the ignore-rule output has a non-numeric line number; refusing to read it partially")
+            matches[decode(records[index + 3], "an ignore-rule path")] = IgnoreMatch(
+                source = decode(records[index], "an ignore-rule source"),
+                line = line,
+                pattern = decode(records[index + 2], "an ignore-rule pattern"),
             )
             index += 4
         }
@@ -242,11 +280,12 @@ internal class GitRepository private constructor(private val root: File) {
     }
 
     /**
-     * Every object reachable from every local ref, as (object id, path) pairs. The NUL-safe
-     * enumeration keeps a path containing a newline intact, and a record without a path is a
-     * commit, tree, tag or an already-named blob.
+     * Every object id reachable from every local ref, distinct and sorted. A direct ref to a
+     * blob makes that blob reachable with no tree path, so this list is the complete
+     * candidate set for the content scan; classification by [checkObjects] then decides which
+     * of them are blobs (F-01).
      */
-    fun reachableObjects(): List<ReachableObject> {
+    fun reachableObjectIds(): List<String> {
         val bytes = git(
             "rev-list",
             "--objects",
@@ -254,29 +293,18 @@ internal class GitRepository private constructor(private val root: File) {
             "-z",
             errorMessage = "cannot enumerate the objects reachable from local refs",
         ).bytes
-        val records = splitNul(bytes)
-        val objects = mutableListOf<ReachableObject>()
-        var index = 0
-        while (index < records.size) {
-            val id = String(records[index], Charsets.UTF_8).trim()
-            index++
-            if (id.isEmpty()) continue
-            var path: String? = null
-            if (index < records.size) {
-                val entry = String(records[index], Charsets.UTF_8)
-                if (entry.startsWith("path=")) {
-                    path = entry.removePrefix("path=")
-                    index++
-                }
-            }
-            objects += ReachableObject(id, path)
+        val ids = sortedSetOf<String>()
+        splitNul(bytes).forEach { record ->
+            val text = decode(record, "a reachable object record")
+            if (!text.startsWith("path=")) ids += text
         }
-        return objects
+        return ids.toList()
     }
 
     /**
-     * Blob types and sizes for the given object ids, in one `cat-file --batch-check`
-     * process. A missing or ambiguous object is a failure, never a silent skip.
+     * Blob types and sizes for every requested object id, in one `cat-file --batch-check`
+     * process. The response count and order must match the request exactly; a missing,
+     * extra, misordered or unparseable line is a failure, never a silent skip (F-03).
      */
     fun checkObjects(ids: List<String>): Map<String, ObjectInfo> {
         if (ids.isEmpty()) return emptyMap()
@@ -285,26 +313,91 @@ internal class GitRepository private constructor(private val root: File) {
             command = listOf("git", "cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)"),
             input = input.toByteArray(Charsets.UTF_8),
             errorMessage = "cannot classify the reachable objects",
-        ).text()
+        ).bytes
+        val lines = String(output, Charsets.UTF_8).lineSequence().filter { it.isNotBlank() }.toList()
+        if (lines.size != ids.size) {
+            throw GitFailure(
+                "Git classified ${lines.size} of ${ids.size} requested object(s); the history scan is " +
+                    "incomplete (HYG-06)",
+            )
+        }
         val infos = linkedMapOf<String, ObjectInfo>()
-        output.lineSequence().forEach { rawLine ->
-            val line = rawLine.trim()
-            if (line.isEmpty()) return@forEach
-            val parts = line.split(' ')
-            if (parts.size != 3) throw GitFailure("Git could not classify a reachable object: $line")
-            val size = parts[2].toLongOrNull() ?: throw GitFailure("Git reported a non-numeric object size: $line")
-            infos[parts[0]] = ObjectInfo(parts[1], size)
+        lines.forEachIndexed { position, raw ->
+            val parts = raw.trim().split(' ').filter { it.isNotEmpty() }
+            if (parts.size != 3) throw GitFailure("Git returned an unreadable object classification; the history scan is incomplete")
+            val id = parts[0]
+            if (id != ids[position]) throw GitFailure("the object classification does not match the request; the history scan is incomplete")
+            val type = parts[1]
+            if (type !in OBJECT_TYPES) throw GitFailure("Git returned an unknown object type during classification")
+            val size = parts[2].toLongOrNull() ?: throw GitFailure("Git returned a non-numeric object size during classification")
+            if (size < 0) throw GitFailure("Git returned a negative object size during classification")
+            infos[id] = ObjectInfo(type, size)
         }
         return infos
     }
 
     /**
-     * Streams every requested blob exactly once and hands its raw bytes to [consume].
-     * Reading through `--batch` avoids one process per blob and preserves binary content,
-     * so a credential inside a key container is inspected rather than skipped.
+     * Every historical path occurrence reachable from every local ref, with the paths that
+     * ever carried a gitlink (submodule) entry.
+     *
+     * `rev-list --objects` names an object once, so its single optional name is not an
+     * exhaustive path history: the same blob can appear at a safe path and a forbidden
+     * carrier path while being named only by the safe one. This method therefore reads a
+     * **NUL-safe raw history stream** over `--root -m --no-renames`, which yields one record
+     * per introduced, modified or deleted path per commit — including root and merge commits
+     * — with the full 40-hex modes so a gitlink is visible (F-02). Rename detection is
+     * disabled, so a rename is a delete plus an add and both paths appear.
      */
-    fun forEachBlob(ids: List<String>, consume: (ByteArray) -> Unit) {
-        if (ids.isEmpty()) return
+    fun historyScan(): HistoryScan {
+        val bytes = git(
+            "log",
+            "--all",
+            "--root",
+            "--raw",
+            "--no-renames",
+            "-m",
+            "-z",
+            "--no-abbrev",
+            "--pretty=format:%x00",
+            errorMessage = "cannot enumerate the historical paths",
+        ).bytes
+        val records = splitNul(bytes)
+        val paths = sortedSetOf<String>()
+        val gitlinkPaths = sortedSetOf<String>()
+        val blobPathHint = linkedMapOf<String, String>()
+        var index = 0
+        while (index < records.size) {
+            val header = decode(records[index], "a history-record header").trimStart('\n', '\r')
+            if (!header.startsWith(":")) {
+                index++
+                continue
+            }
+            val fields = header.substring(1).split(' ')
+            if (fields.size != 5) throw GitFailure("a history record has an unreadable header; refusing to read it partially")
+            val status = fields[4]
+            if (status.startsWith("R") || status.startsWith("C")) {
+                throw GitFailure("a rename or copy record appeared although rename detection is disabled")
+            }
+            if (index + 1 >= records.size) throw GitFailure("a history record has no path; refusing to read it partially")
+            val path = decode(records[index + 1], "a historical path")
+            index += 2
+            paths += path
+            if (fields[0] == GITLINK_MODE || fields[1] == GITLINK_MODE) gitlinkPaths += path
+            val destination = fields[3]
+            if (destination != ZERO_ID && destination.length == 40) blobPathHint.putIfAbsent(destination, path)
+        }
+        return HistoryScan(paths = paths, gitlinkPaths = gitlinkPaths, blobPathHint = blobPathHint)
+    }
+
+    /**
+     * Streams every requested blob exactly once and hands its validated bytes to [consume],
+     * then returns the number of records actually consumed. Each response must match its
+     * request by id, be a `blob`, carry a non-negative numeric size and be followed by the
+     * record separator; the process must exit zero. A short, long, mismatched or truncated
+     * stream raises [GitFailure] instead of reporting a partial scan (F-03).
+     */
+    fun forEachBlob(ids: List<String>, consume: (String, ByteArray) -> Unit): Int {
+        if (ids.isEmpty()) return 0
         val process = try {
             ProcessBuilder(listOf("git", "cat-file", "--batch")).directory(root).redirectErrorStream(false).start()
         } catch (e: IOException) {
@@ -312,27 +405,43 @@ internal class GitRepository private constructor(private val root: File) {
         }
         val stderr = ByteArrayOutputStream()
         val errThread = Thread { drain(process.errorStream, stderr) }
-        var complete = false
         errThread.start()
+        var completed = false
+        var consumed = 0
         try {
             process.outputStream.use { it.write(ids.joinToString(separator = "\n", postfix = "\n").toByteArray(Charsets.UTF_8)) }
             val source = process.inputStream
-            while (true) {
-                val header = readLine(source) ?: break
-                if (header.isEmpty()) break
-                val parts = header.split(' ')
-                if (parts.size < 3) throw GitFailure("unexpected `git cat-file --batch` header: $header")
-                val size = parts[2].toLongOrNull() ?: throw GitFailure("non-numeric blob size in header: $header")
-                consume(readExactly(source, size))
+            for (expected in ids) {
+                val header = readHeaderLine(source)
+                    ?: throw GitFailure("`git cat-file --batch` ended after $consumed of ${ids.size} blob(s); the blob scan is incomplete")
+                val parts = header.trim().split(' ').filter { it.isNotEmpty() }
+                if (parts.size != 3) throw GitFailure("`git cat-file --batch` returned an unreadable header; the blob scan is incomplete")
+                if (parts[0] != expected) throw GitFailure("`git cat-file --batch` returned a record for ${parts[0].take(12)}… while ${expected.take(12)}… was requested")
+                if (parts[1] != "blob") throw GitFailure("`git cat-file --batch` returned type `${parts[1]}` where `blob` was requested")
+                val size = parts[2].toLongOrNull() ?: throw GitFailure("`git cat-file --batch` returned a non-numeric blob size")
+                if (size < 0) throw GitFailure("`git cat-file --batch` returned a negative blob size")
+                consume(expected, readBlobBytes(source, size))
+                consumed++
             }
-            complete = true
+            if (source.read() >= 0) throw GitFailure("`git cat-file --batch` returned more records than were requested")
+            completed = true
         } finally {
-            if (!complete) process.destroyForcibly()
-            process.waitFor()
+            if (!completed) process.destroyForcibly()
+            val status = process.waitFor()
             errThread.join()
             val detail = String(stderr.toByteArray(), Charsets.UTF_8).trim()
-            if (detail.isNotEmpty()) throw GitFailure("`git cat-file --batch` reported: $detail")
+            if (completed) {
+                if (status != 0) {
+                    throw GitFailure(
+                        "`git cat-file --batch` exited with status $status" +
+                            (if (detail.isEmpty()) " and no diagnostic" else ": $detail") +
+                            "; the blob scan is incomplete (HYG-06)",
+                    )
+                }
+                if (detail.isNotEmpty()) throw GitFailure("`git cat-file --batch` reported: $detail")
+            }
         }
+        return consumed
     }
 
     private fun runWithInput(command: List<String>, input: ByteArray, errorMessage: String): ProcessResult {
@@ -358,17 +467,25 @@ internal class GitRepository private constructor(private val root: File) {
         return ProcessResult(stdout.toByteArray())
     }
 
-    private fun readLine(source: InputStream): String? {
+    /** A complete batch header line, or `null` only at a clean end of stream. */
+    private fun readHeaderLine(source: InputStream): String? {
         val line = ByteArrayOutputStream()
         while (true) {
             val next = source.read()
-            if (next < 0) return if (line.size() == 0) null else String(line.toByteArray(), Charsets.UTF_8)
+            if (next < 0) {
+                if (line.size() == 0) return null
+                throw GitFailure("`git cat-file --batch` returned a truncated header")
+            }
             if (next == '\n'.code) return String(line.toByteArray(), Charsets.UTF_8)
             line.write(next)
         }
     }
 
-    private fun readExactly(source: InputStream, size: Long): ByteArray {
+    /** Exactly `size` blob bytes, followed by the mandatory record separator. */
+    private fun readBlobBytes(source: InputStream, size: Long): ByteArray {
+        if (size > MAX_BLOB_BYTES) {
+            throw GitFailure("a reachable blob exceeds the ${MAX_BLOB_BYTES / (1024 * 1024)} MiB scan ceiling; the blob scan fails closed rather than skipping it")
+        }
         val buffer = ByteArrayOutputStream(size.toInt().coerceAtLeast(0))
         val chunk = ByteArray(64 * 1024)
         var remaining = size
@@ -378,17 +495,21 @@ internal class GitRepository private constructor(private val root: File) {
             buffer.write(chunk, 0, read)
             remaining -= read
         }
-        // `cat-file --batch` separates records with a single newline.
         val separator = source.read()
-        if (separator >= 0 && separator != '\n'.code) throw GitFailure("unexpected byte after a blob record")
+        if (separator < 0) throw GitFailure("`git cat-file --batch` omitted the record separator after a blob")
+        if (separator != '\n'.code) throw GitFailure("`git cat-file --batch` returned an unexpected byte after a blob")
         return buffer.toByteArray()
     }
 
     private fun git(vararg args: String, errorMessage: String): ProcessResult =
         run(root, listOf("git") + args, errorMessage)
 
-    /** An object reachable from a local ref, with its path when the enumeration supplied one. */
-    data class ReachableObject(val id: String, val path: String?)
+    /** Every historical path, the paths that ever held a gitlink, and a safe blob-id path hint. */
+    data class HistoryScan(
+        val paths: Set<String>,
+        val gitlinkPaths: Set<String>,
+        val blobPathHint: Map<String, String>,
+    )
 
     /** The type and size Git reports for an object. */
     data class ObjectInfo(val type: String, val size: Long)

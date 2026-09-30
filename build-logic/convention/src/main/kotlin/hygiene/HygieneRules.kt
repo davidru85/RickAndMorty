@@ -156,6 +156,21 @@ internal object HygieneRules {
     }
 
     /**
+     * The class of a **tracked** path that must not be committed (HYG-03): the build, IDE,
+     * user-state and machine-local classes of [classifyProhibited], plus signing material and
+     * every credential-carrier path. This is wider than the historical-path classifier on
+     * purpose: a tracked `.env` or key container is both a `HYG-03` violation and an owning
+     * `SEC-026-*` finding, and the rule names both.
+     */
+    fun classifyTrackedProhibited(path: String): String? {
+        classifyProhibited(path)?.let { return it }
+        val fileName = path.substringAfterLast('/')
+        if (isCarrier(path)) return "credential or signing material (`$fileName`)"
+        if (isEnvironmentFile(path)) return "an environment file (`$fileName`)"
+        return null
+    }
+
+    /**
      * Whether a path name is a carrier whose presence is itself a finding (SEC-026-09),
      * independent of whether its content is text.
      */
@@ -249,15 +264,32 @@ internal object HygieneRules {
         """(?i)\baws[_\-\s]?(?:secret|signing)[_\-\s]?access[_\-\s]?key\b\s*[:=]\s*["']?([A-Za-z0-9/+=]{40})""",
     )
 
+    /** The credential-bearing key words, shared by the assignment rules. */
+    private const val KEY_WORDS =
+        "password|passwd|secret|token|apikey|api[_-]?key|client[_-]?secret|clientsecret|" +
+            "access[_-]?key|accesskey|private[_-]?key|privatekey"
+
+    /**
+     * The number of `groupValues` entries before the value groups: the whole match plus the
+     * three key forms. `groupValues[0]` is the whole match, so `drop(VALUE_GROUP_OFFSET)`
+     * leaves the double-quoted, single-quoted and unquoted value groups.
+     */
+    private const val VALUE_GROUP_OFFSET = 4
+
     /**
      * An assignment whose key contains one of the documented words and whose value is long
-     * enough not to be prose (SEC-026-10). The value is captured only so a placeholder can be
-     * suppressed; it is never reported.
+     * enough not to be prose (SEC-026-10).
+     *
+     * The key may be unquoted (`secret = …`) or quoted in either style (`"client_secret": …`,
+     * `'apiKey' => …`), which is how JSON, TOML, YAML and properties files carry credentials.
+     * The value may be double-quoted, single-quoted (either may contain spaces) or unquoted;
+     * an unquoted value must be the last token of a configuration entry, which is what the
+     * trailing terminator lookahead checks, so ordinary prose is not read as an assignment.
+     *
+     * The value is captured only so a placeholder can be suppressed; it is never reported.
      */
     private val GENERIC_ASSIGNMENT = Regex(
-        """(?i)\b[A-Za-z0-9_.\-]*(?:password|passwd|secret|token|apikey|api[_-]?key|client[_-]?secret|""" +
-            """clientsecret|access[_-]?key|accesskey|private[_-]?key|privatekey)[A-Za-z0-9_.\-]*""" +
-            """\s*[:=]\s*["']?([^\s"'`;,]{8,})""",
+        """(?im)(?:"([A-Za-z0-9_.\-]*(?:$KEY_WORDS)[A-Za-z0-9_.\-]*)"|'([A-Za-z0-9_.\-]*(?:$KEY_WORDS)[A-Za-z0-9_.\-]*)'|([A-Za-z0-9_.\-]*(?:$KEY_WORDS)[A-Za-z0-9_.\-]*))\s*[:=]\s*(?:"([^"]{8,})"|'([^']{8,})'|([^\s"'`;,]{8,}))(?=[ \t]*(?:[,;}\]#]|//|$))""",
     )
 
     /** An HTTP(S) URL that embeds basic-auth userinfo (SEC-026-11). */
@@ -322,7 +354,10 @@ internal object HygieneRules {
         }
 
         GENERIC_ASSIGNMENT.findAll(text).forEach { match ->
-            if (!isNonValue(match.groupValues.getOrNull(1))) {
+            // Groups 1–3 are the key forms; groups 4–6 are the double-quoted, single-quoted
+            // and unquoted value forms. Only the value groups are inspected.
+            val value = match.groupValues.drop(VALUE_GROUP_OFFSET).firstOrNull { it.isNotEmpty() }
+            if (!isNonValue(value)) {
                 onFinding(RULE_GENERIC_ASSIGNMENT, lines.lineAt(match.range.first))
             }
         }
