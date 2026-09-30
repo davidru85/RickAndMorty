@@ -185,7 +185,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         val url = properties["distributionUrl"]
         if (url == null) {
             log.add(TEST_ID, location, "declares no `distributionUrl`")
-        } else if (!DISTRIBUTION.containsMatchIn(url)) {
+        } else if (GradleWrapper.version(url) == null) {
             log.add(TEST_ID, location, "`distributionUrl` is not an exact Gradle release distribution: $url")
         }
 
@@ -254,7 +254,6 @@ abstract class DependencyPinsTask : DefaultTask() {
         val EXACT_VERSION = Regex("^[0-9A-Za-z][0-9A-Za-z._-]*$")
         val DYNAMIC = Regex("\\+|latest\\.|snapshot", RegexOption.IGNORE_CASE)
         val FORBIDDEN_CHARS = listOf('[', ']', '(', ')', ',')
-        val DISTRIBUTION = Regex("gradle-[0-9]+\\.[0-9]+(\\.[0-9]+)?-(bin|all)\\.zip$")
         val SHA_256 = Regex("^[0-9a-fA-F]{64}$")
     }
 }

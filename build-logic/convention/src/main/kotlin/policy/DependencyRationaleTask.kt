@@ -174,38 +174,63 @@ abstract class DependencyRationaleTask : DefaultTask() {
     }
 
     /**
-     * R7 — a row with no catalog entries is one of the two toolchain rows, and its version
-     * is the value of its source: the Gradle wrapper's distribution version, or the daemon
+     * R7 — the two toolchain rows. Each appears exactly once, its version equals its
+     * source's value, and a missing row or a missing source value is a violation rather
+     * than a silent pass: the sources are the wrapper's `distributionUrl` and the daemon
      * JVM's `toolchainVersion`.
      */
     private fun checkToolchainRows(table: MarkdownTable.Parsed, log: ViolationLog) {
         val root = rootDirectory.get().asFile
+        val documentLocation = designDocument.get().asFile.location(root)
         val wrapper = wrapperProperties.get().asFile
         val daemon = daemonJvmProperties.get().asFile
-        val wrapperVersion = WRAPPER_VERSION.find(PropertiesFiles.read(wrapper)["distributionUrl"].orEmpty())?.groupValues?.get(1)
+        val wrapperVersion = GradleWrapper.version(PropertiesFiles.read(wrapper)["distributionUrl"])
         val daemonVersion = PropertiesFiles.read(daemon)["toolchainVersion"]
 
-        table.rows.filter { it.cells.size == HEADER.size }.forEach { row ->
-            if (row.cells[1].trim() != "—") return@forEach
-            val component = row.cells[0].trim()
-            val version = MarkdownTable.singleCodeSpan(row.cells[2])
-            val expected = when (component) {
-                "Gradle (wrapper)" -> wrapperVersion to wrapper
-                "Gradle daemon JVM" -> daemonVersion to daemon
-                else -> {
+        val rows = table.rows.filter { it.cells.size == HEADER.size && it.cells[1].trim() == "—" }
+            .groupBy { it.cells[0].trim() }
+
+        TOOLCHAIN_ROWS.forEach { (component, kind) ->
+            val expectedVersion = if (kind == WRAPPER) wrapperVersion else daemonVersion
+            val source = if (kind == WRAPPER) wrapper else daemon
+            val sourceKey = if (kind == WRAPPER) "distributionUrl" else "toolchainVersion"
+
+            val occurrences = rows[component].orEmpty()
+            if (occurrences.isEmpty()) {
+                log.add(TEST_ID, documentLocation, "the toolchain row `$component` is missing")
+            }
+            occurrences.drop(1).forEach { row ->
+                log.add(TEST_ID, "$documentLocation:${row.line}", "the toolchain row `$component` appears more than once")
+            }
+
+            if (expectedVersion == null) {
+                val reason = if (kind == WRAPPER) {
+                    "`distributionUrl` names no Gradle release"
+                } else {
+                    "declares no `$sourceKey`"
+                }
+                log.add(TEST_ID, source.location(root), reason)
+                return@forEach
+            }
+
+            occurrences.forEach { row ->
+                val version = MarkdownTable.singleCodeSpan(row.cells[2])
+                if (version != expectedVersion) {
                     log.add(
                         TEST_ID,
-                        "${designDocument.get().asFile.location(root)}:${row.line}",
-                        "a non-catalog row must be `Gradle (wrapper)` or `Gradle daemon JVM`",
+                        "$documentLocation:${row.line}",
+                        "row `$component` declares `$version`, but `${source.location(root)}` pins `$expectedVersion`",
                     )
-                    return@forEach
                 }
             }
-            if (expected.first != null && version != expected.first) {
+        }
+
+        rows.keys.filterNot { it in TOOLCHAIN_ROWS.keys }.forEach { component ->
+            rows.getValue(component).forEach { row ->
                 log.add(
                     TEST_ID,
-                    "${designDocument.get().asFile.location(root)}:${row.line}",
-                    "row `$component` declares `$version`, but `${expected.second.location(root)}` pins `${expected.first}`",
+                    "$documentLocation:${row.line}",
+                    "a non-catalog row must be `$WRAPPER_ROW` or `$DAEMON_ROW`",
                 )
             }
         }
@@ -231,7 +256,10 @@ abstract class DependencyRationaleTask : DefaultTask() {
         )
         val IDENTIFIER = Regex("DEC-\\d{3}|ADR-\\d{4}|REQ-[A-Z]+-\\d{3}|CON-\\d{3}|§\\d")
         val VERIFIED_DATE = Regex("\\d{4}-\\d{2}-\\d{2}")
-        val WRAPPER_VERSION = Regex("gradle-([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)-(?:bin|all)\\.zip$")
+        const val WRAPPER = "wrapper"
+        const val WRAPPER_ROW = "Gradle (wrapper)"
+        const val DAEMON_ROW = "Gradle daemon JVM"
+        val TOOLCHAIN_ROWS = mapOf(WRAPPER_ROW to WRAPPER, DAEMON_ROW to "daemon")
         val PLACEHOLDER = Regex("TODO|TBD|FIXME|<[^>]*>")
     }
 }
