@@ -44,6 +44,10 @@ class DependencyPolicyPlugin : Plugin<Project> {
             include("build-logic/**/src/**/*.kt")
             exclude("**/build/**", ".gradle/**", ".kotlin/**", "prompts/**")
         }
+        val catalogLookupSources = target.fileTree(target.rootDir) {
+            include("build-logic/**/src/**/*.kt")
+            exclude("build-logic/convention/src/main/kotlin/policy/**", "**/build/**")
+        }
 
         val pins = target.tasks.register<DependencyPinsTask>("verifyDependencyPins") {
             group = VERIFICATION_GROUP
@@ -71,6 +75,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
             readme.set(target.layout.projectDirectory.file("README.md"))
             readmeEs.set(target.layout.projectDirectory.file("README.es.md"))
             this.buildScripts.from(buildScripts)
+            this.catalogLookupSources.from(catalogLookupSources)
             projectDirectory.set(target.rootDir.absolutePath)
         }
 

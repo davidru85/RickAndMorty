@@ -39,6 +39,15 @@ abstract class DependencyInventoryTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val buildScripts: ConfigurableFileCollection
 
+    /**
+     * Build-logic Kotlin sources whose name lookups are refused (I8). The policy package
+     * is excluded on purpose: `CatalogCapture` must call `findLibrary` and `findPlugin` to
+     * read the catalog this task verifies.
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val catalogLookupSources: ConfigurableFileCollection
+
     @get:Input
     abstract val projectDirectory: Property<String>
 
@@ -61,11 +70,48 @@ abstract class DependencyInventoryTask : DefaultTask() {
             throw GradleException(log.render())
         }
 
+        checkBundles(snapshot, log)
+        checkCatalogLookups(log)
         checkRows(english, snapshot, references, readme.get().asFile, log)
         checkRows(spanish, snapshot, references, readmeEs.get().asFile, log)
         checkMirror(english, spanish, log)
 
         if (!log.isEmpty()) throw GradleException(log.render())
+    }
+
+    /**
+     * I7 — the catalog declares no bundle: a bundle hides which entries a module
+     * declares, so the inventory state could not be derived (TASK-015 spec §6.2, DEC-060).
+     */
+    private fun checkBundles(snapshot: CatalogSnapshot, log: ViolationLog) {
+        snapshot.bundles.forEach { bundle ->
+            log.add(
+                TEST_ID,
+                bundle,
+                "the catalog declares a bundle; bundles hide which entries a module declares, " +
+                    "so the inventory state could not be derived (TASK-015 spec §6.2, DEC-060)",
+            )
+        }
+    }
+
+    /**
+     * I8 — no build-logic Kotlin source outside the policy package looks a catalog entry
+     * up by name. Declarations belong in module build scripts (DEC-057); a name lookup
+     * hides the declaration from the inventory.
+     */
+    private fun checkCatalogLookups(log: ViolationLog) {
+        val root = java.io.File(projectDirectory.get())
+        catalogLookupSources.files.sortedBy { it.path }.forEach { file ->
+            KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
+                NAME_LOOKUP.findAll(line).forEach {
+                    log.add(
+                        TEST_ID,
+                        "${file.relativeTo(root).invariantSeparatorsPath}:${index + 1}",
+                        "looks up a catalog entry by name; declarations belong in module build scripts (DEC-057)",
+                    )
+                }
+            }
+        }
     }
 
     /** I1 — the marked table exists with the exact header, or the violation is recorded. */
@@ -183,6 +229,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
         const val END = "<!-- dependency-inventory:end -->"
         const val COLUMNS = 6
 
+        val NAME_LOOKUP = Regex("\\bfind(?:Library|Bundle|Plugin)\\s*\\(")
         val ENGLISH_HEADER = listOf("Entry", "Artifact or plugin id", "Version", "State", "Declared by", "Planned for")
         val SPANISH_HEADER = listOf("Entrada", "Artefacto o id de plugin", "Versión", "Estado", "Declarada en", "Prevista para")
     }
