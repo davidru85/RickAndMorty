@@ -337,7 +337,6 @@ Rationale for every entry — the concern it serves, the alternative it replaced
 | `libs.plugins.android.kotlin.multiplatform.library` | `com.android.kotlin.multiplatform.library` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.roborazzi` | `io.github.takahirom.roborazzi` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.plugins.ktlint` | `org.jlleitschuh.gradle.ktlint` | `14.2.0` | Pinned | — | TASK-029 |
-| `libs.plugins.detekt` | `io.gitlab.arturbosch.detekt` | `1.23.8` | Pinned | — | TASK-029 |
 | `libs.plugins.dependency.analysis` | `com.autonomousapps.dependency-analysis` | `3.19.2` | Pinned | — | TASK-017, TASK-029 |
 
 <!-- dependency-inventory:end -->

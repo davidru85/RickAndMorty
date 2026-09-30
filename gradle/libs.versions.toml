@@ -36,7 +36,6 @@ robolectric = "4.17"
 roborazzi = "1.76.0"
 # Quality tooling
 ktlint-gradle = "14.2.0"
-detekt = "1.23.8"
 dependency-analysis = "3.19.2"
 
 [libraries]
@@ -98,5 +97,4 @@ android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 # Quality tooling
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
