@@ -28,7 +28,9 @@ import org.gradle.work.DisableCachingByDefault
  * - P3 [versionlessEntriesAreBomGoverned] — a versionless library is governed by a BOM;
  * - P4 [noInlineVersionsOutsideTheCatalog] — no external version outside the catalog;
  * - P5 [wrapperIsPinned] — the wrapper names an exact Gradle release with its SHA-256;
- * - P6 [onlyTheComposeBom] — DEC-060's single BOM.
+ * - P6 [onlyTheComposeBom] — DEC-060's single BOM;
+ * - P7 [onlyTheLibsCatalog] — DEC-060's single catalog, `libs`;
+ * - P8 [kotlinDslAndNoBuildSrc] — Kotlin DSL scripts only, and no `buildSrc`.
  */
 @DisableCachingByDefault(because = "verification task with no outputs")
 abstract class DependencyPinsTask : DefaultTask() {
@@ -86,6 +88,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         ::noInlineVersionsOutsideTheCatalog,
         ::wrapperIsPinned,
         ::onlyTheComposeBom,
+        ::onlyTheLibsCatalog,
         ::kotlinDslAndNoBuildSrc,
     )
 
@@ -208,6 +211,16 @@ abstract class DependencyPinsTask : DefaultTask() {
                     "`${bom.coordinates}` is a BOM, and DEC-060 permits one BOM, `$COMPOSE_BOM_COORDINATES`",
                 )
             }
+        }
+    }
+
+    /**
+     * P7 — the only version catalog is `libs`. A second catalog would hold versions the
+     * pin, rationale and inventory checks never see (DEC-060).
+     */
+    private fun onlyTheLibsCatalog(log: ViolationLog) {
+        catalog.get().catalogNames.filter { it != LIB_CATALOG }.forEach { name ->
+            log.add(TEST_ID, name, "the build declares a second version catalog; every external version lives in `$LIB_CATALOG` (DEC-060)")
         }
     }
 

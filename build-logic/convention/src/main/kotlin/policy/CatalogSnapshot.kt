@@ -22,8 +22,11 @@ data class CatalogLibrary(
     /** `group:name`, the coordinate form `TEST-UNIT-051` compares the README against. */
     val coordinates: String get() = "$group:$name"
 
-    /** A platform BOM: its name ends in `-bom`, and it is the only versionless-entry governor (DEC-060). */
-    val isBom: Boolean get() = name.endsWith("-bom")
+    /**
+     * A platform BOM: its artifact name is `bom` or ends in `-bom`, and it is the only
+     * versionless-entry governor (DEC-060).
+     */
+    val isBom: Boolean get() = name == "bom" || name.endsWith("-bom")
 
     /** True when the entry carries no constraint at all, so its effective version is a BOM's. */
     val versionless: Boolean
@@ -62,6 +65,7 @@ data class CatalogSnapshot(
     val plugins: List<CatalogPlugin>,
     val versions: List<CatalogVersion>,
     val bundles: List<String>,
+    val catalogNames: List<String>,
 ) : Serializable {
 
     /** Every library and plugin accessor, in catalog order: libraries first, then plugins. */

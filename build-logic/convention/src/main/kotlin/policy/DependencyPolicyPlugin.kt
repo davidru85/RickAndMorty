@@ -39,9 +39,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
 
         target.pluginManager.apply("base")
 
-        val catalog = CatalogCapture.capture(
-            target.extensions.getByType<VersionCatalogsExtension>().named("libs"),
-        )
+        val catalog = CatalogCapture.capture(target.extensions.getByType<VersionCatalogsExtension>())
 
         val rootDir = target.rootDir
         val buildLogicDir = rootDir.resolve(BUILD_LOGIC)

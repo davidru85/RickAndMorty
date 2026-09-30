@@ -1,6 +1,6 @@
 package io.github.davidru85.multiverse.buildlogic.policy
 
-import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
 
 /**
  * Reads the `libs` version catalog into a serializable snapshot at **configuration**
@@ -9,8 +9,13 @@ import org.gradle.api.artifacts.VersionCatalog
  */
 internal object CatalogCapture {
 
-    /** Captures every library, plugin and `[versions]` alias with its full version constraint. */
-    fun capture(catalog: VersionCatalog): CatalogSnapshot {
+    /**
+     * Captures every library, plugin and `[versions]` alias of the `libs` catalog with its
+     * full version constraint, and records the names of every declared catalog so P7 can
+     * refuse a second one (DEC-060).
+     */
+    fun capture(catalogs: VersionCatalogsExtension): CatalogSnapshot {
+        val catalog = catalogs.named(LIB_CATALOG)
         val libraries = catalog.libraryAliases.sorted().map { alias ->
             val library = catalog.findLibrary(alias).get().get()
             val constraint = library.versionConstraint
@@ -55,6 +60,10 @@ internal object CatalogCapture {
             plugins = plugins,
             versions = versions,
             bundles = catalog.bundleAliases.sorted().map { alias -> "libs.bundles.$alias" },
+            catalogNames = catalogs.catalogNames.sorted(),
         )
     }
 }
+
+/** The only version catalog this build declares (DEC-060). */
+internal const val LIB_CATALOG = "libs"
