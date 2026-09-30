@@ -124,7 +124,7 @@ flowchart LR
 └── docs/                         # Requisitos, arquitectura, API, UI, proceso y decisiones
 ```
 
-El contenido de `docs/` se describe en la sección 12 del [`README.md`](README.md) en inglés. El build añadirá `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}`, `androidApp/`, `iosApp/`, un módulo `benchmark` y los flujos de CI. Cada módulo de feature contiene sus propias capas de Clean Architecture como paquetes.
+El contenido de `docs/` se describe en la sección 12 del [`README.md`](README.md) en inglés. El build añade `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}` y `androidApp/` (TASK-014), y añadirá `core/ios` (módulo de exportación del framework iOS, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)), `iosApp/`, un módulo `benchmark` y los flujos de CI (`CONF-41` sigue pendiente de decisión para los artefactos `benchmark` y `contract-live`). Cada módulo de feature contiene sus propias capas de Clean Architecture como paquetes.
 
 ## 6. Requisitos previos
 
@@ -157,7 +157,7 @@ El wrapper de Gradle está incluido (Gradle 9.7.0, con la suma de comprobación 
 | Compilar todos los módulos, Android y los klib de iOS | `./gradlew assemble` · `./gradlew build` | Ejecutado 2026-09-30 — correcto, sin errores de Android Lint |
 | Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` | Ejecutado 2026-09-30 — correcto sin `iosApp/` y desde un clon limpio |
 | Instalar en un dispositivo o emulador | `./gradlew :androidApp:installDebug` | No ejecutado — el APK del esqueleto aún no tiene activity (TASK-044) |
-| Compilar el framework compartido para iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` | Bloqueado — ver `CONF-40` en [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §6.3 |
+| Compilar el framework compartido para iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | No ejecutado — `:core:ios` todavía no existe (`TASK-078`); ese módulo es el único productor del framework que enlaza la app iOS (`DEC-058`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)) |
 | Compilar la app iOS | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | No ejecutado — `iosApp/` no existe (TASK-051) |
 
 ## 9. Comandos de test y calidad
