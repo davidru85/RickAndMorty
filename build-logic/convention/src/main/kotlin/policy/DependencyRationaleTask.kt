@@ -2,12 +2,13 @@ package io.github.davidru85.multiverse.buildlogic.policy
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -31,6 +32,17 @@ abstract class DependencyRationaleTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val designDocument: RegularFileProperty
 
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val wrapperProperties: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val daemonJvmProperties: RegularFileProperty
+
+    @get:Internal
+    abstract val rootDirectory: DirectoryProperty
+
     @TaskAction
     fun verify() {
         val log = ViolationLog()
@@ -44,9 +56,10 @@ abstract class DependencyRationaleTask : DefaultTask() {
         }
 
         val snapshot = catalog.get()
-        val entries = rowEntries(table, log)
+        val entries = rowEntries(table)
         checkEveryEntryHasExactlyOneRow(entries, snapshot, log)
         checkRows(table, snapshot, log)
+        checkToolchainRows(table, log)
         checkConcernSolutions(table, log)
         checkNoPlaceholders(table, log)
 
@@ -146,14 +159,13 @@ abstract class DependencyRationaleTask : DefaultTask() {
         }
     }
 
-    /** Accessor -> every row line declaring it, so a duplicate row is detectable. */
-    private fun rowEntries(table: MarkdownTable.Parsed, log: ViolationLog): Map<String, List<Int>> {
+    /**
+     * Accessor -> every row line declaring it, so a duplicate row is detectable. A row
+     * with the wrong cell count is skipped **silently**: [checkRows] alone reports it.
+     */
+    private fun rowEntries(table: MarkdownTable.Parsed): Map<String, List<Int>> {
         val entries = mutableMapOf<String, MutableList<Int>>()
-        table.rows.forEach { row ->
-            if (row.cells.size != HEADER.size) {
-                log.add(TEST_ID, "$document:${row.line}", "expected ${HEADER.size} cells, found ${row.cells.size}")
-                return@forEach
-            }
+        table.rows.filter { it.cells.size == HEADER.size }.forEach { row ->
             MarkdownTable.codeSpans(row.cells[1]).forEach { accessor ->
                 entries.getOrPut(accessor) { mutableListOf() }.add(row.line)
             }
@@ -161,7 +173,45 @@ abstract class DependencyRationaleTask : DefaultTask() {
         return entries
     }
 
-    private val document: String get() = designDocument.get().asFile.name
+    /**
+     * R7 — a row with no catalog entries is one of the two toolchain rows, and its version
+     * is the value of its source: the Gradle wrapper's distribution version, or the daemon
+     * JVM's `toolchainVersion`.
+     */
+    private fun checkToolchainRows(table: MarkdownTable.Parsed, log: ViolationLog) {
+        val root = rootDirectory.get().asFile
+        val wrapper = wrapperProperties.get().asFile
+        val daemon = daemonJvmProperties.get().asFile
+        val wrapperVersion = WRAPPER_VERSION.find(PropertiesFiles.read(wrapper)["distributionUrl"].orEmpty())?.groupValues?.get(1)
+        val daemonVersion = PropertiesFiles.read(daemon)["toolchainVersion"]
+
+        table.rows.filter { it.cells.size == HEADER.size }.forEach { row ->
+            if (row.cells[1].trim() != "—") return@forEach
+            val component = row.cells[0].trim()
+            val version = MarkdownTable.singleCodeSpan(row.cells[2])
+            val expected = when (component) {
+                "Gradle (wrapper)" -> wrapperVersion to wrapper
+                "Gradle daemon JVM" -> daemonVersion to daemon
+                else -> {
+                    log.add(
+                        TEST_ID,
+                        "${designDocument.get().asFile.location(root)}:${row.line}",
+                        "a non-catalog row must be `Gradle (wrapper)` or `Gradle daemon JVM`",
+                    )
+                    return@forEach
+                }
+            }
+            if (expected.first != null && version != expected.first) {
+                log.add(
+                    TEST_ID,
+                    "${designDocument.get().asFile.location(root)}:${row.line}",
+                    "row `$component` declares `$version`, but `${expected.second.location(root)}` pins `${expected.first}`",
+                )
+            }
+        }
+    }
+
+    private val document: String get() = designDocument.get().asFile.location(rootDirectory.get().asFile)
 
     private companion object {
         const val TEST_ID = "TEST-UNIT-013"
@@ -181,6 +231,7 @@ abstract class DependencyRationaleTask : DefaultTask() {
         )
         val IDENTIFIER = Regex("DEC-\\d{3}|ADR-\\d{4}|REQ-[A-Z]+-\\d{3}|CON-\\d{3}|§\\d")
         val VERIFIED_DATE = Regex("\\d{4}-\\d{2}-\\d{2}")
+        val WRAPPER_VERSION = Regex("gradle-([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)-(?:bin|all)\\.zip$")
         val PLACEHOLDER = Regex("TODO|TBD|FIXME|<[^>]*>")
     }
 }

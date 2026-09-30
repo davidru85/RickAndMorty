@@ -55,6 +55,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 "pinned by checksum (AC-REQ-NFR-006-1; DEC-061)."
             this.catalog.set(catalog)
             wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
+            rootDirectory.set(target.layout.projectDirectory)
             this.buildScripts.from(buildScripts)
             this.policySources.from(policySources)
         }
@@ -65,6 +66,9 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 "two solutions (AC-REQ-NFR-002-2; DEC-061)."
             this.catalog.set(catalog)
             designDocument.set(target.layout.projectDirectory.file("docs/DESIGN.md"))
+            wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
+            daemonJvmProperties.set(target.layout.projectDirectory.file("gradle/gradle-daemon-jvm.properties"))
+            rootDirectory.set(target.layout.projectDirectory)
         }
 
         val inventory = target.tasks.register<DependencyInventoryTask>("verifyDependencyInventory") {
@@ -76,7 +80,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
             readmeEs.set(target.layout.projectDirectory.file("README.es.md"))
             this.buildScripts.from(buildScripts)
             this.catalogLookupSources.from(catalogLookupSources)
-            projectDirectory.set(target.rootDir.absolutePath)
+            rootDirectory.set(target.layout.projectDirectory)
         }
 
         val aggregate = target.tasks.register("verifyDependencyPolicy") {

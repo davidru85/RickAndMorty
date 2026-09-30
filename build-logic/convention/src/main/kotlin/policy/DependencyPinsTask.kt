@@ -3,11 +3,13 @@ package io.github.davidru85.multiverse.buildlogic.policy
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -45,6 +47,9 @@ abstract class DependencyPinsTask : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val policySources: ConfigurableFileCollection
+
+    @get:Internal
+    abstract val rootDirectory: DirectoryProperty
 
     @TaskAction
     fun verify() {
@@ -138,12 +143,13 @@ abstract class DependencyPinsTask : DefaultTask() {
 
     /** P4 — no external version outside the catalog: no inline coordinate and no inline plugin version. */
     private fun noInlineVersionsOutsideTheCatalog(log: ViolationLog) {
+        val root = rootDirectory.get().asFile
         (buildScripts.files + policySources.files).sortedBy { it.path }.forEach { file ->
             // Comment-masked, line by line: string literals are kept, because coordinates
             // are string literals, and line numbers stay exact.
             KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
                 BuildScripts.inlineVersionedCoordinates(line).forEach { found ->
-                    log.add(TEST_ID, "${file.name}:${index + 1}", "declares an external version outside the catalog: $found")
+                    log.add(TEST_ID, "${file.location(root)}:${index + 1}", "declares an external version outside the catalog: $found")
                 }
             }
         }
@@ -152,18 +158,13 @@ abstract class DependencyPinsTask : DefaultTask() {
     /** P5 — the wrapper names an exact Gradle release and pins its distribution by SHA-256. */
     private fun wrapperIsPinned(log: ViolationLog) {
         val file = wrapperProperties.get().asFile
-        val location = file.name
-        val properties = file.readLines()
-            .mapNotNull { line ->
-                val separator = line.indexOf('=')
-                if (separator <= 0) null else line.take(separator).trim() to line.drop(separator + 1).trim()
-            }
-            .toMap()
+        val location = file.location(rootDirectory.get().asFile)
+        val properties = PropertiesFiles.read(file)
 
         val url = properties["distributionUrl"]
         if (url == null) {
             log.add(TEST_ID, location, "declares no `distributionUrl`")
-        } else if (!DISTRIBUTION.matches(url)) {
+        } else if (!DISTRIBUTION.containsMatchIn(url)) {
             log.add(TEST_ID, location, "`distributionUrl` is not an exact Gradle release distribution: $url")
         }
 
@@ -201,7 +202,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         val EXACT_VERSION = Regex("^[0-9A-Za-z][0-9A-Za-z._-]*$")
         val DYNAMIC = Regex("\\+|latest\\.|snapshot", RegexOption.IGNORE_CASE)
         val FORBIDDEN_CHARS = listOf('[', ']', '(', ')', ',')
-        val DISTRIBUTION = Regex(".*gradle-[0-9]+\\.[0-9]+(\\.[0-9]+)?-(bin|all)\\.zip$")
+        val DISTRIBUTION = Regex("gradle-[0-9]+\\.[0-9]+(\\.[0-9]+)?-(bin|all)\\.zip$")
         val SHA_256 = Regex("^[0-9a-fA-F]{64}$")
     }
 }

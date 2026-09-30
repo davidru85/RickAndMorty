@@ -3,11 +3,13 @@ package io.github.davidru85.multiverse.buildlogic.policy
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -48,14 +50,14 @@ abstract class DependencyInventoryTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val catalogLookupSources: ConfigurableFileCollection
 
-    @get:Input
-    abstract val projectDirectory: Property<String>
+    @get:Internal
+    abstract val rootDirectory: DirectoryProperty
 
     @TaskAction
     fun verify() {
         val log = ViolationLog()
         val snapshot = catalog.get()
-        val rootDir = java.io.File(projectDirectory.get())
+        val rootDir = rootDirectory.get().asFile
 
         val references = BuildScripts.references(
             scripts = buildScripts.files.sortedBy { it.path },
@@ -100,13 +102,13 @@ abstract class DependencyInventoryTask : DefaultTask() {
      * hides the declaration from the inventory.
      */
     private fun checkCatalogLookups(log: ViolationLog) {
-        val root = java.io.File(projectDirectory.get())
+        val root = rootDirectory.get().asFile
         catalogLookupSources.files.sortedBy { it.path }.forEach { file ->
             KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
                 NAME_LOOKUP.findAll(line).forEach {
                     log.add(
                         TEST_ID,
-                        "${file.relativeTo(root).invariantSeparatorsPath}:${index + 1}",
+                        "${file.location(root)}:${index + 1}",
                         "looks up a catalog entry by name; declarations belong in module build scripts (DEC-057)",
                     )
                 }
@@ -116,13 +118,14 @@ abstract class DependencyInventoryTask : DefaultTask() {
 
     /** I1 — the marked table exists with the exact header, or the violation is recorded. */
     private fun read(file: java.io.File, header: List<String>, log: ViolationLog): MarkdownTable.Parsed? {
+        val location = file.location(rootDirectory.get().asFile)
         val table = MarkdownTable.parse(file, BEGIN, END)
         if (table == null) {
-            log.add(TEST_ID, file.name, "the marked dependency inventory is missing (markers `$BEGIN` / `$END`)")
+            log.add(TEST_ID, location, "the marked dependency inventory is missing (markers `$BEGIN` / `$END`)")
             return null
         }
         if (table.header != header) {
-            log.add(TEST_ID, "${file.name}:${table.beginLine}", "the inventory header is not the one the policy fixes")
+            log.add(TEST_ID, "$location:${table.beginLine}", "the inventory header is not the one the policy fixes")
         }
         return table
     }
@@ -141,7 +144,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
                 log.add(TEST_ID, "${file.name}:${row.line}", "expected $COLUMNS cells, found ${row.cells.size}")
                 return@forEach
             }
-            val location = "${file.name}:${row.line}"
+            val location = "${file.location(rootDirectory.get().asFile)}:${row.line}"
             val accessor = MarkdownTable.singleCodeSpan(row.cells[0])
             if (accessor == null) {
                 log.add(TEST_ID, location, "the Entry cell does not carry exactly one accessor")
@@ -195,8 +198,9 @@ abstract class DependencyInventoryTask : DefaultTask() {
             }
         }
 
+        val location = file.location(rootDirectory.get().asFile)
         snapshot.accessors.forEach { accessor ->
-            if (accessor !in seen) log.add(TEST_ID, file.name, "`$accessor` is missing from the inventory")
+            if (accessor !in seen) log.add(TEST_ID, location, "`$accessor` is missing from the inventory")
         }
     }
 
@@ -206,7 +210,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
         val spanishRows = spanish.rows.associateBy { MarkdownTable.singleCodeSpan(it.cells.firstOrNull().orEmpty()) }
         englishRows.forEach { (accessor, englishRow) ->
             val spanishRow = spanishRows[accessor] ?: run {
-                log.add(TEST_ID, readmeEs.get().asFile.name, "`$accessor` is missing from the Spanish inventory")
+                log.add(TEST_ID, readmeEs.get().asFile.location(rootDirectory.get().asFile), "`$accessor` is missing from the Spanish inventory")
                 return@forEach
             }
             (0..4).forEach { column ->
@@ -215,7 +219,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
                 if (englishCell != spanishCell) {
                     log.add(
                         TEST_ID,
-                        "${readmeEs.get().asFile.name}:${spanishRow.line}",
+                        "${readmeEs.get().asFile.location(rootDirectory.get().asFile)}:${spanishRow.line}",
                         "column ${column + 1} is `$spanishCell`, but README.md has `$englishCell`",
                     )
                 }
