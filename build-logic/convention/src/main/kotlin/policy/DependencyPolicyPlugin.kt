@@ -82,6 +82,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
             description = "TEST-UNIT-014: every external version is an exact pin, the build is Kotlin DSL without " +
                 "`buildSrc`, and the Gradle wrapper is pinned by checksum (AC-REQ-NFR-006-1; DEC-061)."
             this.catalog.set(catalog)
+            catalogFile.set(target.layout.projectDirectory.file("gradle/libs.versions.toml"))
             wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
             rootDirectory.set(target.layout.projectDirectory)
             this.mainBuildScripts.from(mainBuildScripts)

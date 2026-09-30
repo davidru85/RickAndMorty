@@ -38,6 +38,11 @@ abstract class DependencyPinsTask : DefaultTask() {
     @get:Input
     abstract val catalog: Property<CatalogSnapshot>
 
+    /** The catalog **source**, whose shape the Gradle model cannot report (F-01). */
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val catalogFile: RegularFileProperty
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val wrapperProperties: RegularFileProperty
@@ -87,6 +92,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         ::versionlessEntriesAreBomGoverned,
         ::noInlineVersionsOutsideTheCatalog,
         ::wrapperIsPinned,
+        ::catalogSourceForms,
         ::onlyTheComposeBom,
         ::onlyTheLibsCatalog,
         ::kotlinDslAndNoBuildSrc,
@@ -186,19 +192,59 @@ abstract class DependencyPinsTask : DefaultTask() {
     }
 
     /**
-     * P6 — DEC-060's single BOM: the catalog contains at most one BOM library, and it is
-     * [COMPOSE_BOM_COORDINATES]. A second BOM would let a versionless entry resolve from
-     * a source the inventory does not name.
+     * P6 — DEC-060's single BOM, enforced as **exactly one entry**: the catalog must hold
+     * `libs.androidx.compose.bom` at [COMPOSE_BOM_COORDINATES], versioned directly, and no
+     * other BOM library. A second entry — including a second alias of the same coordinate —
+     * would let a versionless entry resolve from a source the inventory does not name.
+     *
+     * P3 stays responsible for versionless-entry governance; this rule does not repeat its
+     * messages.
      */
     private fun onlyTheComposeBom(log: ViolationLog) {
-        catalog.get().libraries.filter { it.isBom }.forEach { bom ->
-            if (bom.coordinates != COMPOSE_BOM_COORDINATES) {
+        val boms = catalog.get().libraries.filter { it.isBom }
+        val canonical = boms.firstOrNull { it.accessor == COMPOSE_BOM_ACCESSOR }
+
+        when {
+            boms.isEmpty() -> log.add(TEST_ID, COMPOSE_BOM_ACCESSOR, "the catalog declares no BOM entry; DEC-060 requires `$COMPOSE_BOM_ACCESSOR` (`$COMPOSE_BOM_COORDINATES`)")
+
+            canonical == null -> boms.forEach { bom ->
                 log.add(
                     TEST_ID,
                     bom.accessor,
-                    "`${bom.coordinates}` is a BOM, and DEC-060 permits one BOM, `$COMPOSE_BOM_COORDINATES`",
+                    "the BOM entry must be `$COMPOSE_BOM_ACCESSOR` (`$COMPOSE_BOM_COORDINATES`); DEC-060 permits exactly one BOM",
                 )
             }
+
+            canonical.coordinates != COMPOSE_BOM_COORDINATES -> log.add(
+                TEST_ID,
+                canonical.accessor,
+                "`${canonical.coordinates}` is a BOM, and DEC-060 permits one BOM, `$COMPOSE_BOM_COORDINATES`",
+            )
+        }
+
+        boms.filterNot { it.accessor == COMPOSE_BOM_ACCESSOR }.forEach { bom ->
+            log.add(
+                TEST_ID,
+                bom.accessor,
+                "declares an additional BOM entry; DEC-060 permits exactly `$COMPOSE_BOM_ACCESSOR` (`$COMPOSE_BOM_COORDINATES`)",
+            )
+        }
+    }
+
+    /**
+     * P1 (source half) — the catalog's **source shape**. Gradle resolves `{ require = "1.11.0" }`
+     * and `"1.11.0"` to the same constraint, so the model cannot tell the forbidden rich form
+     * from the permitted plain one; the source can (TASK-015 §6.2).
+     */
+    private fun catalogSourceForms(log: ViolationLog) {
+        val file = catalogFile.get().asFile
+        val location = file.location(rootDirectory.get().asFile)
+        CatalogSource.inspect(file).richForms.forEach { form ->
+            log.add(
+                TEST_ID,
+                "$location:${form.line}",
+                "`${form.alias}` uses rich version key `${form.key}`; versions must be plain exact strings or `version.ref`",
+            )
         }
     }
 
@@ -237,6 +283,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         const val TEST_ID = "TEST-UNIT-014"
 
         /** DEC-060: the Compose BOM is the only BOM in the catalog. */
+        const val COMPOSE_BOM_ACCESSOR = "libs.androidx.compose.bom"
         const val COMPOSE_BOM_COORDINATES = "androidx.compose:compose-bom"
 
         val EXACT_VERSION = Regex("^[0-9A-Za-z][0-9A-Za-z._-]*$")
