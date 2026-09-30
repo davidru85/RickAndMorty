@@ -77,7 +77,7 @@ This is the canonical permitted list (`AC-REQ-OBS-001-1`). A field outside it is
 | `correlationId` | string? | client-generated, request-scoped (§4.1 rule 5) | Anything derived from user input |
 | `outcome` | enum | `SUCCESS`, `EMPTY`, `FAILURE`, `CANCELLED` | — |
 | `errorClass` | enum | one of `OFFLINE`, `TIMEOUT`, `NOT_FOUND`, `INVALID_REQUEST`, `RATE_LIMITED`, `SERVER`, `MALFORMED_RESPONSE`, `EMPTY_BODY`, `UNKNOWN` — the REST families of `ApiFailure` (`API_SPECS.md` §6.1) | The failure message, the exception's text, a stack trace |
-| `screen` | enum | `SPLASH`, `DISCOVERY`, `CHARACTER_DETAIL`, `FAVORITES`, `EPISODES`, `LOCATIONS` | A route string carrying an id |
+| `screen` | enum | `SPLASH`, `DISCOVERY`, `CHARACTER_DETAIL`, `FAVORITES`, `EPISODES`, `SETTINGS` | A route string carrying an id |
 | `component` | enum | `RESPONSE_CACHE`, `IMAGE_CACHE`, `FAVORITES_STORE`, `PAGER` | A store path or key |
 | `retryAfterSeconds` | long? | server-advised delay, already a number | The `Retry-After` header's raw text |
 | `appVersion`, `platform`, `buildType` | string | build constants (`VERSION`, `android`/`ios`, `debug`/`release`) | — |

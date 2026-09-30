@@ -1,6 +1,6 @@
 # ADR-0001 — Module boundaries: feature-per-module with Clean Architecture inside each feature
 
-- **Status:** Accepted
+- **Status:** Accepted (module set amended by [ADR-0010](0010-settings-destination.md))
 - **Date:** 2026-09-29
 - **Last verified:** 2026-09-29
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
@@ -9,6 +9,8 @@
 - **Inputs:** `DEC-052` in [`DECISION_BOARD.md`](../DECISION_BOARD.md) (supersedes `DEC-019`); `DEC-001` (ADR-0002), `DEC-013` (ADR-0003), `DEC-015` (ADR-0006), `DEC-016` (ADR-0009), `DEC-017` (ADR-0007); `REQ-NFR-001`, `REQ-NFR-002`, `REQ-PLAT-001`, `REQ-PLAT-004`, `REQ-FUNC-001`…`REQ-FUNC-008` in [`REQUIREMENTS.md`](../REQUIREMENTS.md); [`DESIGN.md`](../DESIGN.md) §1, §3, §4; repository-owner directive of 2026-09-29 replacing the three-shared-module layout
 
 > `DEC-019` (keep the eight-module structure) is **Superseded** by `DEC-052`. The module names in this ADR are authoritative; `DESIGN.md` §3 is being realigned to them and currently still shows the superseded layout.
+
+> **Amended 2026-09-30 by [ADR-0010](0010-settings-destination.md) (`DEC-055`):** `:feature:settings` and `iosApp/Features/Settings` replace `:feature:locations` and `iosApp/Features/Locations` wherever this ADR lists them. ADR-0010 is authoritative for that one module. Every other boundary, rule and rationale below is unchanged.
 
 ## Owners
 
@@ -226,5 +228,6 @@ A feature-per-module split has one known failure mode: each feature re-implement
 ## Superseded and superseding ADRs
 
 - **Supersedes:** none. This ADR supersedes decision `DEC-019` (keep the eight-module structure), which is marked `Superseded` on the board; `DEC-019` never had a separate ADR file.
-- **Superseded by:** none as of 2026-09-29.
+- **Superseded by:** none as of 2026-09-30.
+- **Amended by:** ADR-0010 (Settings replaces Locations in the module set), 2026-09-30.
 - **Related:** ADR-0002 (platform targets and the shells), ADR-0003 (where sharing stops), ADR-0005 (response cache in `:core:data`), ADR-0006 (presentation-state ownership and DI), ADR-0007 (favorites store placement), ADR-0009 (shared pager in `:core:data`).

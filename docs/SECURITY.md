@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no code exists yet (see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -22,7 +22,7 @@ Facts that bound the whole model:
 | Accounts, sessions, credentials | none exist | `NG-002`, `REQ-SEC-002` |
 | Server component | none; the app talks directly to a public API | `API_SPECS.md` §1 |
 | Authored user content | none | `NG-001` |
-| Persisted state | favourite ID set, response cache, image cache | `REQ-SEC-003` |
+| Persisted state | favourite ID set, app preferences (Sounds flag, remote protocol), response cache, image cache | `REQ-SEC-003` |
 | Secrets | none required anywhere | `REQ-SEC-002`, DEC-035 |
 
 ### 1.1 In scope
@@ -109,9 +109,10 @@ This section lists every piece of data the app handles, including every field th
 | 1 | Character list/detail JSON | `{"id":1,"name":"Rick Sanchez",...}` | Yes (app-level response cache in `:core:data`) | Yes — received from the API over HTTPS | No — public catalogue | Cache budget with eviction; stale entries are unreachable after the 30 d offline window (DEC-012, `API_SPECS.md` §7) | Never contains images (`REQ-FUNC-021`). |
 | 2 | Episode JSON | batch `/episode/1,2,3` payloads | Yes, same response cache | Yes, received | No — public catalogue | Same as row 1 | Used only for detail enrichment (`REQ-FUNC-023`). |
 | 3 | Image bytes (portraits) | 300 × 300 JPEG | Yes (memory + disk image cache) | Yes, received from the allow-listed host | No — public asset | Image-cache eviction policy (`UI_SPEC.md` §5.2) | Separated from the JSON cache (`REQ-FUNC-021`). |
-| 4 | Favorite ID set | `{"1","42"}` | Yes — the *only* persisted user state | No, never | No — opaque public API identifiers forming a preference set, not an account | Until the user toggles it off or clears app data; survives process restart (`REQ-FUNC-006`) | Stored per §6. |
-| 5 | Search text | typed or pasted query | No | Yes — only as the `name` query parameter of an HTTPS request to the allow-listed host | Not classified as personal data, but treated as potentially identifying user input: never persisted, never logged (`REQ-SEC-005`) | Transient: in-memory for the request and its cache key; discarded with the process | Voice search is deferred (`REQ-FUNC-030`); re-classification rule in §8.3. |
-| 6 | Active status filter, page number, filter parameter *names* | `status=Alive`, `page=2` | Yes, as part of the cache key | Yes — as request parameters | No | Same as row 1 (the cache entry) | Filter *names* may be logged; values MUST NOT (`OBSERVABILITY.md` §2). |
+| 4 | Favorite ID set | `{"1","42"}` | Yes — persisted user state, with row 4a | No, never | No — opaque public API identifiers forming a preference set, not an account | Until the user toggles it off, deletes all favorites from Settings (`REQ-FUNC-035`) or clears app data; survives process restart (`REQ-FUNC-006`) | Stored per §6. |
+| 4a | App preferences | `soundsEnabled=false`, `remoteProtocol="rest"` | Yes — persisted user state | No, never; the protocol choice only selects which allow-listed endpoint is called | No — two app-behaviour flags | Until changed in Settings or app data is cleared (`REQ-FUNC-033`, `REQ-FUNC-034`) | Exactly the fields of `CONTRACTS.md` `IC-021`; stored per §6. |
+| 5 | Search text | typed or pasted query | No | Yes — only as the `name` query parameter (REST) or the `filter.name` variable (GraphQL) of an HTTPS request to the allow-listed host | Not classified as personal data, but treated as potentially identifying user input: never persisted, never logged (`REQ-SEC-005`) | Transient: in-memory for the request and its cache key; discarded with the process | Voice search is deferred (`REQ-FUNC-030`); re-classification rule in §8.3. |
+| 6 | Active status filter, page number, filter parameter *names* | `status=Alive`, `page=2` | Yes, as part of the cache key | Yes — as REST query parameters or GraphQL variables (DEC-056) | No | Same as row 1 (the cache entry) | Filter *names* may be logged; values MUST NOT (`OBSERVABILITY.md` §2). |
 | 7 | Cache metadata | cache key, expiry instant, `ETag` | Yes, alongside the cache entry | Inbound only | No | Same as the entry | Freshness uses an injected clock (DEC-018). |
 | 8 | Structured log events | see `OBSERVABILITY.md` §3 | Not persisted by the app; emitted to the platform log sink | No | No, by construction (§7) | Process lifetime for in-memory buffers; the platform log buffer is OS-managed and outside app control | Release builds emit errors only (DEC-039). |
 | 9 | Debug diagnostics snapshot | last failure class, data source, timings | In memory only, debug builds only | No | No | Process lifetime | Never on disk, never in release (§7.4). |
@@ -119,7 +120,7 @@ This section lists every piece of data the app handles, including every field th
 | 11 | Build/runtime facts | app version, platform, build type | No | No | No | — | Used in log envelopes only. |
 | 12 | Device, advertising or account identifiers | — | No | No | — | — | None are read, generated or transmitted. |
 
-**Conclusion.** The app processes **no personal data**. The only persisted data is (a) the favourite ID set and (b) caches of public API payloads and public images. Search text is transient: it is never persisted, never logged and never sent anywhere except as an API query parameter over HTTPS to the allow-listed host. Any future feature that processes personal data MUST first extend this table and obtain an accepted decision (§6.4).
+**Conclusion.** The app processes **no personal data**. The only persisted data is (a) the favourite ID set, (b) two app preferences and (c) caches of public API payloads and public images. Search text is transient: it is never persisted, never logged and never sent anywhere except as an API query parameter over HTTPS to the allow-listed host. Any future feature that processes personal data MUST first extend this table and obtain an accepted decision (§6.4).
 
 ## 4. Secret management
 
@@ -177,6 +178,7 @@ Certificate pinning is **not implemented**, and this section states why it is no
 | Store | Content | Location | Owner module |
 | --- | --- | --- | --- |
 | Favorite store | the favourite ID set (row 4 of §3) | Android app-private storage (DataStore file under the app's `filesDir`); iOS app-private container (`UserDefaults`) | `:core:data`, `expect/actual` (DEC-017, DEC-052) |
+| Preferences store | the app preferences (row 4a of §3) | same platform stores as the favorite store, with separate keys | `:core:data`, `expect/actual` (DEC-017, DEC-055) |
 | Response cache | public JSON payloads and cache metadata | Android app-private cache directory; iOS app container cache directory | `:core:data` (DEC-018) |
 | Image cache | public image bytes | the image library's memory + disk caches | Android Coil; iOS `URLCache` + `NSCache` (DEC-026) |
 | Debug diagnostics | last failure, data source, timings | process memory only, debug builds only | app shells (§7.4) |
@@ -413,4 +415,5 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-09-30 | App preferences (row 4a) added to the data inventory and stores; GraphQL variables noted as a transmission path; "Delete favorites" added to row 4 retention. | DEC-055, DEC-056 |
 | 2026-09-29 | Created: app-level threat model, trust boundaries, data classification, secret/permission policy, transport and storage policy, redaction obligations, dependency-security policy, vulnerability-reporting route and the empty `SEC-###` register. | DEC-035, DEC-036, DEC-037, DEC-039, DEC-052 |

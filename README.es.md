@@ -52,24 +52,27 @@ Solo teléfono en vertical; tablet, plegable y horizontal quedan fuera de alcanc
 | Tarjetas centradas en la imagen, con placeholder, crossfade y estado de error de marca | `REQ-FUNC-005` |
 | Favoritos almacenados localmente, con sección propia | `REQ-FUNC-006` |
 | Splash de marca cuyo portal giratorio es el indicador de carga | `REQ-FUNC-007` |
-| Cuatro destinos: Characters, Episodes, Locations, Favorites | `REQ-FUNC-008` |
+| Cuatro destinos: Characters, Episodes, Favorites, Settings | `REQ-FUNC-008` |
 | Transición de tarjeta a detalle, con alternativa si "Reducir movimiento" está activo | `REQ-FUNC-009` |
 | Estados diseñados de vacío, datos obsoletos, error y datos parciales | `REQ-FUNC-010`, `REQ-FUNC-022` |
 | Reintento y actualización manual | `REQ-FUNC-011`, `REQ-FUNC-012` |
 | Localización: inglés y español | `REQ-FUNC-013` |
 | Caché de respuestas con política de frescura explícita | `REQ-FUNC-020` |
 | Caché de imágenes en memoria y disco | `REQ-FUNC-021` |
+| Ajustes: preferencia de sonidos (desactivada por defecto), origen de datos REST API o GraphQL (REST por defecto), borrar todos los favoritos con confirmación | `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-035` |
 
 ### Aplazadas por decisión
 
 | Funcionalidad | Estado |
 | --- | --- |
 | Búsqueda por voz (voz a texto) | Aplazada — `DEC-002`. No se solicita permiso de micrófono ni de reconocimiento de voz. |
-| Pantallas reales de Episodes y Locations | Aplazada — `DEC-005`. Se entregan como pantallas provisionales diseñadas, con vuelta a Characters. |
+| Pantallas reales de Episodes | Aplazada — `DEC-005`. Episodes se entrega como pantalla provisional diseñada, con vuelta a Characters. |
+| Pantallas reales de Locations | Aplazada — `DEC-005`, `DEC-055`. Locations no está en la navegación. |
+| Efectos de sonido | Aplazada — `DEC-055`. El ajuste de sonidos se guarda, pero todavía no reproduce nada. |
 
 ### Pantallas y capturas previstas
 
-La especificación visual es [`docs/UI_SPEC.md`](docs/UI_SPEC.md). Define seis pantallas (Splash, Discovery, Detail y los estados provisionales de Episodes, Locations y Favorites) y enlaza cada componente con su nodo de Figma.
+La especificación visual es [`docs/UI_SPEC.md`](docs/UI_SPEC.md). Define siete pantallas por plataforma (Splash, Discovery, Detail, la pantalla provisional de Episodes, el estado vacío de Favorites, Settings y la confirmación de borrar favoritos) y enlaza cada componente con su nodo de Figma.
 
 Las capturas **aún no están incluidas**. Hay dos conjuntos pendientes, registrados en [`docs/BACKLOG.md`](docs/BACKLOG.md):
 
@@ -91,7 +94,7 @@ flowchart LR
     AVM --> FEAT
     IO --> FEAT
     subgraph "Módulos de feature"
-        FEAT[":feature:discovery · character-detail · favorites<br/>· episodes · locations<br/>domain + presentation + ui"]
+        FEAT[":feature:discovery · character-detail · favorites<br/>· episodes · settings<br/>domain + presentation + ui"]
     end
     FEAT --> CORE
     subgraph Core
@@ -121,7 +124,7 @@ flowchart LR
 └── docs/                         # Requisitos, arquitectura, API, UI, proceso y decisiones
 ```
 
-El contenido de `docs/` se describe en la sección 12 del [`README.md`](README.md) en inglés. El build añadirá `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,locations}`, `androidApp/`, `iosApp/`, un módulo `benchmark` y los flujos de CI. Cada módulo de feature contiene sus propias capas de Clean Architecture como paquetes.
+El contenido de `docs/` se describe en la sección 12 del [`README.md`](README.md) en inglés. El build añadirá `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}`, `androidApp/`, `iosApp/`, un módulo `benchmark` y los flujos de CI. Cada módulo de feature contiene sus propias capas de Clean Architecture como paquetes.
 
 ## 6. Requisitos previos
 
@@ -186,7 +189,7 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 ## 11. Limitaciones conocidas
 
 1. **Las imágenes son de 300 × 300.** La API publica un único avatar cuadrado por personaje y nada mayor. El hero del detalle reescala la fuente; los degradados y el fondo difuminado de iOS lo convierten en una decisión estilística y no en un defecto visible ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
-2. **Dos pestañas son provisionales.** Episodes y Locations son pantallas "próximamente"; Favorites sí es funcional (`DEC-005`).
+2. **Una pestaña es provisional.** Episodes es una pantalla "próximamente"; Favorites y Settings sí son funcionales (`DEC-005`, `DEC-055`). El ajuste de sonidos no reproduce nada hasta que se decida qué sonidos habrá.
 3. **La búsqueda por voz no está implementada.** Está aplazada y no se solicita permiso de micrófono ni de voz (`DEC-002`).
 4. **Solo teléfono en vertical.** Sin tablet, plegable ni horizontal (`DEC-027`).
 5. **Sin analítica.** No hay SDK de analítica, seguimiento ni publicidad (`REQ-OBS-003`).

@@ -101,7 +101,7 @@ Rules that hold across the protocol:
 | Element | Rule |
 | --- | --- |
 | `type` | One of the allowed types in §3.3. |
-| `scope` | The module or area the change belongs to, using the DEC-052 layout: `core-domain`, `core-data`, `core-presentation`, `core-designsystem`, `core-testing`, `feature-discovery`, `feature-character-detail`, `feature-favorites`, `feature-episodes`, `feature-locations`, `androidApp`, `iosApp`, plus the non-code scopes `docs`, `ci`, `build`, `tokens`, `copy`. |
+| `scope` | The module or area the change belongs to, using the DEC-052 layout: `core-domain`, `core-data`, `core-presentation`, `core-designsystem`, `core-testing`, `feature-discovery`, `feature-character-detail`, `feature-favorites`, `feature-episodes`, `feature-settings`, `androidApp`, `iosApp`, plus the non-code scopes `docs`, `ci`, `build`, `tokens`, `copy`. |
 | `description` | Imperative mood, no trailing period, 72 characters or fewer. |
 | `body` | What changed and why. Explain the decision when it is not obvious from the diff; do not narrate the diff. |
 | `footers` | Identifier references and the breaking-change marker: `Refs: TASK-###`, `REQ-###`, `AC-REQ-...-n`, `TEST-###`, `DEC-###`, `ADR-####`. |

@@ -41,7 +41,7 @@ This audit covers the entire documentation set of the repository after the docum
 | `docs/BACKLOG.md` | Canonical work index (`TASK-###`) | Delivery Planner | Active | Working | Continuous |
 | `docs/DECISION_BOARD.md` | Decision status index (`DEC-###`) | System Architect | Active | Normative | On decision change |
 | `docs/adr/0000-adr-template.md` | ADR template | System Architect | Active | Template | Rarely |
-| `docs/adr/0001`…`0009` | Decision rationale | System Architect | Active | Normative (immutable once accepted) | Never after acceptance |
+| `docs/adr/0001`…`0011` | Decision rationale | System Architect | Active | Normative (immutable once accepted) | Never after acceptance |
 | `docs/PROJECT_LOG.md` | Chronological record of why things changed | Documentation Maintainer | Active | Working | Per meaningful event |
 | `docs/HANDOFF.md` | Current state and next actions | Delivery Planner | Active | Working | On handover |
 | `docs/design/01-android-m3-expressive.md` | Historical Figma generation brief | UI/UX Designer | Superseded as a specification | Input | Never |
@@ -124,6 +124,8 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | `CONF-29`, `CONF-30` | Shared ViewModels invalidated much of `DESIGN.md` once bridging was decided | `DESIGN.md` §2–§6 rewritten for platform-owned state holders and the feature-per-module layout |
 | `CONF-31` | `API_SPECS.md` §7.1/§12 assumed OkHttp/Apollo | Rewritten for the Ktor stack and the app-level cache |
 | `CONF-32` | Single pinned alpha with no policy | `GUIDELINES.md` alpha-dependency rule + ADR-0008 upgrade and fallback plan |
+| `CONF-33` | 2026-09-30: the owner asked for a REST/GraphQL choice in Settings while `DECISION_BOARD.md` §3 and ADR-0004 rejected GraphQL as a shipped protocol (S2, blocked `API_SPECS.md` §2) | Escalated to the owner, who chose "both via Ktor, no Apollo": DEC-056 + ADR-0011; the §3 rejection narrowed to Apollo; ADR-0004 carries an amendment pointer |
+| `CONF-34` | 2026-09-30: the owner removed Locations from the navigation while `DEC-005`, `REQ-FUNC-008` and ADR-0001 fixed it as a destination and module (S2, blocked `UI_SPEC.md` §6.4) | Owner decision recorded as DEC-055 + ADR-0010; `DEC-005` marked amended; ADR-0001 carries an amendment pointer |
 
 ### 6.2 Open gaps
 
@@ -179,3 +181,4 @@ Next actions, in order: create the Gradle build and version catalog (`GAP-001`);
 | --- | --- | --- |
 | 2026-09-29 | Audit created. 24 documents authored, 9 amended, 2 renamed, 6 rejected; all conflicts closed and 9 gaps recorded. | DEC-021, DEC-046, DEC-052, DEC-053, DEC-054 |
 | 2026-09-29 | Post-audit reconciliation: `TEST-UNIT-014`…`016` collisions between `REQUIREMENTS.md` and `TESTING.md` resolved by allocating `TEST-UNIT-043`…`045` for `REQ-NFR-009`…`011` and `REQ-FUNC-014`; `API-CHAR-005` declared in the `API_SPECS.md` identifier index; the Paging 3 contradiction in `API_SPECS.md` §8 removed; `DESIGN.md` §6 diagram aligned to the `CONTRACTS.md` state names. | DEC-016, DEC-021, DEC-052 |
+| 2026-09-30 | `CONF-33` and `CONF-34` recorded and resolved by owner decisions DEC-055 and DEC-056; inventory extended to ADR-0011. | DEC-055, DEC-056 |

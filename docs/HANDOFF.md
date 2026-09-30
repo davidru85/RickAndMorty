@@ -1,7 +1,7 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-09-29; must be updated on every handoff (`AGENTS.md` §5.7).
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
@@ -18,7 +18,7 @@ The repository contains **documentation only**. There is no source code, no Grad
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Being established | Set authored on the branch `docs/documentation-system`; inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-054` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-056` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
@@ -47,16 +47,18 @@ No build, test, linter, formatter, benchmark or application run has ever been ex
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
-2. **Decision baseline.** `DEC-001`…`DEC-054` are recorded with category, status, urgency, blocking impact and ADR pointer, together with rejected and superseded alternatives and deferred decisions (`docs/DECISION_BOARD.md`).
+2. **Decision baseline.** `DEC-001`…`DEC-056` are recorded with category, status, urgency, blocking impact and ADR pointer, together with rejected and superseded alternatives and deferred decisions (`docs/DECISION_BOARD.md`).
 3. **Requirements with acceptance criteria.** `docs/REQUIREMENTS.md` carries stable identifiers, `AC-<REQ-ID>-n` criteria, MoSCoW priorities, scope, non-goals, deferred items, constraints, risks and assessment traceability.
 4. **Process baseline.** The TDD phase-and-commit protocol (DEC-053, amending DEC-041), the mandatory both-platform pull-request gate (DEC-054, superseding DEC-028) and the definitions of Ready and Done are decided and documented.
 5. **Figma-aligned visual baseline.** The Figma file map, tokens, per-platform component specifications, screens, motion, states, iconography and accessibility expectations are written down (`docs/UI_SPEC.md`), on the basis of the two design briefs in `docs/design/`.
+
+6. **Navigation and Settings redesign (2026-09-30).** In Figma, Settings replaced Locations as the fourth destination, and both navigation bars became reusable components: `Android/Navigation bar` `117:887` and `iOS/Glass tab item` `117:1369` inside `iOS/Glass tab bar` `102:255`. The Settings screens hold three settings built from each platform's kit: Sounds (off by default), a REST API/GraphQL choice (REST by default) and "Delete favorites", which opens a confirmation frame. Recorded as DEC-055 (ADR-0010) and DEC-056 (ADR-0011), with `REQ-FUNC-033`…`REQ-FUNC-035`, `IC-021`…`IC-023` and `TASK-074`…`TASK-077`. The Figma edits were checked by screenshot through the Figma API; the "Delete favorites" disabled state is specified in `docs/UI_SPEC.md` §8 but not drawn.
 
 ## 3. In progress and not started
 
 - **Plan:** the M0→M3 milestone plan, sequencing and quality gates live in `docs/TECHNICAL_PLAN.md`, authored in the same change as this file. Treat that document, not this summary, as the plan.
 - **Work index:** the first implementation tasks with their acceptance criteria live in `docs/BACKLOG.md`, authored in the same change. Take work from there, not from this file.
-- **Module layout changed and not yet propagated:** the repository owner replaced the eight-module layout with **feature-per-module plus Clean Architecture packages inside each feature** (DEC-052, superseding DEC-019). The core modules are `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem` (Android) and `:core:testing`; the feature modules are `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes` and `:feature:locations`; the app shells are `:androidApp` and the `iosApp` target with one Swift package per feature plus `iosApp/DesignSystem`. `docs/DESIGN.md` §3, `docs/CONTRACTS.md`, `AGENTS.md` §8 and the command tables in `README.md` §8–§9 were written against the previous names and are being updated in the same change; until they are, treat DEC-052 as authoritative for module names and dependency direction.
+- **Module layout changed and not yet propagated:** the repository owner replaced the eight-module layout with **feature-per-module plus Clean Architecture packages inside each feature** (DEC-052, superseding DEC-019). The core modules are `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem` (Android) and `:core:testing`; the feature modules are `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes` and `:feature:settings` (the latter replacing `:feature:locations` per DEC-055); the app shells are `:androidApp` and the `iosApp` target with one Swift package per feature plus `iosApp/DesignSystem`. `docs/DESIGN.md` §3, `docs/CONTRACTS.md`, `AGENTS.md` §8 and the command tables in `README.md` §8–§9 were written against the previous names and are being updated in the same change; until they are, treat DEC-052 as authoritative for module names and dependency direction.
 - **Not started, and named here because they block the first milestone:**
   - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
   - `.gitignore`;
@@ -87,7 +89,7 @@ Do not implement a deferred item. The authoritative lists are:
 - `docs/DECISION_BOARD.md` §4 — decisions with status `Deferred`, with the condition that reopens each one.
 - `docs/REQUIREMENTS.md` §1.3 — deferred scope items `DEF-001`…`DEF-004`, with their re-entry conditions. `docs/REQUIREMENTS.md` §14 records that nothing there is blocking.
 
-Two consequences worth knowing before planning work: voice search is deferred and no microphone or speech permission may be added (`REQ-SEC-004`); Episodes and Locations ship as placeholders (`DEC-005`).
+Two consequences worth knowing before planning work: voice search is deferred and no microphone or speech permission may be added (`REQ-SEC-004`); Episodes ships as a placeholder (`DEC-005`), and Settings replaces Locations with three real settings, including a runtime REST/GraphQL switch (`DEC-055`, `DEC-056`).
 
 ## 6. Known risks
 
