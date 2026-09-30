@@ -1,25 +1,102 @@
-# Version catalog — minimal set for the build skeleton (TASK-014).
-# Every entry is an exact version: no range, no `+`, no `latest.*`.
-# TASK-015 completes the catalog and records the per-dependency rationale.
+# Version catalog — the single source of every external version (DEC-060, TASK-015).
+# It pins the full planned dependency inventory: an entry may be pinned before the
+# task that first declares it, and README.md §15 shows which entries are declared.
+# Every entry is an exact version (no range, no `+`, no `latest.*`), its rationale
+# is a row of docs/DESIGN.md §3.5, and `./gradlew verifyDependencyPolicy` enforces
+# both (TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051; DEC-061).
 
 [versions]
+# Toolchain
 kotlin = "2.4.20"
 agp = "9.3.1"
-kotlinx-serialization = "1.11.0"
 android-compileSdk = "37"
 android-targetSdk = "37"
 android-minSdk = "26"
+# Kotlin libraries
+kotlinx-serialization = "1.11.0"
+kotlinx-coroutines = "1.11.0"
+# Networking
+ktor = "3.6.0"
+okhttp = "5.5.0"
+# Dependency injection
+koin = "4.2.2"
+# AndroidX and Compose
+androidx-compose-bom = "2026.09.00"
+androidx-compose-material3 = "1.5.0-alpha29"
+androidx-activity = "1.13.0"
+androidx-lifecycle = "2.11.0"
+androidx-navigation = "2.10.2"
+androidx-core-splashscreen = "1.2.0"
+androidx-datastore = "1.2.1"
+# Images
+coil = "3.6.3"
+# Testing
+junit4 = "4.13.2"
+robolectric = "4.17"
+roborazzi = "1.76.0"
+# Quality tooling
+ktlint-gradle = "14.2.0"
+detekt = "1.23.8"
+dependency-analysis = "3.19.2"
 
 [libraries]
-# Runtime: the only library any module declares in this change (feature route types).
-kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
-# Build-logic compile-only: the Gradle plugin APIs the convention plugins compile against.
+# Toolchain — the Gradle plugin APIs the convention plugins compile against.
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+# Kotlin libraries
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+# Networking
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "okhttp" }
+# Dependency injection
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+# AndroidX and Compose
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidx-compose-bom" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-animation = { module = "androidx.compose.animation:animation" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-compose-material3" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
+# Images
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+# Testing
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
 
 [plugins]
+# Toolchain
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+# Testing
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+# Quality tooling
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
