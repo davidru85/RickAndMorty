@@ -24,7 +24,7 @@ This file applies to every agent, human-supervised or autonomous, working in thi
 | Verification | Tests plus measurable performance evidence — DEC-029, DEC-033 |
 | Emphasis | Code and architecture quality; interview discussion centres on it (`assessment.md` l.8) — DEC-003 |
 
-**Current repository state:** the Gradle/KMP build skeleton (TASK-014, merged in PR #6 on 2026-09-30) and the five feature route declarations exist, `.gitignore` is tracked, and the version catalog pins the full planned dependency inventory with its policy checks in `check` (TASK-015, in review); no feature behaviour, no product tests, no CI and no `VERSION` exist yet. Documentation describes the **target** state and is updated in the same change that ships a feature (DEC-046). Never claim that unbuilt code works.
+**Current repository state:** the Gradle/KMP build skeleton (TASK-014, merged in PR #6 on 2026-09-30) and the five feature route declarations exist, `.gitignore` is tracked, and the version catalog pins the full planned dependency inventory with its policy checks in `check` (TASK-015, merged in PR #10 on 2026-09-30); no feature behaviour, no product tests, no CI and no `VERSION` exist yet. Documentation describes the **target** state and is updated in the same change that ships a feature (DEC-046). Never claim that unbuilt code works.
 
 Agent writes stay limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md` except where the owner grants an explicit, task-scoped authorization (§4.3, TASK-014 OD-1).
 
