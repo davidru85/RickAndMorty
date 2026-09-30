@@ -203,7 +203,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 | --- | --- | --- |
 | API base URL | `https://rickandmortyapi.com/api/` | Build constant; not discovered at runtime |
 | App version | Single `VERSION` source feeding `versionName` and `CFBundleShortVersionString` | `DEC-043` |
-| Remote protocol | REST. GraphQL is documented as the alternative, not shipped | `DEC-011`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
+| Remote protocol | Both ship and the user picks in Settings: REST API (default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Cache freshness | 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback | `DEC-012` |
 | Release mechanism | Tag `vMAJOR.MINOR.PATCH`, GitHub Release with the APK attached | `DEC-043` |
 

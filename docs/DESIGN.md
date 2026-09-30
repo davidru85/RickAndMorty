@@ -67,9 +67,12 @@ flowchart LR
         UC[Use cases] --> RI[[Repository interfaces]]
     end
     subgraph Data
-        Repo[Repository impls] --> Remote[REST adapter]
+        Repo[Repository impls] --> Sel[Protocol selector<br/>per request]
+        Sel --> Rest[REST adapter]
+        Sel --> Gql[GraphQL adapter]
         Repo --> Cache[Response cache]
         Repo --> Local[Favorites store]
+        Repo --> Prefs[Settings store]
     end
     VM --> UC
     Repo -. implements .-> RI
@@ -92,7 +95,7 @@ The split between shared and native code:
 - **Native per platform:** UI, design system, navigation, image loading and portrait colour extraction (these depend on platform bitmaps and toolkits).
 - **Android stays unblocked:** Android ships alone by building the `:core:*` modules, the Android-side `:feature:*` modules and `:androidApp`. The iOS app is additive (DEC-040, `REQ-PLAT-004`).
 
-**Networking impact (resolved).** The shared data layer uses **Ktor client + kotlinx.serialization**, with the OkHttp engine on Android and the Darwin engine on iOS (DEC-011, [`adr/0004-rest-client.md`](adr/0004-rest-client.md)). Retrofit/OkHttp and Apollo are retired; `API_SPECS.md` §7 and §14 are written against Ktor. The adapter sits behind `CharacterRemoteDataSource`, so the engine choice stays local to `:core:data`.
+**Networking impact (resolved).** The shared data layer uses **Ktor client + kotlinx.serialization**, with the OkHttp engine on Android and the Darwin engine on iOS (DEC-011, [`adr/0004-rest-client.md`](adr/0004-rest-client.md)). Retrofit/OkHttp and Apollo are retired; `API_SPECS.md` §7 and §14 are written against Ktor. Both adapters — `RestCharacterRemoteDataSource` and `GraphQlCharacterRemoteDataSource` — sit behind `CharacterRemoteDataSource`, and the repository resolves one per request from the stored settings, so the engine choice and the protocol choice both stay local to `:core:data` (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)).
 
 ## 3. Module boundaries
 
@@ -300,6 +303,16 @@ Both designs add a Favorite action (Android extended FAB, iOS prominent glass bu
 
 Preferences (Sounds, remote protocol) are exposed by `AppSettingsRepository` in `:core:domain` and persisted by an `expect/actual` store in `:core:data`. On each platform it reuses the store technology favorites already use (DataStore on Android, `UserDefaults` on iOS; DEC-017), so no dependency is added (DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)). `:core:data` reads the protocol preference to choose the remote data source per request (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)). The store holds only the keys `CONTRACTS.md` `IC-021` names, and nothing personal (`REQ-SEC-003`).
 
+`:core:data` therefore holds three data sources, each with one responsibility, and no fourth is added for a concern that already has one (`REQ-NFR-002`). Only `:core:data` implements a data layer: a feature module consumes `:core:domain` contracts and declares no data source of its own (`adr/0001-module-boundaries.md`).
+
+| Data source | Contract | Responsibility | Selected by |
+| --- | --- | --- | --- |
+| `RestCharacterRemoteDataSource` | `IC-011` | Character list, detail and episode batch over `GET /api/...` | `remoteProtocol == Rest` (default) |
+| `GraphQlCharacterRemoteDataSource` | `IC-011` | The same domain results over `POST /graphql` with the checked-in operations | `remoteProtocol == GraphQl` |
+| `AppSettingsLocalDataSource` | `IC-022` | Persists the Settings values, including the choice that selects the two adapters above | n/a — it is the store, not a selectable source |
+
+The two remote sources return equal domain values for the same logical request; a protocol switch is an identity change for the pager and the cache, never a mixed-protocol page (`AC-REQ-FUNC-034-2`, `AC-REQ-FUNC-034-4`).
+
 ## 5. Dependency injection
 
 - **Framework:** Koin 4.2.2, runtime DSL (DEC-014, [`adr/0006-presentation-state.md`](adr/0006-presentation-state.md)). Koin is multiplatform, so one graph serves Android and iOS; Hilt is Android-only and cannot provide the shared graph (rejected), and the Koin compiler plugin is not used.
@@ -349,11 +362,17 @@ classDiagram
 
     class CharacterRepositoryImpl
     class FavoritesRepositoryImpl
+    class AppSettingsRepositoryImpl
 
     class CharacterRemoteDataSource {
         <<interface>>
     }
     class RestCharacterRemoteDataSource
+    class GraphQlCharacterRemoteDataSource
+    class AppSettingsRepository {
+        <<interface>>
+    }
+    class AppSettingsLocalDataSource
     class FavoritesLocalDataSource
 
     class CharacterAccentResolver {
@@ -375,7 +394,11 @@ classDiagram
     FavoritesRepositoryImpl ..|> FavoritesRepository
     CharacterRepositoryImpl --> CharacterRemoteDataSource
     RestCharacterRemoteDataSource ..|> CharacterRemoteDataSource
+    GraphQlCharacterRemoteDataSource ..|> CharacterRemoteDataSource
+    CharacterRepositoryImpl ..> AppSettingsRepository : reads remoteProtocol
     FavoritesRepositoryImpl --> FavoritesLocalDataSource
+    AppSettingsRepositoryImpl ..|> AppSettingsRepository
+    AppSettingsRepositoryImpl --> AppSettingsLocalDataSource
 ```
 
 `CharacterAccentResolver` is Android-only (`:feature:discovery`, Android UI source set). It is injected into the Compose screen, not into a state holder, because it depends on the image pipeline.
@@ -418,7 +441,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | D5 | Pager | Custom shared pager — DEC-016, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md) |
 | — | Module structure | Feature-per-module with Clean Architecture per feature — DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) |
 | — | Settings destination and preferences store | `:feature:settings` replaces `:feature:locations`; preferences in `:core:domain`/`:core:data` — DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md) |
-| — | Remote protocol | REST and GraphQL both ship, user-selectable, through the one Ktor client — DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md) |
+| — | Remote protocol | REST and GraphQL both ship as `IC-011` data sources, user-selectable, through the one Ktor client; the settings store (`IC-022`) holds the choice and selects one per request — DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md) |
 
 ## 10. Change log
 
@@ -426,3 +449,4 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | --- | --- | --- |
 | 2026-09-29 | Restructured to feature-per-module with Clean Architecture inside each feature module; platform floors, Ktor, Koin, favorites and pager questions resolved into decisions; failure chain delegated to `ERROR_FLOW.md`; system overview added. | DEC-011…DEC-021, DEC-052 |
 | 2026-09-30 | `:feature:settings` replaces `:feature:locations`; navigation order Characters · Episodes · Favorites · Settings; §4.6 app settings added; `:core:data` carries both remote protocols. | DEC-055, DEC-056 |
+| 2026-09-30 | Data-source inventory made explicit: §1 and §2 show the per-request protocol selector over the two `IC-011` adapters; §4.6 adds the three-data-source table including the `IC-022` settings store; §6 class diagram gains the GraphQL adapter and the settings store. | DEC-056, DEC-055 |

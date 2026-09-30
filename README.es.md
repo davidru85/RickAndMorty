@@ -182,7 +182,7 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 | --- | --- | --- |
 | URL base de la API | `https://rickandmortyapi.com/api/` | Constante de compilación; no se descubre en tiempo de ejecución |
 | Versión de la app | Un único `VERSION` que alimenta `versionName` y `CFBundleShortVersionString` | `DEC-043` |
-| Protocolo remoto | REST. GraphQL se documenta como alternativa, no se entrega | `DEC-011`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
+| Protocolo remoto | Ambos se entregan y el usuario elige en Ajustes: REST API (por defecto) o GraphQL, con el mismo cliente Ktor | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Frescura de caché | 24 h fresco, 7 d revalidación en segundo plano, 30 d en modo offline | `DEC-012` |
 | Publicación | Etiqueta `vMAJOR.MINOR.PATCH`, GitHub Release con el APK adjunto | `DEC-043` |
 

@@ -43,6 +43,16 @@ The app ships **both protocols**, and the user chooses between them in Settings.
 
 Both protocols go through one networking stack: the single Ktor client, with hand-written GraphQL documents and kotlinx.serialization envelopes, and no Apollo (ADR-0004). They sit behind the same repository interface as two implementations of `CONTRACTS.md` `IC-011`, selected per request from the user's choice. The whole app uses one protocol at a time. Do not mix REST and GraphQL per screen, because that mixes cache entries, mapping and error handling within one screen. Cache entries of the two protocols are kept apart by the `protocol` key component (§7.2, ADR-0005).
 
+**Data-source inventory (`:core:data`).** There are exactly three data sources, each with one responsibility; no fourth is added while a concern already has one (`REQ-NFR-002`):
+
+| Data source | Contract | Wire surface | Role |
+| --- | --- | --- | --- |
+| `RestCharacterRemoteDataSource` | `IC-011` | `GET https://rickandmortyapi.com/api/...` | Shipped protocol and **default** selection; serves the list, the detail and the episode batch |
+| `GraphQlCharacterRemoteDataSource` | `IC-011` | `POST https://rickandmortyapi.com/graphql` | The user-selected alternative; same domain results through §5.5 |
+| `AppSettingsLocalDataSource` | `IC-022` | None (DataStore on Android, `UserDefaults` on iOS) | Persists the Settings values the user configures on the Settings screen, including the REST/GraphQL choice that selects between the two rows above |
+
+**Selection.** `AppSettingsLocalDataSource` feeds `AppSettings`, exposed by `IC-021`'s `AppSettingsRepository` in `:core:domain`. On every request, the repository reads the current `remoteProtocol` from that repository and dispatches to the matching `IC-011` implementation, so the Settings choice takes effect on the next remote call without a restart (`REQ-FUNC-034`, ADR-0011). The store itself speaks no protocol; it is a data source only in the persistence sense.
+
 | Concern | REST | GraphQL |
 | --- | --- | --- |
 | Endpoint | `/api/...` | `/graphql` |
@@ -804,3 +814,4 @@ Any change to the selected protocol, required fields, caching policy or error se
 | --- | --- | --- |
 | 2026-09-29 | Scope widened from "Android character review app" to the two-platform KMP client. §7.1 rewritten from an OkHttp disk cache to the app-level cache with explicit freshness, keying and the `404` `no-store` requirement. §9 rate-limit-header claim corrected against the live probe. §11 traceability re-pointed at stable requirement ids. §12 open decisions replaced by the resolved-decision table. §13 contract identifier index added. | DEC-011, DEC-012, DEC-018, DEC-052 |
 | 2026-09-30 | GraphQL moves from documented alternative to shipped, user-selectable protocol through Ktor; §2, §7.2 and §14 updated. | DEC-056 |
+| 2026-09-30 | §2 states the three-data-source inventory (`RestCharacterRemoteDataSource`, `GraphQlCharacterRemoteDataSource`, `AppSettingsLocalDataSource`) and the per-request selection through `IC-021`. | DEC-055, DEC-056 |
