@@ -66,9 +66,10 @@ class DependencyPolicyPlugin : Plugin<Project> {
             exclude(*BUILD_STATE_EXCLUDES, POLICY_PACKAGE_GLOB)
         }
 
-        // File name -> project path, computed from the build model for the main build.
-        val projectPaths = projectBuildFiles.associate { file ->
-            file.relativeTo(rootDir).invariantSeparatorsPath to projectPathOf(file, rootDir)
+        // Root-relative build-file path -> project path, taken from `Project.path` so a
+        // `projectDir` remap cannot change a project's identity (F-05).
+        val projectPaths = target.allprojects.associate { project ->
+            project.buildFile.relativeTo(rootDir).invariantSeparatorsPath to project.path
         }
 
         // Paths that must not exist. They are declared even while absent, so creating one
@@ -122,7 +123,6 @@ class DependencyPolicyPlugin : Plugin<Project> {
             this.buildScripts.from(mainBuildScripts, buildLogicScripts)
             this.catalogLookupSources.from(catalogLookupSources)
             this.projectPaths.set(projectPaths)
-            this.projectPathsByFile.set(projectPaths.entries.associate { (path, project) -> rootDir.resolve(path).absolutePath to project })
             rootDirectory.set(target.layout.projectDirectory)
         }
 
@@ -134,17 +134,6 @@ class DependencyPolicyPlugin : Plugin<Project> {
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
-    }
-
-    /**
-     * The project path of a project's own build file: the root project is `:`, and
-     * `<dir>/build.gradle.kts` is `:` plus `<dir>` with `/` replaced by `:`.
-     */
-    private fun projectPathOf(file: java.io.File, rootDir: java.io.File): String {
-        val relative = file.relativeTo(rootDir).invariantSeparatorsPath
-        val dir = relative.removeSuffix("/${file.name}")
-        if (dir == relative || dir.isEmpty()) return ":"
-        return ":$dir".replace('/', ':')
     }
 
     private companion object {

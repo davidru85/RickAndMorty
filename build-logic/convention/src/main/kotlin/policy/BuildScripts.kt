@@ -28,12 +28,13 @@ internal object BuildScripts {
     fun references(
         scripts: List<File>,
         accessors: Set<String>,
+        rootDir: File,
         projectPaths: Map<String, String>,
     ): Map<String, List<String>> {
         val references = mutableMapOf<String, MutableSet<String>>()
         scripts.forEach { script ->
-            val projectPath = projectPaths[script.absolutePath]
-                ?: buildLogicProjectPath(script)
+            val projectPath = projectPaths[script.relativeTo(rootDir).invariantSeparatorsPath]
+                ?: buildLogicProjectPath(script, rootDir)
                 ?: return@forEach
             val code = KotlinSourceMask.mask(script.readText(), maskStrings = true)
             CHAIN.findAll(code).forEach { match ->
@@ -58,10 +59,12 @@ internal object BuildScripts {
      * and `build-logic/settings.gradle.kts` -> `:build-logic`. Returns `null` for a script
      * outside the included build (those come from [references]'s project-path map).
      */
-    private fun buildLogicProjectPath(script: File): String? {
-        val parts = script.invariantSeparatorsPath.split('/')
+    private fun buildLogicProjectPath(script: File, rootDir: File): String? {
+        val parts = script.relativeTo(rootDir).invariantSeparatorsPath.split('/')
         val index = parts.indexOfLast { it == "build-logic" }
         if (index < 0) return null
+        // A layout mapping, not a build-model identity: `allprojects` of the main build does
+        // not expose included-build `Project` objects.
         val dirs = parts.subList(index, parts.size - 1)
         return dirs.joinToString(separator = ":", prefix = ":")
     }

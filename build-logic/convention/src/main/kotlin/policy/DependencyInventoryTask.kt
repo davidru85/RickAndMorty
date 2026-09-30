@@ -51,13 +51,9 @@ abstract class DependencyInventoryTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val catalogLookupSources: ConfigurableFileCollection
 
-    /** Root-relative build-file path -> project path, computed from the build model. */
+    /** Root-relative build-file path -> project path, taken from `Project.path` (F-05). */
     @get:Input
     abstract val projectPaths: MapProperty<String, String>
-
-    /** Absolute build-file path -> project path, used while scanning. */
-    @get:Internal
-    abstract val projectPathsByFile: MapProperty<String, String>
 
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
@@ -71,7 +67,8 @@ abstract class DependencyInventoryTask : DefaultTask() {
         val references = BuildScripts.references(
             scripts = buildScripts.files.sortedBy { it.path },
             accessors = snapshot.accessors.toSet(),
-            projectPaths = projectPathsByFile.get(),
+            rootDir = rootDir,
+            projectPaths = projectPaths.get(),
         )
 
         // Every independent rule runs, even when a README table is missing: a missing
