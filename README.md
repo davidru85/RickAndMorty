@@ -271,7 +271,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
 | CI and `VERSION` | Not started — TASK-025, TASK-018 |
-| `.gitignore` | Tracked and completed by TASK-016's automated hygiene check — `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set and all reachable history; TASK-016 is In review (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036) |
+| `.gitignore` | Tracked and completed by TASK-016's automated hygiene check — `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set and all reachable history; TASK-016 is In review (issue #12, PR #13; see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036) |
 | Screenshots (Figma exports and in-app) | Not started |
 
 ## 15. Dependency inventory

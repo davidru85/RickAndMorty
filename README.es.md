@@ -239,7 +239,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Implementación | No iniciada — ver [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Catálogo de versiones | En revisión — TASK-015: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario |
 | CI y `VERSION` | No iniciado — TASK-025, TASK-018 |
-| `.gitignore` | Registrado y completado por la comprobación automática de higiene de TASK-016 — `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set y todo el historial alcanzable; TASK-016 está En revisión (ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036) |
+| `.gitignore` | Registrado y completado por la comprobación automática de higiene de TASK-016 — `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set y todo el historial alcanzable; TASK-016 está En revisión (issue #12, PR #13; ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036) |
 | Capturas (Figma y de la app) | No iniciado |
 
 ## 15. Inventario de dependencias

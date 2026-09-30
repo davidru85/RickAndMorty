@@ -11,7 +11,7 @@
 
 ## 1. Current state (2026-09-30)
 
-The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, branch `build/repository-hygiene`, in review), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
+The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, branch `build/repository-hygiene`, issue #12, PR #13, in review), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
 | Area | State | Notes |
 | --- | --- | --- |
