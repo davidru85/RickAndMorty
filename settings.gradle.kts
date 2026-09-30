@@ -35,3 +35,12 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "multiverse-explorer"
+
+// The module set of ADR-0001 as amended by ADR-0010, in the order of its table.
+include(
+    ":core:domain",
+    ":core:data",
+    ":core:presentation",
+    ":core:designsystem",
+    ":core:testing",
+)
