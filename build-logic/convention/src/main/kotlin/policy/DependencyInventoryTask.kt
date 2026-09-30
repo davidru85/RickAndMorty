@@ -5,6 +5,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -50,6 +51,14 @@ abstract class DependencyInventoryTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val catalogLookupSources: ConfigurableFileCollection
 
+    /** Root-relative build-file path -> project path, computed from the build model. */
+    @get:Input
+    abstract val projectPaths: MapProperty<String, String>
+
+    /** Absolute build-file path -> project path, used while scanning. */
+    @get:Internal
+    abstract val projectPathsByFile: MapProperty<String, String>
+
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
 
@@ -61,8 +70,8 @@ abstract class DependencyInventoryTask : DefaultTask() {
 
         val references = BuildScripts.references(
             scripts = buildScripts.files.sortedBy { it.path },
-            rootDir = rootDir,
             accessors = snapshot.accessors.toSet(),
+            projectPaths = projectPathsByFile.get(),
         )
 
         val english = read(readme.get().asFile, ENGLISH_HEADER, log) ?: run {
@@ -104,14 +113,13 @@ abstract class DependencyInventoryTask : DefaultTask() {
     private fun checkCatalogLookups(log: ViolationLog) {
         val root = rootDirectory.get().asFile
         catalogLookupSources.files.sortedBy { it.path }.forEach { file ->
-            KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
-                NAME_LOOKUP.findAll(line).forEach {
-                    log.add(
-                        TEST_ID,
-                        "${file.location(root)}:${index + 1}",
-                        "looks up a catalog entry by name; declarations belong in module build scripts (DEC-057)",
-                    )
-                }
+            val code = KotlinSourceMask.mask(file.readText(), maskStrings = true)
+            NAME_LOOKUP.findAll(code).forEach {
+                log.add(
+                    TEST_ID,
+                    "${file.location(root)}:${BuildScripts.lineOf(code, it.range.first)}",
+                    "looks up a catalog entry by name; declarations belong in module build scripts (DEC-057)",
+                )
             }
         }
     }

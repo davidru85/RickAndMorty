@@ -18,9 +18,16 @@ import org.gradle.kotlin.dsl.register
  * - `verifyDependencyInventory` — `TEST-UNIT-051` (`AC-REQ-NFR-002-1`);
  * - `verifyDependencyPolicy` — the three above, wired into the root `check`.
  *
- * The catalog, the file set and the project paths are all read at configuration time and
- * passed as `@Input`s, so every task is configuration-cache compatible and executes with
- * no `Project` access. The plugin adds no dependency of its own.
+ * The scanned file set comes from the **build model**, not from a directory walk
+ * (`D-01`): the main build's scripts are the existing settings files plus every
+ * project's own build file, and the included build `build-logic/` contributes its
+ * scripts and Kotlin sources under a fixed exclusion list. A nested checkout inside the
+ * repository therefore cannot appear in the scan, and a project path comes from the
+ * build rather than from a directory name.
+ *
+ * The catalog, the file sets and the project paths are all read at configuration time
+ * and passed as `@Input`s, so every task is configuration-cache compatible and executes
+ * with no `Project` access. The plugin adds no dependency of its own.
  */
 class DependencyPolicyPlugin : Plugin<Project> {
 
@@ -36,34 +43,60 @@ class DependencyPolicyPlugin : Plugin<Project> {
             target.extensions.getByType<VersionCatalogsExtension>().named("libs"),
         )
 
-        val buildScripts = target.fileTree(target.rootDir) {
-            include("**/*.gradle.kts")
-            exclude("**/build/**", ".gradle/**", ".kotlin/**", "prompts/**")
+        val rootDir = target.rootDir
+        val buildLogicDir = rootDir.resolve(BUILD_LOGIC)
+
+        // The main build's scripts, taken from the build model: the settings files and
+        // every declared project's own build file. A nested checkout is not a project.
+        val settingsFiles = SETTINGS_NAMES.map { rootDir.resolve(it) }.filter { it.isFile }
+        val projectBuildFiles = target.allprojects.map { it.buildFile }.filter { it.isFile }
+        val mainBuildScripts = target.files(settingsFiles, projectBuildFiles)
+
+        // Build state and IDE output are never sources.
+        val buildLogicScripts = target.fileTree(buildLogicDir) {
+            include("**/*.gradle.kts", "**/*.gradle")
+            exclude(*BUILD_STATE_EXCLUDES)
         }
-        val policySources = target.fileTree(target.rootDir) {
-            include("build-logic/**/src/**/*.kt")
-            exclude("**/build/**", ".gradle/**", ".kotlin/**", "prompts/**")
+        val buildLogicSources = target.fileTree(buildLogicDir) {
+            include("**/src/**/*.kt", "**/src/**/*.gradle.kts")
+            exclude(*BUILD_STATE_EXCLUDES)
         }
-        val catalogLookupSources = target.fileTree(target.rootDir) {
-            include("build-logic/**/src/**/*.kt")
-            exclude("build-logic/convention/src/main/kotlin/policy/**", "**/build/**")
+        // The policy package is excluded from the name-lookup rule on purpose:
+        // `CatalogCapture` must read the catalog this task verifies.
+        val catalogLookupSources = target.fileTree(buildLogicDir) {
+            include("**/src/**/*.kt", "**/src/**/*.gradle.kts")
+            exclude(*BUILD_STATE_EXCLUDES, POLICY_PACKAGE_GLOB)
         }
+
+        // File name -> project path, computed from the build model for the main build.
+        val projectPaths = projectBuildFiles.associate { file ->
+            file.relativeTo(rootDir).invariantSeparatorsPath to projectPathOf(file, rootDir)
+        }
+
+        // Roots that must not exist: a Groovy settings file, and a `buildSrc` directory.
+        val legacyBuildRoots = target.files(
+            SETTINGS_NAMES.filter { it.endsWith(".gradle") }.mapNotNull { rootDir.resolve(it).takeIf { f -> f.isFile } },
+            listOfNotNull(rootDir.resolve("buildSrc").takeIf { it.exists() }),
+        )
 
         val pins = target.tasks.register<DependencyPinsTask>("verifyDependencyPins") {
             group = VERIFICATION_GROUP
-            description = "TEST-UNIT-014: every external version is an exact pin, and the Gradle wrapper is " +
-                "pinned by checksum (AC-REQ-NFR-006-1; DEC-061)."
+            description = "TEST-UNIT-014: every external version is an exact pin, the build is Kotlin DSL without " +
+                "`buildSrc`, and the Gradle wrapper is pinned by checksum (AC-REQ-NFR-006-1; DEC-061)."
             this.catalog.set(catalog)
             wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
             rootDirectory.set(target.layout.projectDirectory)
-            this.buildScripts.from(buildScripts)
-            this.policySources.from(policySources)
+            this.mainBuildScripts.from(mainBuildScripts)
+            this.buildLogicScripts.from(buildLogicScripts)
+            this.policySources.from(buildLogicSources)
+            this.projectBuildFiles.from(projectBuildFiles)
+            this.legacyBuildRoots.from(legacyBuildRoots)
         }
 
         val rationale = target.tasks.register<DependencyRationaleTask>("verifyDependencyRationale") {
             group = VERIFICATION_GROUP
-            description = "TEST-UNIT-013: every catalog entry has a named rationale and no concern has more than " +
-                "two solutions (AC-REQ-NFR-002-2; DEC-061)."
+            description = "TEST-UNIT-013: every catalog entry has a named rationale, no concern has more than two " +
+                "solutions, and the toolchain rows match their sources (AC-REQ-NFR-002-2; DEC-061)."
             this.catalog.set(catalog)
             designDocument.set(target.layout.projectDirectory.file("docs/DESIGN.md"))
             wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
@@ -78,8 +111,10 @@ class DependencyPolicyPlugin : Plugin<Project> {
             this.catalog.set(catalog)
             readme.set(target.layout.projectDirectory.file("README.md"))
             readmeEs.set(target.layout.projectDirectory.file("README.es.md"))
-            this.buildScripts.from(buildScripts)
+            this.buildScripts.from(mainBuildScripts, buildLogicScripts)
             this.catalogLookupSources.from(catalogLookupSources)
+            this.projectPaths.set(projectPaths)
+            this.projectPathsByFile.set(projectPaths.entries.associate { (path, project) -> rootDir.resolve(path).absolutePath to project })
             rootDirectory.set(target.layout.projectDirectory)
         }
 
@@ -93,7 +128,22 @@ class DependencyPolicyPlugin : Plugin<Project> {
         target.tasks.named("check").configure { dependsOn(aggregate) }
     }
 
+    /**
+     * The project path of a project's own build file: the root project is `:`, and
+     * `<dir>/build.gradle.kts` is `:` plus `<dir>` with `/` replaced by `:`.
+     */
+    private fun projectPathOf(file: java.io.File, rootDir: java.io.File): String {
+        val relative = file.relativeTo(rootDir).invariantSeparatorsPath
+        val dir = relative.removeSuffix("/${file.name}")
+        if (dir == relative || dir.isEmpty()) return ":"
+        return ":$dir".replace('/', ':')
+    }
+
     private companion object {
         const val VERIFICATION_GROUP = "verification"
+        const val BUILD_LOGIC = "build-logic"
+        const val POLICY_PACKAGE_GLOB = "**/src/main/kotlin/policy/**"
+        val SETTINGS_NAMES = listOf("settings.gradle.kts", "settings.gradle")
+        val BUILD_STATE_EXCLUDES = arrayOf("**/build/**", "**/.gradle/**", "**/.kotlin/**")
     }
 }

@@ -40,13 +40,30 @@ abstract class DependencyPinsTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val wrapperProperties: RegularFileProperty
 
+    /** The main build's scripts: the settings files and every project's build file. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val buildScripts: ConfigurableFileCollection
+    abstract val mainBuildScripts: ConfigurableFileCollection
 
+    /** The included build's scripts, `*.gradle.kts` and `*.gradle`. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val buildLogicScripts: ConfigurableFileCollection
+
+    /** The included build's Kotlin sources: `*.kt` and precompiled `*.gradle.kts`. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val policySources: ConfigurableFileCollection
+
+    /** Every project's own build file, for the Kotlin-DSL rule P8. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val projectBuildFiles: ConfigurableFileCollection
+
+    /** Roots that must not exist: a Groovy settings file, a `buildSrc` directory. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val legacyBuildRoots: ConfigurableFileCollection
 
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
@@ -69,6 +86,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         ::noInlineVersionsOutsideTheCatalog,
         ::wrapperIsPinned,
         ::onlyTheComposeBom,
+        ::kotlinDslAndNoBuildSrc,
     )
 
     /**
@@ -144,13 +162,13 @@ abstract class DependencyPinsTask : DefaultTask() {
     /** P4 — no external version outside the catalog: no inline coordinate and no inline plugin version. */
     private fun noInlineVersionsOutsideTheCatalog(log: ViolationLog) {
         val root = rootDirectory.get().asFile
-        (buildScripts.files + policySources.files).sortedBy { it.path }.forEach { file ->
-            // Comment-masked, line by line: string literals are kept, because coordinates
-            // are string literals, and line numbers stay exact.
-            KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
-                BuildScripts.inlineVersionedCoordinates(line).forEach { found ->
-                    log.add(TEST_ID, "${file.location(root)}:${index + 1}", "declares an external version outside the catalog: $found")
-                }
+        val scanned = mainBuildScripts.files + buildLogicScripts.files + policySources.files
+        scanned.sortedBy { it.path }.forEach { file ->
+            // Comment-masked, whole file: string literals are kept, because coordinates
+            // are string literals, and a form split across lines is still one match.
+            val code = KotlinSourceMask.mask(file.readText(), maskStrings = false)
+            BuildScripts.inlineVersions(code).forEach { match ->
+                log.add(TEST_ID, "${file.location(root)}:${BuildScripts.lineOf(code, match.range.first)}", "declares an external version outside the catalog: ${match.value}")
             }
         }
     }
@@ -189,6 +207,27 @@ abstract class DependencyPinsTask : DefaultTask() {
                     bom.accessor,
                     "`${bom.coordinates}` is a BOM, and DEC-060 permits one BOM, `$COMPOSE_BOM_COORDINATES`",
                 )
+            }
+        }
+    }
+
+    /**
+     * P8 — the build is Kotlin DSL and has no `buildSrc`: P4's patterns assume Kotlin
+     * DSL, so a Groovy script, a Groovy settings file or a `buildSrc` directory would
+     * escape them (DEC-057, DEC-061).
+     */
+    private fun kotlinDslAndNoBuildSrc(log: ViolationLog) {
+        val root = rootDirectory.get().asFile
+        projectBuildFiles.files.sortedBy { it.path }.forEach { file ->
+            if (!file.name.endsWith(".gradle.kts")) {
+                log.add(TEST_ID, file.location(root), "the build must use Kotlin DSL scripts (DEC-057, DEC-061)")
+            }
+        }
+        legacyBuildRoots.files.sortedBy { it.path }.forEach { file ->
+            if (file.name == "buildSrc") {
+                log.add(TEST_ID, "buildSrc", "build logic lives in `build-logic/` (DEC-057); `buildSrc` is not scanned by the policy")
+            } else {
+                log.add(TEST_ID, file.location(root), "the build must use Kotlin DSL scripts (DEC-057, DEC-061)")
             }
         }
     }

@@ -19,11 +19,21 @@ internal object BuildScripts {
 
     private val CHAIN = Regex("\\blibs(?:\\.[A-Za-z][A-Za-z0-9]*)+")
 
-    /** Accessor -> the project paths whose build script references it, sorted. */
-    fun references(scripts: List<File>, rootDir: File, accessors: Set<String>): Map<String, List<String>> {
+    /**
+     * Accessor -> the project paths whose build script references it, sorted. The project
+     * path of a main-build script comes from the build model ([projectPaths]); the included
+     * build's scripts are mapped by directory below `build-logic/`.
+     */
+    fun references(
+        scripts: List<File>,
+        accessors: Set<String>,
+        projectPaths: Map<String, String>,
+    ): Map<String, List<String>> {
         val references = mutableMapOf<String, MutableSet<String>>()
         scripts.forEach { script ->
-            val projectPath = projectPath(script, rootDir)
+            val projectPath = projectPaths[script.absolutePath]
+                ?: buildLogicProjectPath(script)
+                ?: return@forEach
             val code = KotlinSourceMask.mask(script.readText(), maskStrings = true)
             CHAIN.findAll(code).forEach { match ->
                 val chain = match.value
@@ -41,15 +51,17 @@ internal object BuildScripts {
         accessors.filter { chain == it || chain.startsWith("$it.") }.maxByOrNull { it.length }
 
     /**
-     * The project path of the build script at [script]:
-     * the root script is `:`, and `<dir>/build.gradle.kts` is `:` plus `<dir>` with
-     * `/` replaced by `:` (`feature/discovery/build.gradle.kts` -> `:feature:discovery`).
+     * The project path of a script in the included build `build-logic/`, derived from its
+     * directory: `build-logic/convention/build.gradle.kts` -> `:build-logic:convention`,
+     * and `build-logic/settings.gradle.kts` -> `:build-logic`. Returns `null` for a script
+     * outside the included build (those come from [references]'s project-path map).
      */
-    fun projectPath(script: File, rootDir: File): String {
-        val relative = script.relativeTo(rootDir).invariantSeparatorsPath
-        val dir = relative.removeSuffix("/build.gradle.kts")
-        if (dir == "build.gradle.kts" || dir.isEmpty()) return ":"
-        return ":$dir".replace('/', ':')
+    private fun buildLogicProjectPath(script: File): String? {
+        val parts = script.invariantSeparatorsPath.split('/')
+        val index = parts.indexOfLast { it == "build-logic" }
+        if (index < 0) return null
+        val dirs = parts.subList(index, parts.size - 1)
+        return dirs.joinToString(separator = ":", prefix = ":")
     }
 
     /** One pattern that finds an external version declared outside the catalog. */
@@ -101,8 +113,21 @@ internal object BuildScripts {
     )
 
     /**
-     * Every external version declared inline in [text]. One match yields one entry.
+     * Every external version declared inline in [text], as one match per form. The scan
+     * runs over the whole text, so a form split across lines is still one match.
      */
-    fun inlineVersionedCoordinates(text: String): List<String> =
-        INLINE_VERSION_PATTERNS.flatMap { it.pattern.findAll(text).map { match -> match.value } }
+    fun inlineVersions(text: String): List<MatchResult> =
+        INLINE_VERSION_PATTERNS.flatMap { it.pattern.findAll(text) }
+
+    /** The 1-based line of a character offset, from a precomputed table of line starts. */
+    fun lineOf(text: String, offset: Int): Int = text.lineStarts().let { starts ->
+        val index = starts.binarySearch(offset)
+        (if (index >= 0) index else -index - 2) + 1
+    }
+
+    private fun String.lineStarts(): IntArray {
+        val starts = mutableListOf(0)
+        forEachIndexed { index, c -> if (c == '\n') starts += index + 1 }
+        return starts.toIntArray()
+    }
 }
