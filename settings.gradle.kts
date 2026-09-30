@@ -43,4 +43,9 @@ include(
     ":core:presentation",
     ":core:designsystem",
     ":core:testing",
+    ":feature:discovery",
+    ":feature:character-detail",
+    ":feature:favorites",
+    ":feature:episodes",
+    ":feature:settings",
 )
