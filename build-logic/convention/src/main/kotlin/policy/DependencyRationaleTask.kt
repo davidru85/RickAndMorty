@@ -47,12 +47,9 @@ abstract class DependencyRationaleTask : DefaultTask() {
     fun verify() {
         val log = ViolationLog()
         val table = MarkdownTable.parse(designDocument.get().asFile, BEGIN, END)
-        if (table == null) {
-            log.add(TEST_ID, document, "the marked rationale table is missing (markers `$BEGIN` / `$END`)")
-            throw GradleException(log.render())
-        }
-        if (table.header != HEADER) {
-            log.add(TEST_ID, "$document:${table.beginLine}", "the table header is not the one the policy fixes")
+        table.problems.forEach { problem -> log.add(TEST_ID, "$document:${problem.line}", problem.reason) }
+        if (table.header != HEADER && table.problems.isEmpty()) {
+            log.add(TEST_ID, "$document:${table.rows.firstOrNull()?.let { it.line - 2 } ?: 1}", "the table header is not the one the policy fixes")
         }
 
         val snapshot = catalog.get()
@@ -82,7 +79,7 @@ abstract class DependencyRationaleTask : DefaultTask() {
     }
 
     /** R3, R4 and R6 — cell shape, effective version and placeholders, row by row. */
-    private fun checkRows(table: MarkdownTable.Parsed, snapshot: CatalogSnapshot, log: ViolationLog) {
+    private fun checkRows(table: MarkdownTable.Result, snapshot: CatalogSnapshot, log: ViolationLog) {
         table.rows.forEach { row ->
             if (row.cells.size != HEADER.size) {
                 log.add(TEST_ID, "$document:${row.line}", "expected ${HEADER.size} cells, found ${row.cells.size}")
@@ -117,7 +114,13 @@ abstract class DependencyRationaleTask : DefaultTask() {
             }
             if (entriesCell.trim() == "—") return@forEach
 
-            MarkdownTable.codeSpans(entriesCell).forEach { accessor ->
+            val listedAccessors = MarkdownTable.codeSpanList(entriesCell)
+            if (listedAccessors == null) {
+                log.add(TEST_ID, "$document:${row.line}", "Catalog entries must be `—` or exactly a comma-separated list of accessor code spans; found `$entriesCell`")
+                return@forEach
+            }
+
+            listedAccessors.forEach { accessor ->
                 if (accessor !in snapshot.accessors) {
                     // R2 alone reports an unknown accessor; this rule would duplicate it.
                     return@forEach
@@ -134,7 +137,7 @@ abstract class DependencyRationaleTask : DefaultTask() {
     }
 
     /** R5 — at most two distinct solutions per concern (`REQ-NFR-002`). */
-    private fun checkConcernSolutions(table: MarkdownTable.Parsed, log: ViolationLog) {
+    private fun checkConcernSolutions(table: MarkdownTable.Result, log: ViolationLog) {
         table.rows
             .filter { it.cells.size == HEADER.size }
             .groupBy { it.cells[3].trim() }
@@ -151,7 +154,7 @@ abstract class DependencyRationaleTask : DefaultTask() {
     }
 
     /** R6 — no unresolved placeholder in any cell. */
-    private fun checkNoPlaceholders(table: MarkdownTable.Parsed, log: ViolationLog) {
+    private fun checkNoPlaceholders(table: MarkdownTable.Result, log: ViolationLog) {
         table.rows.forEach { row ->
             row.cells.forEach { cell ->
                 PLACEHOLDER.findAll(cell).forEach { match ->
@@ -165,12 +168,16 @@ abstract class DependencyRationaleTask : DefaultTask() {
      * Accessor -> every row line declaring it, so a duplicate row is detectable. A row
      * with the wrong cell count is skipped **silently**: [checkRows] alone reports it.
      */
-    private fun rowEntries(table: MarkdownTable.Parsed): Map<String, List<Int>> {
+    private fun rowEntries(table: MarkdownTable.Result): Map<String, List<Int>> {
         val entries = mutableMapOf<String, MutableList<Int>>()
         table.rows.filter { it.cells.size == HEADER.size }.forEach { row ->
-            MarkdownTable.codeSpans(row.cells[1]).forEach { accessor ->
-                entries.getOrPut(accessor) { mutableListOf() }.add(row.line)
+            val cell = row.cells[1].trim()
+            val spans = MarkdownTable.codeSpanList(cell)
+            if (spans == null) {
+                // R3's cell-shape half reports a malformed Catalog-entries cell; R2 counts rows.
+                return@forEach
             }
+            spans.forEach { accessor -> entries.getOrPut(accessor) { mutableListOf() }.add(row.line) }
         }
         return entries
     }
@@ -181,7 +188,7 @@ abstract class DependencyRationaleTask : DefaultTask() {
      * than a silent pass: the sources are the wrapper's `distributionUrl` and the daemon
      * JVM's `toolchainVersion`.
      */
-    private fun checkToolchainRows(table: MarkdownTable.Parsed, log: ViolationLog) {
+    private fun checkToolchainRows(table: MarkdownTable.Result, log: ViolationLog) {
         val root = rootDirectory.get().asFile
         val documentLocation = designDocument.get().asFile.location(root)
         val wrapper = wrapperProperties.get().asFile

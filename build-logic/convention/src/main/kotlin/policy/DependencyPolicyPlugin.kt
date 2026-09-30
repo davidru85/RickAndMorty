@@ -118,6 +118,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
             description = "TEST-UNIT-051: the README dependency inventory lists exactly the catalog's libraries and " +
                 "plugins with their version and declaration state (AC-REQ-NFR-002-1; DEC-061)."
             this.catalog.set(catalog)
+            catalogFile.set(target.layout.projectDirectory.file("gradle/libs.versions.toml"))
             readme.set(target.layout.projectDirectory.file("README.md"))
             readmeEs.set(target.layout.projectDirectory.file("README.es.md"))
             this.buildScripts.from(mainBuildScripts, buildLogicScripts)

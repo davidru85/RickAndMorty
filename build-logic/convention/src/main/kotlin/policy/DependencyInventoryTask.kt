@@ -30,6 +30,11 @@ abstract class DependencyInventoryTask : DefaultTask() {
     @get:Input
     abstract val catalog: Property<CatalogSnapshot>
 
+    /** The catalog source, whose key order the inventory must follow (`F-06`). */
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val catalogFile: RegularFileProperty
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val readme: RegularFileProperty
@@ -76,11 +81,15 @@ abstract class DependencyInventoryTask : DefaultTask() {
         val english = read(readme.get().asFile, ENGLISH_HEADER, log)
         val spanish = read(readmeEs.get().asFile, SPANISH_HEADER, log)
 
+        val expectedOrder = CatalogSource.inspect(catalogFile.get().asFile).let { source ->
+            source.libraryOrder.map(CatalogSource::libraryAccessor) + source.pluginOrder.map(CatalogSource::pluginAccessor)
+        }
+
         checkBundles(snapshot, log)
         checkCatalogLookups(log)
         checkAccessorAliasing(log)
-        english?.let { checkRows(it, snapshot, references, readme.get().asFile, log) }
-        spanish?.let { checkRows(it, snapshot, references, readmeEs.get().asFile, log) }
+        english?.let { checkRows(it, snapshot, references, expectedOrder, readme.get().asFile, log) }
+        spanish?.let { checkRows(it, snapshot, references, expectedOrder, readmeEs.get().asFile, log) }
         if (english != null && spanish != null) checkMirror(english, spanish, log)
 
         if (!log.isEmpty()) throw GradleException(log.render())
@@ -141,37 +150,54 @@ abstract class DependencyInventoryTask : DefaultTask() {
     }
 
     /** I1 — the marked table exists with the exact header, or the violation is recorded. */
-    private fun read(file: java.io.File, header: List<String>, log: ViolationLog): MarkdownTable.Parsed? {
+    private fun read(file: java.io.File, header: List<String>, log: ViolationLog): MarkdownTable.Result? {
         val location = file.location(rootDirectory.get().asFile)
         val table = MarkdownTable.parse(file, BEGIN, END)
-        if (table == null) {
-            log.add(TEST_ID, location, "the marked dependency inventory is missing (markers `$BEGIN` / `$END`)")
-            return null
-        }
+        val structural = table.problems.isNotEmpty()
+        table.problems.forEach { problem -> log.add(TEST_ID, "$location:${problem.line}", problem.reason) }
+        if (structural) return null
         if (table.header != header) {
-            log.add(TEST_ID, "$location:${table.beginLine}", "the inventory header is not the one the policy fixes")
+            log.add(TEST_ID, "${location}:${table.rows.firstOrNull()?.let { it.line - 2 } ?: 1}", "the inventory header is not the one the policy fixes")
         }
         return table
     }
 
     /** I2–I5 — row set, coordinates, effective version and declaration state. */
     private fun checkRows(
-        table: MarkdownTable.Parsed,
+        table: MarkdownTable.Result,
         snapshot: CatalogSnapshot,
         references: Map<String, List<String>>,
+        expectedOrder: List<String>,
         file: java.io.File,
         log: ViolationLog,
     ) {
         val seen = mutableSetOf<String>()
+        val listed = mutableListOf<String>()
+
+        // I2 (order) — the rows follow catalog declaration order, not merely the same set.
+        table.rows.forEachIndexed { index, row ->
+            val accessor = MarkdownTable.singleCodeSpan(row.cells.firstOrNull().orEmpty()) ?: return@forEachIndexed
+            listed += accessor
+            val expected = expectedOrder.getOrNull(index)
+            if (expected != null && accessor != expected) {
+                log.add(
+                    TEST_ID,
+                    "${file.location(rootDirectory.get().asFile)}:${row.line}",
+                    "inventory rows are not in catalog declaration order; expected `$expected`, found `$accessor`",
+                )
+            }
+        }
+
         table.rows.forEach { row ->
             if (row.cells.size != COLUMNS) {
                 log.add(TEST_ID, "${file.location(rootDirectory.get().asFile)}:${row.line}", "expected $COLUMNS cells, found ${row.cells.size}")
                 return@forEach
             }
             val location = "${file.location(rootDirectory.get().asFile)}:${row.line}"
-            val accessor = MarkdownTable.singleCodeSpan(row.cells[0])
+            val entryCell = row.cells[0]
+            val accessor = MarkdownTable.singleCodeSpan(entryCell)
             if (accessor == null) {
-                log.add(TEST_ID, location, "the Entry cell does not carry exactly one accessor")
+                log.add(TEST_ID, location, "Entry must be exactly one accessor code span; found `$entryCell`")
                 return@forEach
             }
             if (!seen.add(accessor)) log.add(TEST_ID, location, "`$accessor` is listed more than once")
@@ -180,28 +206,36 @@ abstract class DependencyInventoryTask : DefaultTask() {
                 return@forEach
             }
 
-            val coordinates = MarkdownTable.singleCodeSpan(row.cells[1])
+            val idCell = row.cells[1]
+            val coordinates = MarkdownTable.singleCodeSpan(idCell)
             val expectedCoordinates = snapshot.pluginIds()[accessor] ?: snapshot.libraries.first { it.accessor == accessor }.coordinates
-            if (coordinates != expectedCoordinates) {
+            if (coordinates == null) {
+                log.add(TEST_ID, location, "Artifact or plugin id must be exactly one code span; found `$idCell`")
+            } else if (coordinates != expectedCoordinates) {
                 log.add(TEST_ID, location, "Artifact or plugin id is `$coordinates`, but the catalog declares `$expectedCoordinates`")
             }
 
-            val versionCell = row.cells[2]
-            val version = MarkdownTable.singleCodeSpan(versionCell)
-            val bomSuffix = versionCell.trim().endsWith("(BOM)")
+            val versionCell = row.cells[2].trim()
+            val hasBomSuffix = versionCell.endsWith(BOM_SUFFIX)
+            val versionText = if (hasBomSuffix) versionCell.removeSuffix(BOM_SUFFIX).trim() else versionCell
+            val version = MarkdownTable.singleCodeSpan(versionText)
             val expectedVersion = snapshot.effectiveVersion(accessor)
-            if (version != expectedVersion) {
+            if (version == null) {
+                log.add(TEST_ID, location, "Version must be exactly one code span, plus `$BOM_SUFFIX` only for a versionless entry; found `$versionCell`")
+            } else if (version != expectedVersion) {
                 log.add(TEST_ID, location, "Version is `$version`, but the effective version of `$accessor` is `$expectedVersion`")
             }
-            if (bomSuffix != snapshot.isVersionless(accessor)) {
+            if (hasBomSuffix != snapshot.isVersionless(accessor)) {
                 val expected = if (snapshot.isVersionless(accessor)) "must be present" else "must not be present"
-                log.add(TEST_ID, location, "the ` (BOM)` suffix $expected for `$accessor`")
+                log.add(TEST_ID, location, "the `$BOM_SUFFIX` suffix $expected for `$accessor`")
             }
 
             val declaredBy = references[accessor].orEmpty()
             val state = row.cells[3].trim()
             val expectedState = if (declaredBy.isEmpty()) "Pinned" else "Declared"
-            if (state != expectedState) {
+            if (state !in setOf("Declared", "Pinned")) {
+                log.add(TEST_ID, location, "State must be exactly `Declared` or `Pinned`; found `$state`")
+            } else if (state != expectedState) {
                 log.add(TEST_ID, location, "State is `$state`, but the build scripts say `$expectedState`")
             }
 
@@ -211,7 +245,12 @@ abstract class DependencyInventoryTask : DefaultTask() {
                     log.add(TEST_ID, location, "a Pinned entry must carry `—` in Declared by, found `$declaredByCell`")
                 }
             } else {
-                val listed = MarkdownTable.codeSpans(row.cells[4]).sorted()
+                val listedCell = MarkdownTable.codeSpanList(row.cells[4])
+                if (listedCell == null) {
+                    log.add(TEST_ID, location, "Declared by must be `—` or a comma-separated list of code spans; found `${row.cells[4]}`")
+                    return@forEach
+                }
+                val listed = listedCell.sorted()
                 if (listed != declaredBy.sorted()) {
                     log.add(
                         TEST_ID,
@@ -226,10 +265,14 @@ abstract class DependencyInventoryTask : DefaultTask() {
         snapshot.accessors.forEach { accessor ->
             if (accessor !in seen) log.add(TEST_ID, location, "`$accessor` is missing from the inventory")
         }
+        if (listed.isNotEmpty() && listed.toSet() != expectedOrder.toSet()) {
+            val unknown = (listed.toSet() - expectedOrder.toSet()).joinToString()
+            if (unknown.isNotEmpty()) log.add(TEST_ID, location, "inventory lists accessors that are not in the catalog: $unknown")
+        }
     }
 
     /** I6 — columns 1–5 of the Spanish table equal the English table, row for row. */
-    private fun checkMirror(english: MarkdownTable.Parsed, spanish: MarkdownTable.Parsed, log: ViolationLog) {
+    private fun checkMirror(english: MarkdownTable.Result, spanish: MarkdownTable.Result, log: ViolationLog) {
         val englishRows = english.rows.associateBy { MarkdownTable.singleCodeSpan(it.cells.firstOrNull().orEmpty()) }
         val spanishRows = spanish.rows.associateBy { MarkdownTable.singleCodeSpan(it.cells.firstOrNull().orEmpty()) }
         englishRows.forEach { (accessor, englishRow) ->
@@ -259,6 +302,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
 
         val NAME_LOOKUP = Regex("\\bfind(?:Library|Bundle|Plugin)\\s*\\(")
         val BARE_LIBS = Regex("(?<![\\w.])libs\\b(?!\\s*\\.)")
+        const val BOM_SUFFIX = " (BOM)"
         val ENGLISH_HEADER = listOf("Entry", "Artifact or plugin id", "Version", "State", "Declared by", "Planned for")
         val SPANISH_HEADER = listOf("Entrada", "Artefacto o id de plugin", "Versión", "Estado", "Declarada en", "Prevista para")
     }
