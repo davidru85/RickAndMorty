@@ -1,6 +1,6 @@
 # DESIGN.md - System Architecture Design
 
-- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
+- **Status:** Active — the architecture below is target state; the Gradle/KMP build skeleton (TASK-014) exists, no feature behaviour does (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
 - **Last verified:** 2026-09-30
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
@@ -134,6 +134,9 @@ flowchart TB
     FF --> CP
     FF --> CDS
     FE --> CDS
+    FE --> CP
+    FS --> CD
+    FS --> CP
     FS --> CDS
     APP --> FD
     APP --> FC
@@ -215,6 +218,24 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
   - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The same foreground drives the Android 12+ system splash.
   - iOS: the single 1024 px master (no Dark, Clear or Tinted variants) feeds an Icon Composer `.icon` file in the iOS app target.
 - **Sample portraits:** mock content only, never bundled in the release apps. The apps always load portraits from the API through the image cache. The same files may be used as local fixtures for previews and screenshot tests (§8), so those never hit the network.
+
+### 3.5 Build toolchain and build logic
+
+Every version below is an exact pin in `gradle/libs.versions.toml`; each was verified against a primary source on the date shown, and none is a range (`REQ-NFR-006`, `AC-REQ-NFR-006-1`). ADR-0008 permits exactly one alpha artifact in the project — `material3:1.5.0-alpha29` in `:core:designsystem` — and this skeleton uses none: no build tool is taken at an alpha, beta or RC version.
+
+| Component | Version | Rationale | Primary source | Verified |
+| --- | --- | --- | --- | --- |
+| Gradle (wrapper) | 9.7.0 | Newest stable release inside the range the Kotlin 2.4.20 Multiplatform plugin documents as compatible (7.6.3–9.7.0) and above the 9.5.0 minimum AGP 9.3.1 requires. The distribution is pinned by SHA-256 in `gradle/wrapper/gradle-wrapper.properties`. | `https://kotlinlang.org/docs/multiplatform/compatibility-guide.html` (version compatibility table); `https://developer.android.com/build/releases/past-releases/agp-9-3-0-release-notes` (Gradle minimum); `https://services.gradle.org/versions/all` | 2026-09-30 |
+| Android Gradle Plugin | 9.3.1 | Newest stable AGP that supports `compileSdk` 37, supports Gradle 9.7.0 (minimum 9.5.0) and sits inside the AGP range documented for Kotlin 2.4.20 (8.5.2–9.3.1). The next stable line, 9.4.x, exceeds that range and is therefore not used. | `https://kotlinlang.org/docs/multiplatform/compatibility-guide.html`; `https://developer.android.com/build/releases/past-releases/agp-9-3-0-release-notes` (API level 37 maximum, Gradle 9.5.0, JDK 17); `https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml` | 2026-09-30 |
+| Kotlin and the Kotlin Gradle plugin | 2.4.20 | Fixed by ADR-0002 and ADR-0008; the current stable compiler. | `https://kotlinlang.org/docs/multiplatform/compatibility-guide.html`; `https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml` | 2026-09-30 |
+| Kotlin serialization plugin | 2.4.20 | Ships with the Kotlin release and must match the compiler version. | `https://repo1.maven.org/maven2/org/jetbrains/kotlin/plugin/serialization/` | 2026-09-30 |
+| `kotlinx-serialization-core` | 1.11.0 | Newest stable release of the runtime; the route declarations of §4.2 are `@Serializable`. | `https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core/maven-metadata.xml` | 2026-09-30 |
+
+SDK levels are `compileSdk`/`targetSdk` 37 and `minSdk` 26, taken from the catalog and set once per module by the convention plugins (ADR-0002, DEC-009). The JVM bytecode target is 17 for every Java and Kotlin compilation, set in the convention plugins; no `jvmToolchain(...)` is declared, so the build uses the JDK running Gradle (README.md §6 documents JDK 17 as the minimum).
+
+**Build logic (DEC-057).** Shared Gradle configuration lives in three convention plugins in the included build `build-logic/`: `multiverse.kmp.library` (a Kotlin Multiplatform library with the Android-KMP target and the two iOS targets), `multiverse.android.library` and `multiverse.android.application`. The included build is Gradle tooling and is not a project module, so it does not change the ADR-0001 module set. Each module's own `build.gradle.kts` declares only its plugins and its dependencies, and **every project-to-project edge is declared in the consuming module's build script** — never inside a convention plugin — so the dependency graph is reviewable per module and a boundary violation is visible in the diff that introduces it.
+
+The package root and the Android application id are declared exactly once, as `multiverse.packageRoot` in the root `gradle.properties`; every Android namespace, the application id and the Kotlin package directories derive from that single value, and a build without it fails.
 
 ## 4. Presentation layer
 
@@ -450,3 +471,4 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | 2026-09-29 | Restructured to feature-per-module with Clean Architecture inside each feature module; platform floors, Ktor, Koin, favorites and pager questions resolved into decisions; failure chain delegated to `ERROR_FLOW.md`; system overview added. | DEC-011…DEC-021, DEC-052 |
 | 2026-09-30 | `:feature:settings` replaces `:feature:locations`; navigation order Characters · Episodes · Favorites · Settings; §4.6 app settings added; `:core:data` carries both remote protocols. | DEC-055, DEC-056 |
 | 2026-09-30 | Data-source inventory made explicit: §1 and §2 show the per-request protocol selector over the two `IC-011` adapters; §4.6 adds the three-data-source table including the `IC-022` settings store; §6 class diagram gains the GraphQL adapter and the settings store. | DEC-056, DEC-055 |
+| 2026-09-30 | §3 diagram gains the `FE --> CP`, `FS --> CD` and `FS --> CP` edges the module table requires (CONF-38); new §3.5 records the build toolchain pins, the SDK levels and the DEC-057 convention-plugin layout. | DEC-052, DEC-057, TASK-014 |

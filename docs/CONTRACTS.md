@@ -1,6 +1,6 @@
 # CONTRACTS.md — Internal Kotlin Contract Baseline
 
-- **Status:** Active — target state (the repository contains no source code, no build files and no CI yet; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
+- **Status:** Active — target state (the Gradle/KMP build skeleton exists as of TASK-014; no contract is implemented yet; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
 - **Last verified:** 2026-09-30
 - **Owner:** System Architect (see `AGENTS.md` §3)
 - **Authoritative for:** the internal Kotlin contracts `IC-###` — the source-level declarations that cross a module boundary (repository, data-source, cache, storage and pager seams), the shared UI-state types both platforms consume, and the invariants, ownership, reference and compatibility rules attached to each of them.

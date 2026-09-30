@@ -11,7 +11,7 @@
 
 ## 1. Purpose and scope
 
-The repository is a documentation-only baseline on 2026-09-29 (see `README.md` §14): there is no source code, no Gradle build, no CI and no `.gitignore`. This plan sequences the work that takes it from that baseline to a released Android app, a released iOS app, and a hardened release, in that order.
+The repository held a documentation-only baseline on 2026-09-29; the Gradle/KMP build skeleton landed on 2026-09-30 (TASK-014, `PROJECT_LOG.md` LOG-0026) and there is still no feature code, no CI, no `.gitignore` and no `VERSION`. This plan sequences the work that takes it from that baseline to a released Android app, a released iOS app, and a hardened release, in that order.
 
 In scope: milestone objectives with entry and exit criteria, deliverables and review evidence; architectural build order; the phase plan; prerequisite constraints; the gate that applies at each phase boundary; risk-sequencing consequences; release readiness and release mechanics; ordering without invented dates; and the milestone → requirement coverage matrix.
 
@@ -22,7 +22,7 @@ Two project rules shape every milestone below and are not repeated per row:
 - **TDD is the unit of progress** (DEC-053). A behaviour change is one red → green → refactor cycle, committed per phase, and a task is not started until its first failing test exists. Documentation, build/CI configuration and tooling changes are the only recognised exceptions, and an exception MUST be stated explicitly when used. The protocol itself is owned by `CONTRIBUTING.md`.
 - **The full test suite is mandatory on every pull request** (DEC-054). Both platform runners are required on every change, and a pull request is not approvable while any required check is failing, skipped or absent. The check list is owned by `TESTING.md` §14; the gate is owned by `DEFINITION.md` §3. The red commit produced by the TDD protocol is expected to fail tests, so the gate evaluates the final state of the pull request, not each commit.
 
-**Current delivery state.** The documentation baseline this plan describes is authored on the `docs/documentation-system` branch and is pending review; the repository has no build, CI, `.gitignore` or `VERSION` at the time of writing. Everything in §2 onward is therefore target state, and no milestone below is reachable until the M0 exit criteria in §2.1 hold.
+**Current delivery state.** The documentation baseline is merged and the first M0 deliverable, the Gradle/KMP build skeleton, is in review on `build/gradle-kmp-skeleton` (TASK-014, LOG-0026); the repository has no CI, `.gitignore`, `VERSION` or feature code at the time of writing. Everything in §2 onward is therefore target state, and no milestone below is reachable until the M0 exit criteria in §2.1 hold.
 
 ## 2. Delivery model
 
@@ -213,7 +213,7 @@ Milestone exit criteria are owned by `DEFINITION.md` §4 and the release steps b
 
 ## 9. Timeline and ordering
 
-No calendar dates are committed. The reason is a property of this project rather than a preference: the repository is a documentation-only baseline on 2026-09-29, there is no assigned team and no working-hours model, no external deadline, and no historical velocity to extrapolate from (14 commits, all documentation). Any date in this file would be invented, and an invented date would be quoted as a commitment. The commitments are the order below and the dependency chain that enforces it.
+No calendar dates are committed. The reason is a property of this project rather than a preference: the repository carried a documentation-only baseline on 2026-09-29 and has since gained only the build skeleton (2026-09-30), there is no assigned team and no working-hours model, no external deadline, and no historical velocity to extrapolate from (14 commits, all documentation). Any date in this file would be invented, and an invented date would be quoted as a commitment. The commitments are the order below and the dependency chain that enforces it.
 
 | Step | Milestone | Ordering statement | Depends on |
 | --- | --- | --- | --- |

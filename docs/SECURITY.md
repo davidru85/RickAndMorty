@@ -357,7 +357,7 @@ This section is the advisory register (DEC-036). It is a section of this documen
 
 ## 12. Secure-development expectations
 
-These are the rules a change must satisfy before review. They are target state, because no source code exists yet.
+These are the rules a change must satisfy before review. They are target state, because no feature code exists yet (the Gradle/KMP build skeleton of TASK-014 carries no behaviour).
 
 ### 12.1 Treat every API value as untrusted
 
