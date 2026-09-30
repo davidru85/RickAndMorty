@@ -74,18 +74,17 @@ abstract class DependencyInventoryTask : DefaultTask() {
             projectPaths = projectPathsByFile.get(),
         )
 
-        val english = read(readme.get().asFile, ENGLISH_HEADER, log) ?: run {
-            throw GradleException(log.render())
-        }
-        val spanish = read(readmeEs.get().asFile, SPANISH_HEADER, log) ?: run {
-            throw GradleException(log.render())
-        }
+        // Every independent rule runs, even when a README table is missing: a missing
+        // table only skips the checks that need it.
+        val english = read(readme.get().asFile, ENGLISH_HEADER, log)
+        val spanish = read(readmeEs.get().asFile, SPANISH_HEADER, log)
 
         checkBundles(snapshot, log)
         checkCatalogLookups(log)
-        checkRows(english, snapshot, references, readme.get().asFile, log)
-        checkRows(spanish, snapshot, references, readmeEs.get().asFile, log)
-        checkMirror(english, spanish, log)
+        checkAccessorAliasing(log)
+        english?.let { checkRows(it, snapshot, references, readme.get().asFile, log) }
+        spanish?.let { checkRows(it, snapshot, references, readmeEs.get().asFile, log) }
+        if (english != null && spanish != null) checkMirror(english, spanish, log)
 
         if (!log.isEmpty()) throw GradleException(log.render())
     }
@@ -119,6 +118,26 @@ abstract class DependencyInventoryTask : DefaultTask() {
                     TEST_ID,
                     "${file.location(root)}:${BuildScripts.lineOf(code, it.range.first)}",
                     "looks up a catalog entry by name; declarations belong in module build scripts (DEC-057)",
+                )
+            }
+        }
+    }
+
+    /**
+     * I9 — the catalog accessor is never aliased. A bare `libs` bound to another name hides
+     * every declaration that goes through that name, so the inventory state stops being
+     * derivable (TEST-UNIT-051, `AC-REQ-NFR-002-1`).
+     */
+    private fun checkAccessorAliasing(log: ViolationLog) {
+        val root = rootDirectory.get().asFile
+        buildScripts.files.sortedBy { it.path }.forEach { file ->
+            val code = KotlinSourceMask.mask(file.readText(), maskStrings = true)
+            BARE_LIBS.findAll(code).forEach {
+                log.add(
+                    TEST_ID,
+                    "${file.location(root)}:${BuildScripts.lineOf(code, it.range.first)}",
+                    "the catalog accessor `libs` is used indirectly; reference entries as `libs.<alias>` " +
+                        "so the declaration state stays derivable (TEST-UNIT-051)",
                 )
             }
         }
@@ -242,6 +261,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
         const val COLUMNS = 6
 
         val NAME_LOOKUP = Regex("\\bfind(?:Library|Bundle|Plugin)\\s*\\(")
+        val BARE_LIBS = Regex("(?<![\\w.])libs\\b(?!\\s*\\.)")
         val ENGLISH_HEADER = listOf("Entry", "Artifact or plugin id", "Version", "State", "Declared by", "Planned for")
         val SPANISH_HEADER = listOf("Entrada", "Artefacto o id de plugin", "Versión", "Estado", "Declarada en", "Prevista para")
     }

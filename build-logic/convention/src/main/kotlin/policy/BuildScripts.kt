@@ -17,7 +17,8 @@ import java.io.File
  */
 internal object BuildScripts {
 
-    private val CHAIN = Regex("\\blibs(?:\\.[A-Za-z][A-Za-z0-9]*)+")
+    private val WHITESPACE = Regex("\\s+")
+    private val CHAIN = Regex("\\blibs(?:\\s*\\.\\s*[A-Za-z][A-Za-z0-9]*)+")
 
     /**
      * Accessor -> the project paths whose build script references it, sorted. The project
@@ -36,8 +37,9 @@ internal object BuildScripts {
                 ?: return@forEach
             val code = KotlinSourceMask.mask(script.readText(), maskStrings = true)
             CHAIN.findAll(code).forEach { match ->
-                val chain = match.value
-                if (chain == "libs.versions.toml") return@forEach
+                // A chain may be written across lines, so whitespace around a dot is
+                // removed before the accessor is resolved.
+                val chain = match.value.replace(WHITESPACE, "")
                 longestAccessor(chain, accessors)?.let { accessor ->
                     references.getOrPut(accessor) { sortedSetOf() }.add(projectPath)
                 }
