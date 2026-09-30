@@ -108,7 +108,7 @@ Milestone objectives, sequencing and scope per milestone are owned by `TECHNICAL
 | # | M1 exit criterion | Evidence |
 | --- | --- | --- |
 | M1-1 | An installable Android APK is produced from a clean clone by the documented commands, with no manual step outside them (`REQ-NFR-006`) | Build log and installed-and-launched screenshot from the APK |
-| M1-2 | The four destinations exist and are reachable from each other — Characters, Episodes, Locations, Favorites — with the character list, character detail and favorites working and Episodes and Locations rendering their designed placeholders (`REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-006`, `REQ-FUNC-008`) | Snapshot or screenshot per destination |
+| M1-2 | The four destinations exist and are reachable from each other — Characters, Episodes, Favorites, Settings — with the character list, character detail, favorites and the three settings working and Episodes rendering its designed placeholder (`REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-006`, `REQ-FUNC-008`, `REQ-FUNC-033`…`REQ-FUNC-035`) | Snapshot or screenshot per destination |
 | M1-3 | Every Must-have requirement in `REQUIREMENTS.md` §5.1 is verified by test evidence, except the requirement whose platform is iOS (`REQ-PLAT-003`), which is carried to M2 because `REQ-PLAT-004` makes M1 releasable with iOS absent | Traceability rows, each pointing at a passing test id |
 | M1-4 | The numeric budgets are met on the reference device named in `PERFORMANCE.md`, measured by the method in `PERFORMANCE.md` (DEC-033), not asserted | Measurement output naming device, build type and method |
 | M1-5 | The accessibility checklist required by DEC-023 is executed and recorded, and the automated checks pass | Recorded checklist plus automated-check output |

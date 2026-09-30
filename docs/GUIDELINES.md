@@ -152,7 +152,7 @@ The module set and the permitted edges are owned by `adr/0001-module-boundaries.
 | `:core:presentation` | KMP | Cross-feature presentation primitives only: `LoadState`, display formatters, canonical copy keys | `:core:domain` |
 | `:core:designsystem` | Android | M3 Expressive tokens and components | Compose only — no project module |
 | `:core:testing` | KMP | Shared fakes, JSON fixtures, dispatcher and clock helpers | test classpath only |
-| `:feature:*` | KMP + Android UI | One user-facing capability each: `discovery`, `character-detail`, `favorites`, `episodes`, `locations` | `:core:domain`, `:core:data`, `:core:presentation`, and from Android UI source sets only `:core:designsystem` |
+| `:feature:*` | KMP + Android UI | One user-facing capability each: `discovery`, `character-detail`, `favorites`, `episodes`, `settings` | `:core:domain`, `:core:data`, `:core:presentation`, and from Android UI source sets only `:core:designsystem` |
 | `:androidApp` | Android | Application, DI graph, `NavHost`, splash, image loader, adaptive icon | all Android modules |
 | `iosApp` | iOS app | App target, `iosApp/Features/<Feature>` Swift packages, `iosApp/DesignSystem` | the generated Kotlin framework and `iosApp/DesignSystem` |
 

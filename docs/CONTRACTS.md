@@ -1,7 +1,7 @@
 # CONTRACTS.md — Internal Kotlin Contract Baseline
 
 - **Status:** Active — target state (the repository contains no source code, no build files and no CI yet; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** System Architect (see `AGENTS.md` §3)
 - **Authoritative for:** the internal Kotlin contracts `IC-###` — the source-level declarations that cross a module boundary (repository, data-source, cache, storage and pager seams), the shared UI-state types both platforms consume, and the invariants, ownership, reference and compatibility rules attached to each of them.
 - **Not authoritative for:** the remote-facing and domain model declarations (`API_SPECS.md` §3, §4.7, §5, §6), the failure → state → copy chain (`ERROR_FLOW.md`), module composition and dependency direction (`DESIGN.md` §3, `adr/0001-module-boundaries.md`), requirement ids and acceptance criteria (`REQUIREMENTS.md`), visual specification (`UI_SPEC.md`), test ids, layers and tooling (`TESTING.md`), user-visible copy strings (`UI_SPEC.md` §6.4, §8).
@@ -30,13 +30,14 @@ Module names, source-set layout and dependency direction follow `adr/0001-module
 flowchart LR
     subgraph Domain[":core:domain — depends on nothing"]
         ID[IC-001..005<br/>API_SPECS declarations]
-        REPO[IC-007 CharacterRepository<br/>IC-008 FavoritesRepository<br/>IC-009 use cases<br/>IC-010 filters<br/>failure = IC-003 Failure]
+        REPO[IC-007 CharacterRepository<br/>IC-008 FavoritesRepository<br/>IC-009 use cases<br/>IC-010 filters<br/>IC-021 AppSettingsRepository<br/>failure = IC-003 Failure]
     end
     subgraph Data[":core:data — depends on :core:domain"]
         REMOTE[IC-011 CharacterRemoteDataSource]
         CACHE[IC-012 CacheStorage]
         LOCAL[IC-013 FavoritesLocalDataSource]
         PAGER[IC-014 CharacterPager]
+        PREFS[IC-022 AppSettingsLocalDataSource]
     end
     subgraph Pres[":core:presentation — depends on :core:domain"]
         LOAD[IC-015 LoadState]
@@ -47,6 +48,7 @@ flowchart LR
         LIST[IC-018 CharacterListUiState + Intent]
         DETAIL[IC-019 CharacterDetailUiState + Intent]
         FAV[IC-020 FavoritesUiState + Intent]
+        SET[IC-023 SettingsUiState + Intent]
     end
     Data -. implements .-> REPO
     Pres --> Domain
@@ -55,9 +57,11 @@ flowchart LR
     Android[Android ViewModel] --> LIST
     Android --> DETAIL
     Android --> FAV
+    Android --> SET
     iOS[iOS ObservableObject] --> LIST
     iOS --> DETAIL
     iOS --> FAV
+    iOS --> SET
 ```
 
 ## 1. Purpose and the one-owner rule
@@ -116,12 +120,15 @@ ApiFailure (+ every variant)             API_SPECS.md §6           :core:domain
 REST DTOs, GraphQL envelopes             API_SPECS.md §4.7, §5.1   :core:data    commonMain (never outside)
 CharacterRepository                      CONTRACTS.md IC-007       :core:domain  commonMain
 FavoritesRepository                      CONTRACTS.md IC-008       :core:domain  commonMain
+AppSettingsRepository, AppSettings,      CONTRACTS.md IC-021       :core:domain  commonMain
+  RemoteProtocol
 Use cases (cross-feature and feature)    CONTRACTS.md IC-009       :core:domain, or the feature's domain package
 CharacterFilter, StatusFilter            CONTRACTS.md IC-010       :core:domain  commonMain
 CharacterRemoteDataSource                CONTRACTS.md IC-011       :core:data    commonMain
 CacheStorage, CacheKey, CacheEntry       CONTRACTS.md IC-012       :core:data    commonMain
 FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data    commonMain
 CharacterPager, PagerState               CONTRACTS.md IC-014       :core:data    commonMain
+AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, PresentationFormatters          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -129,6 +136,7 @@ CharacterListUiState, CharacterListIntent CONTRACTS.md IC-018      :feature:disc
 CharacterDetailUiState, InfoRowUi,       CONTRACTS.md IC-019       :feature:character-detail  presentation package
   InfoRowKind, CharacterDetailIntent
 FavoritesUiState, FavoritesIntent         CONTRACTS.md IC-020      :feature:favorites  presentation package
+SettingsUiState, SettingsIntent           CONTRACTS.md IC-023      :feature:settings  presentation package
 CharacterAccentResolver                   DESIGN.md §4.4            :feature:discovery  androidMain UI
 ```
 
@@ -261,6 +269,7 @@ interface CharacterRepository {
 interface FavoritesRepository {
     fun observe(): Flow<Set<CharacterId>>
     suspend fun toggle(id: CharacterId)
+    suspend fun clear()
 }
 ```
 
@@ -268,10 +277,11 @@ interface FavoritesRepository {
   - `observe()` is a hot, conflated, never-completing stream: it emits the current set to every new collector as its first value, emits again on every change, and never completes on its own (`REQ-FUNC-006`, `AC-REQ-FUNC-006-2`).
   - Emissions are ordered and distinct: a set that is unchanged is not re-emitted.
   - `toggle(id)` applies exactly one flip per call and writes it before returning; concurrent calls are serialised by the implementation so an update cannot be lost.
+  - `clear()` empties the whole set in one write and returns after it is persisted; `observe()` then emits the empty set exactly once, and a `clear()` on an empty set emits nothing. It is serialised with `toggle` like any other write (`REQ-FUNC-035`, `AC-REQ-FUNC-035-2`).
   - Stored state survives process restart, because persistence is owned by `IC-013` — the repository holds no authoritative in-memory copy (`REQ-FUNC-006`).
   - The set is local to the device: the repository `MUST NOT` perform any network request (`NG-003`, `REQ-SEC-003`).
   - No call on this interface blocks the caller's thread: `observe()` performs no I/O on the subscribing thread and `toggle()` suspends rather than blocking the UI thread.
-- **Traceability:** `REQ-FUNC-006`, `DEC-004`, `DEC-017`, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md).
+- **Traceability:** `REQ-FUNC-006`, `REQ-FUNC-035`, `DEC-004`, `DEC-017`, `DEC-055`, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md), [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md).
 
 ### IC-009 — Use cases
 
@@ -283,8 +293,11 @@ interface FavoritesRepository {
 | `GetCharacterDetails` | `:feature:character-detail`, `domain` package | `suspend operator fun invoke(id: CharacterId, enrich: Boolean): DataResult<CharacterDetails>` | `IC-019` state holder |
 | `ObserveFavoriteIds` | `:core:domain` (cross-feature) | `operator fun invoke(): Flow<Set<CharacterId>>` | `IC-018`, `IC-019`, `IC-020` state holders |
 | `ToggleFavorite` | `:feature:character-detail`, `domain` package | `suspend operator fun invoke(id: CharacterId)` | `IC-019` state holder |
+| `ClearFavorites` | `:feature:settings`, `domain` package | `suspend operator fun invoke()` | `IC-023` state holder, only after the user confirms |
+| `ObserveAppSettings` | `:feature:settings`, `domain` package | `operator fun invoke(): Flow<AppSettings>` | `IC-023` state holder |
+| `UpdateAppSettings` | `:feature:settings`, `domain` package | `suspend operator fun invoke(change: (AppSettings) -> AppSettings)` | `IC-023` state holder |
 
-- **Placement rule:** a use case lives in the `domain` package of the feature that uses it, except a use case consumed by more than one feature, which lives in `:core:domain` (`adr/0001-module-boundaries.md`). `ObserveFavoriteIds` is cross-feature for exactly that reason; `GetCharacterPage`, `GetCharacterDetails` and `ToggleFavorite` are feature-local.
+- **Placement rule:** a use case lives in the `domain` package of the feature that uses it, except a use case consumed by more than one feature, which lives in `:core:domain` (`adr/0001-module-boundaries.md`). `ObserveFavoriteIds` is cross-feature for exactly that reason; `GetCharacterPage`, `GetCharacterDetails`, `ToggleFavorite`, `ClearFavorites`, `ObserveAppSettings` and `UpdateAppSettings` are feature-local. `:core:data` reads the protocol preference through `IC-021` directly, not through a use case, because it is infrastructure, not a feature.
 - **Invariants**
   - A use case is stateless and holds no cache of its own: two invocations with the same arguments are independent.
   - A use case `MUST NOT` catch `CancellationException`, and `MUST NOT` convert a `CancellationException` into a `DataResult.Failure`. Failure handling and state decisions belong to the state holder (`IC-018`, `IC-019`); a use case returns the `DataResult` it received unchanged.
@@ -329,7 +342,7 @@ interface CharacterRemoteDataSource {
 }
 ```
 
-- **Semantics:** the seam returns **domain** types. DTO decoding and mapping happen inside the implementation (`RestCharacterRemoteDataSource`) so `IC-005` cannot leak through it.
+- **Semantics:** the seam returns **domain** types. DTO decoding and mapping happen inside the implementation so `IC-005` cannot leak through it. There are exactly two implementations: `RestCharacterRemoteDataSource` and `GraphQlCharacterRemoteDataSource`. The GraphQL one posts the checked-in operations of `API_SPECS.md` §5.5 through the same Ktor client. The repository chooses one **per request** from `IC-021`'s current `remoteProtocol` (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)).
 - **Invariants**
   - No DTO or wire envelope crosses this seam (`AC-REQ-NFR-001-2`).
   - An expected remote failure is returned as `DataResult.Failure` (`IC-003`); transport and decoding exceptions never escape, and only a `CancellationException` propagates.
@@ -338,7 +351,8 @@ interface CharacterRemoteDataSource {
   - A batch response that omits a requested id is reconciled by id; the omission is reported as a warning rather than as a failure (`API_SPECS.md` §6.1).
   - Requests are issued only to the configured HTTPS host; a relation or pagination URL naming another host is rejected (`REQ-SEC-001`, `AC-REQ-SEC-001-1`).
   - The seam carries no cache policy: caching is decided above it (`IC-012`).
-- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-023`, `REQ-NFR-001`, `REQ-SEC-001`, `API_SPECS.md` §4.2, §6.1, `DEC-011`.
+  - Both implementations return equal domain values for the same logical request, and map failures to the same `ApiFailure` variants (`API_SPECS.md` §6.1, §6.2). An empty filtered result is an empty page on both, whatever the wire shape (`AC-REQ-FUNC-034-3`).
+- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-023`, `REQ-FUNC-034`, `REQ-NFR-001`, `REQ-SEC-001`, `API_SPECS.md` §4.2, §5.5, §6.1, §6.2, `DEC-011`, `DEC-056`.
 
 ### IC-012 — `CacheStorage`
 
@@ -366,11 +380,11 @@ interface CacheStorage {
 - **Invariants**
   - `get` returns `null` for a miss and never throws: an unreadable or corrupt entry is a miss plus a warning, never a user-visible failure (`REQ-FUNC-020`).
   - A `put` failure is contained: the read path degrades to a cache miss rather than propagating an exception to a screen.
-  - `CacheKey.value` is the complete normalized request identity — resource, page and every filter value — so two filter combinations can never share an entry (`REQ-REL-001`, `AC-REQ-REL-001-1`).
+  - `CacheKey.value` is the complete normalized request identity — protocol, resource, page and every filter value — so two filter combinations, or the same request over REST and over GraphQL, can never share an entry (`REQ-REL-001`, `AC-REQ-REL-001-1`, `AC-REQ-FUNC-034-4`; key shape in ADR-0005 and ADR-0011).
   - Only successfully decoded, domain-valid payloads are written; errors, empty bodies and partial responses are never admitted (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`, `RISK-005`).
   - Image bytes are never stored here: image caching is independent of response caching (`REQ-FUNC-021`, `AC-REQ-FUNC-021-2`).
   - No method reads the wall clock; an entry's age is computed by the caller from `storedAt` and the injected clock, so a device clock change cannot alter freshness evaluation (`REQ-REL-004`, `AC-REQ-REL-004-1`).
-  - `evictAll` clears response payloads only and `MUST NOT` touch the favourites store (`IC-013`).
+  - `evictAll` clears response payloads only and `MUST NOT` touch the favourites store (`IC-013`) or the preferences store (`IC-022`). A protocol switch `MUST NOT` call it.
 - **Traceability:** `REQ-FUNC-020`, `REQ-FUNC-021`, `REQ-REL-001`, `REQ-REL-004`, `DEC-012`, `DEC-018`.
 
 ### IC-013 — `FavoritesLocalDataSource`
@@ -382,12 +396,14 @@ interface FavoritesLocalDataSource {
     fun observe(): Flow<Set<CharacterId>>
     suspend fun add(id: CharacterId)
     suspend fun remove(id: CharacterId)
+    suspend fun clear()
 }
 ```
 
 - **Semantics:** the storage seam for the favourite id set. `expect/actual` implementations are DataStore on Android and `UserDefaults` on iOS (`DEC-017`, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md)). `IC-008` is the only consumer.
 - **Invariants**
   - `add` and `remove` are idempotent set operations: adding a present id and removing an absent id are no-ops that still leave the observable set unchanged.
+  - `clear()` removes every id in one persisted write; clearing an empty store is a no-op that emits nothing. It removes only the favourite ids; the preferences of `IC-022` share the platform store technology but not its keys, and are untouched.
   - `observe()` emits the persisted set to a new collector without blocking the subscriber, then every subsequent change; the stream is conflated and never completes.
   - Persistence survives process restart, and no id leaks across a simulated reinstall or clear of the store (`REQ-FUNC-006`, `AC-REQ-FUNC-006-2`).
   - Only canonical id strings are persisted (`IC-001`); no index, no ordinal and no name is used as a key.
@@ -435,6 +451,53 @@ data class PagerState(
   - Prefetch is bounded to the next page and `MUST NOT` fetch the whole catalogue up front (`API_SPECS.md` §8, `REQ-NFR-003`).
   - `PagerState` carries no `LoadState`: the presentation layer derives it from `items`, `failure` and `isAppending` under the mapping fixed in `IC-018`. The pager therefore never decides which screen state is rendered.
 - **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-003`, `REQ-FUNC-004`, `REQ-FUNC-012`, `DEC-016`, `API_SPECS.md` §8.
+
+### IC-021 — `AppSettingsRepository`, `AppSettings` and `RemoteProtocol`
+
+- **Declarations** (`:core:domain`, `commonMain`):
+
+```kotlin
+data class AppSettings(
+    val soundsEnabled: Boolean = false,
+    val remoteProtocol: RemoteProtocol = RemoteProtocol.Rest,
+)
+
+enum class RemoteProtocol { Rest, GraphQl }
+
+interface AppSettingsRepository {
+    fun observe(): Flow<AppSettings>
+    suspend fun update(change: (AppSettings) -> AppSettings)
+}
+```
+
+- **Consumed by:** the `:feature:settings` use cases (`IC-009`) and, for `remoteProtocol` only, the repository implementation in `:core:data` that selects the `IC-011` implementation.
+- **Invariants**
+  - The defaults above are the fresh-install values: Sounds off, REST (`AC-REQ-FUNC-033-2`, `AC-REQ-FUNC-034-1`).
+  - `observe()` is hot, conflated and never completes. It emits the current value to every new collector first, then each distinct change.
+  - `update` applies the function to the latest persisted value and writes the result atomically; concurrent updates are serialised so none is lost. An update that produces an equal value writes and emits nothing.
+  - `AppSettings` holds only these two fields. Adding a field is a contract change (§8) and needs a requirement; nothing personal may be added (`REQ-SEC-003`).
+  - `soundsEnabled` has no consumer that produces sound until `REQ-FUNC-036` is admitted.
+  - A `remoteProtocol` change is visible to the next remote request. It does not by itself evict the response cache (`IC-012`).
+- **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-SEC-003`, `DEC-055`, `DEC-056`, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md), [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md).
+
+### IC-022 — `AppSettingsLocalDataSource`
+
+- **Declaration** (`:core:data`, `commonMain`, implemented per target by `expect/actual`):
+
+```kotlin
+interface AppSettingsLocalDataSource {
+    fun observe(): Flow<AppSettings>
+    suspend fun write(settings: AppSettings)
+}
+```
+
+- **Semantics:** the storage seam for `IC-021`, using the same platform store technology as `IC-013`: DataStore on Android, `UserDefaults` on iOS (`DEC-017`). `IC-021`'s implementation is the only consumer.
+- **Invariants**
+  - A missing or unreadable key reads as the `IC-021` default for that field, never as an error.
+  - `RemoteProtocol` is persisted by a stable string (`"rest"`, `"graphql"`), never by ordinal. An unknown stored string reads as `Rest`.
+  - Persistence survives process restart, and both `actual`s satisfy this one contract with identical semantics.
+  - The store holds exactly the two `AppSettings` fields and shares no key with `IC-013`.
+- **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `DEC-017`, `DEC-055`.
 
 ## 6. Presentation contracts (owned here)
 
@@ -613,6 +676,36 @@ sealed interface FavoritesIntent {
   - The feature issues no remote request and holds no detail data; it renders cards from `IC-016` and resolves a card to its detail screen through the shared navigation hand-off.
 - **Traceability:** `REQ-FUNC-006`, `REQ-FUNC-008`, `DEC-004`, `UI_SPEC.md` §6.4.
 
+### IC-023 — `SettingsUiState` and `SettingsIntent`
+
+- **Declarations** (`:feature:settings`, `presentation` package, `commonMain`):
+
+```kotlin
+data class SettingsUiState(
+    val soundsEnabled: Boolean = false,
+    val remoteProtocol: RemoteProtocol = RemoteProtocol.Rest,
+    val canDeleteFavorites: Boolean = false,
+    val isConfirmingDelete: Boolean = false,
+)
+
+sealed interface SettingsIntent {
+    data class SoundsToggled(val enabled: Boolean) : SettingsIntent
+    data class RemoteProtocolSelected(val protocol: RemoteProtocol) : SettingsIntent
+    data object DeleteFavoritesRequested : SettingsIntent
+    data object DeleteFavoritesConfirmed : SettingsIntent
+    data object DeleteFavoritesDismissed : SettingsIntent
+}
+```
+
+- **Consumed by:** the Android ViewModel in `:feature:settings` and the iOS `ObservableObject` in `iosApp/Features/Settings` (`DEC-013`).
+- **Invariants**
+  - `soundsEnabled` and `remoteProtocol` mirror `IC-021`'s latest emission; the state holder keeps no competing copy.
+  - `canDeleteFavorites` is true iff the `ObserveFavoriteIds` set is non-empty (`AC-REQ-FUNC-035-3`).
+  - `DeleteFavoritesRequested` sets `isConfirmingDelete` only when `canDeleteFavorites` is true. `DeleteFavoritesConfirmed` invokes `ClearFavorites` exactly once and then clears `isConfirmingDelete`. `DeleteFavoritesDismissed` clears it and invokes nothing (`AC-REQ-FUNC-035-1`).
+  - `RemoteProtocolSelected` with the current protocol writes nothing.
+  - The feature issues no remote request.
+- **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-035`, `DEC-055`, `UI_SPEC.md` §6.5.
+
 ## 7. Consumption by platform state holders
 
 `DEC-013` removed shared ViewModels; `DEC-015` kept the shared state classes. The consequence is a precise, two-sided obligation.
@@ -697,6 +790,10 @@ Test ids and layers are owned by `TESTING.md`; this section states which mechani
 | `IC-014` | Virtual time and a fake repository: reset, coalesced `next()`, end-of-pagination, `refresh()` semantics, no clearing on failure, prefetch bound | `TEST-UNIT-016`, `TEST-UNIT-006`, `TEST-UNIT-007` |
 | `IC-015`–`IC-017` | Pure tests: the `LoadState` variant construction rules, formatter outputs including `Unsupported` status and null-means-hide, `CopyKey` parity against both resource files | `TEST-UNIT-002`, `TEST-UNIT-008`, `TEST-UNIT-036` |
 | `IC-018`–`IC-020` | Mapping tests over recorded `PagerState`/store emissions; the precedence and intent rules asserted without a platform test runner | `TEST-UNIT-003`, `TEST-UNIT-005`, `TEST-UNIT-006`, `TEST-UNIT-007` |
+| `IC-008` `clear()`, `IC-013` `clear()` | Fake store with two collectors: one empty-set emission each, no emission on an empty store, preferences untouched | `TEST-UNIT-047` |
+| `IC-021`, `IC-022` | `FakeAppSettingsStore`: defaults, atomic `update`, no emission on an equal value, unknown protocol string reads as `Rest` | `TEST-UNIT-046` |
+| `IC-011` selection, `IC-012` isolation, `IC-014` reset | Fake settings flow switching protocol during an in-flight load; distinct keys per protocol; no `evictAll` on switch | `TEST-UNIT-048`, `TEST-UNIT-049` |
+| `IC-023` | Intent-rule tests over fake repositories: confirmation gating, single clear, no-op on unchanged protocol | `TEST-UNIT-050` |
 
 Fakes live in `:core:testing` and `MUST` honour the contract rather than merely echo configuration (a fake that returns what it was given is not evidence — `TESTING.md` §1 P2). Where a contract's behaviour cannot be exercised through a fake, it is a `TEST-INT-###` case instead (§9.3).
 
@@ -704,7 +801,7 @@ Fakes live in `:core:testing` and `MUST` honour the contract rather than merely 
 
 | Contract | What `MockEngine` proves | Notes |
 | --- | --- | --- |
-| `IC-011` | The adapter's observable behaviour against committed fixtures: status and query parameter encoding, `All` sending no `status`, blank query sending no `name`, singleton-versus-batch routing, chunk bounds, batch reconciliation by id, and `ApiFailure` classification for empty, malformed, `4xx`, `429` and `5xx` bodies | `TEST-CONTRACT-001`, `TEST-CONTRACT-003`, `TEST-UNIT-010`; fixtures and their inventory are owned by `TESTING.md` §4.3 (`DEC-030`) |
+| `IC-011` (both implementations) | Each adapter's observable behaviour against committed fixtures, and REST-versus-GraphQL parity to equal domain values (`TEST-CONTRACT-005`): status and query parameter encoding, `All` sending no `status`, blank query sending no `name`, singleton-versus-batch routing, chunk bounds, batch reconciliation by id, and `ApiFailure` classification for empty, malformed, `4xx`, `429` and `5xx` bodies | `TEST-CONTRACT-001`, `TEST-CONTRACT-003`, `TEST-UNIT-010`; fixtures and their inventory are owned by `TESTING.md` §4.3 (`DEC-030`) |
 | `IC-007` (through the adapter) | That a filtered `404` becomes an empty page rather than a failure, and that a partial response is never cached | `TEST-CONTRACT-001`, `TEST-UNIT-009` |
 
 `MockEngine` is used because the contract under test is the mapping and failure behaviour, not the socket. The same ids run in fixture/replay mode inside the required check set and in live mode in the separate scheduled job, as reconciled by `DEC-054` and `DEFINITION.md` D2.
@@ -767,4 +864,5 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 | --- | --- | --- |
 | 2026-09-29 | Document created on the `docs/documentation-system` branch: `IC-###` scheme and reference rules, the one-owner map, reference-only entries for the `API_SPECS.md` declarations, the data/domain seam contracts (`CharacterRepository`, `FavoritesRepository`, use cases, filters, `CharacterRemoteDataSource`, `CacheStorage`, `FavoritesLocalDataSource`, `CharacterPager`), the presentation contracts (`LoadState`, `CharacterCardUi`, formatters and copy keys, the list/detail/favorites state and intent types), platform consumption rules, change and Swift-compatibility rules, the verification strategy and the assumptions/drift register. Module names follow the feature-per-module layout of `DEC-052`. | `DEC-013`, `DEC-015`, `DEC-016`, `DEC-017`, `DEC-018`, `DEC-021`, `DEC-052`, `DEC-053`, `DEC-054` |
 | 2026-09-29 | Failure signalling changed from a thrown `ApiException` to a sealed `DataResult` (`Success`/`Failure`); `IC-006` withdrawn and its id retired as a gap rather than reallocated, so `IC-007`…`IC-020` keep their numbers. `IC-003` rewritten around the sealed envelope; `IC-007`, `IC-009`, `IC-011` and `IC-014` reworded from throwing/returning to `DataResult` outcomes; §3, §9.1 and §10.1 updated. `API_SPECS.md` §3 owns the declaration. | `DEC-013`, `ADR-0003` |
+| 2026-09-30 | `IC-008` and `IC-013` gained `clear()`; `IC-009` gained `ClearFavorites`, `ObserveAppSettings` and `UpdateAppSettings`; `IC-011` now has a REST and a GraphQL implementation selected per request; `IC-012` keys include the protocol; `IC-021` (`AppSettingsRepository`), `IC-022` (`AppSettingsLocalDataSource`) and `IC-023` (`SettingsUiState`/`SettingsIntent`) added; verification rows added. | `DEC-055`, `DEC-056` |
 | 2026-09-29 | Drift register updated against the realigned documents: D1, D2, D5 and D6 marked resolved; D3 and D4 narrowed to the remaining indirect citation hop through `DESIGN.md` §4.1. | `DEC-046`, `DEC-052` |

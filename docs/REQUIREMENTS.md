@@ -1,7 +1,7 @@
 # REQUIREMENTS.md — Product Requirements
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** Requirements Analyst (see `AGENTS.md`)
 - **Authoritative for:** *what* the product must do and *how well*. Not for *how* (see `DESIGN.md`, `API_SPECS.md`, `UI_SPEC.md`).
 - **Inputs:** [`assessment.md`](../assessment.md)
@@ -34,8 +34,9 @@ A client for the public [Rick and Morty API](https://rickandmortyapi.com/) that 
 | --- | --- | --- | --- |
 | DEF-001 | Voice search (speech-to-text) | DEC-002 | Only if a platform speech path is required; carry `REQ-FUNC-030`. |
 | DEF-002 | Real Episodes list and detail screens | DEC-005 | After M2, using `API-EPI-*` batch endpoints already documented. |
-| DEF-003 | Real Locations screens | DEC-005 | Same as DEF-002. |
+| DEF-003 | Real Locations screens | DEC-005, DEC-055 | Same as DEF-002, plus a decision on where Locations is reached from: it has no navigation destination since DEC-055. |
 | DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. |
+| DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. Until then the Sounds preference (`REQ-FUNC-033`) is stored but plays nothing. |
 
 ## 2. Actors and journeys
 
@@ -142,7 +143,7 @@ The app `MUST` show a branded splash whose portal rotation is the loading indica
 - Task: `TASK-007` · Tests: `TEST-UI-006`, `TEST-A11Y-001`
 
 #### REQ-FUNC-008 — Navigation and sections
-The app `MUST` expose four destinations — Characters, Episodes, Locations, Favorites — where Episodes and Locations present coming-soon placeholders and every placeholder offers an action that returns to Characters.
+The app `MUST` expose four destinations, in this order — Characters, Episodes, Favorites, Settings (DEC-055) — where Episodes presents a coming-soon placeholder with an action that returns to Characters, and Settings presents the settings of `REQ-FUNC-033`…`REQ-FUNC-035`.
 
 - `AC-REQ-FUNC-008-1` Every destination is reachable in one tap from any other destination.
 - `AC-REQ-FUNC-008-2` "Browse characters" selects the Characters destination without pushing a new screen.
@@ -220,13 +221,39 @@ When enrichment is requested, the app `MUST` fetch episode data in batch and der
 - `AC-REQ-FUNC-023-2` With `episodeSummaries == null`, "First seen in" is absent and the episode count still renders.
 - Task: `TASK-023` · Tests: `TEST-UNIT-011`, `TEST-CONTRACT-002`
 
+#### REQ-FUNC-033 — Settings screen and sounds preference
+The Settings destination `MUST` present, in this order, a Sounds on/off control, the remote data-source choice (`REQ-FUNC-034`) and a "Delete favorites" action (`REQ-FUNC-035`), each using the platform's own controls (DEC-055). The Sounds preference `MUST` default to off and persist across restarts; until `DEF-005` defines the sound set, it `MUST NOT` cause any sound to play.
+
+- `AC-REQ-FUNC-033-1` Settings shows exactly the three settings in the order above, with the copy of `UI_SPEC.md` §6.5 on both platforms.
+- `AC-REQ-FUNC-033-2` A changed Sounds value is shown again after the app restarts; a fresh install shows it off.
+- `AC-REQ-FUNC-033-3` No audio asset, audio permission or audio dependency exists in either app (`REQ-SEC-004`).
+- Task: `TASK-074` · Tests: `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`
+
+#### REQ-FUNC-034 — Remote data-source selection
+The user `MUST` be able to choose whether character data is fetched through the REST API or through GraphQL (DEC-056). REST is the default. The choice persists across restarts and takes effect without restarting the app.
+
+- `AC-REQ-FUNC-034-1` A fresh install uses REST; a changed choice is shown again after a restart and is the protocol the next request uses.
+- `AC-REQ-FUNC-034-2` Changing the choice cancels in-flight list loads, resets the list to page 1 and reloads it through the selected protocol, without showing items fetched through the previous one.
+- `AC-REQ-FUNC-034-3` For the same filter and page, both protocols produce equal domain results, including the empty-results case.
+- `AC-REQ-FUNC-034-4` Cached entries of one protocol are never served for the other, and switching evicts nothing.
+- Task: `TASK-075` · Tests: `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017`
+
+#### REQ-FUNC-035 — Delete all favorites
+Settings `MUST` offer a "Delete favorites" action that, after an explicit confirmation, removes every stored favorite (DEC-055).
+
+- `AC-REQ-FUNC-035-1` Activating the action shows a confirmation with "Cancel" and a destructive "Delete"; "Cancel" and dismissal change nothing.
+- `AC-REQ-FUNC-035-2` "Delete" empties the stored set in one operation; Favorites then shows its empty state and no Detail screen shows a character as favorited, without a manual refresh.
+- `AC-REQ-FUNC-035-3` The action is disabled while there are no favorites.
+- Task: `TASK-076` · Tests: `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017`
+
 ### 5.3 Could have (deferred — do not implement in M1/M2)
 
 | ID | Requirement | Status |
 | --- | --- | --- |
 | REQ-FUNC-030 | Voice search populating the query field on both platforms | Deferred — DEC-002. Must not ship without the permission/privacy work in `SECURITY.md`. |
 | REQ-FUNC-031 | Episodes list and detail screens | Deferred — DEC-005 (DEF-002). |
-| REQ-FUNC-032 | Locations list and detail screens | Deferred — DEC-005 (DEF-003). |
+| REQ-FUNC-032 | Locations list and detail screens | Deferred — DEC-005 (DEF-003). No navigation destination since DEC-055. |
+| REQ-FUNC-036 | Sound effects played while the Sounds preference is on | Deferred — DEC-055 (DEF-005). |
 
 ## 6. Non-functional requirements
 
@@ -238,7 +265,7 @@ The codebase `MUST` implement layered responsibilities with dependencies pointin
 - Reference: `DESIGN.md` §1, §3.4 · ADR: `ADR-0001` · Tests: `TEST-UNIT-012`
 
 #### REQ-NFR-009 — Feature-per-module structure
-The codebase `MUST` be organised as one module per user-facing capability (`:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes`, `:feature:locations`) with Clean Architecture layers inside each feature module, and shared infrastructure in `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem`, `:core:testing`.
+The codebase `MUST` be organised as one module per user-facing capability (`:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes`, `:feature:settings`) with Clean Architecture layers inside each feature module, and shared infrastructure in `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem`, `:core:testing`.
 
 - `AC-REQ-NFR-009-1` No feature module depends on another feature module; a dependency-analysis check fails the build on a forbidden edge.
 - `AC-REQ-NFR-009-2` Each feature module contains its own `domain` and `presentation` packages and declares its own navigation destination; no feature module owns the app-wide `NavHost`.
@@ -384,7 +411,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 
 ## 14. Open questions
 
-None blocking. Deferred items are tracked as `DEF-001`…`DEF-004` in §1.3 and as `DEC-###` rows with status `Deferred` in `DECISION_BOARD.md`.
+None blocking. Deferred items are tracked as `DEF-001`…`DEF-005` in §1.3 and as `DEC-###` rows with status `Deferred` in `DECISION_BOARD.md`.
 
 ## 15. Traceability summary
 
@@ -401,3 +428,4 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Rewritten from the initial 27-line draft: stable IDs, acceptance criteria, MoSCoW rebuilt against `assessment.md`, scope/non-goals, platform, UX, security and observability requirements added. | DEC-002, DEC-004, DEC-007, DEC-046 |
+| 2026-09-30 | Settings replaces Locations as the fourth destination (`REQ-FUNC-008`); `REQ-FUNC-033`…`REQ-FUNC-035` added as Should-have (sounds preference, REST/GraphQL selection, delete all favorites), not traceable to `assessment.md` but to owner decisions; `REQ-FUNC-036` and `DEF-005` defer the sound set; `REQ-NFR-009` module list updated. | DEC-055, DEC-056 |

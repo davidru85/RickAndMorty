@@ -50,24 +50,27 @@ Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`do
 | Image-first cards with placeholder, crossfade and branded error state | `REQ-FUNC-005` |
 | Favourites, stored locally, with a Favorites section | `REQ-FUNC-006` |
 | Branded splash whose portal rotation is the loading indicator | `REQ-FUNC-007` |
-| Four destinations: Characters, Episodes, Locations, Favorites | `REQ-FUNC-008` |
+| Four destinations: Characters, Episodes, Favorites, Settings | `REQ-FUNC-008` |
 | Card-to-detail shared-element transition with Reduce Motion fallback | `REQ-FUNC-009` |
 | Designed empty, stale, error and partial-data states | `REQ-FUNC-010`, `REQ-FUNC-022` |
 | Retry and manual refresh | `REQ-FUNC-011`, `REQ-FUNC-012` |
 | Localisation: English and Spanish | `REQ-FUNC-013` |
 | Response caching with an explicit freshness policy | `REQ-FUNC-020` |
 | Memory and disk image caching | `REQ-FUNC-021` |
+| Settings: Sounds preference (off by default), REST API or GraphQL data source (REST by default), delete all favorites with confirmation | `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-035` |
 
 ### Deferred by decision
 
 | Feature | Status |
 | --- | --- |
 | Voice search (speech-to-text) | Deferred — `DEC-002`. No microphone or speech permission is requested. |
-| Real Episodes and Locations screens | Deferred — `DEC-005`. Both ship as designed placeholders with a route back to Characters. |
+| Real Episodes screens | Deferred — `DEC-005`. Episodes ships as a designed placeholder with a route back to Characters. |
+| Real Locations screens | Deferred — `DEC-005`, `DEC-055`. Locations is not in the navigation. |
+| Sound effects | Deferred — `DEC-055`. The Sounds setting is stored but plays nothing yet. |
 
 ### Planned screens and screenshots
 
-The visual specification is [`docs/UI_SPEC.md`](docs/UI_SPEC.md). It defines six screens (Splash, Discovery, Detail, Episodes placeholder, Locations placeholder, Favorites empty state) and cross-links every component to its Figma node.
+The visual specification is [`docs/UI_SPEC.md`](docs/UI_SPEC.md). It defines seven frames per platform (Splash, Discovery, Detail, Episodes placeholder, Favorites empty state, Settings, and the Delete favorites confirmation) and cross-links every component to its Figma node.
 
 Screenshots are **not committed yet**. Two sets are pending and tracked in [`docs/BACKLOG.md`](docs/BACKLOG.md):
 
@@ -89,7 +92,7 @@ flowchart LR
     AVM --> FEAT
     IO --> FEAT
     subgraph "Feature modules"
-        FEAT[":feature:discovery · character-detail · favorites<br/>· episodes · locations<br/>domain + presentation + ui"]
+        FEAT[":feature:discovery · character-detail · favorites<br/>· episodes · settings<br/>domain + presentation + ui"]
     end
     FEAT --> CORE
     subgraph Core
@@ -142,7 +145,7 @@ flowchart LR
     └── templates/                # Backlog item, test case, PR, bug report
 ```
 
-The build will add `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,locations}`, `androidApp/`, `iosApp/`, a `benchmark` module and the CI workflows. Each feature module contains its own Clean Architecture layers as packages. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
+The build will add `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}`, `androidApp/`, `iosApp/`, a `benchmark` module and the CI workflows. Each feature module contains its own Clean Architecture layers as packages. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
 
 ## 6. Prerequisites
 
@@ -207,7 +210,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 ## 11. Known limitations
 
 1. **Images are 300 × 300.** The API publishes one square avatar per character and nothing larger. The detail hero therefore upscales the source; scrims and the blurred iOS backdrop make this a stylistic choice rather than a visible defect ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
-2. **Two tabs are placeholders.** Episodes and Locations are designed coming-soon screens; Favorites is real (`DEC-005`).
+2. **One tab is a placeholder.** Episodes is a designed coming-soon screen; Favorites and Settings are real (`DEC-005`, `DEC-055`). The Sounds setting plays nothing until a sound set is decided.
 3. **Voice search is not implemented.** It is deferred, and no microphone or speech permission is requested (`DEC-002`).
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).

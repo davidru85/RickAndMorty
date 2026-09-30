@@ -1,7 +1,7 @@
 # DECISION_BOARD.md — Decision Index and Status Board
 
 - **Status:** Active
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** the current *status* and *location* of every project decision. Rationale lives in the ADR files; chronology lives in `PROJECT_LOG.md`. This file MUST NOT restate rationale.
 
@@ -22,7 +22,7 @@
 | DEC-002 | Assessment extras: all committed except voice search, which is deferred | Scope | Accepted | Blocking | `REQUIREMENTS.md` §5.3, `UI_SPEC.md` §6.2 | — | Interview A2 |
 | DEC-003 | Depth concentrates on code and architecture quality | Process | Accepted | High | `TECHNICAL_PLAN.md` | — | Interview A3 |
 | DEC-004 | Favorites in MVP on both platforms, stored locally | Scope | Accepted | High | `REQUIREMENTS.md` §5.1 | [ADR-0007](adr/0007-favorites-storage.md) | Interview A4 |
-| DEC-005 | Episodes/Locations ship as placeholders | Scope | Accepted | Normal | `REQUIREMENTS.md` §5.3 | — | Interview A5 |
+| DEC-005 | Episodes/Locations ship as placeholders | Scope | Accepted (amended by DEC-055) | Normal | `REQUIREMENTS.md` §5.3 | — | Interview A5 |
 | DEC-006 | Baseline accessibility plus i18n-ready resources with English and Spanish shipped | Scope | Accepted | High | `REQUIREMENTS.md` §8 | — | Interview A6 |
 | DEC-007 | "Review" means read-only browsing; no authored content | Scope | Accepted | Blocking | `REQUIREMENTS.md` §1.2 | — | Interview A7 |
 | DEC-008 | iOS minimum deployment target 18.0, Liquid Glass via availability check with material fallback | Platform | Accepted | Blocking | iOS module, `UI_SPEC.md` §4.2 | [ADR-0003](adr/0003-ui-sharing-strategy.md) | Interview B1 |
@@ -40,6 +40,8 @@
 | DEC-052 | Feature-per-module: one module per user-facing capability, Clean Architecture layers inside each module, shared infrastructure in `:core:*` | Architecture | Accepted | Blocking | `DESIGN.md` §3, every module path and build command | [ADR-0001](adr/0001-module-boundaries.md) | Owner directive 2026-09-29 |
 | DEC-053 | TDD protocol: red → commit → green → commit → refactor → commit → push, with phase commits preserved (no squash) | Process | Accepted | Blocking | `CONTRIBUTING.md`, `DEFINITION.md`, `TESTING.md` | — | Owner directive 2026-09-29 |
 | DEC-054 | CI/CD: the entire test suite must run green on both platforms before a pull request can be approved or merged | Process | Accepted | Blocking | CI workflows, branch protection, `DEFINITION.md` §2 | — | Owner directive 2026-09-29 |
+| DEC-055 | Settings replaces Locations as the fourth navigation destination (order Characters · Episodes · Favorites · Settings); Settings holds a sounds preference, the remote-protocol choice and "Delete favorites" with confirmation; `:feature:settings` replaces `:feature:locations`; preferences persist in `:core:data` | Scope | Accepted | High | `REQUIREMENTS.md` `REQ-FUNC-008`, `REQ-FUNC-033`…`REQ-FUNC-035`, `UI_SPEC.md` §6.5, module set | [ADR-0010](adr/0010-settings-destination.md) | Owner directive 2026-09-30 |
+| DEC-056 | REST and GraphQL both ship, selectable at runtime in Settings (REST default), through the single Ktor client with hand-written GraphQL operations; no Apollo | Data | Accepted | High | `:core:data`, `API_SPECS.md` §2, §7.2, `TESTING.md` §4.3 | [ADR-0011](adr/0011-runtime-remote-protocol.md) | Owner directive 2026-09-30 |
 | DEC-020 | Native resource files per platform plus a canonical key list and a parity test | Process | Accepted | High | Localisation tasks | — | Interview C6 |
 | DEC-021 | `ERROR_FLOW.md` is the canonical owner of the failure→state→copy chain | Documentation | Accepted | Blocking | `DESIGN.md` §7, `UI_SPEC.md` §8 | — | Interview D1 |
 | DEC-022 | Hand-written design tokens checked against a committed `tokens.json` export | Process | Accepted | Normal | Design-system modules | — | Interview D2 |
@@ -81,7 +83,7 @@
 | Android-only PR gate with iOS deferred to `main` | Superseded by DEC-054 | Owner directive: all tests, both platforms, required before approval. | DEC-054 |
 | Squash merge | Superseded by DEC-041 (amended) | Squashing would destroy the red/green/refactor commit sequence mandated by DEC-053. | DEC-041, DEC-053 |
 | Retrofit/OkHttp as the shipped REST client | Superseded by DEC-011 | JVM-only; cannot serve the shared data layer. | `API_SPECS.md` §14 |
-| GraphQL (Apollo Kotlin) as the shipped protocol | Rejected for MVP | `POST` breaks the standard HTTP cache, needs a normalized cache, and no screen requires it. REST stays documented as the alternative. | `API_SPECS.md` §2 |
+| GraphQL (Apollo Kotlin) as the shipped protocol | Rejected for MVP; GraphQL-through-Ktor admitted by DEC-056 (Apollo still rejected) | `POST` breaks the standard HTTP cache, needs a normalized cache, and no screen requires it. REST stays documented as the alternative. | `API_SPECS.md` §2 |
 | Paging 3 | Rejected | No iOS equivalent; the page contract is simple enough for a shared pager. | DEC-016 |
 | Shared ViewModels with SKIE | Rejected | Alpha AndroidX artifact plus a third-party compiler plugin on the critical path. | DEC-013 |
 | Kotlin Swift export | Deferred | Officially Alpha at the time of the decision. | DEC-013, DEF-004 |
@@ -101,7 +103,8 @@
 | DEC | Question | Revisit when | Reference |
 | --- | --- | --- | --- |
 | DEC-002 | Voice search implementation and its permission flow | A platform speech requirement appears | `REQUIREMENTS.md` `REQ-FUNC-030` |
-| DEC-005 | Real Episodes/Locations screens | After the iOS milestone | `REQUIREMENTS.md` `REQ-FUNC-031/032` |
+| DEC-005 | Real Episodes/Locations screens | After the iOS milestone; Locations also needs an entry point, since it has no navigation destination (DEC-055) | `REQUIREMENTS.md` `REQ-FUNC-031/032` |
+| DEC-055 | Which sound effects exist and when they play (the Sounds preference is stored but plays nothing) | A sound set is specified and traced to an accepted decision | `REQUIREMENTS.md` `REQ-FUNC-036` (`DEF-005`) |
 | DEC-013 | Kotlin Swift export as the single interop path | Swift export becomes Stable | DEF-004 |
 | DEC-025 | iOS snapshot baseline breadth | iOS milestone starts | `TESTING.md` |
 | DEC-029 | Whether live contract tests move into the merge gate | The API publishes a versioned or stable contract | `API_SPECS.md` §1 |
@@ -111,3 +114,4 @@
 | Date | Change | Reference |
 | --- | --- | --- |
 | 2026-09-29 | Board created; DEC-001…DEC-051 recorded from the documentation decision interview; superseded and rejected alternatives filed in §3. | This audit |
+| 2026-09-30 | DEC-055 added (Settings replaces Locations in the navigation and holds three settings); DEC-056 added (runtime REST/GraphQL selection through Ktor); DEC-005 marked amended; the §3 GraphQL rejection narrowed to Apollo; the sound set filed as deferred. | [ADR-0010](adr/0010-settings-destination.md), `PROJECT_LOG.md` LOG entry of 2026-09-30 |

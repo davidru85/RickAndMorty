@@ -1,12 +1,14 @@
 # ADR-0004 — REST client: Ktor 3.6.0 with kotlinx.serialization everywhere
 
-- **Status:** Accepted
+- **Status:** Accepted (GraphQL outcome amended by [ADR-0011](0011-runtime-remote-protocol.md))
 - **Date:** 2026-09-29
 - **Last verified:** 2026-09-29
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementation owner Implementation Engineer (Android); consulted Implementation Engineer (iOS) for the Darwin engine configuration
 - **Authoritative for:** which HTTP client and which serialization stack the project ships, and how error and mapping behaviour is kept in one place. Not the wire contract (`API_SPECS.md`), not the cache policy (ADR-0005) and not the pager (ADR-0009).
 - **Inputs:** `DEC-011` in [`DECISION_BOARD.md`](../DECISION_BOARD.md); `DEC-018` (ADR-0005), `DEC-030` (ADR-0004's test seam), `DEC-052` (ADR-0001); `REQ-NFR-002`, `REQ-NFR-004`, `CON-004`, `CON-001` in [`REQUIREMENTS.md`](../REQUIREMENTS.md); [`API_SPECS.md`](../API_SPECS.md) §2, §4, §6, §7.1, §12; [`DESIGN.md`](../DESIGN.md) §2, §9 (decision D1); verified Ktor 3.6.0 release, Kotlin 2.4.20 and kotlinx.serialization as of 2026-09-29
+
+> **Amended 2026-09-30 by [ADR-0011](0011-runtime-remote-protocol.md) (`DEC-056`):** GraphQL now ships as a user-selectable remote protocol, sent through this ADR's single Ktor client with hand-written operations. The rejection of Apollo Kotlin and of any second HTTP client below still stands; only the "GraphQL as the shipped protocol" outcome is amended.
 
 ## Owners
 

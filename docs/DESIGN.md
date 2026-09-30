@@ -1,7 +1,7 @@
 # DESIGN.md - System Architecture Design
 
 - **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
 - **Not authoritative for:** requirement IDs and acceptance criteria (`REQUIREMENTS.md`), internal interface signatures and invariants (`CONTRACTS.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), visual specification (`UI_SPEC.md`).
@@ -32,7 +32,7 @@ flowchart TB
     PU --> IPA
     APK --> AU --> SH
     IPA --> IU --> SH
-    SH -->|"HTTPS, JSON, GET"| API[("rickandmortyapi.com<br/>REST + GraphQL")]
+    SH -->|"HTTPS, JSON, GET (REST) or POST (GraphQL)"| API[("rickandmortyapi.com<br/>REST + GraphQL")]
     SH -->|"favourites, cached responses"| STORE[("Local storage<br/>DataStore / UserDefaults + cache files")]
 ```
 
@@ -96,7 +96,7 @@ The split between shared and native code:
 
 ## 3. Module boundaries
 
-**Strategy: feature-per-module with Clean Architecture inside each module (DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md)).** Each user-facing capability is its own Gradle/Swift module that contains its own domain, presentation and UI layers as packages. Shared infrastructure lives in `:core:*`. A feature module never depends on another feature module.
+**Strategy: feature-per-module with Clean Architecture inside each module (DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md); the Settings module replaces Locations per DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)).** Each user-facing capability is its own Gradle/Swift module that contains its own domain, presentation and UI layers as packages. Shared infrastructure lives in `:core:*`. A feature module never depends on another feature module.
 
 ```mermaid
 flowchart TB
@@ -112,7 +112,7 @@ flowchart TB
         FC[":feature:character-detail"]
         FF[":feature:favorites"]
         FE[":feature:episodes"]
-        FL[":feature:locations"]
+        FS[":feature:settings"]
     end
     APP[":androidApp"]
     IOS["iosApp targets<br/>Features/* + DesignSystem"]
@@ -131,18 +131,18 @@ flowchart TB
     FF --> CP
     FF --> CDS
     FE --> CDS
-    FL --> CDS
+    FS --> CDS
     APP --> FD
     APP --> FC
     APP --> FF
     APP --> FE
-    APP --> FL
+    APP --> FS
     APP --> CDS
     IOS --> FD
     IOS --> FC
     IOS --> FF
     IOS --> FE
-    IOS --> FL
+    IOS --> FS
     FD -. test only .-> CT
     FC -. test only .-> CT
     FF -. test only .-> CT
@@ -152,8 +152,8 @@ flowchart TB
 
 | Module | Target | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`), `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | — |
-| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, REST DTOs, mappers, app-level response cache, shared pager, favorites stores, repository implementations, failure mapping, retry/timeout policy. | `:core:domain` |
+| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | — |
+| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, shared pager, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy. | `:core:domain` |
 | `:core:presentation` | `commonMain` | Cross-feature presentation primitives only: `LoadState`, display formatters ("Unknown" casing, status labels, dimension derivation), canonical copy keys. No screen-specific state. | `:core:domain` |
 | `:core:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme, no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors`, components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons, empty-state component. | Compose only |
 | `:core:testing` | KMP | Shared fakes (fake repositories, fake `CacheStorage`, fake favorites store, fake clock, fake image loader), JSON fixtures, `TestDispatcher` helpers. Test source sets only — never shipped. | `:core:domain`, `:core:data` |
@@ -179,9 +179,9 @@ Every feature module repeats the same internal structure: Clean Architecture lay
 | `:feature:character-detail` | Detail screen: hero, stats, info list, enrichment-aware rows, favourite toggle, the shared-element destination. | Owns `CharacterDetailUiState`/`CharacterDetailIntent`; reads the list-provided header for the instant transition. |
 | `:feature:favorites` | Favorites list over the stored ID set, plus its designed empty state. | Reads `ObserveFavoriteIds` from `:core:domain`; renders the same card component as Discovery by consuming `:core:presentation` state types. |
 | `:feature:episodes` | Episodes "coming soon" placeholder only. | No data layer in the MVP (DEC-005). |
-| `:feature:locations` | Locations "coming soon" placeholder only. | No data layer in the MVP (DEC-005). |
+| `:feature:settings` | Settings screen: Sounds preference, remote data-source choice, "Delete favorites" with its confirmation (`REQ-FUNC-033`…`REQ-FUNC-035`). | Owns `SettingsUiState`/`SettingsIntent` (`IC-023`) and the feature-local use cases; reads and writes preferences through `AppSettingsRepository` and clears favorites through `FavoritesRepository`, both in `:core:domain` (DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)). |
 
-iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Discovery`, `Features/CharacterDetail`, `Features/Favorites`, `Features/Episodes`, `Features/Locations`, plus `DesignSystem`. Each Swift feature package holds its views and its `ObservableObject` (or `@Observable`) state holder, consuming the state contract published by the matching Kotlin feature module (DEC-013).
+iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Discovery`, `Features/CharacterDetail`, `Features/Favorites`, `Features/Episodes`, `Features/Settings`, plus `DesignSystem`. Each Swift feature package holds its views and its `ObservableObject` (or `@Observable`) state holder, consuming the state contract published by the matching Kotlin feature module (DEC-013).
 
 ### 3.3 Application shells
 
@@ -240,19 +240,20 @@ The Discovery state holder applies the rules from `API_SPECS.md` §8: 300 ms deb
 | `Splash` | In-app composable after `installSplashScreen()` | Root view before the stack |
 | `CharacterList` | Start destination, bottom navigation "Characters" | `TabView` → "Characters" tab root |
 | `CharacterDetail(id)` | `@Serializable data class CharacterDetail(val id: String)` | `Route.detail(CharacterId)` |
-| `Episodes` · `Locations` · `Favorites` | Top-level destinations in the navigation bar | `TabView` tabs |
+| `Episodes` · `Favorites` · `Settings` | Top-level destinations in the navigation bar, in the order Characters · Episodes · Favorites · Settings (DEC-055) | `TabView` tabs, same order |
 
 The card-to-detail transition is part of the architecture, not decoration:
 - **Android:** `SharedTransitionLayout` wraps the app-wide `NavHost` in `:androidApp`, composed from each feature's declared destination. The portrait uses the shared key `"portrait-$id"`, and predictive back is supported. The shared element crosses the `:feature:discovery` → `:feature:character-detail` boundary as a keyed modifier supplied by `:core:designsystem`, not as a module dependency between the two features (rule 6 in §3.4).
 - **iOS:** a `@Namespace` is passed from the Discovery view to the detail view for `.matchedTransitionSource` / `.navigationTransition(.zoom)`.
 - **Both:** to work, the detail must render the pre-filled `header` immediately, before the network responds (`API_SPECS.md` §8: "Reuse list data during navigation"). Discovery publishes the selected `CharacterCardUi` through a shared navigation hand-off in `:core:presentation`, so neither feature depends on the other.
 
-The Episodes, Locations and Favorites destinations are wired in the MVP but Episodes and Locations show placeholder screens (`UI_SPEC.md` §6.4). Each platform has one reusable empty-state component with identical copy: `:core:designsystem` (Android) and `iosApp/DesignSystem` (iOS).
-- Episodes and Locations are "coming soon" screens with no use case or data layer (DEC-005).
+The Episodes, Favorites and Settings destinations are wired in the MVP. Episodes shows a placeholder screen (`UI_SPEC.md` §6.4) and Settings shows the settings screen (`UI_SPEC.md` §6.5). Each platform has one reusable empty-state component with identical copy: `:core:designsystem` (Android) and `iosApp/DesignSystem` (iOS).
+- Episodes is a "coming soon" screen with no use case or data layer (DEC-005).
+- Settings changes preferences through `AppSettingsRepository`; a data-source change reaches the Discovery pager as an identity change, so the list reloads from page 1 (ADR-0011).
 - `:feature:favorites` observes `ObserveFavoriteIds` (§4.5) and shows its empty state while the set is empty.
 - "Browse characters" switches to the Characters destination rather than pushing a route.
 
-Real Episodes and Locations screens remain deferred (DEF-002, DEF-003).
+Real Episodes screens and sound effects remain deferred (DEF-002, DEF-005). Locations has no destination since DEC-055; real Locations screens remain deferred (DEF-003).
 
 ### 4.3 Design tokens pipeline
 
@@ -293,12 +294,17 @@ Both designs add a Favorite action (Android extended FAB, iOS prominent glass bu
 - **Domain:** `FavoritesRepository` with `ObserveFavoriteIds(): Flow<Set<CharacterId>>` and `ToggleFavorite(id)`; `ObserveFavoriteIds` is cross-feature, so it lives in `:core:domain`, and `ToggleFavorite` is used by the detail feature (contract in [`CONTRACTS.md`](CONTRACTS.md)).
 - **Data:** `:core:data` stores the ID set behind `FavoritesLocalDataSource` with `expect/actual` implementations — DataStore on Android, `UserDefaults` on iOS (DEC-017, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md)). Multiplatform DataStore and SQLDelight were rejected as alpha and unnecessary respectively.
 - The UI shows the favourite state instantly and re-fetches details through the normal cached path, so no database is required.
+- **Delete all:** `:feature:settings` clears the whole set through `FavoritesRepository` after the user confirms (`REQ-FUNC-035`). Every observer receives the empty set, so Favorites and Detail update without a refresh.
+
+### 4.6 App settings
+
+Preferences (Sounds, remote protocol) are exposed by `AppSettingsRepository` in `:core:domain` and persisted by an `expect/actual` store in `:core:data`. On each platform it reuses the store technology favorites already use (DataStore on Android, `UserDefaults` on iOS; DEC-017), so no dependency is added (DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)). `:core:data` reads the protocol preference to choose the remote data source per request (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)). The store holds only the keys `CONTRACTS.md` `IC-021` names, and nothing personal (`REQ-SEC-003`).
 
 ## 5. Dependency injection
 
 - **Framework:** Koin 4.2.2, runtime DSL (DEC-014, [`adr/0006-presentation-state.md`](adr/0006-presentation-state.md)). Koin is multiplatform, so one graph serves Android and iOS; Hilt is Android-only and cannot provide the shared graph (rejected), and the Koin compiler plugin is not used.
-- **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`) and the app shell starts the graph by loading every feature module plus `coreModule`. This keeps a feature's wiring inside the feature.
-- **Singletons:** Ktor `HttpClient`, response cache, favorites store, repositories, Coil `ImageLoader` (Android), `CharacterAccentResolver`.
+- **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`, `settingsModule`) and the app shell starts the graph by loading every feature module plus `coreModule`. This keeps a feature's wiring inside the feature.
+- **Singletons:** Ktor `HttpClient`, response cache, favorites store, app-settings store, both remote data sources, repositories, Coil `ImageLoader` (Android), `CharacterAccentResolver`.
 - **Factories:** feature use cases.
 - **State-holder scope:** `DiscoveryViewModel` (in `:feature:discovery`, Android) and `CharacterDetailViewModel` (in `:feature:character-detail`, Android) are resolved with `koinViewModel()`. On iOS the shared graph is started from the app target and each feature package resolves its own dependencies into its `ObservableObject`; there is no `StateFlow`-to-Swift bridge (DEC-013).
 
@@ -411,9 +417,12 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | D4 | Favorites scope | Committed MVP feature backed by `expect/actual` stores — DEC-004, DEC-017, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md) |
 | D5 | Pager | Custom shared pager — DEC-016, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md) |
 | — | Module structure | Feature-per-module with Clean Architecture per feature — DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) |
+| — | Settings destination and preferences store | `:feature:settings` replaces `:feature:locations`; preferences in `:core:domain`/`:core:data` — DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md) |
+| — | Remote protocol | REST and GraphQL both ship, user-selectable, through the one Ktor client — DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md) |
 
 ## 10. Change log
 
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Restructured to feature-per-module with Clean Architecture inside each feature module; platform floors, Ktor, Koin, favorites and pager questions resolved into decisions; failure chain delegated to `ERROR_FLOW.md`; system overview added. | DEC-011…DEC-021, DEC-052 |
+| 2026-09-30 | `:feature:settings` replaces `:feature:locations`; navigation order Characters · Episodes · Favorites · Settings; §4.6 app settings added; `:core:data` carries both remote protocols. | DEC-055, DEC-056 |

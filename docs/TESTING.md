@@ -1,7 +1,7 @@
 # TESTING.md — Test Strategy and Verification Plan
 
 - **Status:** Active — target state. The repository contains no test code yet (§Preamble, *Current state vs target state*).
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`DESIGN.md`](DESIGN.md), [`UI_SPEC.md`](UI_SPEC.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), `ERROR_FLOW.md`, `CONTRACTS.md`, `PERFORMANCE.md`, `DEFINITION.md`, `CONTRIBUTING.md`, `GUIDELINES.md`, [`../AGENTS.md`](../AGENTS.md)
@@ -117,7 +117,7 @@ The proportions are targets for review judgement, not build gates (`DEC-031`, §
 
 The product surface is small and bounded by decisions already taken:
 
-- **Four destinations** (`REQ-FUNC-008`): Characters, Detail, Favorites and one placeholder group. Episodes and Locations are placeholders (`DEC-005`, `DEF-002`, `DEF-003`), so two of the four destinations contain no data logic to exercise end-to-end.
+- **Four destinations** (`REQ-FUNC-008`): Characters, Episodes, Favorites and Settings. Episodes is a placeholder (`DEC-005`, `DEF-002`) with no data logic to exercise end-to-end; Settings holds three local settings (`REQ-FUNC-033`…`REQ-FUNC-035`, `DEC-055`).
 - **One navigable flow:** list → detail → favourite, plus search/filter on the list (`REQUIREMENTS.md` §2).
 - **Phone portrait only** (`DEC-027`, `NG-004`): no device matrix, no rotation, no tablet or foldable layouts.
 - **No accounts, no authoring, no write paths** (`NG-001`, `NG-002`, `REQ-PLAT-005`).
@@ -152,6 +152,11 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Detail model | List-provided header usable before any network response (`AC-REQ-FUNC-002-1`); `episodeSummaries == null` hides "First seen in" while the episode count still renders (`AC-REQ-FUNC-023-2`) | `TEST-UNIT-002`, `TEST-UNIT-011` |
 | State holders (shared logic) | Debounce 300 ms, `distinctUntilChanged`, page reset on query/status change, cancellation of the superseded request, blank query sends no `name` parameter, exactly four status options with `All` the default (`REQ-FUNC-003`, `REQ-FUNC-004`) | `TEST-UNIT-003` |
 | Favorites logic | Toggle parity, optimistic state, empty set semantics (`REQ-FUNC-006`) | `TEST-UNIT-004` |
+| App settings store | `IC-021`/`IC-022` against `FakeAppSettingsStore` and, through the §6.2 suite, both `actual`s: fresh-install defaults (Sounds off, REST), persistence across a simulated restart, atomic `update`, no emission on an equal value, unknown protocol string read as REST, no keys beyond `AppSettings` (`AC-REQ-FUNC-033-2`, `AC-REQ-FUNC-034-1`) | `TEST-UNIT-046` |
+| Clear favorites | `clear()` on `IC-008`/`IC-013`: one empty-set emission to every collector, none on an empty store, preferences untouched (`AC-REQ-FUNC-035-2`) | `TEST-UNIT-047` |
+| Protocol switch | A `remoteProtocol` change while a page loads cancels it, resets the pager to page 1 and reloads through the other `IC-011` implementation, with no item from the previous protocol ever emitted (`AC-REQ-FUNC-034-2`) | `TEST-UNIT-048` |
+| Protocol cache isolation | Same filter and page produce different `CacheKey`s per protocol; a switch neither evicts nor reads the other protocol's entries (`AC-REQ-FUNC-034-4`) | `TEST-UNIT-049` |
+| Settings state holder | `IC-023` intent rules: delete confirmation only when favorites exist, exactly one `ClearFavorites` on confirm, none on dismiss, no write for an unchanged protocol (`AC-REQ-FUNC-035-1`, `AC-REQ-FUNC-035-3`) | `TEST-UNIT-050` |
 | Failure mapping | Full `ApiFailure` matrix against `ERROR_FLOW.md` and its `API-ERR-###` rows; precedence when several mappings apply; `CancellationException` never surfaced (`AC-REQ-FUNC-022-2`) | `TEST-UNIT-010` |
 | Cache | Freshness, stale-while-revalidate and offline windows with an injected fake clock; `DataResult.source` and `isStale`; errors, empty bodies and partial GraphQL responses never cached (`AC-REQ-FUNC-020-3`, `AC-REQ-REL-004-1`) | `TEST-UNIT-009`, `TEST-UNIT-023` |
 | Cache identity | Key isolation across pages, filters, protocols and GraphQL field selections (`REQ-REL-001`) | `TEST-UNIT-020` |
@@ -234,7 +239,7 @@ Fixtures live in `:core:testing` at `core/testing/src/commonMain/resources/fixtu
 | `graphql-empty-filter.json` | Empty-filter GraphQL query | All `info` fields null with `results: []` → empty result, not a malformed response | `TEST-CONTRACT-004` |
 | `graphql-validation-error-400.json` | Live GraphQL query with an unknown field | HTTP `400` with `GRAPHQL_VALIDATION_FAILED` → `InvalidRequest`, non-retryable | `TEST-CONTRACT-004`, `TEST-UNIT-022` |
 
-The GraphQL fixtures exist because `API_SPECS.md` §5 and §10.2 remain the documented alternative protocol and because protocol parity is a resilience contract (`TEST-CONTRACT-005`). They `MUST NOT` be read as a commitment to ship a GraphQL client: `DEC-011` ships REST.
+The GraphQL fixtures exist because GraphQL is a shipped, user-selectable protocol (`DEC-056`, `REQ-FUNC-034`): `API_SPECS.md` §5 and §10.2 describe shipped behaviour, and protocol parity (`TEST-CONTRACT-005`) proves both protocols map to equal domain values (`AC-REQ-FUNC-034-3`).
 
 ### 4.4 Keeping fixtures in sync with the live API
 
@@ -325,7 +330,8 @@ Both platforms assert the **state** they render against `ERROR_FLOW.md` (canonic
 | List renders the first page without fetching later pages; the paging indicator is the last item | `TEST-UI-001` | `AC-REQ-FUNC-001-1` |
 | Detail renders the list-provided header before the network responds, and shows the inline retry when the detail fetch fails with cached list data | `TEST-UI-002` | `AC-REQ-FUNC-002-1`, `AC-REQ-FUNC-002-3` |
 | Filter chips show exactly four options with `All` selected by default, and a selection resets to page 1 | `TEST-UI-003` | `REQ-FUNC-004` |
-| Four destinations are reachable in one tap from any other; "Browse characters" switches destination without pushing a route | `TEST-UI-007` | `AC-REQ-FUNC-008-1`, `AC-REQ-FUNC-008-2` |
+| Four destinations, in the order Characters · Episodes · Favorites · Settings, are reachable in one tap from any other; "Browse characters" switches destination without pushing a route | `TEST-UI-007` | `AC-REQ-FUNC-008-1`, `AC-REQ-FUNC-008-2` |
+| Settings shows Sounds, Data source and Delete favorites in order with the canonical copy; the switch/toggle and the picker expose their state; "Delete favorites" is disabled with no favorites, opens the confirmation otherwise, "Cancel" changes nothing and "Delete" leaves Favorites on its empty state (Android semantics test plus the iOS state-holder and snapshot cases) | `TEST-UI-017` | `AC-REQ-FUNC-033-1`, `AC-REQ-FUNC-034-1`, `AC-REQ-FUNC-035-1`, `AC-REQ-FUNC-035-2`, `AC-REQ-FUNC-035-3` |
 | Empty results state names the active query and offers "Clear filters" | `TEST-UI-009` | `REQ-FUNC-010` |
 | Splash lasts within its window, exposes an indeterminate progress indicator, and completes with no network | `TEST-UI-006`, `TEST-A11Y-001` | `AC-REQ-FUNC-007-1`, `AC-REQ-FUNC-007-2`, `AC-REQ-FUNC-007-3` |
 | First launch with no network shows the designed error state, not a crash | `TEST-UI-011` | `AC-REQ-PLAT-005-1` |
@@ -595,6 +601,9 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-021` — Image caching | Should | `TEST-INT-002` |
 | `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010` |
 | `REQ-FUNC-023` — Detail enrichment | Should | `TEST-UNIT-011`, `TEST-CONTRACT-002` |
+| `REQ-FUNC-033` — Settings screen and sounds preference | Should | `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`; `AC-REQ-FUNC-033-3` by the manifest/`Info.plist` and dependency checks `TEST-UNIT-028` |
+| `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017` |
+| `REQ-FUNC-035` — Delete all favorites | Should | `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017` |
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017` |
 | `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034` |
@@ -637,7 +646,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 
 ### 16.1 Gaps and boundaries
 
-- Requirements marked **Could** (`REQ-FUNC-030`, `REQ-FUNC-031`, `REQ-FUNC-032`) are deferred (`REQUIREMENTS.md` §5.3) and have no tests by design.
+- Requirements marked **Could** (`REQ-FUNC-030`, `REQ-FUNC-031`, `REQ-FUNC-032`, `REQ-FUNC-036`) are deferred (`REQUIREMENTS.md` §5.3) and have no tests by design.
 - The acceptance criteria themselves are not listed per row here: each `AC-` of a mapped requirement is asserted inside the mapped ids, and the combined requirement → contract → task → acceptance matrix is maintained in `DOCUMENTATION_AUDIT.md` §6.
 - Three rows are partly manual by nature and say so in §16.2: `REQ-SEC-002` and `REQ-SEC-006` (secret scanning and advisory review also happen outside the test code) and `REQ-SEC-007` (the test asserts the route is documented and identical in both files; the wording itself is a documentation review). A manual check `MUST NOT` stand in for an automated one where an automated one is possible.
 - Adding a test id, or retiring one, is a change to this document in the same commit as the test (`DEC-046`).

@@ -23,7 +23,8 @@ Committed exports fix that: the reviewer sees the design in the repository, the 
 | `03-detail-android.png` | 03 · Detail (Android) | `21:1217` |
 | `03-detail-ios.png` | 03 · Detail (iOS) | `26:452` |
 | `04-episodes-android.png` · `04-episodes-ios.png` | 04 · Episodes placeholder | `101:499` · `102:269` |
-| `05-locations-android.png` · `05-locations-ios.png` | 05 · Locations placeholder | `101:568` · `102:322` |
+| `05-settings-android.png` · `05-settings-ios.png` | 05 · Settings | `101:568` · `102:322` |
+| `05b-settings-delete-android.png` · `05b-settings-delete-ios.png` | 05b · Settings · Delete favorites confirmation | `122:1293` · `123:529` |
 | `06-favorites-android.png` · `06-favorites-ios.png` | 06 · Favorites empty state | `101:637` · `102:375` |
 | `10-launcher-android.png` | Android launcher icon board | `59:240` |
 | `10-appicon-ios.png` | iOS app icon board | `59:930` |

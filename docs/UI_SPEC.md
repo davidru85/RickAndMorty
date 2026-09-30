@@ -1,7 +1,7 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
 - **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** UI/UX Designer (see `AGENTS.md`)
 - **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
 - **Not authoritative for:** behaviour requirements (`REQUIREMENTS.md`), architecture (`DESIGN.md`), failure handling (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`).
@@ -29,7 +29,7 @@ The portraits on the shared page (`13:130`) are **sample data only**: ten 300 ×
 
 ### 1.1 Screens
 
-Both flows are wired as clickable prototypes: open a page and press **Present**. The Splash simulates a 2 s data load (the portal spins as the loading indicator), then moves to Discovery. Tap Rick's card to open Detail. The navigation tabs switch between Discovery and the three placeholder sections, whose "Browse characters" button returns to Discovery.
+Both flows are wired as clickable prototypes: open a page and press **Present**. The Splash simulates a 2 s data load (the portal spins as the loading indicator), then moves to Discovery. Tap Rick's card to open Detail. The navigation tabs switch between Discovery, the Episodes placeholder, Favorites and Settings; "Browse characters" on a placeholder returns to Discovery. On Settings, "Delete favorites" opens the confirmation frame, whose buttons return to Settings.
 
 | Screen | Android (412 × 892 dp) | iOS (402 × 874 pt, iPhone 17 Pro) |
 | --- | --- | --- |
@@ -37,7 +37,8 @@ Both flows are wired as clickable prototypes: open a page and press **Present**.
 | 02 · Discovery (list) | [`20:1735`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=20-1735) | [`29:381`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=29-381) |
 | 03 · Detail | [`21:1217`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=21-1217) | [`26:452`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=26-452) |
 | 04 · Episodes (placeholder) | [`101:499`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-499) | [`102:269`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-269) |
-| 05 · Locations (placeholder) | [`101:568`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-568) | [`102:322`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-322) |
+| 05 · Settings | [`101:568`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-568) | [`102:322`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-322) |
+| 05b · Settings · Delete favorites (confirmation) | [`122:1293`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=122-1293) | [`123:529`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=123-529) |
 | 06 · Favorites (empty state) | [`101:637`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=101-637) | [`102:375`](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty?node-id=102-375) |
 
 Both frames are 9:19.5. The app has a **single appearance** with no light/dark variants (§3.1, §9).
@@ -56,10 +57,12 @@ Both frames are 9:19.5. The app has a **single appearance** with no light/dark v
 | `iOS/Glass segmented control` | `22:271` | All · Alive · Dead · Unknown. |
 | `iOS/Glass search field` | `22:281` | Prop `Placeholder`. |
 | `iOS/Glass icon button` | `25:287` | Variants `Style = Glass · Prominent`; prop `Symbol`. |
-| `iOS/Glass tab bar` | `102:255` | Variants `Selected = Characters · Episodes · Locations · Favorites`. |
+| `iOS/Glass tab bar` | `102:255` | Variants `Selected = Characters · Episodes · Favorites · Settings`; each variant is four `iOS/Glass tab item` instances over the `Liquid Glass – Regular – Small` capsule. |
+| `iOS/Glass tab item` | `117:1369` | Variants `State = Selected · Unselected`; props `Symbol` (SF Symbol glyph), `Label`. The only definition of a tab's look (§4.2). |
 | `iOS/Glass text button` | `102:197` | Capsule glass prominent button (Portal Green); prop `Label`. |
 | `iOS/Empty state` | `102:256` | Props `Symbol`, `Heading`, `Body`; includes the glass text button (§6.4). |
 | `Android/Empty state` | `101:483` | Props `Heading`, `Body`, `Icon` (instance swap); Cookie-9 illustration + M3 filled button (§6.4). |
+| `Android/Navigation bar` | `117:887` | Variants `Selected = Characters · Episodes · Favorites · Settings`. Wraps the Material 3 kit navigation bar with the scheme colours bound once, plus the 24 dp gesture-inset area (412 × 88 dp). Every screen uses an instance; never override item colours on a screen (§4.1). |
 | `Android/Launcher icon/Background` · `/Foreground` | `59:242` · `59:263` | Adaptive icon layers, 108 dp canvas (see §10.1). |
 | `Android/Launcher icon` | `59:282` | Composite of background + foreground. |
 | `Android/Play Store icon` | `59:515` | 512 × 512 store listing icon. |
@@ -67,8 +70,8 @@ Both frames are 9:19.5. The app has a **single appearance** with no light/dark v
 
 Library kits attached to the file and used as building blocks:
 
-- **Material 3 Design Kit:** status bar, app bar (Search), filter chip, navigation bar, icon button, extended FAB, icons.
-- **iOS and iPadOS 27:** status bar, home indicator, the `Liquid Glass – Regular – Small` material, and the `App Icon/iPhone` template (Home Screen preview).
+- **Material 3 Design Kit:** status bar, app bar (Search), filter chip, navigation bar, icon button, extended FAB, list item, switch, connected button group, button, basic dialog, icons.
+- **iOS and iPadOS 27:** status bar, home indicator, the `Liquid Glass – Regular – Small` material, `Row`, `Row - Button`, `Toggle - Switch`, `Segmented Control`, `Alert`, and the `App Icon/iPhone` template (Home Screen preview). iOS kit instances inherit the screen's explicit `Colors = Dark` mode; nested parts that expose a `Mode` property are set to `Dark`.
 
 Every Material 3 kit instance is re-bound to the local `Multiverse · M3 Scheme` variables, so kit components carry the brand palette.
 
@@ -230,12 +233,18 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Shows exactly photo, name, status (badge) and species (§6.2). Name in Title Medium Emphasized, up to 2 lines so the full name fits (ellipsis only beyond that); species in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
 | Staggered grid | 2 fixed columns, 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(StaggeredGridCells.Fixed(2))` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
-| Navigation bar | 4 destinations: Characters (`groups`), Episodes (`play_arrow`), Locations (`language`), Favorites (`favorite`); container Surface Container | `NavigationBar`; the selected item follows the current section. Episodes, Locations and Favorites open placeholder screens (§6.4) |
+| Navigation bar | 4 destinations in this order: Characters (`groups`), Episodes (`play_arrow`), Favorites (`favorite`), Settings (`settings`, outlined); container Surface Container. Selected item: Secondary Container indicator, On Secondary Container icon, Secondary label; unselected items: On Surface Variant icon and label. Figma component `Android/Navigation bar` (§1.2) | `NavigationBar`; the selected item follows the current section. Episodes opens its placeholder, Favorites its list or empty state (§6.4), Settings the settings screen (§6.5) |
 | Detail icon buttons | 48 dp touch target, 40 dp container at Surface Container Highest @72% over the image | `FilledTonalIconButton` with custom container colour |
 | Stat tiles | Row of 3, 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
 | Extended FAB | Medium (80 dp), Primary colour, "Favorite" label, Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area. Unmarked (as drawn): outline `favorite` icon. Marked: filled heart | M3 Expressive medium extended FAB |
 | Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs. Used only for paging (§8), not on the splash | `ContainedLoadingIndicator` |
+| Settings group | Section header in Title Small, Primary, 16 dp start inset; below it a Surface Container group, corner 28, 380 dp wide, 24 dp between sections (§6.5) | `Text` + `Surface(shape = RoundedCornerShape(28.dp))` holding the rows |
+| Settings row | M3 two-line list item, 72 dp: leading 24 dp icon (On Surface Variant), headline Body Large, supporting text Body Medium On Surface Variant; transparent container over the group | `ListItem` |
+| Sounds switch | M3 Expressive switch: off by default (as drawn); when on, the handle shows the check icon on a Primary track | `Switch(thumbContent = { Icon(Icons.Filled.Check) })` as the row's trailing content |
+| Data-source picker | M3 Expressive connected button group, Small, two segments filling the row width minus 16 dp insets: "REST API" · "GraphQL". Selected segment Secondary with On Secondary label; unselected Secondary Container with On Secondary Container label; no icons | `ButtonGroup` with `ToggleButton`s in connected (single-select, selection-required) mode |
+| Delete favorites button | Filled button, Medium (56 dp), full group width, leading `delete` icon; container Error Container, content On Error Container | `Button(colors = ButtonDefaults.buttonColors(containerColor = errorContainer, contentColor = onErrorContainer))` |
+| Confirmation dialog | M3 basic dialog, no icon, over a Scrim @32% scrim: headline Headline Small Emphasized, supporting text Body Medium, text buttons "Cancel" (Primary) and "Delete" (Error) | `AlertDialog` with `TextButton`s; "Delete" uses `colorScheme.error` |
 
 ### 4.2 iOS (SwiftUI, Liquid Glass)
 
@@ -245,9 +254,15 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters". No trailing `mic.fill` while voice search is deferred (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
 | Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
-| Glass tab bar | Floating capsule, 4 tabs: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Locations (`globe.europe.africa.fill`), Favorites (`heart.fill`); selected tab (symbol + label) in Portal Glow, every unselected tab always in white (`Label/Primary`), never dimmed or black (one variant per selected tab) | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)`; unselected items forced to white through `UITabBarAppearance` (`normal.iconColor` and `normal.titleTextAttributes`), because the system default is a dimmed secondary colour |
+| Glass tab bar | Floating capsule, 4 tabs in this order: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Favorites (`heart.fill`), Settings (`gearshape.fill`); each tab is an `iOS/Glass tab item` (§1.2); selected tab (symbol + label) in Portal Glow, every unselected tab always in white (`Label/Primary`), never dimmed or black (one variant per selected tab) | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)`; unselected items forced to white through `UITabBarAppearance` (`normal.iconColor` and `normal.titleTextAttributes`), because the system default is a dimmed secondary colour |
 | Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol). Favorite uses Glass + `heart` when unmarked (as drawn) and Prominent + `heart.fill` when marked | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
 | Glass status capsule | Dot + "Alive" (Footnote Emphasized), clear glass | `Label` + `.glassEffect(.clear, in: .capsule)` |
+| Settings section | Header in Subheadline Emphasized, `Label/Secondary`, 16 pt start inset; below it a `Liquid Glass – Regular – Small` panel, continuous corner 26, 370 pt wide, 24 pt between sections; optional footer in Footnote, `Label/Secondary` (§6.5) | `Form`/`List` with `.listStyle(.insetGrouped)` and `.scrollContentBackground(.hidden)` over the tinted canvas; sections use `Section(header:footer:)` |
+| Settings row | iOS kit `Row`, Tall (68 pt): SF Symbol in Portal Glow, Body title, Subheadline subtitle in secondary; separators hidden on the last row of a panel | `LabeledContent` / `Label` inside the section |
+| Sounds toggle | iOS kit `Toggle - Switch`, off by default (as drawn); on-state track in Portal Green | `Toggle(isOn:)` with `.tint(.portalGreen)` |
+| Data-source picker | iOS kit `Segmented Control`, Large, two options "REST API" · "GraphQL", enabled, filling the panel width minus 16 pt insets | `Picker(selection:)` with `.pickerStyle(.segmented)` |
+| Delete favorites row | iOS kit `Row - Button`, Destructive: "Delete favorites" in system red, no symbol | `Button(role: .destructive)` in its own section |
+| Confirmation alert | iOS kit `Alert`, side-by-side buttons, dark: title, message, "Cancel" (cancel role) and "Delete" (destructive role) over a 40% black dimming layer | `.alert(_:isPresented:actions:message:)` with `Button(role: .cancel)` and `Button(role: .destructive)` |
 | Frosted panel | 370 wide, continuous corner 34, 20 pt padding. Stats row (3 columns: Title 2 value, Caption 1 label, 1 pt separators), divider, then 3 `Glass info row`s | `.glassEffect(in: .rect(cornerRadius: 34, style: .continuous))` |
 | Glass info row | 38 pt symbol well (Glass/Tint Green, symbol in Portal Glow) + label (Footnote, secondary) + value (Headline) | `LabeledContent` / custom `HStack` |
 | Episode count line | Informative only: `play.rectangle.on.rectangle.fill` + "Appears in N episodes", Subheadline in `Label/Secondary`, aligned with the panel content. No glass container, no chevron, not interactive | Plain `Label` below the panel (not a `Button`) |
@@ -341,7 +356,7 @@ Behaviour:
   | Count line | "{count} characters across the multiverse" (`count` from `info.count`) |
   | Search placeholder | "Search characters" |
   | Filter options | "All" · "Alive" · "Dead" · "Unknown" |
-  | Navigation | "Characters" · "Episodes" · "Locations" · "Favorites" |
+  | Navigation | "Characters" · "Episodes" · "Favorites" · "Settings" |
 
 - **Card data:** every card shows exactly the same four items on both platforms. Only the layout differs.
 
@@ -397,10 +412,10 @@ Data binding (see the domain model in `API_SPECS.md` §3):
 
 On iOS, the title block, panel and accessory are a bottom-anchored stack, so the layout adapts to Dynamic Type sizes.
 
-### 6.4 Episodes, Locations and Favorites (placeholders)
+### 6.4 Episodes and Favorites (placeholders)
 
-These three tabs don't have their final content yet:
-- Episodes and Locations show a "coming soon" placeholder.
+These two tabs don't have their final content yet:
+- Episodes shows a "coming soon" placeholder.
 - Favorites shows its empty state, because the Favorite action already exists on Detail.
 
 The text and information are **identical on both platforms**:
@@ -408,7 +423,6 @@ The text and information are **identical on both platforms**:
 | Screen | Title | Heading | Body | Button |
 | --- | --- | --- | --- | --- |
 | Episodes | "Episodes" | "Episodes are on their way" | "Soon you'll be able to browse every episode, from the Pilot to the latest season." | "Browse characters" |
-| Locations | "Locations" | "Locations are on their way" | "Soon you'll be able to explore every planet, dimension and space station in the multiverse." | "Browse characters" |
 | Favorites | "Favorites" | "No favorites yet" | "Tap the heart on a character's page to keep them here." | "Browse characters" |
 
 Presentation per platform:
@@ -416,7 +430,7 @@ Presentation per platform:
 | | Android (`Android/Empty state`) | iOS (`iOS/Empty state`) |
 | --- | --- | --- |
 | Title | Display Small Emphasized, same position as the Discovery headline | Large Title, same position as Discovery |
-| Illustration | M3 Expressive Cookie-9 (160 dp) with the section's icon (64 dp). Container colour per section: Episodes Secondary Container, Locations Tertiary Container, Favorites Primary Container | 120 pt glass symbol well (`Liquid Glass/Regular`) with a 48 pt SF Symbol in Portal Glow: `play.tv.fill`, `globe.europe.africa.fill`, `heart` |
+| Illustration | M3 Expressive Cookie-9 (160 dp) with the section's icon (64 dp). Container colour per section: Episodes Secondary Container, Favorites Primary Container | 120 pt glass symbol well (`Liquid Glass/Regular`) with a 48 pt SF Symbol in Portal Glow: `play.tv.fill`, `heart` |
 | Heading / body | Headline Small Emphasized / Body Medium, centred, 320 dp wide | Title 2 / Subheadline (secondary), centred, 320 pt wide |
 | Button | M3 filled button, Medium | `iOS/Glass text button` (glass prominent, Portal Green) |
 | Navigation | Navigation bar with the section's item selected | Glass tab bar variant for the section |
@@ -424,8 +438,45 @@ Presentation per platform:
 Behaviour:
 - **Browse characters:** selects the Characters tab (Discovery). It doesn't push a new screen.
 - **Favorites:** when the user has favourites, this screen becomes the list of favourite characters, using the same cards as Discovery. The empty state only shows while the list is empty.
-- **When Episodes and Locations are built:** their placeholders are replaced by real screens with the same title and navigation.
+- **When Episodes is built:** its placeholder is replaced by a real screen with the same title and navigation.
 - **Accessibility:** the illustration is decorative. The heading and body are read in order, followed by the button.
+
+### 6.5 Settings
+
+Settings holds three settings, in this order: Sounds, Data source and Delete favorites (`REQ-FUNC-033`…`REQ-FUNC-035`). Each platform draws them with its own controls: M3 Expressive on Android, Liquid Glass on iOS (§4.1, §4.2). There is no placeholder and no "Browse characters" button.
+
+The text is **identical on both platforms**:
+
+| Element | Text |
+| --- | --- |
+| Title | "Settings" |
+| Section headers | "Preferences" · "Data" · "Favorites" |
+| Sounds row | "Sounds" / "Play sound effects in the app" |
+| Data source row | "Data source" / "How the app fetches characters" |
+| Data source options | "REST API" · "GraphQL" |
+| Delete action | "Delete favorites" |
+| Delete explanation | "Remove every character you've saved. This can't be undone." |
+| Confirmation title | "Delete all favorites?" |
+| Confirmation message | "This removes every character from Favorites. You can't undo this." |
+| Confirmation buttons | "Cancel" · "Delete" |
+
+Presentation per platform:
+
+| | Android (Figma `101:568`, `122:1293`) | iOS (Figma `102:322`, `123:529`) |
+| --- | --- | --- |
+| Title | Display Small Emphasized, same position as the Discovery headline | Large Title, same position as Discovery |
+| Sections | Settings group per section (§4.1), starting 24 dp below the title | Settings section per section (§4.2), starting 16 pt below the title |
+| Sounds | Settings row, `volume_up`, trailing Sounds switch | Settings row, `speaker.wave.2.fill`, trailing Sounds toggle |
+| Data source | Settings row, `swap_horiz`, with the data-source picker below it inside the same group | Settings row, `arrow.left.arrow.right`, with the segmented picker below it inside the same panel |
+| Delete favorites | Explanation (Body Medium) above the full-width Delete favorites button, inside the group | Destructive row button in its own panel; the explanation is the section footer |
+| Confirmation | M3 dialog over the scrim (§4.1) | Alert over the dimming layer (§4.2) |
+| Navigation | Navigation bar with Settings selected | Glass tab bar with Settings selected |
+
+Behaviour:
+- **Sounds:** defaults to off and persists. It plays nothing until the sound set is defined (`REQ-FUNC-036`, `DEF-005`).
+- **Data source:** "REST API" is selected on a fresh install. Changing it applies at once: the character list reloads from page 1 through the chosen protocol (`REQ-FUNC-034`, `ADR-0011`). Nothing else on the screen changes.
+- **Delete favorites:** opens the confirmation. "Delete" clears every favorite and closes the confirmation, and Favorites then shows its empty state. "Cancel", a tap outside (Android) or the system dismiss gesture changes nothing. The action is disabled while there are no favorites: on Android the button uses the M3 disabled colours, and on iOS the row uses the kit's `Disabled` value. The disabled state is not drawn in Figma yet (§8).
+- **Accessibility:** each control is labelled by its row title. The switch and toggle announce their on/off state, the picker announces the selected option, and the confirmation takes focus when it opens and returns it to the action when it closes.
 
 ## 7. Navigation and motion
 
@@ -435,9 +486,11 @@ flowchart LR
     Discovery -->|tap card · shared element| Detail
     Detail -->|back · predictive back| Discovery
     Discovery <-->|tab| Episodes
-    Discovery <-->|tab| Locations
     Discovery <-->|tab| Favorites
-    Episodes & Locations & Favorites -->|Browse characters| Discovery
+    Discovery <-->|tab| Settings
+    Episodes & Favorites -->|Browse characters| Discovery
+    Settings -->|Delete favorites| Confirm[Delete favorites confirmation]
+    Confirm -->|Cancel or Delete| Settings
 ```
 
 Android:
@@ -477,6 +530,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 | Offline / error (no cache) | Portal logo + "Portal link lost" + `ApiFailure`-specific message + "Retry" | `ContentUnavailableView` + Retry glass button |
 | Stale / offline with cache | Content visible; snackbar "Showing saved results" with Retry | Content visible; glass banner in the bottom accessory |
 | Detail load failure | Keep list data (name, image, status) and show inline retry in place of the info list | Same, inside the frosted panel |
+| Settings: no favorites | "Delete favorites" button in the M3 disabled colours; the explanation stays | `Row - Button` `Disabled` value (`.disabled(true)`); the footer stays |
 
 ## 9. Accessibility
 

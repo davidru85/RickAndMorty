@@ -1,7 +1,7 @@
 # API_SPECS.md - REST and GraphQL Technical Specification
 
 - **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** API Architect (see `AGENTS.md`)
 - **Authoritative for:** the remote data contract — endpoints, DTOs, failure taxonomy, retry, response and image caching policy, contract identifiers.
 - **Not authoritative for:** architecture (`DESIGN.md`), internal Kotlin seams (`CONTRACTS.md`), failure-to-copy behaviour (`ERROR_FLOW.md`), UI (`UI_SPEC.md`).
@@ -39,9 +39,9 @@ Current resource totals must not be hard-coded. They are data, not schema. The c
 
 ## 2. Protocol decision
 
-The production MVP should use **REST as its default remote source**. Its fixed payload already satisfies the list and basic detail, it maps cleanly to Android paging, and successful `GET` responses are cacheable by the standard HTTP stack.
+The app ships **both protocols**, and the user chooses between them in Settings. **REST is the default** (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md), `REQ-FUNC-034`). REST's fixed payload already satisfies the list and basic detail, and it maps cleanly to paging. GraphQL returns the same domain data through the operations of §5.5.
 
-GraphQL is a supported alternative when a screen needs a tailored or nested payload, such as character details plus episode names in one request. Documenting both protocols does not justify shipping two complete networking stacks. Select one implementation per build or replace the remote adapter behind the same repository interface. Do not mix REST and GraphQL opportunistically per screen because that duplicates cache entries, mapping, error handling, and tests.
+Both protocols go through one networking stack: the single Ktor client, with hand-written GraphQL documents and kotlinx.serialization envelopes, and no Apollo (ADR-0004). They sit behind the same repository interface as two implementations of `CONTRACTS.md` `IC-011`, selected per request from the user's choice. The whole app uses one protocol at a time. Do not mix REST and GraphQL per screen, because that mixes cache entries, mapping and error handling within one screen. Cache entries of the two protocols are kept apart by the `protocol` key component (§7.2, ADR-0005).
 
 | Concern | REST | GraphQL |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ GraphQL is a supported alternative when a screen needs a tailored or nested payl
 | Identifier representation | JSON number | GraphQL `ID`, decoded as `String` |
 | No matching filtered results | Observed `404` with an error body | Observed `200`, empty `results`, nullable metadata |
 | Standard Android HTTP cache | Directly applicable to `GET` | `POST` requires an application-level cache |
-| Recommended use | MVP list, detail, filters | Optional enriched detail or protocol variant |
+| Role in the app | Default protocol for list, detail, filters | User-selected alternative for the same operations (§5.5) |
 
 ## 3. Shared domain contract
 
@@ -542,7 +542,7 @@ Nested GraphQL relationships are cyclic (`Character -> Episode -> Character`, fo
 - split an oversized detail into a second batch query when necessary;
 - use variables rather than interpolating user input into the query text.
 
-Apollo Kotlin is the recommended Android client only if GraphQL is selected. It provides generated, operation-specific models and schema validation. Do not add Apollo alongside Retrofit solely because both APIs are documented.
+GraphQL is sent through the project's single Ktor client with the checked-in documents of §5.5 and hand-written kotlinx.serialization envelopes. Apollo Kotlin is not used (DEC-056, ADR-0011). Schema validation of the checked-in documents is a contract test (§10.2), not a code generator.
 
 ## 6. Error contract and domain mapping
 
@@ -633,7 +633,7 @@ App policy:
 
 ### 7.2 GraphQL cache
 
-OkHttp's normal disk cache does not satisfy the app's GraphQL caching requirement because the app contract uses `POST`. Use the GraphQL client's normalized cache or an equivalent data-layer store.
+An HTTP engine's disk cache does not satisfy the app's GraphQL caching requirement because the app contract uses `POST`. The app uses its application-level response cache for both protocols (ADR-0005). A GraphQL entry is keyed `graphql|POST|/graphql|` + the operation-response key below, so it can never collide with a REST entry (ADR-0011). No normalized cache is used; the Apollo bullet below is kept only as the alternative ADR-0011 rejected.
 
 Cache identity:
 
@@ -714,7 +714,7 @@ Rate-limit headers were **not** observed on a normal GraphQL query during the 20
 ### 10.2 GraphQL contract tests
 
 - Validate checked-in operations against a pinned copy of the official schema.
-- Verify generated nullability matches the schema.
+- Verify the hand-written envelopes' nullability matches the schema.
 - Map GraphQL `ID` to canonical domain IDs.
 - Verify page metadata and filter variables.
 - Normalize empty results when nullable count/page fields are absent.
@@ -789,7 +789,7 @@ The choices that previously sat here as open questions are decided; their ration
 
 | Question | Resolution | Effect on this document |
 | --- | --- | --- |
-| Shipped protocol | REST (`DEC-011`, [`adr/0004-rest-client.md`](adr/0004-rest-client.md)); GraphQL stays documented as the alternative, not shipped | §2 stands; §5 is specification-only |
+| Shipped protocol | Both, user-selectable, REST default, one Ktor client (`DEC-056`, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md); client per `DEC-011`) | §2 rewritten on 2026-09-30; §5 is shipped behaviour and §10.2 runs in the gate |
 | HTTP client and serializer | Ktor 3.6.0 + kotlinx.serialization everywhere (`DEC-011`) | §6.3 retry policy is implemented as a Ktor plugin, not an OkHttp interceptor; §7.1 is written for the app-level cache |
 | Paging | Shared custom pager in `:core:data` (`DEC-016`, [`adr/0009-pagination-strategy.md`](adr/0009-pagination-strategy.md)); Paging 3 rejected | §8 paging rules are implemented by that pager |
 | Cache storage and budgets | Application-level cache with explicit keys and an injected clock (`DEC-018`, [`adr/0005-caching-strategy.md`](adr/0005-caching-strategy.md)); exact byte budget is a configuration value settled during implementation | §7.1 owns the policy; §7.4 images remain a separate concern |
@@ -803,3 +803,4 @@ Any change to the selected protocol, required fields, caching policy or error se
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Scope widened from "Android character review app" to the two-platform KMP client. §7.1 rewritten from an OkHttp disk cache to the app-level cache with explicit freshness, keying and the `404` `no-store` requirement. §9 rate-limit-header claim corrected against the live probe. §11 traceability re-pointed at stable requirement ids. §12 open decisions replaced by the resolved-decision table. §13 contract identifier index added. | DEC-011, DEC-012, DEC-018, DEC-052 |
+| 2026-09-30 | GraphQL moves from documented alternative to shipped, user-selectable protocol through Ktor; §2, §7.2 and §14 updated. | DEC-056 |
