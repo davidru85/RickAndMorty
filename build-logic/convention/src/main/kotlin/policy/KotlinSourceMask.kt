@@ -10,20 +10,28 @@ package io.github.davidru85.multiverse.buildlogic.policy
  *
  * Masked regions:
  *
- * - a line comment, from the double-slash sequence to the end of the line;
- * - a block comment, from the slash-star sequence to its matching star-slash sequence,
- *   counting nested pairs as Kotlin does;
+ * - a line comment, from the two-character `//` to the end of the line; **both**
+ *   opener characters are blanked;
+ * - a block comment, from the two-character slash-star sequence to its matching star-slash pair, counting
+ *   nested pairs as Kotlin does; **both** opener characters are blanked and the state is
+ *   entered by advancing past both, so the opener's `*` can never close the comment (a slash-star, slash sequence is one comment, not a finished comment followed by code);
  * - when [maskStrings] is `true`, the **contents** of string literals, the delimiters
- *   kept: regular strings honouring backslash escapes, raw strings with no escapes,
- *   and the template expressions inside them.
+ *   kept: regular strings honouring backslash escapes, raw strings with no escapes, and
+ *   the template expressions inside them.
  *
- * **Documented limitation.** With [maskStrings] `true`, an accessor used inside a
- * string template is masked with the string and is therefore not detected; none should
- * be, because a template is not a declaration.
+ * A raw string ends at a run of `n ≥ 3` consecutive double quotes: the whole run is the
+ * closer, so the first `n − 3` quotes are content and the last three are the delimiter.
+ * Consuming the whole run is what keeps string parity correct for `"""x""""`, whose
+ * content is `x"`; closing at the first three quotes would leave a stray quote that
+ * opens a regular string and hides the rest of the file.
  *
- * A character literal (`'x'`, `'\''`, a plain quoted double quote, `'|'`) is recognised
- * and skipped, so its quote character never opens or closes a string; its content is not
- * masked.
+ * **Documented limitation.** With [maskStrings] `true`, an accessor used inside a string
+ * template is masked with the string and is therefore not detected; none should be,
+ * because a template is not a declaration.
+ *
+ * A character literal (`'x'`, a backslash-escaped quote, a plain quoted double quote,
+ * `'|'`) is recognised and skipped, so its quote character never opens or closes a
+ * string; its content is not masked.
  *
  * Lexing is a single left-to-right pass over the states *code*, *line comment*,
  * *block comment (depth n)*, *string*, *raw string* and *char literal*. A comment opener
@@ -74,9 +82,13 @@ internal object KotlinSourceMask {
 
                 inRawString -> {
                     if (c == '"' && text.startsWith("\"\"\"", i)) {
+                        // The whole run of quotes is the closer: the first n - 3 quotes
+                        // are content, the last three are the delimiter.
+                        var run = 0
+                        while (text.getOrNull(i + run) == '"') run++
                         inRawString = false
-                        if (maskStrings) blank(i, i + 3)
-                        i += 3
+                        if (maskStrings) blank(i, i + run)
+                        i += run
                     } else {
                         if (maskStrings && c != '\n' && c != '\r') out[i] = ' '
                         i++
@@ -99,8 +111,16 @@ internal object KotlinSourceMask {
 
                 else -> {
                     when {
-                        c == '/' && text.getOrNull(i + 1) == '/' -> { inLineComment = true; i++ }
-                        c == '/' && text.getOrNull(i + 1) == '*' -> { blockDepth = 1; i++ }
+                        c == '/' && text.getOrNull(i + 1) == '/' -> {
+                            out[i] = ' '; out[i + 1] = ' '
+                            inLineComment = true
+                            i += 2
+                        }
+                        c == '/' && text.getOrNull(i + 1) == '*' -> {
+                            out[i] = ' '; out[i + 1] = ' '
+                            blockDepth = 1
+                            i += 2
+                        }
                         c == '"' && text.startsWith("\"\"\"", i) -> { inRawString = true; i += 3 }
                         c == '"' -> { inString = true; i++ }
                         c == '\'' -> { i = skipCharLiteral(text, i) }
