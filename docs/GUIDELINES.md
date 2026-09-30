@@ -473,7 +473,7 @@ Test naming is owned by `TESTING.md` §13.2 and repeated here only as the rule a
   - A branch is named `<type>/<slug>` with the type from the allowed set (`AGENTS.md` §4.1); the current documentation branch is `docs/documentation-system`.
   - Commit types are Conventional Commits **carrying the TDD phase meaning**: `test:` is the red phase, `feat:`/`fix:` the green phase, `refactor:` the refactor phase (`DEC-041` as amended by `DEC-053`). The full allowed type list and message grammar are owned by `CONTRIBUTING.md` §3.2–§3.3 and are not restated here.
   - A commit message that does not match the phase it belongs to, or a red-phase message that does not state the observed failure, is a review finding.
-  - History is linear and phase commits are preserved: no squash, no amend and no force-push of pushed phase commits (`CONTRIBUTING.md` §3.5).
+  - Phase commits are preserved and the branch is kept: integration uses a merge commit (DEC-059), so no squash, no amend and no force-push of pushed phase commits (`CONTRIBUTING.md` §3.5). The history on `main` is non-linear by design; the rule it replaces required linear history and a rebase merge, which discarded the branch record.
 - Version and release mechanics (`VERSION`, tags, release notes) are owned by `DEC-043` and `DEFINITION.md` §5 and are not repeated here.
 
 **Enforcement:** `Review:` in the pull request (`CONTRIBUTING.md` §8.1); branch protection and required checks are human-only repository settings (`DEC-049`, `DEC-054`); as of 2026-09-30 a ruleset protects `main` against deletion, force-push and non-linear history and requires a pull request, while the required-check half is still absent (TASK-025, `GAP-002`).

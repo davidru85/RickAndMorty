@@ -206,7 +206,7 @@ Milestone exit criteria are owned by `DEFINITION.md` §4 and the release steps b
 - A release is a tag named `vMAJOR.MINOR.PATCH` on the released commit (DEC-043).
 - The GitHub Release for a tag publishes the Android APK as its release asset (DEC-043); no other artifact is attached without a decision.
 - Release notes are generated from Conventional Commits for the range since the previous tag; the repository keeps no `CHANGELOG.md` (DEC-042).
-- History is linear and the TDD phase commits are preserved: pull requests are integrated by a rebase-style merge that keeps the `test:`, `feat:`/`fix:` and `refactor:` commits intact, and squash merges are not used (DEC-053, amending DEC-041).
+- Pull requests are integrated by a **merge commit** and no other method, so the TDD phase commits (`test:`, `feat:`/`fix:`, `refactor:`) stay intact and the branch itself is preserved as the record; squash merges are not used (DEC-053), and rebase merges were disabled by DEC-059, which supersedes the merge-method half of DEC-041. History on `main` is non-linear by design.
 - The released commit MUST be reachable from `main`, and the version in `VERSION` MUST match the tag exactly.
 - Merging, tagging, publishing releases, and changing repository settings, branch protection or secrets are human-only actions (DEC-049).
 - The step-by-step release checklist, including the `VERSION` bump, the tag, the release asset, the log entry and the documentation re-run, is owned by `DEFINITION.md` §5.

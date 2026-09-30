@@ -132,9 +132,11 @@ A breaking change to a public contract also updates the owning contract document
 
 ### 3.5 Merge policy
 
-- A pull request is integrated with a **rebase merge** that preserves the phase commits and keeps history linear. Squash merging is **not** used: it is replaced by this policy (DEC-053 amends DEC-041).
-- Conventional Commits remain mandatory and now carry the phase meaning: `test:` is red, `feat:`/`fix:` is green, `refactor:` is refactor.
-- Reviewing the phase commits in sequence `MUST` be possible from `main`'s history after the merge; that sequence is the evidence for the red/green/refactor gate (`DEFINITION.md` §3, D3).
+- A pull request is integrated with a **merge commit**, and with no other method: rebase merging and squash merging are disabled at the repository level and the `main` ruleset accepts only `merge` (DEC-059, superseding the merge-method half of DEC-041). The merged branch is preserved, so the previous branch and its individual commits stay reachable from the merge commit and remain part of the record.
+- Squash merging stays **not** used: it would collapse the phase commits into one and destroy the red/green/refactor sequence (DEC-053).
+- Conventional Commits remain mandatory and carry the phase meaning: `test:` is red, `feat:`/`fix:` is green, `refactor:` is refactor.
+- Reviewing the phase commits in sequence `MUST` be possible from `main`'s history after the merge; that sequence is the evidence for the red/green/refactor gate (`DEFINITION.md` §3, D3). A merge commit preserves it because the branch commits appear in the merge's second parent; a rebase merge rewrote the SHAs instead, which is what DEC-059 traded away.
+- History on `main` is therefore **not** linear: it carries one merge commit per pull request. That is a deliberate consequence of DEC-059, not a drift.
 - Merge itself is a human action (§9); the author — human or agent — prepares the branch and the pull request.
 
 ### 3.6 Release notes and versioning (DEC-042, DEC-043)

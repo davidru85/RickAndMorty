@@ -549,7 +549,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 | Assemble | Android assemble and the iOS build | The change compiles and links on both platforms |
 | Milestone independence | `TEST-UNIT-019` | `REQ-PLAT-004`: Android must stay releasable with the iOS app absent |
 
-**Branch protection** is what makes these checks binding. That is a repository setting and therefore a human action (`DEC-049`); agents open the pull request, and a maintainer configures and verifies the required-check list. As of 2026-09-30 `main` carries an active ruleset that forbids deletion and force-push, requires linear history and requires a pull request, but it names **no** required status check, so the rows above are not yet enforced; until the workflows of TASK-025 exist and are named in that ruleset, this list remains a convention (`GAP-002`). Until branch protection names every row above, the gate is a convention rather than a gate.
+**Branch protection** is what makes these checks binding. That is a repository setting and therefore a human action (`DEC-049`); agents open the pull request, and a maintainer configures and verifies the required-check list. As of 2026-09-30 `main` carries an active ruleset that forbids deletion and force-push and requires a pull request, but it names **no** required status check, so the rows above are not yet enforced; until the workflows of TASK-025 exist and are named in that ruleset, this list remains a convention (`GAP-002`), and so is the gate.
 
 ### 14.3 Scheduled and on-demand work
 
