@@ -142,6 +142,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | `GAP-007` | S3 | Error states are specified in `UI_SPEC.md` §8 but are not drawn in Figma | Screenshot tests will baseline the implementation, not a design frame | UI/UX Designer | Open — recorded in `UI_SPEC.md` §8 and `PROJECT_LOG.md` |
 | `GAP-008` | S3 | `README.md` shows no screenshots | A reviewer cannot see the product before running it | Documentation Maintainer | Open — depends on `GAP-004` and on the first runnable milestone |
 | `GAP-009` | S3 | Issue tracker state does not exist yet for the `TASK-###` rows | `BACKLOG.md` is canonical but its issue links cannot resolve | Delivery Planner | Open — created with the first milestone |
+| `GAP-011` | S3 | The dependency-policy checks P4 and I5 infer inline versions and declarations from **source text**; the remaining limits are (L1) the deprecated positional notation (a configuration name applied to `"group", "name", "version"`); (L2) the generated `LibrariesForLibs` type used from build-logic through a classpath workaround; (L3) versionless-entry governance by group prefix, so the BOM's actual membership is proven only when the entry is first resolved; (L4) any Kotlin-DSL spelling of a version or a catalog reference that the patterns do not know. | A deliberate or unusual spelling can place a version outside the catalog, or hide a declaration from the README inventory, without failing `check` | Implementation Engineer | Open. Recommend a backlog task after TASK-029: check every project's declared `ExternalModuleDependency` set and the settings-level plugin requests against the catalog, derive `Declared` from them, and retire the P4/I5 patterns |
 | `GAP-010` | S2 | `SECURITY.md` §9.3 makes Gradle dependency-verification metadata or a lockfile the target state "when the build lands"; the build landed with TASK-014 and no task owns the adoption | A re-pointed or tampered artifact resolution would not be detected; the version catalog pins versions, not artifact bytes | Security Reviewer + Delivery Planner | Open — recommended as a dedicated task after CI exists (TASK-025), because platform-specific artifacts (`aapt2` per OS, Kotlin/Native per host) need checksums generated on every CI OS |
 
 ### 6.3 Open conflicts
@@ -191,7 +192,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Documents amended | 9 |
 | Documents renamed | 2 (design briefs) |
 | Documents rejected | 6 (listed in §4) |
-| Open gaps | 10 (§6.2) |
+| Open gaps | 11 (§6.2) |
 | Open conflicts | 12 (§6.3: `CONF-36`, `CONF-37`, `CONF-39`, `CONF-41`…`CONF-43`, `CONF-45`…`CONF-48`, `CONF-50`, `CONF-51`; `CONF-38`, `CONF-40` and `CONF-49` are resolved, `CONF-44` is partially resolved) |
 | Blocking gaps for the next milestone | `GAP-001`, `GAP-002` |
 
@@ -206,6 +207,7 @@ Next actions, in order: add the secret scan that completes `.gitignore` (`TASK-0
 | 2026-09-30 | `CONF-33` and `CONF-34` recorded and resolved by owner decisions DEC-055 and DEC-056; inventory extended to ADR-0011. | DEC-055, DEC-056 |
 | 2026-09-30 | `CONF-35` recorded and resolved: the READMEs' protocol row corrected and the three-data-source inventory stated in `DESIGN.md`, `CONTRACTS.md` `IC-011` and `API_SPECS.md` §2; ADR-0005 amended. | DEC-055, DEC-056 |
 | 2026-09-30 | Reconciled with the TASK-014 build skeleton: §5 and §7 now describe the observed build state, `GAP-001` is split into build skeleton (addressed) and feature implementation (open), and `CONF-36`…`CONF-44` are recorded in §6.3. | TASK-014, DEC-057, `PROJECT_LOG.md` LOG-0026 |
+| 2026-09-30 | Second review round of PR #10: `GAP-011` records the source-text limits of the policy checks and recommends the Gradle-model redesign; §8's open-gap count is 11. | TASK-015, `PROJECT_LOG.md` LOG-0034 |
 | 2026-09-30 | Review round of PR #10: `CONF-51` rewritten as an OD-6 blocked item (detekt unpinned), the §7 dependency-pin row corrected, and `LOG-0033` records the corrected policy rule set. `CONF-51` stays open, so §8's counts are unchanged. | TASK-015, `PROJECT_LOG.md` LOG-0033 |
 | 2026-09-30 | Reconciled with TASK-015: §5 and `GAP-001` state the merged build and the completed catalog, `GAP-010` records the unowned dependency-verification metadata, `CONF-45`…`CONF-48`, `CONF-50` and `CONF-51` are recorded as open, `CONF-49` is resolved, and `CONF-44` becomes partially resolved. | TASK-015, DEC-060, DEC-061, `PROJECT_LOG.md` LOG-0032 |
 | 2026-09-30 | `CONF-40` resolved by `DEC-058` / [ADR-0012](adr/0012-ios-framework-export.md) and moved to §6.1; recorded as `TASK-078`. | TASK-078, `PROJECT_LOG.md` LOG-0027 |
