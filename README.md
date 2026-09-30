@@ -193,6 +193,7 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
 | Module-graph rule check (no feature-to-feature edges) | `./gradlew buildHealth` | Not run — `buildHealth` needs the dependency-analysis plugin (TASK-017, TASK-029) |
 | Verify the dependency policy (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | Executed 2026-09-30: passes; also runs as part of `./gradlew check` and `./gradlew build` |
+| Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-09-30: passes (0 findings over the working set and all reachable history); also runs as part of `./gradlew check` and `./gradlew build` |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not run — the harness module needs a decision first (`CONF-41`) |
 | Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
@@ -270,7 +271,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
 | CI and `VERSION` | Not started — TASK-025, TASK-018 |
-| `.gitignore` | Tracked; TASK-016's remaining acceptance is the secret scan |
+| `.gitignore` | Tracked and completed by TASK-016's automated hygiene check — `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set and all reachable history; TASK-016 is In review (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036) |
 | Screenshots (Figma exports and in-app) | Not started |
 
 ## 15. Dependency inventory

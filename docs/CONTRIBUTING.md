@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — Contribution Process
 
 - **Status:** Active — target state. The Gradle/KMP build skeleton exists (TASK-014); no feature code, tests or CI exist yet (`README.md` §14), so the feature and test commands below are the documented interface to work that has not landed.
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-09-30
 - **Owner:** Documentation Maintainer (see `../AGENTS.md` §3.9)
 - **Authoritative for:** the contribution process — prerequisites, branching, the TDD phase-and-commit protocol and the merge policy (DEC-053, amending DEC-041), Conventional Commits and how release notes are derived, the issue workflow, pull-request expectations including the required-check list, review, agent permissions, and the contribution completion checklist.
 - **Not authoritative for:** code conventions and tool-enforced rules (`GUIDELINES.md`); gates, Ready/Done and waivers (`DEFINITION.md`); test strategy, layers, ids and tooling (`TESTING.md`); the vulnerability-reporting route (`SECURITY.md` §10); module boundaries and dependency direction (`DESIGN.md`, `adr/0001-module-boundaries.md`, DEC-052); operating rules for agents (`../AGENTS.md`).
@@ -239,6 +239,7 @@ Every pull request requires the full suite on **both platforms**; the checks bel
 | `android-assemble` | `README.md` §8 | The Android build the change affects (`DEFINITION.md` §3, D1) |
 | `a11y-checks` | `TESTING.md` §9.1 | Automated accessibility assertions (`TEST-A11Y-001`…`006`, DEC-023), token parity (`TEST-UNIT-035`, DEC-022) and copy-key parity (`TEST-UNIT-036`, DEC-020) |
 | `milestone-independence` | `TESTING.md` §14 | The Android milestone builds and is releasable without the iOS app (`TEST-UNIT-019`, `REQ-PLAT-004`, DEC-040) |
+| `repository-hygiene` | `SECURITY.md` §4, `TESTING.md` §14 | `./gradlew verifyRepositoryHygiene` (`TEST-UNIT-026`): the commit-eligible working set and every blob reachable from all local refs, tracked-path hygiene and fail-closed shallow detection (DEC-062, `REQ-SEC-002`). CI `MUST` fetch full history (`fetch-depth: 0` or equivalent) so the history scan is complete |
 | `quarantine-tests` | `TESTING.md` §15 | Quarantined cases only; non-blocking, never cited as evidence, and the only permitted exclusion from the required set |
 
 Notes that keep the list honest:
@@ -273,7 +274,7 @@ Notes that keep the list honest:
 | A visual state — loading, empty, stale, error, partial data | A semantics or state test first, then a committed snapshot baseline | Baselines are recorded only once the state is correct (`TESTING.md` §8.2, §8.3) |
 | Accessibility-relevant UI | Automated assertions plus the recorded manual checklist | `TESTING.md` §9; DEC-023 |
 | A defect fix | A regression test in the layer that failed, failing before the fix and passing after | `TESTING.md` §1, P5; where impractical, the bug report records the manual reproduction instead |
-| Pure documentation, build/CI configuration, tooling | No new test required | The explicit TDD exception (§3.1); the change still passes the static-analysis and dependency checks |
+| Pure documentation, build/CI configuration, tooling | No new test required | The explicit TDD exception (§3.1); a tool that this class introduces (an analyser, a scanner or a policy check) is still proved with a temporary seeded violation, and the change still passes the static-analysis and dependency checks |
 
 Rules that apply to every contribution:
 
@@ -293,7 +294,7 @@ Documentation is part of the change, not a follow-up: the owning document is upd
 | A new or superseded architectural choice, module boundary, public contract, tooling decision or scope change | An ADR in `docs/adr/` (when architecturally significant) plus the `DEC-###` row in `DECISION_BOARD.md` |
 | A shipped feature | Every specification that describes it: `UI_SPEC.md` for a visual or interaction surface, `API_SPECS.md` for the remote contract, `CONTRACTS.md` for an internal interface, `ERROR_FLOW.md` for a failure path, `OBSERVABILITY.md` for a log or diagnostic surface — whichever the feature touches (DEC-046) |
 | A change to a module, dependency or build interface | `DESIGN.md` §3 and the version catalog justification, plus the `README.md`/`README.es.md` §15 dependency inventory; also `README.md` if the documented commands or layout change |
-| A change to the gate, test layer or tooling | `DEFINITION.md` or `TESTING.md` respectively, per which one owns the rule |
+| A change to the gate, test layer or tooling | `DEFINITION.md` or `TESTING.md` respectively, per which one owns the rule; a change that adds build, CI or configuration files re-runs `./gradlew verifyRepositoryHygiene` because `SECURITY.md` §4 requires it |
 | Any change whose motivation is decision-relevant — a decision, a scope change, a contract change, a milestone result | `PROJECT_LOG.md`, one `LOG-####` entry (`DEFINITION.md` §3, D11) |
 | Any change that touches this process | This file, and the `DEC-###` row that authorises it |
 | A user-visible string change | The canonical copy key list and both platform resource files, per `UI_SPEC.md` and DEC-020 |
@@ -396,3 +397,4 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Created: setup and prerequisites, trunk-based branching with the allowed branch types, the TDD phase-and-commit protocol with rebase-merge policy, Conventional Commits and release-note derivation, the issue workflow against `BACKLOG.md`, pull-request expectations with the required-check list, per-change testing and documentation requirements, the review process, the agent permission boundary, the mirrored vulnerability-reporting route and the completion checklist. | DEC-041, DEC-042, DEC-043, DEC-044, DEC-046, DEC-048, DEC-049, DEC-051, DEC-052, DEC-053, DEC-054 |
+| 2026-09-30 | Provisional `repository-hygiene` required check added to §5.3 (full history on both runners); §6's tooling-exception row now requires a seeded violation for an introduced tool; §7's tooling row re-runs `verifyRepositoryHygiene`. No workflow created. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
