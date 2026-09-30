@@ -242,6 +242,15 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Decision / ADR:** DEC-056, ADR-0011 (amends ADR-0004's GraphQL outcome).
 - **Validation:** Documentation change only; no GraphQL request has been executed from this repository.
 
+### LOG-0025 · 2026-09-30 · Data sources made explicit: two remote adapters plus the settings store
+
+- **Event:** The owner restated the data-layer shape the Settings work implies: each module's data layer has two remote data sources — one for the REST API and one for GraphQL, both returning the same domain data — plus a separate data source for the datastore that persists the settings the user configures in the Settings view; the stored REST/GraphQL choice decides which remote source a request uses. The documentation already shipped this behaviour (DEC-056, `REQ-FUNC-034`) but described it in prose across several sections and still showed a single REST adapter in the architecture diagrams. This change names it once: `CONTRACTS.md` `IC-011` states the two implementations and points at `IC-022` for the settings store; `DESIGN.md` §1, §2, §4.6 and §6 show the per-request selector, the two adapters and the settings store; `API_SPECS.md` §2 lists the three-data-source inventory and the selection mechanism; ADR-0005's `protocol` key component is now `rest` or `graphql` with `POST` for GraphQL.
+- **Rationale:** Owner directive of 2026-09-30. `README.md` §10 still claimed "GraphQL is documented as the alternative, not shipped", which contradicted `API_SPECS.md` §2, `IC-011`/`IC-021` and ADR-0011; the diagrams could be read as a single adapter. Stating the inventory once, in the owning documents, removes the contradiction and makes the "which source is used when" rule reviewable.
+- **Affected artifacts:** `docs/CONTRACTS.md` (`IC-011`), `docs/DESIGN.md` (§1, §2, §4.6, §6, §9, §10), `docs/API_SPECS.md` (§2, §15), `docs/adr/0005-caching-strategy.md`, `README.md` §10, `README.es.md` §10, `docs/DOCUMENTATION_AUDIT.md` (`CONF-35`).
+- **Decision / ADR:** DEC-055, DEC-056; ADR-0011 (amends ADR-0005's key components), ADR-0010 (the settings store).
+- **Backlog:** `TASK-075` already owns the GraphQL remote data source and the runtime switch; no `TASK-###` row changed, because this change states existing behaviour rather than adding scope.
+- **Validation:** Documentation change only; the repository has no build, so no code, test or app run was executed and none is claimed. Internal links in the edited documents were re-checked by inspection, and the four Mermaid diagrams in `DESIGN.md` were checked for undeclared nodes.
+
 ## 3. Verification performed on this repository
 
 As of 2026-09-29, and for the whole lifetime of the repository, verification has been documentation-only. The checks that were run and their outcomes are recorded in `docs/DOCUMENTATION_AUDIT.md`; the classes of check that apply to this log are: internal link resolution, `LOG-####` identifier uniqueness and ordering, and consistency review against `docs/REQUIREMENTS.md`, `docs/DECISION_BOARD.md` and `docs/DOCUMENTATION_AUDIT.md`.

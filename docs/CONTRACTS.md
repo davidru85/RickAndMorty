@@ -342,7 +342,11 @@ interface CharacterRemoteDataSource {
 }
 ```
 
-- **Semantics:** the seam returns **domain** types. DTO decoding and mapping happen inside the implementation so `IC-005` cannot leak through it. There are exactly two implementations: `RestCharacterRemoteDataSource` and `GraphQlCharacterRemoteDataSource`. The GraphQL one posts the checked-in operations of `API_SPECS.md` §5.5 through the same Ktor client. The repository chooses one **per request** from `IC-021`'s current `remoteProtocol` (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)).
+- **Semantics:** the seam returns **domain** types. DTO decoding and mapping happen inside the implementation so `IC-005` cannot leak through it. The remote data sources of `:core:data` are exactly three, each with one responsibility:
+  - `RestCharacterRemoteDataSource` — `IC-011`, the default protocol, `GET` against `/api/...`.
+  - `GraphQlCharacterRemoteDataSource` — `IC-011`, posts the checked-in operations of `API_SPECS.md` §5.5 to `/graphql` through the same Ktor client.
+  - `AppSettingsLocalDataSource` — `IC-022`, the DataStore/`UserDefaults` seam that holds the settings the user configures on the Settings screen, including the choice that selects between the two adapters above. It is not an `IC-011` implementation and returns `AppSettings`, not character data.
+  The repository reads `IC-021` and resolves the adapter **per request** from the current `remoteProtocol`; the same preference selects one protocol for every screen (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)).
 - **Invariants**
   - No DTO or wire envelope crosses this seam (`AC-REQ-NFR-001-2`).
   - An expected remote failure is returned as `DataResult.Failure` (`IC-003`); transport and decoding exceptions never escape, and only a `CancellationException` propagates.
@@ -352,7 +356,7 @@ interface CharacterRemoteDataSource {
   - Requests are issued only to the configured HTTPS host; a relation or pagination URL naming another host is rejected (`REQ-SEC-001`, `AC-REQ-SEC-001-1`).
   - The seam carries no cache policy: caching is decided above it (`IC-012`).
   - Both implementations return equal domain values for the same logical request, and map failures to the same `ApiFailure` variants (`API_SPECS.md` §6.1, §6.2). An empty filtered result is an empty page on both, whatever the wire shape (`AC-REQ-FUNC-034-3`).
-- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-023`, `REQ-FUNC-034`, `REQ-NFR-001`, `REQ-SEC-001`, `API_SPECS.md` §4.2, §5.5, §6.1, §6.2, `DEC-011`, `DEC-056`.
+- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-023`, `REQ-FUNC-034`, `REQ-NFR-001`, `REQ-SEC-001`, `API_SPECS.md` §4.2, §5.5, §6.1, §6.2, `DEC-011`, `DEC-055`, `DEC-056`.
 
 ### IC-012 — `CacheStorage`
 

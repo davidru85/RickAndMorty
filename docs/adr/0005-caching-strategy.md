@@ -24,10 +24,10 @@ The project ships an **application-level response cache in `:core:data`**, keyed
 key = protocol + "|" + method + "|" + pathTemplate + "|" + canonicalQuery
 ```
 
-- `protocol` — `rest` for the shipped REST adapter; included so a future protocol variant cannot collide with it (`API_SPECS.md` §7.2).
-- `method` — `GET`.
-- `pathTemplate` — the request path without query, e.g. `/api/character` or `/api/character/{id}`.
-- `canonicalQuery` — the parameters actually sent, lower-cased where the contract fixes the case (status, gender), trimmed, URL-encoded once, written in a fixed alphabetical order, with blank values omitted entirely. `page` is included as sent, so page 1 with a filter and page 1 without one are different entries.
+- `protocol` — the selected remote protocol: `rest` (default) or `graphql`. Included so the two shipped protocols can never collide with each other, and so a future protocol variant cannot collide with either (`API_SPECS.md` §7.2, ADR-0011).
+- `method` — `GET` for REST; `POST` for GraphQL, whose request is a JSON envelope.
+- `pathTemplate` — the request path without query, e.g. `/api/character`, `/api/character/{id}` or `/graphql`.
+- `canonicalQuery` — the parameters actually sent, lower-cased where the contract fixes the case (status, gender), trimmed, URL-encoded once, written in a fixed alphabetical order, with blank values omitted entirely. `page` is included as sent, so page 1 with a filter and page 1 without one are different entries. For GraphQL it is the operation name plus the SHA-256 of the checked-in document plus the canonical variables (ADR-0011, `API_SPECS.md` §7.2).
 
 Two keys MUST never collide across pages, filters, IDs or protocols (`REQ-REL-001`). The image URL is never part of this cache and images are never stored here (`REQ-FUNC-021`, `AC-REQ-FUNC-021-2`).
 
@@ -161,5 +161,6 @@ Storage note: the cache is persisted through a dedicated `expect/actual` blob st
 ## Superseded and superseding ADRs
 
 - **Supersedes:** none.
-- **Superseded by:** none as of 2026-09-29.
+- **Superseded by:** none as of 2026-09-30.
+- **Amended by:** [ADR-0011](0011-runtime-remote-protocol.md) (`DEC-056`), 2026-09-30: the `protocol` component is now `rest` or `graphql`, and `method` is `POST` for the GraphQL adapter. The freshness bands, the never-cache rule and the injected clock are unchanged.
 - **Related:** ADR-0004 (the client this cache sits behind, and the engine-cache exclusion it requires), ADR-0009 (the pager whose pages are the cache's units), ADR-0001 (`:core:data` ownership), ADR-0007 (the separate favorites store).
