@@ -69,10 +69,12 @@ internal object BuildScripts {
 
     /**
      * The forms an external version takes outside the catalog. Every version alternative
-     * requires a **digit** right after the opening quote, which is what keeps a catalog
-     * lookup such as `catalog.version("android-minSdk")` out of the result; a project
-     * path such as `":core:domain"` never matches either, because the coordinate pattern
-     * requires a non-empty first segment.
+     * accepts any non-empty quoted text, so it also catches exactly the dynamic values
+     * `AC-REQ-NFR-006-1` forbids (`"+"`, `"latest.release"`, a range); a catalog lookup
+     * such as `catalog.version("android-minSdk")` stays out of the result because the
+     * chained form needs a `)` receiver and the bare form refuses a preceding identifier
+     * or `.`. A project path such as `":core:domain"` never matches either, because the
+     * coordinate pattern requires a non-empty first segment.
      */
     val INLINE_VERSION_PATTERNS: List<InlineVersionPattern> = listOf(
         // 1. A quoted coordinate with its version: "group:name:version".
@@ -85,29 +87,34 @@ internal object BuildScripts {
             Regex("\"[A-Za-z][A-Za-z0-9_.\\-]*:[A-Za-z0-9_.\\-]+:\"\\s*\\+"),
             "a coordinate with a concatenated version",
         ),
-        // 3. The infix or Groovy form: the `version` keyword, then a quoted version.
+        // 3. The infix form: the `version` keyword, then a quoted version.
         InlineVersionPattern(
-            Regex("\\bversion\\s+\"[0-9][^\"]*\""),
+            Regex("\\bversion\\s+\"[^\"]+\""),
             "an inline plugin version",
         ),
-        // 4. The call form, including a chained `.version("1.2.3")`.
+        // 4a. A chained call: `).version("…")`.
         InlineVersionPattern(
-            Regex("\\bversion\\s*\\(\\s*\"[0-9][^\"]*\"\\s*\\)"),
+            Regex("\\)\\s*\\.\\s*version\\s*\\(\\s*\"[^\"]+\"\\s*\\)"),
+            "an inline chained plugin version",
+        ),
+        // 4b. A bare call: `version("…")`, never a qualified lookup such as `catalog.version("…")`.
+        InlineVersionPattern(
+            Regex("(?<![\\w.])version\\s*\\(\\s*\"[^\"]+\"\\s*\\)"),
             "an inline plugin version",
         ),
-        // 5. A named argument: version = "1.2.3".
+        // 5. A named argument: `version = "…"`.
         InlineVersionPattern(
-            Regex("\\bversion\\s*=\\s*\"[0-9][^\"]*\""),
+            Regex("\\bversion\\s*=\\s*\"[^\"]+\""),
             "an inline version named argument",
         ),
-        // 6. The helper form: kotlin("module", "1.2.3").
+        // 6. The helper form: `kotlin("module", "…")`.
         InlineVersionPattern(
-            Regex("\\bkotlin\\s*\\(\\s*\"[^\"]+\"\\s*,\\s*\"[0-9][^\"]*\""),
+            Regex("\\bkotlin\\s*\\(\\s*\"[^\"]+\"\\s*,\\s*\"[^\"]+\""),
             "an inline helper version",
         ),
         // 7. The dependency-constraint DSL.
         InlineVersionPattern(
-            Regex("\\b(?:strictly|require|prefer|useVersion)\\s*\\(\\s*\"[0-9][^\"]*\""),
+            Regex("\\b(?:strictly|require|prefer|reject|useVersion)\\s*\\(\\s*\"[^\"]+\""),
             "an inline dependency constraint",
         ),
     )
