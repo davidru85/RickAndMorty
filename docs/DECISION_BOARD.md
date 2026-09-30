@@ -1,7 +1,7 @@
 # DECISION_BOARD.md — Decision Index and Status Board
 
 - **Status:** Active
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-01
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** the current *status* and *location* of every project decision. Rationale lives in the ADR files; chronology lives in `PROJECT_LOG.md`. This file MUST NOT restate rationale.
 
@@ -129,3 +129,4 @@
 | 2026-09-30 | DEC-062 added (repository and secret hygiene enforced by the dependency-free `verifyRepositoryHygiene` Gradle task wired into the root `check`; working-set plus all-refs history boundary, fail-closed on shallow/incomplete Git state, redacted findings). No ADR: a tooling decision, not architecture (§1). | `PROJECT_LOG.md` LOG-0036, TASK-016 |
 | 2026-09-30 | DEC-062 implementation corrected on review (the scan now covers every reachable blob and every historical path occurrence and fails closed on incomplete Git reads). The decision text is unchanged, so no row was superseded and no new decision was allocated. | `PROJECT_LOG.md` LOG-0037, TASK-016 |
 | 2026-09-30 | DEC-062 implementation corrected again after the second review: refs that peel directly to a tree are now enumerated, every `-z` stream must end with the record terminator, content is streamed without a whole-object ceiling, and the reported count is labelled as unique historical paths. The decision text is unchanged; no row was superseded and no decision was allocated. | `PROJECT_LOG.md` LOG-0038, TASK-016 |
+| 2026-10-01 | DEC-062's implementation was merged to `main` in PR #13 on 2026-09-30; the decision is `Accepted` and its status is unchanged. | `PROJECT_LOG.md` LOG-0039, TASK-016 |

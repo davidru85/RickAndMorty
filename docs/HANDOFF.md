@@ -1,7 +1,7 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-09-30; must be updated on every handoff (`AGENTS.md` §5.7).
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-01
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
@@ -11,7 +11,7 @@
 
 ## 1. Current state (2026-09-30)
 
-The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, branch `build/repository-hygiene`, issue #12, PR #13, in review), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
+The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, merged in PR #13 on 2026-09-30, issue #12 closed), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
 | Area | State | Notes |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in P
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
 | Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md`. The build skeleton is merged (TASK-014, PR #6); no feature code does |
-| Build, CI, tooling | Build skeleton merged; catalog pinned; hygiene check in review | Gradle wrapper 9.7.0, AGP 9.3.1, Kotlin 2.4.20 and the 11 modules of ADR-0001 build (LOG-0026); the version catalog pins the full planned inventory and `verifyDependencyPolicy` enforces it in `check` (TASK-015, LOG-0032); `verifyRepositoryHygiene` (`TEST-UNIT-026`) completes `.gitignore` and runs in `check` on branch `build/repository-hygiene`, corrected on review twice (TASK-016, LOG-0036, LOG-0037, LOG-0038). Still absent: CI, `VERSION`, lint/detekt/dependency-analysis configuration and every product test |
+| Build, CI, tooling | Build skeleton, catalog and hygiene check merged | Gradle wrapper 9.7.0, AGP 9.3.1, Kotlin 2.4.20 and the 11 modules of ADR-0001 build (LOG-0026); the version catalog pins the full planned inventory and `verifyDependencyPolicy` enforces it in `check` (TASK-015, LOG-0032); `verifyRepositoryHygiene` (`TEST-UNIT-026`) completes `.gitignore` and runs in `check`, merged to `main` in PR #13 (TASK-016, LOG-0036, LOG-0037, LOG-0038, LOG-0039). Still absent: CI, `VERSION`, lint/detekt/dependency-analysis configuration and every product test |
 | Screenshots | Not started | Figma exports under `docs/figma/` and in-app screenshots of the running apps |
 
 ### 1.1 Verified versus intended
@@ -40,7 +40,7 @@ The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in P
 
 - Everything about the applications: architecture, module boundaries, contracts, screens, motion, copy, error states, accessibility behaviour, performance budgets, security posture, logging.
 - The product commands: feature, iOS-app, snapshot, contract, performance and release commands in §8 and in `README.md` §8–§9 remain target state, because the features they call do not exist. The commands marked **executed** — the Gradle/KMP skeleton build of LOG-0026 and the repository-policy tasks of LOG-0032…LOG-0038 — do exist and were run.
-- Product acceptance: every **product/application** `AC-*` criterion of `REQUIREMENTS.md` remains unproven, because no feature code exists; the repository/tooling criteria that a build check can decide are implemented and locally evidenced instead (`AC-REQ-SEC-002-1` by `TEST-UNIT-026`, plus `AC-REQ-NFR-002-1`, `AC-REQ-NFR-006-1` and the exact-pin half of `TEST-UNIT-014`). That is not the same as nothing having been exercised: `TASK-014` and `TASK-015` are `Done`, `TASK-016` has local evidence for `TEST-UNIT-026` and is in review, and `TASK-015` has local evidence for `TEST-UNIT-013`, the exact-pin half of `TEST-UNIT-014`, and `TEST-UNIT-051` (`PROJECT_LOG.md` LOG-0032…LOG-0038).
+- Product acceptance: every **product/application** `AC-*` criterion of `REQUIREMENTS.md` remains unproven, because no feature code exists; the repository/tooling criteria that a build check can decide are implemented and locally evidenced instead (`AC-REQ-SEC-002-1` by `TEST-UNIT-026`, plus `AC-REQ-NFR-002-1`, `AC-REQ-NFR-006-1` and the exact-pin half of `TEST-UNIT-014`). That is not the same as nothing having been exercised: `TASK-014`, `TASK-015` and `TASK-016` are `Done` (`TEST-UNIT-026` merged in PR #13), and `TASK-015` has local evidence for `TEST-UNIT-013`, the exact-pin half of `TEST-UNIT-014`, and `TEST-UNIT-051` (`PROJECT_LOG.md` LOG-0032…LOG-0038).
 - The Figma-derived visual specification: the Figma file itself could not be fetched anonymously on 2026-09-29 (HTTP 403), so its content is reproduced from the design work, not re-verified from the source.
 
 Beyond the build checks of LOG-0026 and the repository-policy verification tasks of LOG-0032…LOG-0038, no product test, formatter, static analyser, benchmark or application run has been executed here: no product test source set exists, and `ktlint`, detekt, `dependency-analysis`, the snapshot suites, the benchmark harness and every app run remain TASK-024, TASK-029 and the M1 feature work. Android Lint and the build checks have executed. Statements to the contrary would be false.
@@ -64,7 +64,7 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
   - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
   - the module-boundary enforcement check and its seeded violations — TASK-017;
   - the `VERSION` source — TASK-018;
-  - the repository-hygiene check that completes `.gitignore` is **done in TASK-016** (branch `build/repository-hygiene`, in review): `verifyRepositoryHygiene` holds the ignore-rule and credential rules and runs in `check`;
+  - the repository-hygiene check that completes `.gitignore` is **merged in TASK-016** (PR #13, 2026-09-30): `verifyRepositoryHygiene` holds the ignore-rule and credential rules and runs in `check`;
   - the `tokens.json` parity test — DEC-022;
   - rendered PNG exports under `docs/figma/` — DEC-045;
   - `README.es.md` review as the only translation — DEC-047.
@@ -75,7 +75,7 @@ Each action names the first concrete step and the document that owns it. A task 
 
 1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
-3. **Review and merge the repository-hygiene change.** First step: review the TASK-016 branch `build/repository-hygiene` and merge it, since the working-set and history scan of `AC-REQ-SEC-002-1` now runs in `check` as `verifyRepositoryHygiene` (`TEST-UNIT-026`; LOG-0038). Owner: `docs/BACKLOG.md` row TASK-016.
+3. **Repository-hygiene change merged.** TASK-016 landed in PR #13 on 2026-09-30 (`verifyRepositoryHygiene`, `TEST-UNIT-026`), so the working-set and history scan of `AC-REQ-SEC-002-1` now runs in `check` on `main`; the next repository step is the `TASK-017` boundary check and the `TASK-018` `VERSION` wiring (action 4). Owner: `docs/BACKLOG.md` rows TASK-016, TASK-017, TASK-018.
 4. **Add the boundary check (TASK-017) and the `VERSION` wiring (TASK-018).** First step: make the module-boundary rules a build property that fails on a seeded violation, then add the `VERSION` rule to `verifyDependencyPins`. TASK-015 pinned the catalog and left the policy plugin's rule list ready for it; the build skeleton it extends is merged as TASK-014. Owner: `docs/DESIGN.md` §3.5, `docs/BACKLOG.md` for the rows.
 5. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
 6. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
@@ -144,7 +144,7 @@ Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-ske
 | Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run: no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available: `lintDebug` runs and is clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
 | Dependency-policy checks (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | **Executed 2026-09-30** — passes; also runs inside `./gradlew check` and `./gradlew build` (TASK-015, LOG-0032) |
-| Repository and secret hygiene check | `./gradlew verifyRepositoryHygiene` | **Executed 2026-09-30** (corrected head `963da9c`) — passes with 0 findings over the working set, every reachable blob and every unique historical path; also runs inside `./gradlew check` and `./gradlew build` (TASK-016, LOG-0036, corrected by LOG-0037 and LOG-0038) |
+| Repository and secret hygiene check | `./gradlew verifyRepositoryHygiene` | **Executed 2026-10-01 on merged `main`** — passes with 0 findings over the working set, every reachable blob and every unique historical path; runs inside `./gradlew check` and `./gradlew build` (TASK-016, LOG-0036…LOG-0039) |
 | iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run: `iosApp/` does not exist (TASK-051) |
 | Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` | Not run: no contract test exists (TASK-026) |
 | Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` | Not run: the harness module needs a decision first (CONF-41) |
