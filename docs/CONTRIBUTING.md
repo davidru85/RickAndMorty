@@ -234,7 +234,7 @@ Every pull request requires the full suite on **both platforms**; the checks bel
 | `android-snapshots` | `TESTING.md` §8.2 | Roborazzi verification against committed baselines (DEC-034) |
 | `ios-verify` | `TESTING.md` §8.3 | iOS build, unit tests, SwiftUI/state-holder tests and swift-snapshot-testing baselines (DEC-025) |
 | `static-analysis` | `GUIDELINES.md`, `TESTING.md` §14 | ktlint, detekt, Android Lint, SwiftLint, swift-format (DEC-032) |
-| `dependency-analysis` | `GUIDELINES.md` | dependency-analysis, exact pinning, no dynamic version ranges (DEC-032, DEC-037, `REQ-NFR-006`) |
+| `dependency-analysis` | `GUIDELINES.md` | dependency-analysis, exact pinning, no dynamic version ranges (DEC-032, DEC-037, `REQ-NFR-006`), plus `verifyDependencyPolicy`: rationale and concern count, exact pins, and the README inventory (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`) |
 | `contract-fixture` | `TESTING.md` §11 | The API contract suite in fixture/replay mode inside the gate (DEC-054) |
 | `android-assemble` | `README.md` §8 | The Android build the change affects (`DEFINITION.md` §3, D1) |
 | `a11y-checks` | `TESTING.md` §9.1 | Automated accessibility assertions (`TEST-A11Y-001`…`006`, DEC-023), token parity (`TEST-UNIT-035`, DEC-022) and copy-key parity (`TEST-UNIT-036`, DEC-020) |
@@ -292,7 +292,7 @@ Documentation is part of the change, not a follow-up: the owning document is upd
 | A new or changed requirement | `REQUIREMENTS.md` (the `REQ-*` id and its `AC-*` criteria), `BACKLOG.md` (the `TASK-###` row), `TESTING.md` (the requirement→test traceability row) |
 | A new or superseded architectural choice, module boundary, public contract, tooling decision or scope change | An ADR in `docs/adr/` (when architecturally significant) plus the `DEC-###` row in `DECISION_BOARD.md` |
 | A shipped feature | Every specification that describes it: `UI_SPEC.md` for a visual or interaction surface, `API_SPECS.md` for the remote contract, `CONTRACTS.md` for an internal interface, `ERROR_FLOW.md` for a failure path, `OBSERVABILITY.md` for a log or diagnostic surface — whichever the feature touches (DEC-046) |
-| A change to a module, dependency or build interface | `DESIGN.md` §3 and the version catalog justification; also `README.md` if the documented commands or layout change |
+| A change to a module, dependency or build interface | `DESIGN.md` §3 and the version catalog justification, plus the `README.md`/`README.es.md` §15 dependency inventory; also `README.md` if the documented commands or layout change |
 | A change to the gate, test layer or tooling | `DEFINITION.md` or `TESTING.md` respectively, per which one owns the rule |
 | Any change whose motivation is decision-relevant — a decision, a scope change, a contract change, a milestone result | `PROJECT_LOG.md`, one `LOG-####` entry (`DEFINITION.md` §3, D11) |
 | Any change that touches this process | This file, and the `DEC-###` row that authorises it |

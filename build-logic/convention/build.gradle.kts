@@ -34,5 +34,9 @@ gradlePlugin {
             id = "multiverse.android.application"
             implementationClass = "io.github.davidru85.multiverse.buildlogic.AndroidApplicationConventionPlugin"
         }
+        register("dependencyPolicy") {
+            id = "multiverse.dependency.policy"
+            implementationClass = "io.github.davidru85.multiverse.buildlogic.policy.DependencyPolicyPlugin"
+        }
     }
 }

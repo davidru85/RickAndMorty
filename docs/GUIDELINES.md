@@ -62,9 +62,9 @@ The names below are the only tool names used in this document. Exact commands ar
 
 ### 1.4 Current state
 
-The build skeleton exists on 2026-09-30 (TASK-014: wrapper, convention plugins, the 11 modules, five route declarations) but no feature code, test or analyser configuration does, so every `Tool:` and `Test:` line is still a statement about the target build. Two consequences are stated rather than hidden:
+The build skeleton exists on 2026-09-30 (TASK-014: wrapper, convention plugins, the 11 modules, five route declarations) and the dependency-policy verification tasks exist, but no feature code, product test source set or analyser configuration does, so every `Tool:` and `Test:` line that names a product tool or a product test is still a statement about the target build. Two consequences are stated rather than hidden:
 
-- Until the tool configuration lands, the mechanical rules are unenforced; the change that introduces a tool `MUST` prove it blocks a seeded violation (`TECHNICAL_PLAN.md`, phase P2).
+- The dependency-policy checks now exist and run in the root `check` (`verifyDependencyPolicy`: `TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`; DEC-061, TASK-015), and **every** rule has an observed failing seed (the S1–S63 matrix of `PROJECT_LOG.md` LOG-0033…LOG-0035). The positive seeds fail their owning rule and the negative seeds pass, which is what the matrix is for. The rule set is P1–P8 (pins), R1–R7 (rationale) and I1–I9 (inventory): exact plain pins on comment-masked text matched over the whole file, one Compose BOM and one catalog, Kotlin DSL scripts with no `buildSrc`, toolchain rows checked against their properties files and failing closed when either is missing, and no bundle, no name lookup and no aliased accessor. Every other tool configuration (`ktlint`, detekt, Android Lint, dependency-analysis, Roborazzi) is still target state, and the change that introduces a tool `MUST` prove it blocks a seeded violation the same way (`TECHNICAL_PLAN.md`, phase P2).
 - The earlier module names (`:shared:*`, `:android:designsystem`, `:android:feature:characters`) survive only as history in `DECISION_BOARD.md` §3 and in change-log entries; `adr/0001-module-boundaries.md` and `DESIGN.md` §3 carry the current module set, and `AGENTS.md` §8 is aligned with them.
 
 ## 2. Kotlin: language and correctness rules
@@ -220,8 +220,9 @@ A new third-party dependency requires, in the same change:
 4. **An exact pin** in the version catalog, never a range or `latest.release` (`REQ-NFR-006`, `AC-REQ-NFR-006-1`).
 5. **A declared usage** — the module that declares the dependency is the module that uses it; `dependency-analysis` reports an unused declaration, and an undeclared transitive use is a violation.
 6. **The alpha rule** — an alpha or pre-release artifact is permitted only where an ADR records the accepted risk. `DEC-010`/`ADR-0008` permit exactly one (`material3:1.5.0-alpha29`) and contain it to `:core:designsystem`; its bumps are their own pull request and MUST NOT be applied automatically by the dependency automation of `DEC-037`.
+7. **Inventory and rationale in the same change** — pinning a catalog entry that no build script references yet is the recorded policy (DEC-060), and the entry still needs its `DESIGN.md` §3.5 row and its `README.md`/`README.es.md` §15 row. The **first declaration** of such an entry flips its State from `Pinned` to `Declared` and adds the declaring project path in the same change; `./gradlew verifyDependencyPolicy` must pass afterwards. Catalog entries are referenced only through `libs.<alias>` accessors in module build scripts: no `[bundles]` and no lookups by name in build-logic (`DESIGN.md` §3.5, DEC-057, DEC-060). The build keeps one catalog, `libs`, Kotlin DSL scripts only and no `buildSrc`, and never aliases `libs` (P7, P8, I9).
 
-**Enforcement:** `Tool:` dependency-analysis (`buildHealth`); `Test:` `TEST-UNIT-013` (rationale and concern count), `TEST-UNIT-014` (exact pins only); `Review:` rationale presence and concern duplication.
+**Enforcement:** `Tool:` dependency-analysis (`buildHealth`); `Test:` `TEST-UNIT-013` (rationale and concern count), `TEST-UNIT-014` (exact pins only), `TEST-UNIT-051` (inventory mirror); `Review:` rationale presence and concern duplication.
 
 ### 3.7 Adding a module
 

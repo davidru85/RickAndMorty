@@ -47,7 +47,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 
 ### Current state vs target state
 
-- **Current state (2026-09-30):** the Gradle/KMP build skeleton exists (TASK-014, branch `build/gradle-kmp-skeleton`) with the 11 modules and five route declarations; no test source set, no fixture and no CI exist. Every statement below is the target state.
+- **Current state (2026-09-30):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist (`verifyDependencyPolicy`: `TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061). No product test source set, no fixture and no CI exist. Every other statement below is the target state.
 - **Target state:** the layers, IDs, layout and policies defined here, implemented in the Android milestone (M1) and extended in the iOS milestone (M2) (`DEC-040`, `REQ-PLAT-004`).
 
 ### Stated assumptions
@@ -182,7 +182,8 @@ These run with the shared suites (no emulator, no network) even though several o
 | --- | --- |
 | `TEST-UNIT-012` | `:core:domain` has no dependency on platform, HTTP or UI libraries, and no DTO type appears in a signature outside `:core:data` and the feature data packages (`REQ-NFR-001`) |
 | `TEST-UNIT-013` | Every declared dependency has a named rationale, and no concern is served by more than two solutions (`REQ-NFR-002`) |
-| `TEST-UNIT-014` | No dynamic version range (`+`, `latest.release`) exists anywhere in the build, and `VERSION` is the single source for the app versions (`AC-REQ-NFR-006-1`, `AC-REQ-NFR-006-2`) |
+| `TEST-UNIT-014` | No dynamic version range (`+`, `latest.release`) exists anywhere in the build, and `VERSION` is the single source for the app versions (`AC-REQ-NFR-006-1`, `AC-REQ-NFR-006-2`). The exact-pin half is implemented by `verifyDependencyPins`; the `VERSION` half lands with `TASK-018`, which adds its rule to the same task |
+| `TEST-UNIT-051` | The dependency inventory in `README.md` §15 lists exactly the version-catalog libraries and plugins, with their pinned versions and their declaration state derived from the build scripts, and `README.es.md` mirrors it (`AC-REQ-NFR-002-1`) |
 | `TEST-UNIT-015` | The documented local gate commands exist and run the checks they claim to run (`AC-REQ-NFR-007-1`) |
 | `TEST-UNIT-017` | No platform UI code exists in a shared source set, and the module graph contains no dependency from one feature to another (`REQ-PLAT-001`, `DEC-052` dependency rules) |
 | `TEST-UNIT-018` | Android `minSdk` is 26 and `compileSdk`/`targetSdk` are 37, asserted from the resolved build configuration (`AC-REQ-PLAT-002-1`) |
@@ -473,6 +474,9 @@ Only a **passing** live run may refresh fixtures: the job uploads the captured b
 Module names and dependency direction follow `DEC-052` (feature-per-module, Clean Architecture layers inside each feature). The authoritative dependency rules are restated here only where they constrain where tests live; `DESIGN.md` §3 owns the module table.
 
 ```text
+build-logic/convention/src/main/kotlin/policy/  # repository-policy checks (TEST-UNIT-013, 014, 051), run by the root `check` through
+                                          # `verifyDependencyPolicy`: a Gradle verification task carries its test id in its
+                                          # description and in every failure line, which is what §13.2 grep-ability requires (DEC-061)
 core/
   testing/src/commonMain/kotlin/...          # shared fakes, FixtureLoader, fixtures, TestDispatcher + fake-clock helpers (DEC-052)
   testing/src/commonMain/resources/fixtures/ # committed JSON fixtures + .meta.json sidecars (DEC-030)
@@ -545,7 +549,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 | iOS unit and state-holder tests | The Swift test targets and the KMP-linked state tests | `TEST-UNIT-###`, `TEST-INT-###` on iOS |
 | iOS snapshot tests | swift-snapshot-testing, committed baselines, including the Reduce Transparency, largest Dynamic Type and glass/fallback variants (`DEC-025`) | Visual regressions and `REQ-PLAT-003`, `REQ-UX-006`, `REQ-UX-007` |
 | Static analysis and formatting | ktlint, detekt, Android Lint, SwiftLint, swift-format (`DEC-032`) | Quality gate (`REQ-NFR-007`) |
-| Dependency analysis | The `DEC-032` dependency-analysis check | `REQ-NFR-002`, `DEC-037` |
+| Dependency analysis | The `DEC-032` dependency-analysis check, plus `./gradlew verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`) | `REQ-NFR-002`, `DEC-037` |
 | Assemble | Android assemble and the iOS build | The change compiles and links on both platforms |
 | Milestone independence | `TEST-UNIT-019` | `REQ-PLAT-004`: Android must stay releasable with the iOS app absent |
 
@@ -606,7 +610,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-035` — Delete all favorites | Should | `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017` |
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017` |
-| `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034` |
+| `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034`, `TEST-UNIT-051` |
 | `REQ-NFR-003` — Performance budgets | Must | `TEST-PERF-001`, `TEST-PERF-002`, `TEST-PERF-003` |
 | `REQ-NFR-004` — Resilience | Must | `TEST-CONTRACT-003`, `TEST-CONTRACT-004`, `TEST-CONTRACT-005` |
 | `REQ-NFR-005` — Verification depth | Must | All `TEST-UNIT-###`, `TEST-CONTRACT-###`, `TEST-INT-###`, `TEST-UI-###` ids in this document, including the test-first discipline check `TEST-UNIT-041`, the Kotlin→Swift parity check `TEST-UNIT-042`, the no-network guard `TEST-UNIT-024` and the live probes `TEST-CONTRACT-006` |
@@ -663,13 +667,14 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 
 ## 17. Test case inventory
 
-The complete set of allocated ids and the module that owns each. Level names match the test-case template (`DEC-051`); status for every case is `Planned` because no test code exists yet.
+The complete set of allocated ids and the module that owns each. Level names match the test-case template (`DEC-051`). `TEST-UNIT-013` and `TEST-UNIT-051` are **implemented** (Gradle verification tasks in `build-logic/`, DEC-061) and `TEST-UNIT-014` is implemented for its exact-pin half; every other case is `Planned`, because no product test code exists yet.
 
 | Range | Owning module | Level | Contents |
 | --- | --- | --- | --- |
 | `TEST-UNIT-001`…`004` | `:core:data` (001–002), `:feature:discovery` (003), `:core:data` + feature favorites (004) | unit | Mappers (001–002), search/filter state logic (003), favorites logic (004) |
 | `TEST-UNIT-005`…`008` | `:feature:discovery` (005–007), `:core:presentation` (008) | unit | Empty results, retry, refresh, localisation |
 | `TEST-UNIT-009`…`016` | `:core:data` (009, 010, 011, 016), build root (012–015) | unit | Cache policy, failure mapping, detail enrichment mappers, pager, layering, dependency restraint, version pinning, quality-gate configuration |
+| `TEST-UNIT-051` | Build root | unit | The README dependency inventory against the catalog and the build scripts (`AC-REQ-NFR-002-1`) |
 | `TEST-UNIT-017`…`024` | Build root (017–019), `:core:data` (020–023), build root (024) | unit | Platform purity, SDK configuration, milestone independence, cache identity, request coalescing, retry boundaries, freshness with a fake clock, no-network guard |
 | `TEST-UNIT-025`…`034` | Build root (025, 026, 030), `:core:data` (027), both app shells (028, 033), `:core:presentation` + `:core:data` (029, 032, 034) | unit | Security and observability policy checks: host allow-list, secret scan, persisted-field inventory, microphone/speech absence, log redaction, advisory register, reporting route, logging contract, debug surface, analytics absence |
 | `TEST-UNIT-035`…`042` | `:core:designsystem` + iOS `DesignSystem` (035), `:core:presentation` (036), `:feature:discovery` (037–038), `:feature:character-detail` (039), `:feature:favorites` (040), build root (041), `iosApp/Tests` (042) | unit | Token parity, copy-key parity, feature cache policies, feature favorites, test-first discipline, Kotlin→Swift contract parity |
@@ -691,4 +696,8 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 | 2026-09-29 | Test-first workflow added (§1.1, P10): observed red before green, phase-per-commit, which layer owns the red test, and how the cycle interacts with snapshots and the quarantine policy. | `DEC-053` |
 | 2026-09-29 | CI section rewritten: the full suite is required on every pull request on both platforms, contract tests run in fixture/replay mode in the gate with live-network mode as a scheduled signal, branch protection is named as the human action, and quarantine is the only permitted exclusion. | `DEC-054` (supersedes `DEC-028`) |
 | 2026-09-29 | Cross-document alignment after the sibling documents landed: `TEST-UNIT-042` allocated for the Kotlin→Swift contract-parity check that `CONTRACTS.md` §9.4 asked this document to own; §1 P3 now cites the `LoadState` precedence that `IC-018` owns instead of `DESIGN.md` §4.1; `TEST-UNIT-010` is stated against the `API-ERR-###` rows of `ERROR_FLOW.md`. | `DEC-052`, `DEC-053`, `DEC-054` |
+| 2026-09-30 | Round-3 hardening of the `TEST-UNIT-013`/`014`/`051` checks: rich catalog source forms (`{ require = … }`) and duplicate BOM entries refused, both Gradle builds covered for catalogs and Groovy/`buildSrc`, inventory owners taken from `Project.path`, and the Markdown tables validated for structure, catalog order and exact cell grammar (`LOG-0035`, S54–S63). | `DEC-057`, `DEC-060`, `DEC-061`, TASK-015 |
+| 2026-09-30 | Round-2 hardening of the `TEST-UNIT-013`/`014`/`051` checks: scanned files taken from the build model (P8: Kotlin DSL, no `buildSrc`), mask lexing fixed, dynamic and multi-line inline versions caught, multi-line chains seen and aliasing refused (I9), one catalog (P7), fail-closed toolchain rows (R7); remaining limits `GAP-011` (`LOG-0034`). | `DEC-057`, `DEC-060`, `DEC-061`, TASK-015 |
+| 2026-09-30 | `TEST-UNIT-014` and `TEST-UNIT-051` checks hardened on review: rich version forms refused on every entry, BOM self-governance closed, the DEC-060 single BOM enforced, seven inline-version forms detected on comment-masked text, references derived from code only, bundles and name lookups refused; `TEST-UNIT-013` checks the toolchain rows (`LOG-0033`). | `DEC-057`, `DEC-060`, `DEC-061`, TASK-015 |
+| 2026-09-30 | `TEST-UNIT-051` allocated for the README dependency inventory check, `TEST-UNIT-013` and `TEST-UNIT-014` marked implemented for the halves the `multiverse.dependency.policy` tasks cover, the policy-check layout added to §13.1 and the `verifyDependencyPolicy` command added to §14.2. | `DEC-061`, `DEC-060`, TASK-015 |
 | 2026-09-29 | §14 declared authoritative for the required-check list, which is what `DEFINITION.md` §7 and `HANDOFF.md` already assign to this document; `DEFINITION.md` §7 keeps the gate classification. Header `Owner:` corrected to the `AGENTS.md` §3.6 role name used by the sibling documents. | `DEC-054` |
