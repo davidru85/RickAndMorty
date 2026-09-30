@@ -139,7 +139,9 @@ abstract class DependencyPinsTask : DefaultTask() {
     /** P4 — no external version outside the catalog: no inline coordinate and no inline plugin version. */
     private fun noInlineVersionsOutsideTheCatalog(log: ViolationLog) {
         (buildScripts.files + policySources.files).sortedBy { it.path }.forEach { file ->
-            file.readLines().forEachIndexed { index, line ->
+            // Comment-masked, line by line: string literals are kept, because coordinates
+            // are string literals, and line numbers stay exact.
+            KotlinSourceMask.mask(file.readText(), maskStrings = false).lines().forEachIndexed { index, line ->
                 BuildScripts.inlineVersionedCoordinates(line).forEach { found ->
                     log.add(TEST_ID, "${file.name}:${index + 1}", "declares an external version outside the catalog: $found")
                 }

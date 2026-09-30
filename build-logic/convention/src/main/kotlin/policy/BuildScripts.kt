@@ -4,12 +4,16 @@ import java.io.File
 
 /**
  * The build-script half of the policy: catalog accessor references and the project
- * path each declaration belongs to (`TEST-UNIT-051`, I5; DEC-061).
+ * path each declaration belongs to (`TEST-UNIT-051` I5; DEC-061).
  *
  * A reference is a maximal `libs.<segment>...` chain (never `libs.versions.toml`,
  * which is not a Kotlin reference). The chain references the **longest catalog
  * accessor that is a segment prefix of it**, so `libs.androidx.compose.ui.tooling`
  * references the tooling accessor and not `libs.androidx.compose.ui`.
+ *
+ * The chain is searched in the source with its comments and string literals masked
+ * ([KotlinSourceMask], `maskStrings = true`), so a comment or a string that mentions an
+ * accessor is not a declaration.
  */
 internal object BuildScripts {
 
@@ -20,7 +24,8 @@ internal object BuildScripts {
         val references = mutableMapOf<String, MutableSet<String>>()
         scripts.forEach { script ->
             val projectPath = projectPath(script, rootDir)
-            CHAIN.findAll(script.readText()).forEach { match ->
+            val code = KotlinSourceMask.mask(script.readText(), maskStrings = true)
+            CHAIN.findAll(code).forEach { match ->
                 val chain = match.value
                 if (chain == "libs.versions.toml") return@forEach
                 longestAccessor(chain, accessors)?.let { accessor ->
@@ -47,30 +52,57 @@ internal object BuildScripts {
         return ":$dir".replace('/', ':')
     }
 
-    /**
-     * External coordinates declared inline with an explicit version — three colon-separated
-     * segments inside double quotes, with a non-empty group — or a plugin version declared
-     * by the Gradle DSL. A project path such as `":core:domain"` has an empty first segment
-     * and does not match.
-     *
-     * The patterns are used by [PinsTask] on `.gradle.kts` files **and** on the policy sources
-     * themselves, which is why this file builds no literal coordinate anywhere: an example
-     * is composed from a template (a coordinate written as `group:name:version` is assembled
-     * from its three placeholder parts, never typed as one string).
-     */
-    fun inlineVersionedCoordinates(text: String): List<String> {
-        val found = mutableListOf<String>()
-        COORDINATE.findAll(text).forEach { found += it.value }
-        PLUGIN_VERSION.forEach { pattern -> pattern.findAll(text).forEach { found += it.value } }
-        return found
-    }
+    /** One pattern that finds an external version declared outside the catalog. */
+    data class InlineVersionPattern(val pattern: Regex, val description: String)
 
-    private val COORDINATE = Regex("\"([A-Za-z][A-Za-z0-9_.\\-]*):([A-Za-z0-9_.\\-]+):([^\"/\\s]+)\"")
-    private val PLUGIN_VERSION = listOf(
-        // Groovy-DSL form: the `version` keyword followed by a quoted numeric version.
-        Regex("\\bversion\\s+\"[0-9][^\"]*\""),
-        // Kotlin-DSL form: `version(` followed by a quoted numeric version, never a
-        // qualified catalog lookup such as a catalog object's `version("alias")` call.
-        Regex("(?<![.\\w])version\\s*\\(\\s*\"[0-9][^\"]*\"\\s*\\)"),
+    /**
+     * The forms an external version takes outside the catalog. Every version alternative
+     * requires a **digit** right after the opening quote, which is what keeps a catalog
+     * lookup such as `catalog.version("android-minSdk")` out of the result; a project
+     * path such as `":core:domain"` never matches either, because the coordinate pattern
+     * requires a non-empty first segment.
+     */
+    val INLINE_VERSION_PATTERNS: List<InlineVersionPattern> = listOf(
+        // 1. A quoted coordinate with its version: "group:name:version".
+        InlineVersionPattern(
+            Regex("\"([A-Za-z][A-Za-z0-9_.\\-]*):([A-Za-z0-9_.\\-]+):([^\"/\\s]+)\""),
+            "a coordinate with an inline version",
+        ),
+        // 2. A coordinate completed by concatenation: "group:name:" + version.
+        InlineVersionPattern(
+            Regex("\"[A-Za-z][A-Za-z0-9_.\\-]*:[A-Za-z0-9_.\\-]+:\"\\s*\\+"),
+            "a coordinate with a concatenated version",
+        ),
+        // 3. The infix or Groovy form: the `version` keyword, then a quoted version.
+        InlineVersionPattern(
+            Regex("\\bversion\\s+\"[0-9][^\"]*\""),
+            "an inline plugin version",
+        ),
+        // 4. The call form, including a chained `.version("1.2.3")`.
+        InlineVersionPattern(
+            Regex("\\bversion\\s*\\(\\s*\"[0-9][^\"]*\"\\s*\\)"),
+            "an inline plugin version",
+        ),
+        // 5. A named argument: version = "1.2.3".
+        InlineVersionPattern(
+            Regex("\\bversion\\s*=\\s*\"[0-9][^\"]*\""),
+            "an inline version named argument",
+        ),
+        // 6. The helper form: kotlin("module", "1.2.3").
+        InlineVersionPattern(
+            Regex("\\bkotlin\\s*\\(\\s*\"[^\"]+\"\\s*,\\s*\"[0-9][^\"]*\""),
+            "an inline helper version",
+        ),
+        // 7. The dependency-constraint DSL.
+        InlineVersionPattern(
+            Regex("\\b(?:strictly|require|prefer|useVersion)\\s*\\(\\s*\"[0-9][^\"]*\""),
+            "an inline dependency constraint",
+        ),
     )
+
+    /**
+     * Every external version declared inline in [text]. One match yields one entry.
+     */
+    fun inlineVersionedCoordinates(text: String): List<String> =
+        INLINE_VERSION_PATTERNS.flatMap { it.pattern.findAll(text).map { match -> match.value } }
 }
