@@ -50,6 +50,11 @@ internal object CatalogCapture {
             )
         }
 
-        return CatalogSnapshot(libraries = libraries, plugins = plugins, versions = versions)
+        return CatalogSnapshot(
+            libraries = libraries,
+            plugins = plugins,
+            versions = versions,
+            bundles = catalog.bundleAliases.sorted().map { alias -> "libs.bundles.$alias" },
+        )
     }
 }

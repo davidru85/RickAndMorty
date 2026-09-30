@@ -14,22 +14,25 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 /**
- * `TEST-UNIT-014` — every external version is an exact pin, and the wrapper is pinned
- * by checksum (`AC-REQ-NFR-006-1`, `REQ-NFR-006`; DEC-061).
+ * `TEST-UNIT-014` — every external version is an exact plain pin, the catalog holds
+ * one BOM, and the wrapper is pinned by checksum (`AC-REQ-NFR-006-1`, `REQ-NFR-006`;
+ * DEC-060, DEC-061).
  *
- * The rules live in one function each (P1–P5) and the task walks them in order, so a
- * later task can contribute a rule of its own — `TASK-018` adds the single-`VERSION`
- * rule of `AC-REQ-NFR-006-2` to `verifyDependencyPins` without restructuring this class.
+ * The rules are one function each, registered in [rules] order, so a later task can
+ * contribute one without restructuring this class:
+ *
+ * - P1 [exactPins] — every constraint is an exact plain version, evaluated once per entry;
+ * - P2 [pluginsDeclareVersions] — every plugin declares a version;
+ * - P3 [versionlessEntriesAreBomGoverned] — a versionless library is governed by a BOM;
+ * - P4 [noInlineVersionsOutsideTheCatalog] — no external version outside the catalog;
+ * - P5 [wrapperIsPinned] — the wrapper names an exact Gradle release with its SHA-256;
+ * - P6 [onlyTheComposeBom] — DEC-060's single BOM.
  */
 @DisableCachingByDefault(because = "verification task with no outputs")
 abstract class DependencyPinsTask : DefaultTask() {
 
     @get:Input
     abstract val catalog: Property<CatalogSnapshot>
-
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val catalogFile: RegularFileProperty
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -51,8 +54,8 @@ abstract class DependencyPinsTask : DefaultTask() {
     }
 
     /**
-     * The registered rules, in order. `TASK-018` appends the `VERSION` rule here; the
-     * `catalogFile` input already exists for it.
+     * The registered rules, in order. `TASK-018` appends the single-`VERSION` rule of
+     * `AC-REQ-NFR-006-2` here, together with its own `VERSION` input.
      */
     private fun rules(): List<(ViolationLog) -> Unit> = listOf(
         ::exactPins,
@@ -60,49 +63,75 @@ abstract class DependencyPinsTask : DefaultTask() {
         ::versionlessEntriesAreBomGoverned,
         ::noInlineVersionsOutsideTheCatalog,
         ::wrapperIsPinned,
+        ::onlyTheComposeBom,
     )
 
-    /** P1 — every version constraint is an exact version: no range, no `+`, no `latest.*`, no qualifier list. */
+    /**
+     * P1 — every version constraint is an exact plain version. Each entry is evaluated
+     * once, in a fixed order, so one defect yields exactly one violation line.
+     */
     private fun exactPins(log: ViolationLog) {
-        fun check(location: String, required: String, strict: String, preferred: String, rejected: List<String>) {
-            if (required.isEmpty()) {
-                log.add(TEST_ID, location, "has no required version")
-            } else if (!EXACT_VERSION.matches(required)) {
-                log.add(TEST_ID, location, "`$required` is not an exact version")
-            }
-            if (DYNAMIC.containsMatchIn(required)) {
-                log.add(TEST_ID, location, "`$required` is dynamic: no `+`, `latest.*` or snapshot version is permitted")
-            }
-            if (FORBIDDEN_CHARS.any { required.contains(it) }) {
-                log.add(TEST_ID, location, "`$required` is a rich version range, not a plain pin")
-            }
-            if (strict.isNotEmpty() || preferred.isNotEmpty() || rejected.isNotEmpty()) {
-                log.add(TEST_ID, location, "uses a rich version form (strictly/require/prefer/reject), not a plain pin")
+        fun check(location: String, required: String, strict: String, preferred: String, rejected: List<String>, emptyReason: String?) {
+            firstPinViolation(required, strict, preferred, rejected, emptyReason)?.let { reason ->
+                log.add(TEST_ID, location, reason)
             }
         }
 
         val snapshot = catalog.get()
-        snapshot.versions.forEach { check("version ${it.alias}", it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions) }
-        snapshot.libraries.forEach {
-            if (!it.versionless) check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions)
+        snapshot.versions.forEach {
+            check("version ${it.alias}", it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, "has no version")
         }
-        snapshot.plugins.forEach { check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions) }
+        snapshot.libraries.forEach {
+            // A library without any constraint is P3's concern, not P1's.
+            check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, null)
+        }
+        snapshot.plugins.forEach {
+            // A plugin without a version is P2's concern, not P1's.
+            check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, null)
+        }
+    }
+
+    /**
+     * The single ordered decision behind P1: the first applicable condition wins, so a
+     * rich form is reported as a rich form and a dynamic version as a dynamic version,
+     * never both.
+     */
+    private fun firstPinViolation(
+        required: String,
+        strict: String,
+        preferred: String,
+        rejected: List<String>,
+        emptyReason: String?,
+    ): String? = when {
+        strict.isNotEmpty() || preferred.isNotEmpty() || rejected.isNotEmpty() ->
+            "uses a rich version form (strictly/prefer/reject); only a plain exact version is permitted"
+
+        required.isEmpty() -> emptyReason
+
+        FORBIDDEN_CHARS.any { required.contains(it) } -> "`$required` is a version range, not an exact pin"
+
+        DYNAMIC.containsMatchIn(required) -> "`$required` is dynamic (`+`, `latest.*` or snapshot)"
+
+        !EXACT_VERSION.matches(required) -> "`$required` is not an exact version"
+
+        else -> null
     }
 
     /** P2 — every plugin declares a version. */
     private fun pluginsDeclareVersions(log: ViolationLog) {
         catalog.get().plugins.forEach { plugin ->
             if (plugin.requiredVersion.isEmpty()) {
-                log.add(TEST_ID, plugin.accessor, "plugin `${plugin.pluginId}` declares no version")
+                log.add(TEST_ID, plugin.accessor, "declares no version")
             }
         }
     }
 
-    /** P3 — a library without a version is governed by a BOM of the same group or a dot-prefix of it. */
+    /** P3 — a versionless library is governed by a BOM, and a BOM declares its own version. */
     private fun versionlessEntriesAreBomGoverned(log: ViolationLog) {
         catalog.get().libraries.filter { it.versionless }.forEach { library ->
-            if (!catalog.get().isBomGoverned(library)) {
-                log.add(TEST_ID, library.accessor, "is versionless with no governing BOM (DEC-060: one BOM, the Compose BOM)")
+            when {
+                library.isBom -> log.add(TEST_ID, library.accessor, "a BOM must declare its own version")
+                !catalog.get().isBomGoverned(library) -> log.add(TEST_ID, library.accessor, "is versionless and no BOM governs its group")
             }
         }
     }
@@ -120,8 +149,9 @@ abstract class DependencyPinsTask : DefaultTask() {
 
     /** P5 — the wrapper names an exact Gradle release and pins its distribution by SHA-256. */
     private fun wrapperIsPinned(log: ViolationLog) {
-        val location = wrapperProperties.get().asFile.name
-        val properties = wrapperProperties.get().asFile.readLines()
+        val file = wrapperProperties.get().asFile
+        val location = file.name
+        val properties = file.readLines()
             .mapNotNull { line ->
                 val separator = line.indexOf('=')
                 if (separator <= 0) null else line.take(separator).trim() to line.drop(separator + 1).trim()
@@ -143,8 +173,28 @@ abstract class DependencyPinsTask : DefaultTask() {
         }
     }
 
+    /**
+     * P6 — DEC-060's single BOM: the catalog contains at most one BOM library, and it is
+     * [COMPOSE_BOM_COORDINATES]. A second BOM would let a versionless entry resolve from
+     * a source the inventory does not name.
+     */
+    private fun onlyTheComposeBom(log: ViolationLog) {
+        catalog.get().libraries.filter { it.isBom }.forEach { bom ->
+            if (bom.coordinates != COMPOSE_BOM_COORDINATES) {
+                log.add(
+                    TEST_ID,
+                    bom.accessor,
+                    "`${bom.coordinates}` is a BOM, and DEC-060 permits one BOM, `$COMPOSE_BOM_COORDINATES`",
+                )
+            }
+        }
+    }
+
     private companion object {
         const val TEST_ID = "TEST-UNIT-014"
+
+        /** DEC-060: the Compose BOM is the only BOM in the catalog. */
+        const val COMPOSE_BOM_COORDINATES = "androidx.compose:compose-bom"
 
         val EXACT_VERSION = Regex("^[0-9A-Za-z][0-9A-Za-z._-]*$")
         val DYNAMIC = Regex("\\+|latest\\.|snapshot", RegexOption.IGNORE_CASE)

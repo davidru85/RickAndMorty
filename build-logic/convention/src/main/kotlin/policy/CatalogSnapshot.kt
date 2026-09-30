@@ -25,8 +25,10 @@ data class CatalogLibrary(
     /** A platform BOM: its name ends in `-bom`, and it is the only versionless-entry governor (DEC-060). */
     val isBom: Boolean get() = name.endsWith("-bom")
 
-    /** True when the entry carries no version of its own, so its effective version is a BOM's. */
-    val versionless: Boolean get() = requiredVersion.isEmpty()
+    /** True when the entry carries no constraint at all, so its effective version is a BOM's. */
+    val versionless: Boolean
+        get() = requiredVersion.isEmpty() && strictVersion.isEmpty() &&
+            preferredVersion.isEmpty() && rejectedVersions.isEmpty()
 }
 
 /** One plugin entry of the `libs` version catalog, captured at configuration time (DEC-061). */
@@ -59,6 +61,7 @@ data class CatalogSnapshot(
     val libraries: List<CatalogLibrary>,
     val plugins: List<CatalogPlugin>,
     val versions: List<CatalogVersion>,
+    val bundles: List<String>,
 ) : Serializable {
 
     /** Every library and plugin accessor, in catalog order: libraries first, then plugins. */
@@ -84,7 +87,8 @@ data class CatalogSnapshot(
 
     /** The BOM governing a versionless library, or `null` when none does. */
     fun governingBom(library: CatalogLibrary): CatalogLibrary? = libraries.firstOrNull { candidate ->
-        candidate.isBom && (candidate.group == library.group || library.group.startsWith("${candidate.group}."))
+        candidate.isBom && candidate.accessor != library.accessor && !candidate.versionless &&
+            (candidate.group == library.group || library.group.startsWith("${candidate.group}."))
     }
 
     /** True when at least one BOM governs the entry's group. */
