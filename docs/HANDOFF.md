@@ -92,7 +92,7 @@ Do not implement a deferred item. The authoritative lists are:
 - `docs/DECISION_BOARD.md` §4 — decisions with status `Deferred`, with the condition that reopens each one.
 - `docs/REQUIREMENTS.md` §1.3 — deferred scope items `DEF-001`…`DEF-004`, with their re-entry conditions. `docs/REQUIREMENTS.md` §14 records that nothing there is blocking.
 
-- The decisions needed before the next tasks: `CONF-47` (`:core:domain` and `Flow`) before TASK-036; `CONF-46` (whether the documentation-phase write limit applies); `CONF-45` (one or two solutions per concern); `GAP-010` (who owns dependency-artifact verification, and when); `GAP-011` (whether and when to rebuild P4 and I5 on Gradle's dependency model); and every OD-6 conflict TASK-015 recorded (`CONF-50`, `CONF-51`).
+- The decisions needed before the next tasks are indexed as work rows in `docs/BACKLOG.md` §9 (`TASK-079`…`TASK-086`): `CONF-47` (`:core:domain` and `Flow`) before TASK-036; `CONF-46` (whether the documentation-phase write limit applies); `CONF-45` (one or two solutions per concern); `GAP-010` (who owns dependency-artifact verification, and when); `GAP-011` (whether and when to rebuild the policy checks on Gradle's dependency model); and the two OD-6 blocked items (`CONF-50`, `CONF-51`), each with its own row.
 
 Two consequences worth knowing before planning work: voice search is deferred and no microphone or speech permission may be added (`REQ-SEC-004`); Episodes ships as a placeholder (`DEC-005`), and Settings replaces Locations with three real settings, including a runtime REST/GraphQL switch (`DEC-055`, `DEC-056`).
 
