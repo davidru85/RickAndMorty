@@ -1,7 +1,7 @@
 # DOCUMENTATION_AUDIT.md — Documentation System Audit
 
 - **Status:** Active — audit performed 2026-09-29 on branch `docs/documentation-system`
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-01
 - **Owner:** Documentation Maintainer (see `AGENTS.md`)
 - **Authoritative for:** the documentation inventory, ownership map, open gaps, conflicts, and the reconciliation rule between documentation and implementation.
 - **Inputs:** every document in the repository, `assessment.md`, and the live-API and toolchain verifications recorded below.
@@ -182,7 +182,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Repository state | `git ls-files`, `git log`, `git status --ignored`, tree inspection | 9 tracked Markdown files before this work; 31 after; 14 commits, single branch `main` before the audit branch; no source, build, CI or ignore files |
 | Dependency-pin verification | HTTP existence probes against Maven Central, Google Maven and the Gradle Plugin Portal, dated 2026-09-30, for every entry `TASK-015` pins; plus `./gradlew verifyDependencyPolicy` on branch `build/version-catalog-inventory` | Every decided pin answers `200`; the `TASK-015` policy tasks pass with the S1–S63 seed matrix (`LOG-0032`…`LOG-0035`; `LOG-0035` is the latest evidence). No first-party `material-color-utilities` artifact exists (`CONF-50`), and detekt is **not pinned** because no supported stable line exists (`CONF-51`) |
 | Builds, linters and tests | Executed 2026-09-30 on branch `build/gradle-kmp-skeleton` | The Gradle/KMP skeleton builds: `./gradlew --version`, `./gradlew projects`, `./gradlew help --warning-mode=all`, `./gradlew assemble`, `./gradlew build`, `:androidApp:assembleDebug` (no `iosApp/` present and from a clean clone) and the per-module dependency reports all succeeded; no deprecation warning originates in this repository's scripts. No test exists to run and no app is launchable (no activity). Evidence and the full command list: `PROJECT_LOG.md` LOG-0026 |
-| Repository and secret hygiene | Executed 2026-09-30 on branch `build/repository-hygiene`; corrected on review twice (`LOG-0037`, `LOG-0038`): `./gradlew verifyRepositoryHygiene` and the S1–S14, R1–R15 and T1–T14 seed matrices in disposable clones | Corrected head `963da9c` passes with 95 commit-eligible paths, 704 reachable objects, 326 unique blobs scanned and verified, 102 unique historical paths classified and 0 findings, and the task re-executes on a second run and under a reused configuration cache; `check` and `build` include it; all 38 ignore sentinels are ignored and the shared Xcode/project files are not; each `HYG-01`…`HYG-07` and `SEC-026-01`…`SEC-026-12` rule failed its own seed (S1–S14, plus HYG-05 and the review regressions) and the clean state passed again after each seed was removed, with no seed value printed. Evidence: `PROJECT_LOG.md` LOG-0036, LOG-0037 and LOG-0038 (current) |
+| Repository and secret hygiene | Executed 2026-09-30 on branch `build/repository-hygiene`; corrected on review twice and merged in PR #13 (`LOG-0037`, `LOG-0038`, `LOG-0039`): `./gradlew verifyRepositoryHygiene` and the S1–S14, R1–R15 and T1–T14 seed matrices in disposable clones | Corrected head `963da9c` passes with 95 commit-eligible paths, 704 reachable objects, 326 unique blobs scanned and verified, 102 unique historical paths classified and 0 findings, and the task re-executes on a second run and under a reused configuration cache; `check` and `build` include it; all 38 ignore sentinels are ignored and the shared Xcode/project files are not; each `HYG-01`…`HYG-07` and `SEC-026-01`…`SEC-026-12` rule failed its own seed (S1–S14, plus HYG-05 and the review regressions) and the clean state passed again after each seed was removed, with no seed value printed. Evidence: `PROJECT_LOG.md` LOG-0036, LOG-0037 and LOG-0038, merged per LOG-0039 |
 
 ## 8. Audit completion and next actions
 
@@ -197,7 +197,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Open conflicts | 12 (§6.3: `CONF-36`, `CONF-37`, `CONF-39`, `CONF-41`…`CONF-43`, `CONF-45`…`CONF-48`, `CONF-50`, `CONF-51`; `CONF-38`, `CONF-40` and `CONF-49` are resolved, `CONF-44` is partially resolved) |
 | Blocking gaps for the next milestone | `GAP-001`, `GAP-002` |
 
-Next actions, in order: review and merge the repository-hygiene change (`TASK-016`, in review); add CI workflows and enable branch protection (`GAP-002`); produce the Figma exports (`GAP-004`); add the token export and parity test (`GAP-003`); name the reference device and record the first measurements (`GAP-005`). Each is tracked in `BACKLOG.md` and sequenced in `TECHNICAL_PLAN.md`.
+Next actions, in order: add CI workflows and enable branch protection (`GAP-002`); produce the Figma exports (`GAP-004`); add the token export and parity test (`GAP-003`); name the reference device and record the first measurements (`GAP-005`). Each is tracked in `BACKLOG.md` and sequenced in `TECHNICAL_PLAN.md`.
 
 ## 9. Change log
 
@@ -216,3 +216,4 @@ Next actions, in order: review and merge the repository-hygiene change (`TASK-01
 | 2026-09-30 | `CONF-40` resolved by `DEC-058` / [ADR-0012](adr/0012-ios-framework-export.md) and moved to §6.1; recorded as `TASK-078`. | TASK-078, `PROJECT_LOG.md` LOG-0027 |
 | 2026-09-30 | Reconciled with TASK-016: `GAP-001` no longer names a pending `.gitignore` scan, §7 gained the repository-hygiene verification row, and the next-actions line now starts with reviewing the in-review TASK-016 change. No count in §8 changes: the new decision `DEC-062` is not a gap or a conflict. | TASK-016, `DEC-062`, `PROJECT_LOG.md` LOG-0036 |
 | 2026-09-30 | Reconciled with the TASK-016 review corrections (`LOG-0037`): §7's repository-hygiene row now cites the corrected head and both matrices. No gap or conflict was added or closed, so §8's counts are unchanged. | TASK-016, `DEC-062`, `PROJECT_LOG.md` LOG-0037 |
+| 2026-10-01 | TASK-016 merged: PR #13 merged into `main` on 2026-09-30 and issue #12 closed, so the next-actions line no longer asks for the hygiene change to be reviewed and §7's row is the merged state. No gap or conflict was added or closed, so §8's counts are unchanged. | TASK-016, `DEC-062`, `PROJECT_LOG.md` LOG-0039 |
