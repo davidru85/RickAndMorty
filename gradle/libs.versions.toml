@@ -1,0 +1,25 @@
+# Version catalog — minimal set for the build skeleton (TASK-014).
+# Every entry is an exact version: no range, no `+`, no `latest.*`.
+# TASK-015 completes the catalog and records the per-dependency rationale.
+
+[versions]
+kotlin = "2.4.20"
+agp = "9.3.1"
+kotlinx-serialization = "1.11.0"
+android-compileSdk = "37"
+android-targetSdk = "37"
+android-minSdk = "26"
+
+[libraries]
+# Runtime: the only library any module declares in this change (feature route types).
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+# Build-logic compile-only: the Gradle plugin APIs the convention plugins compile against.
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
