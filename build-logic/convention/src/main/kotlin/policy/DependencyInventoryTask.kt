@@ -168,7 +168,7 @@ abstract class DependencyInventoryTask : DefaultTask() {
         val seen = mutableSetOf<String>()
         table.rows.forEach { row ->
             if (row.cells.size != COLUMNS) {
-                log.add(TEST_ID, "${file.name}:${row.line}", "expected $COLUMNS cells, found ${row.cells.size}")
+                log.add(TEST_ID, "${file.location(rootDirectory.get().asFile)}:${row.line}", "expected $COLUMNS cells, found ${row.cells.size}")
                 return@forEach
             }
             val location = "${file.location(rootDirectory.get().asFile)}:${row.line}"

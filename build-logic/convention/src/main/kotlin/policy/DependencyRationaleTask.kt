@@ -119,8 +119,10 @@ abstract class DependencyRationaleTask : DefaultTask() {
 
             MarkdownTable.codeSpans(entriesCell).forEach { accessor ->
                 if (accessor !in snapshot.accessors) {
-                    log.add(TEST_ID, "$document:${row.line}", "row `$component` lists `$accessor`, which is not in the catalog")
-                } else if (snapshot.effectiveVersion(accessor) != version) {
+                    // R2 alone reports an unknown accessor; this rule would duplicate it.
+                    return@forEach
+                }
+                if (snapshot.effectiveVersion(accessor) != version) {
                     log.add(
                         TEST_ID,
                         "$document:${row.line}",
