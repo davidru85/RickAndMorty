@@ -48,4 +48,5 @@ include(
     ":feature:favorites",
     ":feature:episodes",
     ":feature:settings",
+    ":androidApp",
 )

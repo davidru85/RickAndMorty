@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal manifest for the build skeleton (TASK-014).
+
+  It declares an application and nothing else: no activity, therefore no
+  launchable entry point, and no permission — not even INTERNET, which TASK-044
+  adds together with the networking it needs. No `usesCleartextTraffic` and no
+  backup attributes, so the platform defaults stay in force (SECURITY.md §5).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application />
+</manifest>
