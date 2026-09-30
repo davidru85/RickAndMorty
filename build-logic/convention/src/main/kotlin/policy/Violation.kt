@@ -25,10 +25,6 @@ internal class ViolationLog {
         violations += Violation(testId, location, reason)
     }
 
-    fun add(violation: Violation) {
-        violations += violation
-    }
-
     fun isEmpty(): Boolean = violations.isEmpty()
 
     /** The failure message: one line per violation, in collection order. */

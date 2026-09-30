@@ -14,10 +14,9 @@ import java.io.File
  */
 internal object MarkdownTable {
 
-    /** One parsed table: the begin/end marker line numbers and the raw cell rows. */
+    /** One parsed table: the begin marker's line number and the raw cell rows. */
     data class Parsed(
         val beginLine: Int,
-        val endLine: Int,
         val header: List<String>,
         val rows: List<Row>,
     ) {
@@ -36,11 +35,11 @@ internal object MarkdownTable {
             .map { (offset, value) -> (begin + 1 + offset) to value }
             .filter { (_, value) -> value.trimStart().startsWith("|") }
 
-        if (block.isEmpty()) return Parsed(begin + 1, end + 1, emptyList(), emptyList())
+        if (block.isEmpty()) return Parsed(begin + 1, emptyList(), emptyList())
 
         val header = cells(block.first().second)
         val dataRows = block.drop(2).map { (index, text) -> Parsed.Row(index + 1, cells(text)) }
-        return Parsed(begin + 1, end + 1, header, dataRows)
+        return Parsed(begin + 1, header, dataRows)
     }
 
     /** Splits a table row on `|`, trims each cell and drops the two outer empty cells. */
