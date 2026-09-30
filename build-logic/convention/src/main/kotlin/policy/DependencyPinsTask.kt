@@ -93,28 +93,22 @@ abstract class DependencyPinsTask : DefaultTask() {
     )
 
     /**
-     * P1 — every version constraint is an exact plain version. Each entry is evaluated
-     * once, in a fixed order, so one defect yields exactly one violation line.
+     * P1 — every version constraint is an exact plain version. Each constraint is
+     * evaluated once, in a fixed order, so **one line per `[versions]` alias and per
+     * catalog entry**; a defective shared value is reported for the alias and for each
+     * entry that uses it.
      */
     private fun exactPins(log: ViolationLog) {
-        fun check(location: String, required: String, strict: String, preferred: String, rejected: List<String>, emptyReason: String?) {
-            firstPinViolation(required, strict, preferred, rejected, emptyReason)?.let { reason ->
-                log.add(TEST_ID, location, reason)
-            }
+        fun check(location: String, constraint: VersionConstraint, emptyReason: String?) {
+            firstPinViolation(constraint, emptyReason)?.let { reason -> log.add(TEST_ID, location, reason) }
         }
 
         val snapshot = catalog.get()
-        snapshot.versions.forEach {
-            check("version ${it.alias}", it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, "has no version")
-        }
-        snapshot.libraries.forEach {
-            // A library without any constraint is P3's concern, not P1's.
-            check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, null)
-        }
-        snapshot.plugins.forEach {
-            // A plugin without a version is P2's concern, not P1's.
-            check(it.accessor, it.requiredVersion, it.strictVersion, it.preferredVersion, it.rejectedVersions, null)
-        }
+        snapshot.versions.forEach { check("version ${it.alias}", it.constraint, "has no version") }
+        // A library without any constraint is P3's concern, not P1's.
+        snapshot.libraries.forEach { check(it.accessor, it.constraint, null) }
+        // A plugin without a version is P2's concern, not P1's.
+        snapshot.plugins.forEach { check(it.accessor, it.constraint, null) }
     }
 
     /**
@@ -122,23 +116,17 @@ abstract class DependencyPinsTask : DefaultTask() {
      * rich form is reported as a rich form and a dynamic version as a dynamic version,
      * never both.
      */
-    private fun firstPinViolation(
-        required: String,
-        strict: String,
-        preferred: String,
-        rejected: List<String>,
-        emptyReason: String?,
-    ): String? = when {
-        strict.isNotEmpty() || preferred.isNotEmpty() || rejected.isNotEmpty() ->
+    private fun firstPinViolation(constraint: VersionConstraint, emptyReason: String?): String? = when {
+        constraint.isRich ->
             "uses a rich version form (strictly/prefer/reject); only a plain exact version is permitted"
 
-        required.isEmpty() -> emptyReason
+        constraint.required.isEmpty() -> emptyReason
 
-        FORBIDDEN_CHARS.any { required.contains(it) } -> "`$required` is a version range, not an exact pin"
+        FORBIDDEN_CHARS.any { constraint.required.contains(it) } -> "`${constraint.required}` is a version range, not an exact pin"
 
-        DYNAMIC.containsMatchIn(required) -> "`$required` is dynamic (`+`, `latest.*` or snapshot)"
+        DYNAMIC.containsMatchIn(constraint.required) -> "`${constraint.required}` is dynamic (`+`, `latest.*` or snapshot)"
 
-        !EXACT_VERSION.matches(required) -> "`$required` is not an exact version"
+        !EXACT_VERSION.matches(constraint.required) -> "`${constraint.required}` is not an exact version"
 
         else -> null
     }
@@ -146,7 +134,7 @@ abstract class DependencyPinsTask : DefaultTask() {
     /** P2 — every plugin declares a version. */
     private fun pluginsDeclareVersions(log: ViolationLog) {
         catalog.get().plugins.forEach { plugin ->
-            if (plugin.requiredVersion.isEmpty()) {
+            if (plugin.constraint.required.isEmpty()) {
                 log.add(TEST_ID, plugin.accessor, "declares no version")
             }
         }

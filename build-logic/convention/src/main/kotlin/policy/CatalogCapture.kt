@@ -24,10 +24,12 @@ internal object CatalogCapture {
                 accessor = "libs.$alias",
                 group = module.group,
                 name = module.name,
-                requiredVersion = constraint.requiredVersion,
-                strictVersion = constraint.strictVersion,
-                preferredVersion = constraint.preferredVersion,
-                rejectedVersions = constraint.rejectedVersions,
+                constraint = VersionConstraint(
+                    required = constraint.requiredVersion,
+                    strict = constraint.strictVersion,
+                    preferred = constraint.preferredVersion,
+                    rejected = constraint.rejectedVersions,
+                ),
             )
         }
 
@@ -37,10 +39,12 @@ internal object CatalogCapture {
             CatalogPlugin(
                 accessor = "libs.plugins.$alias",
                 pluginId = plugin.pluginId,
-                requiredVersion = constraint.requiredVersion,
-                strictVersion = constraint.strictVersion,
-                preferredVersion = constraint.preferredVersion,
-                rejectedVersions = constraint.rejectedVersions,
+                constraint = VersionConstraint(
+                    required = constraint.requiredVersion,
+                    strict = constraint.strictVersion,
+                    preferred = constraint.preferredVersion,
+                    rejected = constraint.rejectedVersions,
+                ),
             )
         }
 
@@ -48,10 +52,12 @@ internal object CatalogCapture {
             val constraint = catalog.findVersion(alias).get()
             CatalogVersion(
                 alias = alias,
-                requiredVersion = constraint.requiredVersion,
-                strictVersion = constraint.strictVersion,
-                preferredVersion = constraint.preferredVersion,
-                rejectedVersions = constraint.rejectedVersions,
+                constraint = VersionConstraint(
+                    required = constraint.requiredVersion,
+                    strict = constraint.strictVersion,
+                    preferred = constraint.preferredVersion,
+                    rejected = constraint.rejectedVersions,
+                ),
             )
         }
 

@@ -3,6 +3,24 @@ package io.github.davidru85.multiverse.buildlogic.policy
 import java.io.Serializable
 
 /**
+ * One version constraint as the catalog declares it: the required value plus the rich
+ * forms, so a rule can evaluate the whole constraint once (DEC-061).
+ */
+data class VersionConstraint(
+    val required: String,
+    val strict: String,
+    val preferred: String,
+    val rejected: List<String>,
+) : Serializable {
+
+    /** True when the constraint says nothing at all. */
+    val isEmpty: Boolean get() = required.isEmpty() && strict.isEmpty() && preferred.isEmpty() && rejected.isEmpty()
+
+    /** True when the constraint uses a rich form, which no pin may do. */
+    val isRich: Boolean get() = strict.isNotEmpty() || preferred.isNotEmpty() || rejected.isNotEmpty()
+}
+
+/**
  * One library entry of the `libs` version catalog, captured at configuration time
  * and passed to the policy tasks as an `@Input` (DEC-061).
  *
@@ -13,10 +31,7 @@ data class CatalogLibrary(
     val accessor: String,
     val group: String,
     val name: String,
-    val requiredVersion: String,
-    val strictVersion: String,
-    val preferredVersion: String,
-    val rejectedVersions: List<String>,
+    val constraint: VersionConstraint,
 ) : Serializable {
 
     /** `group:name`, the coordinate form `TEST-UNIT-051` compares the README against. */
@@ -29,28 +44,20 @@ data class CatalogLibrary(
     val isBom: Boolean get() = name == "bom" || name.endsWith("-bom")
 
     /** True when the entry carries no constraint at all, so its effective version is a BOM's. */
-    val versionless: Boolean
-        get() = requiredVersion.isEmpty() && strictVersion.isEmpty() &&
-            preferredVersion.isEmpty() && rejectedVersions.isEmpty()
+    val versionless: Boolean get() = constraint.isEmpty
 }
 
 /** One plugin entry of the `libs` version catalog, captured at configuration time (DEC-061). */
 data class CatalogPlugin(
     val accessor: String,
     val pluginId: String,
-    val requiredVersion: String,
-    val strictVersion: String,
-    val preferredVersion: String,
-    val rejectedVersions: List<String>,
+    val constraint: VersionConstraint,
 ) : Serializable
 
 /** One `[versions]` alias and its constraint, captured at configuration time (DEC-061). */
 data class CatalogVersion(
     val alias: String,
-    val requiredVersion: String,
-    val strictVersion: String,
-    val preferredVersion: String,
-    val rejectedVersions: List<String>,
+    val constraint: VersionConstraint,
 ) : Serializable
 
 /**
@@ -78,11 +85,11 @@ data class CatalogSnapshot(
     fun effectiveVersion(accessor: String): String? {
         val library = libraries.firstOrNull { it.accessor == accessor }
         if (library != null) {
-            if (!library.versionless) return library.requiredVersion
+            if (!library.versionless) return library.constraint.required
             val bom = governingBom(library)
-            return bom?.requiredVersion
+            return bom?.constraint?.required
         }
-        return plugins.firstOrNull { it.accessor == accessor }?.requiredVersion
+        return plugins.firstOrNull { it.accessor == accessor }?.constraint?.required
     }
 
     /** True when the entry has no version of its own and is governed by a BOM. */
