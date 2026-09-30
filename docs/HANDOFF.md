@@ -11,19 +11,19 @@
 
 ## 1. Current state (2026-09-30)
 
-The repository contains the **Gradle/KMP build skeleton** (TASK-014, branch `build/gradle-kmp-skeleton`, in review) and the **five feature route declarations**, plus the documentation set. There is still no feature behaviour, no test, no Xcode project, no `iosApp/`, no CI workflow, no `.gitignore` and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
+The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore`, the **pinned version catalog with its policy checks** (TASK-015, branch `build/version-catalog-inventory`, in review) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
 | Area | State | Notes |
 | --- | --- | --- |
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Being established | Set authored on the branch `docs/documentation-system`; inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-056` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-061` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
-| Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md`. The build skeleton exists (TASK-014, in review); no feature code does |
-| Build, CI, tooling | Build skeleton in review | Gradle wrapper 9.7.0, AGP 9.3.1, Kotlin 2.4.20 and the 11 modules of ADR-0001 build (LOG-0026). Still absent: CI, `.gitignore`, `VERSION`, lint/detekt/dependency-analysis configuration and every test |
+| Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md`. The build skeleton is merged (TASK-014, PR #6); no feature code does |
+| Build, CI, tooling | Build skeleton merged; catalog pinned | Gradle wrapper 9.7.0, AGP 9.3.1, Kotlin 2.4.20 and the 11 modules of ADR-0001 build (LOG-0026); the version catalog pins the full planned inventory and `verifyDependencyPolicy` enforces it in `check` (TASK-015, LOG-0032). Still absent: CI, `VERSION`, lint/detekt/dependency-analysis configuration and every product test |
 | Screenshots | Not started | Figma exports under `docs/figma/` and in-app screenshots of the running apps |
 
 ### 1.1 Verified versus intended
@@ -34,7 +34,7 @@ The repository contains the **Gradle/KMP build skeleton** (TASK-014, branch `bui
 - The live behaviour of the remote API recorded with that date in `docs/API_SPECS.md` §1.1: list totals and page size, `404` for a filtered empty result that is itself cacheable and immutable, immutable detail `404`, out-of-range page `404`, batch requests returning only existing resources, one identifier yielding an object and two an array, GraphQL null for a missing character, `info.next` as `Int`, the empty-filter GraphQL shape, and `400 GRAPHQL_VALIDATION_FAILED` for an unknown field.
 - Toolchain versions and platform API availability checked on 2026-09-29 and recorded in `local://decision-brief.md` §4 (not committed to the repository).
 - Documentation checks on this repository: link resolution, identifier uniqueness and ordering, and consistency review. See §7.
-- The Gradle/KMP build (2026-09-30, branch `build/gradle-kmp-skeleton`): `./gradlew --version`, `projects`, `help --warning-mode=all`, `assemble`, `build`, `:androidApp:assembleDebug` (with no `iosApp/` and from a clean clone), the per-module dependency reports, the `tasks --all` target scan and the APK badging check. Commands and observed results: `PROJECT_LOG.md` LOG-0026.
+- The Gradle/KMP build (2026-09-30, branch `build/gradle-kmp-skeleton`, then merged): `./gradlew --version`, `projects`, `help --warning-mode=all`, `assemble`, `build`, `:androidApp:assembleDebug` (with no `iosApp/` and from a clean clone), the per-module dependency reports, the `tasks --all` target scan and the APK badging check. Commands and observed results: `PROJECT_LOG.md` LOG-0026. The dependency policy was verified on 2026-09-30 on branch `build/version-catalog-inventory`: `verifyDependencyPolicy` passes and runs in `check`, and the seeded-violation matrix S1–S12 failed the owning rule and passed once reverted (`PROJECT_LOG.md` LOG-0032).
 
 **Intended, not verified (documented target state):**
 
@@ -62,9 +62,9 @@ Beyond the build checks of LOG-0026, no test, linter, formatter, benchmark or ap
 - **Module layout changed and not yet propagated:** the repository owner replaced the eight-module layout with **feature-per-module plus Clean Architecture packages inside each feature** (DEC-052, superseding DEC-019). The core modules are `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem` (Android) and `:core:testing`; the feature modules are `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes` and `:feature:settings` (the latter replacing `:feature:locations` per DEC-055); the app shells are `:androidApp` and the `iosApp` target with one Swift package per feature plus `iosApp/DesignSystem`; `:core:ios` (ADR-0012) is the export-only module that produces the single framework `iosApp` links. `docs/DESIGN.md` §3, `docs/CONTRACTS.md`, `AGENTS.md` §8 and the command tables in `README.md` §8–§9 were written against the previous names and are being updated in the same change; until they are, treat DEC-052 as authoritative for module names and dependency direction.
 - **Not started, and named here because they block the first milestone:**
   - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
-  - the version-catalog completion and the per-dependency rationale — TASK-015;
   - the module-boundary enforcement check and its seeded violations — TASK-017;
-  - `.gitignore`;
+  - the `VERSION` source — TASK-018;
+  - the secret scan that completes `.gitignore` — TASK-016;
   - the `tokens.json` parity test — DEC-022;
   - rendered PNG exports under `docs/figma/` — DEC-045;
   - `README.es.md` review as the only translation — DEC-047.
@@ -75,11 +75,11 @@ Each action names the first concrete step and the document that owns it. A task 
 
 1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
-3. **Add `.gitignore` as the very next change.** First step: commit the repository-hygiene rules so no build output, IDE state, `.kotlin/`, `local.properties` or agent prompt can reach the tree (TASK-016). Owner: `docs/BACKLOG.md` row TASK-016.
-4. **Complete the version catalog (TASK-015), then the boundary check (TASK-017) and `VERSION` wiring (TASK-018).** First step: record the rationale for every remaining dependency and pin it exactly; then make the module-boundary rules a build property that fails on a seeded violation. The build skeleton they extend is in review as TASK-014. Owner: `docs/DESIGN.md` §3.5 for the toolchain table, `docs/BACKLOG.md` for the rows.
+3. **Complete `.gitignore` with the secret scan.** First step: run the working-tree and history scan that `AC-REQ-SEC-002-1` requires, `.gitignore` already being tracked (TASK-016). Owner: `docs/BACKLOG.md` row TASK-016.
+4. **Add the boundary check (TASK-017) and the `VERSION` wiring (TASK-018).** First step: make the module-boundary rules a build property that fails on a seeded violation, then add the `VERSION` rule to `verifyDependencyPins`. TASK-015 pinned the catalog and left the policy plugin's rule list ready for it; the build skeleton it extends is merged as TASK-014. Owner: `docs/DESIGN.md` §3.5, `docs/BACKLOG.md` for the rows.
 5. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
 6. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
-7. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
+8. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
 8. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
 9. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
 
@@ -92,6 +92,8 @@ Do not implement a deferred item. The authoritative lists are:
 - `docs/DECISION_BOARD.md` §4 — decisions with status `Deferred`, with the condition that reopens each one.
 - `docs/REQUIREMENTS.md` §1.3 — deferred scope items `DEF-001`…`DEF-004`, with their re-entry conditions. `docs/REQUIREMENTS.md` §14 records that nothing there is blocking.
 
+- The decisions needed before the next tasks: `CONF-47` (`:core:domain` and `Flow`) before TASK-036; `CONF-46` (whether the documentation-phase write limit applies); `CONF-45` (one or two solutions per concern); `GAP-010` (who owns dependency-artifact verification, and when); and every OD-6 conflict TASK-015 recorded (`CONF-50`, `CONF-51`).
+
 Two consequences worth knowing before planning work: voice search is deferred and no microphone or speech permission may be added (`REQ-SEC-004`); Episodes ships as a placeholder (`DEC-005`), and Settings replaces Locations with three real settings, including a runtime REST/GraphQL switch (`DEC-055`, `DEC-056`).
 
 ## 6. Known risks
@@ -103,7 +105,7 @@ Two **operational** risks are specific to taking this repository over and are no
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | The Figma source file requires project access and returned HTTP 403 to an anonymous client on 2026-09-29. | `docs/UI_SPEC.md` cites Figma pages and node identifiers that a new contributor cannot open; the design becomes uncorroborable. | Obtain read access before design-dependent work; commit the rendered PNG exports under `docs/figma/` (DEC-045) so the specification stays checkable without access. |
-| Several toolchain components are pinned pre-release (Material 3 Expressive `1.5.0-alpha29`; alpha-only `androidx.lifecycle` KMP and DataStore KMP — `CON-004`). | An upgrade can break the build or change rendering, and the pinned versions age quickly. | Keep versions pinned and centralised in the version catalog, record the accepted alpha risk per `docs/adr/0008-alpha-dependencies.md`, and let the mandatory gate (DEC-054) catch breakage at upgrade time rather than at review time. |
+| One toolchain artifact is pinned pre-release (Material 3 Expressive `1.5.0-alpha29`, `DESIGN.md` §3.5; the alpha-only `androidx.lifecycle` KMP and DataStore KMP of `CON-004` are **not** adopted). | An upgrade can break the build or change rendering, and the pinned versions age quickly. | Keep versions pinned and centralised in the version catalog, record the accepted alpha risk per `docs/adr/0008-alpha-dependencies.md`, and let the mandatory gate (DEC-054) catch breakage at upgrade time rather than at review time. |
 
 One further operational note: `main` is the only integrated branch and it now carries a **branch ruleset** (`main protection`, active), configured by the owner on 2026-09-30: no deletion, no force-push, and a pull request required. Integration uses a **merge commit** and no other method, so the branch record survives (DEC-059); linear history is deliberately **not** required, because it would refuse merge commits. Two deliberate omissions remain: **no required status checks**, because no workflow exists yet (`GAP-002`, TASK-025), and **no required approvals**, because the repository has a single collaborator who cannot approve their own pull request.
 
@@ -141,6 +143,7 @@ Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-ske
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run: Roborazzi is not configured (TASK-029) |
 | Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run: no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available: `lintDebug` runs and is clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
+| Dependency-policy checks (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | **Executed 2026-09-30** — passes; also runs inside `./gradlew check` and `./gradlew build` (TASK-015, LOG-0032) |
 | iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run: `iosApp/` does not exist (TASK-051) |
 | Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` | Not run: no contract test exists (TASK-026) |
 | Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` | Not run: the harness module needs a decision first (CONF-41) |

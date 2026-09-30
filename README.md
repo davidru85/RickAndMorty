@@ -12,7 +12,7 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
 > **Project status: build skeleton, no application yet.**
-> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations) and no feature behaviour. There is still no CI, no `.gitignore`, no `VERSION` and no launchable app. The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
+> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014, merged in PR #6: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations), the tracked `.gitignore` and the pinned version catalog with its policy checks (TASK-015). There is no feature behaviour yet, and still no CI, no `VERSION` and no launchable app. The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
 
 ## 1. Assessment objectives
 
@@ -192,6 +192,7 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
 | Module-graph rule check (no feature-to-feature edges) | `./gradlew buildHealth` | Not run — `buildHealth` needs the dependency-analysis plugin (TASK-017, TASK-029) |
+| Verify the dependency policy (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | Executed 2026-09-30: passes; also runs as part of `./gradlew check` and `./gradlew build` |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not run — the harness module needs a decision first (`CONF-41`) |
 | Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
@@ -216,7 +217,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 3. **Voice search is not implemented.** It is deferred, and no microphone or speech permission is requested (`DEC-002`).
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).
-6. **Three toolchain artifacts are pinned pre-release.** Material 3 Expressive is pinned at an alpha version; the accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md).
+6. **Exactly one artifact is pinned pre-release.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and no module declares it yet; the accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). The other two alpha-only components are not adopted.
 7. **The API is unversioned.** Its shape can change without notice, so contract tests run outside the merge gate (`DEC-029`).
 8. **The reference device for performance budgets is not yet locked.** Budgets and the measurement method exist; the named device is recorded as a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
@@ -265,9 +266,11 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/adr/`](docs/adr/), [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Visual specification | Complete, pending two Figma screens (error states) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Process documentation | Complete — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
-| Build skeleton | In review — TASK-014 on `build/gradle-kmp-skeleton`: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
+| Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
-| CI, `.gitignore`, `VERSION`, version-catalog completion | Not started — TASK-025, TASK-016, TASK-018, TASK-015 |
+| Version catalog | In review — TASK-015: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory |
+| CI and `VERSION` | Not started — TASK-025, TASK-018 |
+| `.gitignore` | Tracked; TASK-016's remaining acceptance is the secret scan |
 | Screenshots (Figma exports and in-app) | Not started |
 
 ## 15. Dependency inventory

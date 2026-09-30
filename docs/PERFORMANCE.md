@@ -104,27 +104,27 @@ There is no automated equivalent of the Macrobenchmark harness on iOS, so the pr
 
 ## 5. Result register
 
-No measurement exists yet: the repository contains no code, so every row below is `unmeasured`. The register is the single place where measured values live; the `PROJECT_LOG.md` entry referenced in §3 carries the narrative and the raw evidence.
+No measurement exists yet: the repository contains the build skeleton and the pinned catalog but no feature code (`README.md` §14), so every row below is `unmeasured`. The register is the single place where measured values live; the `PROJECT_LOG.md` entry referenced in §3 carries the narrative and the raw evidence.
 
 | ID | Platform | Test id producing the value | Last measured value | Date | Device | Build | Evidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `PERF-001` | Android | `TEST-PERF-001` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-001` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-002` | Android | Same harness as `TEST-PERF-001` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-002` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-003` | Android | `TEST-PERF-001` trace section | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-003` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-004` | Android | `TEST-PERF-002` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-004` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-005` | Android | Instrumented header assertion; perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-005` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-006` | Android | `TEST-PERF-003` (zero-network) and `TEST-UNIT-037` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-006` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-007` | Android | `TEST-INT-002` (image cache); byte-count id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-007` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-008` | Android | Perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-008` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
-| `PERF-009` | Android | Release verification task; no test id | Not measured | Not measured | Not assigned (A-PERF-1) | No build exists | None | Unmeasured - no build exists |
+| `PERF-001` | Android | `TEST-PERF-001` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-001` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-002` | Android | Same harness as `TEST-PERF-001` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-002` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-003` | Android | `TEST-PERF-001` trace section | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-003` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-004` | Android | `TEST-PERF-002` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-004` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-005` | Android | Instrumented header assertion; perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-005` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-006` | Android | `TEST-PERF-003` (zero-network) and `TEST-UNIT-037` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-006` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-007` | Android | `TEST-INT-002` (image cache); byte-count id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-007` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-008` | Android | Perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-008` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-009` | Android | Release verification task; no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-009` | iOS | Not applicable | - | - | - | - | - | Not applicable - the deliverable is an APK (DEC-043) with no size budget on the iOS archive |
 
 ## 6. Levers the design already uses

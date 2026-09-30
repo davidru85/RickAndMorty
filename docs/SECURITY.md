@@ -292,7 +292,7 @@ Mitigations for the pinned-alpha surface are those of `RISK-002`: exact pins, a 
 
 ### 9.3 Known gaps, stated as gaps
 
-- No Gradle dependency-verification metadata (checksums) is configured yet, because no build exists. Owner: Security Reviewer, dated 2026-09-29. Target state: verification metadata or a lockfile for the Gradle dependency graph is adopted when the build lands, so a re-pointed or tampered artifact fails resolution.
+- No Gradle dependency-verification metadata (checksums) and no dependency lockfile is configured. The build exists (TASK-014, merged in PR #6) and TASK-015 pinned the catalog, but the adoption is unowned and recorded as `GAP-010`; the version catalog pins versions, not artifact bytes. Owner: Security Reviewer, dated 2026-09-30. Target state: verification metadata or a lockfile for the Gradle dependency graph, so a re-pointed or tampered artifact fails resolution.
 - No CI exists yet, so none of §9.1's automated checks are running today; they are target state and are tracked as work in `BACKLOG.md`. Nothing in this document should be read as a claim that they already execute.
 
 ## 10. Vulnerability reporting
