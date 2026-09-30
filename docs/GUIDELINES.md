@@ -1,7 +1,7 @@
 # GUIDELINES.md — Engineering Guidelines
 
-- **Status:** Active — target state (the repository contains no source code as of 2026-09-29; every rule below describes the code that will be written, not code that exists)
-- **Last verified:** 2026-09-29
+- **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); every code rule below describes the code that will be written, not code that exists yet
+- **Last verified:** 2026-09-30
 - **Owner:** Implementation Engineer (see `../AGENTS.md` §3.5)
 - **Authoritative for:** the coding rules for Kotlin, Compose and SwiftUI, the source-set and presentation rules a change must apply inside the module layout owned by [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md), repository naming and identifier conventions, and — for every rule — the artefact that enforces it. Not for the contribution process (`CONTRIBUTING.md`), the gates (`DEFINITION.md`), the test strategy (`TESTING.md`), the architecture rationale and module graph (`DESIGN.md` §1/§3.4, `adr/`), the interface invariants (`CONTRACTS.md`), the remote contract (`API_SPECS.md`), the visual specification (`UI_SPEC.md`), the failure-to-copy chain (`ERROR_FLOW.md`), the logging contract (`OBSERVABILITY.md`) or security policy (`SECURITY.md`).
 - **Inputs:** `../assessment.md`; `REQUIREMENTS.md`; `API_SPECS.md`; `DESIGN.md`; `CONTRACTS.md`; `UI_SPEC.md`; `ERROR_FLOW.md`; `OBSERVABILITY.md`; `SECURITY.md`; `TESTING.md`; `DEFINITION.md`; `CONTRIBUTING.md`; `adr/0001-module-boundaries.md`…`adr/0009-pagination-strategy.md`; `DECISION_BOARD.md` (`DEC-008`, `DEC-010`, `DEC-011`, `DEC-012`, `DEC-013`, `DEC-015`, `DEC-019` superseded by `DEC-052`, `DEC-032`, `DEC-041` as amended by `DEC-053`, `DEC-052`, `DEC-053`, `DEC-054`); verified toolchain and API facts dated 2026-09-29.
@@ -62,7 +62,7 @@ The names below are the only tool names used in this document. Exact commands ar
 
 ### 1.4 Current state
 
-No build files and no source code exist on 2026-09-29, so every `Tool:` and `Test:` line is a statement about the target build. Two consequences are stated rather than hidden:
+The build skeleton exists on 2026-09-30 (TASK-014: wrapper, convention plugins, the 11 modules, five route declarations) but no feature code, test or analyser configuration does, so every `Tool:` and `Test:` line is still a statement about the target build. Two consequences are stated rather than hidden:
 
 - Until the tool configuration lands, the mechanical rules are unenforced; the change that introduces a tool `MUST` prove it blocks a seeded violation (`TECHNICAL_PLAN.md`, phase P2).
 - The earlier module names (`:shared:*`, `:android:designsystem`, `:android:feature:characters`) survive only as history in `DECISION_BOARD.md` §3 and in change-log entries; `adr/0001-module-boundaries.md` and `DESIGN.md` §3 carry the current module set, and `AGENTS.md` §8 is aligned with them.
@@ -556,7 +556,7 @@ A filled example is the header of this file. `Last verified` moves only when the
 
 ### 9.2 Target state versus current state
 
-Documentation describes the **target state** and carries the header block, and it is updated in the same change that ships a feature (`DEC-046`). Where the current state differs — as it does throughout while the repository is documentation-only — the difference is stated explicitly, with the date, rather than left for the reader to infer. A document MUST NOT describe something as shipped when it is not.
+Documentation describes the **target state** and carries the header block, and it is updated in the same change that ships a feature (`DEC-046`). Where the current state differs — as it does throughout while only the build skeleton and no feature code exist — the difference is stated explicitly, with the date, rather than left for the reader to infer. A document MUST NOT describe something as shipped when it is not.
 
 **Enforcement:** `Review:` the `Status:` and current-state statements; `DEFINITION.md` §6 DOC8.
 

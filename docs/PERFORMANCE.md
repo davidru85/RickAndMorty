@@ -1,6 +1,6 @@
 # PERFORMANCE.md - Performance Budgets and Measurement Method
 
-- **Status:** Active - target state. The repository is documentation only (`AGENTS.md` §1), so every budget below is a *target* that has never been measured yet. No number in this file is a measurement result.
+- **Status:** Active - target state. The Gradle/KMP build skeleton exists as of TASK-014 and contains no measurable feature, so every budget below is a *target* that has never been measured yet. No number in this file is a measurement result.
 - **Last verified:** 2026-09-29
 - **Owner:** Implementation Engineer (see `AGENTS.md` §3.5); measurement evidence is recorded by the QA & Validation Engineer (`AGENTS.md` §3.6)
 - **Authoritative for:** the numeric performance budgets (`PERF-###`), the reference device definition, the measurement method and tools per platform, the result register, and the regression and budget-change policy. Nothing else in the repository may state a numeric performance budget (DEC-033).

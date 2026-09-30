@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
-- **Status:** Active — target state (no implementation yet; see [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-09-29
+- **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); the application itself is still target state (see [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
+- **Last verified:** 2026-09-30
 - **Owner:** Delivery Planner (see [`AGENTS.md`](AGENTS.md))
 - **Authoritative for:** the developer entry point — prerequisites, build, run, test and quality commands, platform support, known limitations, documentation index.
 - **Not authoritative for:** requirements, architecture, the remote contract, the visual specification or process — each links below.
@@ -11,8 +11,8 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
-> **Project status: documentation baseline, no implementation yet.**
-> This repository currently contains specifications, decisions and process documentation only. There is no Gradle build, no source code, no CI and no `.gitignore` yet. Every command in this README is the **intended** command and is marked as such until the build exists. Nothing in this README has been produced by running the app.
+> **Project status: build skeleton, no application yet.**
+> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations) and no feature behaviour. There is still no CI, no `.gitignore`, no `VERSION` and no launchable app. The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
 
 ## 1. Assessment objectives
 
@@ -166,34 +166,36 @@ git clone <repository-url>
 cd RickAndMorty
 ```
 
-The Gradle wrapper will be committed with the build; no separate Gradle installation is required. There is nothing else to configure: the API base URL is a build constant, and no property file, keystore or environment variable is needed.
+The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so no separate Gradle installation is required. There is nothing else to configure: the API base URL is a build constant, the package root is declared once in `gradle.properties`, and no property file, keystore or environment variable is needed.
 
 ## 8. Build and run
 
-> The build does not exist yet. The commands below are the intended interface, recorded so the plan and the documentation are concrete. They will be verified and this note removed when the build lands.
+> The build skeleton exists and its commands are marked **executed** below. The feature, test and release commands are still the intended interface, recorded so the plan and the documentation are concrete; each is marked with why it has not run.
 
-| Task | Command |
-| --- | --- |
-| Build the Android debug app | `./gradlew :androidApp:assembleDebug` |
-| Install on a connected device/emulator | `./gradlew :androidApp:installDebug` |
-| Build the shared framework for iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` |
-| Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` |
+| Task | Command | State |
+| --- | --- | --- |
+| List the module set | `./gradlew projects` | Executed 2026-09-30 — exactly the 11 modules of ADR-0001 |
+| Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-09-30 — succeeded, no Android Lint error |
+| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-09-30 — succeeded with no `iosApp/` present and from a clean clone |
+| Install on a connected device/emulator | `./gradlew :androidApp:installDebug` | Not run — the skeleton's APK has no activity yet (TASK-044) |
+| Build the shared framework for iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` | Blocked — see `CONF-40` in [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §6.3 |
+| Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run — `iosApp/` does not exist (TASK-051) |
 
 ## 9. Test and quality commands
 
 Every pull request must pass the full suite on both platforms before it can be approved (`DEC-054`); the definitions of Ready, Done and the merge gate are in [`docs/DEFINITION.md`](docs/DEFINITION.md), and the test strategy is in [`docs/TESTING.md`](docs/TESTING.md).
 
-| Task | Command |
-| --- | --- |
-| All shared and unit tests | `./gradlew test` |
-| Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` |
-| Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` |
-| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` |
-| Module-graph rule check (no feature-to-feature edges) | `./gradlew buildHealth` |
-| iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
-| Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` |
-| Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` |
-| Contract suite against the live API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractTestLive` |
+| Task | Command | State |
+| --- | --- | --- |
+| All shared and unit tests | `./gradlew test` | Not run — no test source set exists yet (TASK-024) |
+| Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run — Roborazzi is not configured (TASK-029) |
+| Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
+| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
+| Module-graph rule check (no feature-to-feature edges) | `./gradlew buildHealth` | Not run — `buildHealth` needs the dependency-analysis plugin (TASK-017, TASK-029) |
+| iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
+| Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not run — the harness module needs a decision first (`CONF-41`) |
+| Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
+| Contract suite against the live API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractTestLive` | Not run — no live job exists (TASK-027) |
 
 Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): write the failing test and commit it (`test:`), make it pass and commit (`feat:`/`fix:`), refactor and commit (`refactor:`), then push.
 
@@ -263,6 +265,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/adr/`](docs/adr/), [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Visual specification | Complete, pending two Figma screens (error states) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Process documentation | Complete — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
+| Build skeleton | In review — TASK-014 on `build/gradle-kmp-skeleton`: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
-| CI, build files, `.gitignore`, version catalog | Not started |
+| CI, `.gitignore`, `VERSION`, version-catalog completion | Not started — TASK-025, TASK-016, TASK-018, TASK-015 |
 | Screenshots (Figma exports and in-app) | Not started |

@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
-- **Status / Estado:** Activo — estado objetivo (sin implementación todavía; ver [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-09-29
+- **Status / Estado:** Activo — el esqueleto de build de Gradle/KMP ya existe (TASK-014); la aplicación sigue siendo estado objetivo (ver [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
+- **Last verified:** 2026-09-30
 - **Owner / Responsable:** Delivery Planner (ver [`AGENTS.md`](AGENTS.md))
 - **Authoritative for / Documento autoritativo para:** el punto de entrada del desarrollador — requisitos previos, comandos de compilación, ejecución, test y calidad, plataformas soportadas, limitaciones conocidas e índice de documentación.
 - **No autoritativo para:** requisitos, arquitectura, contrato remoto, especificación visual ni proceso; cada uno se enlaza más abajo.
@@ -11,8 +11,8 @@ Cliente de [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html
 
 Proyecto realizado como prueba técnica de desarrollo móvil para ZARA, descrita en [`assessment.md`](assessment.md).
 
-> **Estado del proyecto: base de documentación, todavía sin implementación.**
-> Este repositorio contiene únicamente especificaciones, decisiones y documentación de proceso. Todavía no hay build de Gradle, ni código fuente, ni CI, ni `.gitignore`. Todos los comandos de este README son los **previstos** y así se indican hasta que exista el build. Nada de lo aquí descrito se ha obtenido ejecutando la aplicación.
+> **Estado del proyecto: esqueleto de build, todavía sin aplicación.**
+> El repositorio contiene el conjunto de documentación, el esqueleto de build de Gradle/KMP (TASK-014: wrapper, plugins de convención, los 11 módulos de ADR-0001 y cinco declaraciones de ruta de navegación) y ninguna funcionalidad. Sigue sin haber CI, `.gitignore`, `VERSION` ni aplicación ejecutable. Los comandos de §8 que el esqueleto ya soporta están marcados como ejecutados; el resto son los **previstos**. Nada de lo aquí descrito se ha obtenido ejecutando la aplicación.
 
 > Versión en inglés (autoritativa): [`README.md`](README.md). Si ambos difieren, prevalece el inglés (`DEC-047`).
 
@@ -145,34 +145,36 @@ git clone <repository-url>
 cd RickAndMorty
 ```
 
-El wrapper de Gradle se incluirá con el build; no hace falta instalar Gradle aparte. No hay nada más que configurar: la URL base de la API es una constante de compilación y no se requiere ningún archivo de propiedades, keystore ni variable de entorno.
+El wrapper de Gradle está incluido (Gradle 9.7.0, con la suma de comprobación de la distribución fijada), así que no hace falta instalar Gradle aparte. No hay nada más que configurar: la URL base de la API es una constante de compilación, la raíz de paquetes se declara una sola vez en `gradle.properties` y no se requiere ningún archivo de propiedades, keystore ni variable de entorno.
 
 ## 8. Compilar y ejecutar
 
-> El build todavía no existe. Los comandos siguientes son la interfaz prevista, registrada para que el plan y la documentación sean concretos. Se verificarán y se retirará esta nota cuando exista el build.
+> El esqueleto de build existe y sus comandos están marcados como **ejecutados** abajo. Los comandos de funcionalidad, tests y release siguen siendo la interfaz prevista; cada uno indica por qué no se ha ejecutado.
 
-| Tarea | Comando |
-| --- | --- |
-| Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` |
-| Instalar en un dispositivo o emulador | `./gradlew :androidApp:installDebug` |
-| Compilar el framework compartido para iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` |
-| Compilar la app iOS | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` |
+| Tarea | Comando | Estado |
+| --- | --- | --- |
+| Listar el conjunto de módulos | `./gradlew projects` | Ejecutado 2026-09-30 — exactamente los 11 módulos de ADR-0001 |
+| Compilar todos los módulos, Android y los klib de iOS | `./gradlew assemble` · `./gradlew build` | Ejecutado 2026-09-30 — correcto, sin errores de Android Lint |
+| Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` | Ejecutado 2026-09-30 — correcto sin `iosApp/` y desde un clon limpio |
+| Instalar en un dispositivo o emulador | `./gradlew :androidApp:installDebug` | No ejecutado — el APK del esqueleto aún no tiene activity (TASK-044) |
+| Compilar el framework compartido para iOS | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` | Bloqueado — ver `CONF-40` en [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §6.3 |
+| Compilar la app iOS | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | No ejecutado — `iosApp/` no existe (TASK-051) |
 
 ## 9. Comandos de test y calidad
 
 Todo pull request debe pasar la suite completa en ambas plataformas antes de poder aprobarse (`DEC-054`); las definiciones de Ready, Done y del merge gate están en [`docs/DEFINITION.md`](docs/DEFINITION.md) y la estrategia de pruebas en [`docs/TESTING.md`](docs/TESTING.md).
 
-| Tarea | Comando |
-| --- | --- |
-| Todos los tests compartidos y unitarios | `./gradlew test` |
-| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` |
-| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` |
-| Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` |
-| Comprobación del grafo de módulos (sin dependencias entre features) | `./gradlew buildHealth` |
-| Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
-| Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` |
-| Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` |
-| Suite de contrato contra la API real (señal programada, no bloqueante) | `./gradlew :core:data:contractTestLive` |
+| Tarea | Comando | Estado |
+| --- | --- | --- |
+| Todos los tests compartidos y unitarios | `./gradlew test` | No ejecutado — todavía no hay source set de test (TASK-024) |
+| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado (TASK-029) |
+| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (TASK-029) |
+| Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` funciona y está limpio; ktlint, detekt y `buildHealth` no están configurados (TASK-029) |
+| Comprobación del grafo de módulos (sin dependencias entre features) | `./gradlew buildHealth` | No ejecutado — falta el plugin de dependency-analysis (TASK-017, TASK-029) |
+| Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
+| Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No ejecutado — falta la decisión sobre el módulo del harness (`CONF-41`) |
+| Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | No ejecutado — no existe el test de contrato (TASK-026) |
+| Suite de contrato contra la API real (señal programada, no bloqueante) | `./gradlew :core:data:contractTestLive` | No ejecutado — no existe el job live (TASK-027) |
 
 El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): escribir el test que falla y commitearlo (`test:`), hacerlo pasar y commitear (`feat:`/`fix:`), refactorizar y commitear (`refactor:`), y después hacer push.
 
@@ -231,6 +233,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Arquitectura y decisiones | Completo — [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/adr/`](docs/adr/), [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Especificación visual | Completa, pendiente de dos pantallas de Figma (estados de error) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Documentación de proceso | Completa — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
+| Esqueleto de build | En revisión — TASK-014 en `build/gradle-kmp-skeleton`: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementación | No iniciada — ver [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
-| CI, build, `.gitignore`, catálogo de versiones | No iniciado |
+| CI, `.gitignore`, `VERSION`, catálogo de versiones completo | No iniciado — TASK-025, TASK-016, TASK-018, TASK-015 |
 | Capturas (Figma y de la app) | No iniciado |

@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-09-29; must be updated on every handoff (`AGENTS.md` §5.7).
+- **Status:** Active. Describes the repository as of 2026-09-30; must be updated on every handoff (`AGENTS.md` §5.7).
 - **Last verified:** 2026-09-30
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -9,9 +9,9 @@
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
 
-## 1. Current state (2026-09-29)
+## 1. Current state (2026-09-30)
 
-The repository contains **documentation only**. There is no source code, no Gradle build, no Gradle wrapper, no Xcode project, no CI workflow, no `.gitignore`, no version catalog and no test of any kind. Nothing in this repository has ever been compiled, run or measured.
+The repository contains the **Gradle/KMP build skeleton** (TASK-014, branch `build/gradle-kmp-skeleton`, in review) and the **five feature route declarations**, plus the documentation set. There is still no feature behaviour, no test, no Xcode project, no `iosApp/`, no CI workflow, no `.gitignore` and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
 | Area | State | Notes |
 | --- | --- | --- |
@@ -22,8 +22,8 @@ The repository contains **documentation only**. There is no source code, no Grad
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
-| Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md` |
-| Build, CI, tooling | Not started | No workflow, no pinned dependency graph, no `.gitignore` |
+| Implementation | Not started | Plan: `docs/TECHNICAL_PLAN.md`; work index: `docs/BACKLOG.md`. The build skeleton exists (TASK-014, in review); no feature code does |
+| Build, CI, tooling | Build skeleton in review | Gradle wrapper 9.7.0, AGP 9.3.1, Kotlin 2.4.20 and the 11 modules of ADR-0001 build (LOG-0026). Still absent: CI, `.gitignore`, `VERSION`, lint/detekt/dependency-analysis configuration and every test |
 | Screenshots | Not started | Figma exports under `docs/figma/` and in-app screenshots of the running apps |
 
 ### 1.1 Verified versus intended
@@ -34,6 +34,7 @@ The repository contains **documentation only**. There is no source code, no Grad
 - The live behaviour of the remote API recorded with that date in `docs/API_SPECS.md` §1.1: list totals and page size, `404` for a filtered empty result that is itself cacheable and immutable, immutable detail `404`, out-of-range page `404`, batch requests returning only existing resources, one identifier yielding an object and two an array, GraphQL null for a missing character, `info.next` as `Int`, the empty-filter GraphQL shape, and `400 GRAPHQL_VALIDATION_FAILED` for an unknown field.
 - Toolchain versions and platform API availability checked on 2026-09-29 and recorded in `local://decision-brief.md` §4 (not committed to the repository).
 - Documentation checks on this repository: link resolution, identifier uniqueness and ordering, and consistency review. See §7.
+- The Gradle/KMP build (2026-09-30, branch `build/gradle-kmp-skeleton`): `./gradlew --version`, `projects`, `help --warning-mode=all`, `assemble`, `build`, `:androidApp:assembleDebug` (with no `iosApp/` and from a clean clone), the per-module dependency reports, the `tasks --all` target scan and the APK badging check. Commands and observed results: `PROJECT_LOG.md` LOG-0026.
 
 **Intended, not verified (documented target state):**
 
@@ -42,7 +43,7 @@ The repository contains **documentation only**. There is no source code, no Grad
 - Every `AC-*` acceptance criterion, every `TASK-###` and every `TEST-*` — none has been exercised.
 - The Figma-derived visual specification: the Figma file itself could not be fetched anonymously on 2026-09-29 (HTTP 403), so its content is reproduced from the design work, not re-verified from the source.
 
-No build, test, linter, formatter, benchmark or application run has ever been executed here. Statements to the contrary would be false.
+Beyond the build checks of LOG-0026, no test, linter, formatter, benchmark or application run has been executed here: there is nothing to run until TASK-024 (test harness), TASK-029 (tooling) and the M1 feature work land. Statements to the contrary would be false.
 
 ## 2. Completed work
 
@@ -61,8 +62,9 @@ No build, test, linter, formatter, benchmark or application run has ever been ex
 - **Module layout changed and not yet propagated:** the repository owner replaced the eight-module layout with **feature-per-module plus Clean Architecture packages inside each feature** (DEC-052, superseding DEC-019). The core modules are `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem` (Android) and `:core:testing`; the feature modules are `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes` and `:feature:settings` (the latter replacing `:feature:locations` per DEC-055); the app shells are `:androidApp` and the `iosApp` target with one Swift package per feature plus `iosApp/DesignSystem`. `docs/DESIGN.md` §3, `docs/CONTRACTS.md`, `AGENTS.md` §8 and the command tables in `README.md` §8–§9 were written against the previous names and are being updated in the same change; until they are, treat DEC-052 as authoritative for module names and dependency direction.
 - **Not started, and named here because they block the first milestone:**
   - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
+  - the version-catalog completion and the per-dependency rationale — TASK-015;
+  - the module-boundary enforcement check and its seeded violations — TASK-017;
   - `.gitignore`;
-  - the version catalog and the pinned dependency set;
   - the `tokens.json` parity test — DEC-022;
   - rendered PNG exports under `docs/figma/` — DEC-045;
   - `README.es.md` review as the only translation — DEC-047.
@@ -73,12 +75,13 @@ Each action names the first concrete step and the document that owns it. A task 
 
 1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
-3. **Create the build skeleton before any feature code.** First step: add `.gitignore`, the Gradle wrapper, the version catalog, the module declarations and the `VERSION` file, and make `./gradlew help` succeed. Owner: `docs/TECHNICAL_PLAN.md`, task in `docs/BACKLOG.md`.
-4. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
-5. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
-6. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
-7. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
-8. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
+3. **Add `.gitignore` as the very next change.** First step: commit the repository-hygiene rules so no build output, IDE state, `.kotlin/`, `local.properties` or agent prompt can reach the tree (TASK-016). Owner: `docs/BACKLOG.md` row TASK-016.
+4. **Complete the version catalog (TASK-015), then the boundary check (TASK-017) and `VERSION` wiring (TASK-018).** First step: record the rationale for every remaining dependency and pin it exactly; then make the module-boundary rules a build property that fails on a seeded violation. The build skeleton they extend is in review as TASK-014. Owner: `docs/DESIGN.md` §3.5 for the toolchain table, `docs/BACKLOG.md` for the rows.
+5. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
+6. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
+7. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
+8. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
+9. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
 
 Working rules that apply to every action above: read the precedence chain before touching a file (`AGENTS.md` §2); one owner per file; update the owning document in the same change (DEC-046); never claim a result you did not observe (`AGENTS.md` §4.2); merge without squashing and keep the phase commits (DEC-053); never merge while a required check is failing, skipped or absent (DEC-054).
 
@@ -114,25 +117,33 @@ One further operational note: `main` is the only integrated branch, and it has n
 - **Remote contract verification** — live probes against the public API on 2026-09-29; the observed results and their date are in `docs/API_SPECS.md` §1.1.
 - **Repository history** — read from the repository itself, not recalled.
 
-**What has NOT been verified:** no build has been run; no test has been executed; no linter, formatter, static analysis, dependency analysis, benchmark or accessibility check has been run; the Android app and the iOS app have never been compiled, installed or launched; no requirement has been demonstrated by an observing run. Every command in §8 and in `README.md` §8–§9 is unexercised, and every `AC-*` criterion in `docs/REQUIREMENTS.md` is currently unproven. The first runnable verification in this project's history will be the first CI run after the build skeleton lands.
+**What has NOT been verified:** no test has been executed; no linter, formatter, static analysis, dependency analysis, benchmark or accessibility check has been run; the Android app and the iOS app have never been installed or launched (the skeleton's APK has no activity); no requirement has been demonstrated by an observing run. The build commands in §8 below that the skeleton now supports have been executed and are marked as such; the rest stay unexercised, and every `AC-*` criterion in `docs/REQUIREMENTS.md` is currently unproven.
 
-## 8. Relevant commands (not yet runnable)
+## 8. Relevant commands
 
-The intended interface, recorded so the plan and the documentation stay concrete. None of these commands has been executed — there is no Gradle wrapper, no build script and no Xcode project. Module names below follow DEC-052; the equivalent table in `README.md` §8–§9 still uses the previous names and is being updated.
+The interface as it stands today. The build skeleton exists (TASK-014), so the wrapper and the module names below are real; the feature, test and release commands are the intended interface and are unexercised. Module names follow DEC-052.
 
-| Purpose | Command |
-| --- | --- |
-| Build the Android debug app | `./gradlew :androidApp:assembleDebug` |
-| Install on a connected device or emulator | `./gradlew :androidApp:installDebug` |
-| Build the shared framework for the iOS simulator | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` |
-| Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` |
-| Shared and unit tests | `./gradlew test` |
-| Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` |
-| Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` |
-| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` |
-| iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` |
-| Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` |
-| Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` |
+Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-skeleton` and are recorded with their observed results in `PROJECT_LOG.md` LOG-0026.
+
+| Purpose | Command | State |
+| --- | --- | --- |
+| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | **Executed 2026-09-30** — succeeded, with no `iosApp/` present and from a clean clone |
+| Build every module, including the iOS klibs | `./gradlew assemble` · `./gradlew build` | **Executed 2026-09-30** — succeeded; no Android Lint error |
+| List the module set | `./gradlew projects` | **Executed 2026-09-30** — exactly the 11 modules of ADR-0001 |
+| Inspect the resolved module graph | `./gradlew :<module>:dependencies --configuration <sourceSet>Implementation` | **Executed 2026-09-30** — matches the module table |
+| Inspect the APK manifest | `aapt2 dump badging androidApp/build/outputs/apk/debug/androidApp-debug.apk` | **Executed 2026-09-30** — package `io.github.davidru85.multiverse`, `minSdk` 26, `targetSdk` 37, no permission |
+| Install on a connected device or emulator | `./gradlew :androidApp:installDebug` | Not run: the APK has no activity to launch (TASK-044) |
+| Build the shared framework for the iOS simulator | `./gradlew :core:presentation:linkDebugFrameworkIosSimulatorArm64` | Blocked by CONF-40: `:core:presentation` may not depend on the features whose state types the iOS app consumes |
+| Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run: `iosApp/` does not exist (TASK-051) |
+| Shared and unit tests | `./gradlew test` | Not run: no test source set exists yet (TASK-024) |
+| Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run: Roborazzi is not configured (TASK-029) |
+| Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run: no baselines exist (TASK-029) |
+| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available: `lintDebug` runs and is clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
+| iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run: `iosApp/` does not exist (TASK-051) |
+| Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` | Not run: no contract test exists (TASK-026) |
+| Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` | Not run: the harness module needs a decision first (CONF-41) |
+
+Every row above that is not marked executed, and every row added since this table was written, remains unexercised and is marked accordingly; the skeleton's own verification is LOG-0026.
 
 The complete required-check list for a pull request, and what each check blocks, are owned by `docs/TESTING.md` and `docs/DEFINITION.md`. As of DEC-054 every check in that list is blocking on both platforms, including the iOS suites; the red commit of a TDD cycle is expected to fail tests, because the gate evaluates the final state of the pull request.
 
