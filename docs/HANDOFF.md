@@ -39,11 +39,11 @@ The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in P
 **Intended, not verified (documented target state):**
 
 - Everything about the applications: architecture, module boundaries, contracts, screens, motion, copy, error states, accessibility behaviour, performance budgets, security posture, logging.
-- Every command in §8 and in `README.md` §8–§9 — the build they call does not exist.
-- Every `AC-*` acceptance criterion, every `TASK-###` and every `TEST-*` — none has been exercised.
+- The product commands: feature, iOS-app, snapshot, contract, performance and release commands in §8 and in `README.md` §8–§9 remain target state, because the features they call do not exist. The commands marked **executed** — the Gradle/KMP skeleton build of LOG-0026 and the dependency-policy tasks of LOG-0032…LOG-0035 — do exist and were run.
+- Product acceptance: every `AC-*` criterion of `REQUIREMENTS.md` remains unproven, because no feature code exists. That is not the same as nothing having been exercised: `TASK-014` is `Done`, and `TASK-015` has local evidence for `TEST-UNIT-013`, the exact-pin half of `TEST-UNIT-014`, and `TEST-UNIT-051` (`PROJECT_LOG.md` LOG-0032…LOG-0035).
 - The Figma-derived visual specification: the Figma file itself could not be fetched anonymously on 2026-09-29 (HTTP 403), so its content is reproduced from the design work, not re-verified from the source.
 
-Beyond the build checks of LOG-0026, no test, linter, formatter, benchmark or application run has been executed here: there is nothing to run until TASK-024 (test harness), TASK-029 (tooling) and the M1 feature work land. Statements to the contrary would be false.
+Beyond the build checks of LOG-0026 and the dependency-policy verification tasks of LOG-0032…LOG-0035, no product test, formatter, static analyser, benchmark or application run has been executed here: no product test source set exists, and `ktlint`, detekt, `dependency-analysis`, the snapshot suites, the benchmark harness and every app run remain TASK-024, TASK-029 and the M1 feature work. Android Lint and the build checks have executed. Statements to the contrary would be false.
 
 ## 2. Completed work
 
@@ -121,7 +121,7 @@ One further operational note: `main` is the only integrated branch and it now ca
 - **Remote contract verification** — live probes against the public API on 2026-09-29; the observed results and their date are in `docs/API_SPECS.md` §1.1.
 - **Repository history** — read from the repository itself, not recalled.
 
-**What has NOT been verified:** no test has been executed; no linter, formatter, static analysis, dependency analysis, benchmark or accessibility check has been run; the Android app and the iOS app have never been installed or launched (the skeleton's APK has no activity); no requirement has been demonstrated by an observing run. The build commands in §8 below that the skeleton now supports have been executed and are marked as such; the rest stay unexercised, and every `AC-*` criterion in `docs/REQUIREMENTS.md` is currently unproven.
+**What has NOT been verified:** no **product** test has been executed; no formatter, static analyser, dependency-analysis plugin, benchmark or accessibility check has been run; the Android app and the iOS app have never been installed or launched (the skeleton's APK has no activity); no requirement has been demonstrated by an observing run. What **has** been executed is the build skeleton of LOG-0026, Android Lint and the build checks, and the dependency-policy verification tasks of LOG-0032…LOG-0035, whose latest evidence is LOG-0035. The build commands in §8 below that the skeleton now supports have been executed and are marked as such; the rest stay unexercised, and every `AC-*` criterion in `docs/REQUIREMENTS.md` is currently unproven.
 
 ## 8. Relevant commands
 
