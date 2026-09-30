@@ -38,5 +38,9 @@ gradlePlugin {
             id = "multiverse.dependency.policy"
             implementationClass = "io.github.davidru85.multiverse.buildlogic.policy.DependencyPolicyPlugin"
         }
+        register("repositoryHygiene") {
+            id = "multiverse.repository.hygiene"
+            implementationClass = "io.github.davidru85.multiverse.buildlogic.hygiene.RepositoryHygienePlugin"
+        }
     }
 }
