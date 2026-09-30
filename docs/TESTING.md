@@ -47,7 +47,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 
 ### Current state vs target state
 
-- **Current state (2026-09-30):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist (`verifyDependencyPolicy`: `TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061). No product test source set, no fixture and no CI exist. Every other statement below is the target state.
+- **Current state (2026-09-30):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist: `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061) and `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062, TASK-016), both wired into the root `check`. No product test source set, no fixture and no CI exist. Every other statement below is the target state.
 - **Target state:** the layers, IDs, layout and policies defined here, implemented in the Android milestone (M1) and extended in the iOS milestone (M2) (`DEC-040`, `REQ-PLAT-004`).
 
 ### Stated assumptions
@@ -190,6 +190,7 @@ These run with the shared suites (no emulator, no network) even though several o
 | `TEST-UNIT-019` | The Android milestone assembles with the iOS app absent (`AC-REQ-PLAT-004-1`) |
 | `TEST-UNIT-024` | No test source set outside `contract-live` contains a live API host literal (§4.1) |
 | `TEST-UNIT-025` … `TEST-UNIT-034` | The security and observability policies of §3.2, one assertion per row: host allow-list, secret scan, persisted-field inventory, absence of microphone/speech permissions in both shipped apps, log redaction, advisory register, vulnerability-reporting route, single logging contract, debug-only diagnostics, no analytics artefact |
+| `TEST-UNIT-026` | **Implemented** as `./gradlew verifyRepositoryHygiene` (`TEST-UNIT-026`, build root, DEC-062). It scans the commit-eligible working set (tracked plus untracked, non-ignored files) and every unique blob reachable from all local refs for twelve credential classes, holds the path rules `HYG-01`…`HYG-07` (ignored sentinels, no tracked ignored or prohibited path, no credential carrier in history, no symlink escape, no submodule), fails closed on a shallow or non-Git checkout, and prints findings without the matched value (`AC-REQ-SEC-002-1`) |
 | `TEST-UNIT-035`, `TEST-UNIT-036` | Token parity against `tokens.json`, and copy-key parity across the canonical key list, the Android resources and the iOS resources |
 | `TEST-UNIT-041` | The repository history of a behaviour-changing change carries the `DEC-053` phase sequence, used as review evidence and never as a substitute for the observed red failure |
 | `TEST-UNIT-043` | Each `:feature:*` module contains its own `domain` and `presentation` packages and declares its own navigation destination; no feature module owns the app-wide `NavHost` (`AC-REQ-NFR-009-2`) |
@@ -550,6 +551,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 | iOS snapshot tests | swift-snapshot-testing, committed baselines, including the Reduce Transparency, largest Dynamic Type and glass/fallback variants (`DEC-025`) | Visual regressions and `REQ-PLAT-003`, `REQ-UX-006`, `REQ-UX-007` |
 | Static analysis and formatting | ktlint, detekt, Android Lint, SwiftLint, swift-format (`DEC-032`) | Quality gate (`REQ-NFR-007`) |
 | Dependency analysis | The `DEC-032` dependency-analysis check, plus `./gradlew verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`) | `REQ-NFR-002`, `DEC-037` |
+| Repository hygiene | `./gradlew verifyRepositoryHygiene` (`TEST-UNIT-026`) — working-set and all-refs history scan, path hygiene and fail-closed shallow detection | `REQ-SEC-002`, `DEC-062`; CI must fetch full history (`fetch-depth: 0` or equivalent) on **both** runners (`DEC-054`) |
 | Assemble | Android assemble and the iOS build | The change compiles and links on both platforms |
 | Milestone independence | `TEST-UNIT-019` | `REQ-PLAT-004`: Android must stay releasable with the iOS app absent |
 
@@ -659,7 +661,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 
 | Requirement | Automated part | Manual part |
 | --- | --- | --- |
-| `REQ-SEC-002` | `TEST-UNIT-026` scans the working tree for secret patterns | History scan and credential review before a public push |
+| `REQ-SEC-002` | `TEST-UNIT-026` (`./gradlew verifyRepositoryHygiene`) scans the commit-eligible working set **and every blob reachable from all local refs** for the twelve credential classes and the prohibited path classes, failing closed on a shallow or incomplete Git state | Independent credential review before a public push and review of any finding; the check is a fixed-pattern policy, not a proof that no secret can exist |
 | `REQ-SEC-006` | `TEST-UNIT-030` asserts the advisory register exists and is current | Reading each advisory, deciding severity and mitigation, recording it in `SECURITY.md` |
 | `REQ-SEC-007` | `TEST-UNIT-031` asserts the reporting route is documented and identical in `SECURITY.md` and `CONTRIBUTING.md` | Review that the route actually works (a test message reaches the maintainer) |
 | `REQ-UX-003`, `REQ-UX-004` | `TEST-A11Y-002`, `TEST-A11Y-003` assert the recorded ratios and measured sizes | On-device measurement on the rendered surfaces (§9.2) |
@@ -667,7 +669,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 
 ## 17. Test case inventory
 
-The complete set of allocated ids and the module that owns each. Level names match the test-case template (`DEC-051`). `TEST-UNIT-013` and `TEST-UNIT-051` are **implemented** (Gradle verification tasks in `build-logic/`, DEC-061) and `TEST-UNIT-014` is implemented for its exact-pin half; every other case is `Planned`, because no product test code exists yet.
+The complete set of allocated ids and the module that owns each. Level names match the test-case template (`DEC-051`). `TEST-UNIT-013`, `TEST-UNIT-051` and `TEST-UNIT-026` are **implemented** (Gradle verification tasks in `build-logic/`, DEC-061 and DEC-062) and `TEST-UNIT-014` is implemented for its exact-pin half; every other case is `Planned`, because no product test code exists yet.
 
 | Range | Owning module | Level | Contents |
 | --- | --- | --- | --- |
@@ -701,3 +703,6 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 | 2026-09-30 | `TEST-UNIT-014` and `TEST-UNIT-051` checks hardened on review: rich version forms refused on every entry, BOM self-governance closed, the DEC-060 single BOM enforced, seven inline-version forms detected on comment-masked text, references derived from code only, bundles and name lookups refused; `TEST-UNIT-013` checks the toolchain rows (`LOG-0033`). | `DEC-057`, `DEC-060`, `DEC-061`, TASK-015 |
 | 2026-09-30 | `TEST-UNIT-051` allocated for the README dependency inventory check, `TEST-UNIT-013` and `TEST-UNIT-014` marked implemented for the halves the `multiverse.dependency.policy` tasks cover, the policy-check layout added to §13.1 and the `verifyDependencyPolicy` command added to §14.2. | `DEC-061`, `DEC-060`, TASK-015 |
 | 2026-09-29 | §14 declared authoritative for the required-check list, which is what `DEFINITION.md` §7 and `HANDOFF.md` already assign to this document; `DEFINITION.md` §7 keeps the gate classification. Header `Owner:` corrected to the `AGENTS.md` §3.6 role name used by the sibling documents. | `DEC-054` |
+| 2026-09-30 | `TEST-UNIT-026` marked implemented as `./gradlew verifyRepositoryHygiene` (build root, `multiverse.repository.hygiene`): §3.3 gained its explicit row, §14.2 a required repository-hygiene check (full history on both runners), §16.2 now states the all-refs history boundary, and §17 lists it as implemented. No other id changed state. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
+| 2026-09-30 | `TEST-UNIT-026`'s implementation was corrected on review: the scan now covers every reachable blob (including pathless directly referenced ones) and every unique historical path, and fails closed on a non-zero or malformed `cat-file --batch` stream; the §3.3/§14.2/§16.2/§17 contract is unchanged and no id was reallocated. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0037 |
+| 2026-09-30 | `TEST-UNIT-026`'s implementation was corrected again after the second review: refs that peel directly to a tree are enumerated, every `-z` stream must be terminally NUL-terminated with an exact record grammar, content is streamed without a whole-object ceiling, and findings render escaped on one line. The contract is unchanged and no id was reallocated. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0038 |

@@ -172,6 +172,7 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 | Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` funciona y está limpio; ktlint, detekt y `buildHealth` no están configurados (TASK-029) |
 | Comprobación del grafo de módulos (sin dependencias entre features) | `./gradlew buildHealth` | No ejecutado — falta el plugin de dependency-analysis (TASK-017, TASK-029) |
 | Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-09-30: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+| Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-09-30: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
 | Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No ejecutado — falta la decisión sobre el módulo del harness (`CONF-41`) |
 | Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | No ejecutado — no existe el test de contrato (TASK-026) |
@@ -236,9 +237,9 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Documentación de proceso | Completa — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
 | Esqueleto de build | Hecho — TASK-014, fusionado en el PR #6 el 2026-09-30: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementación | No iniciada — ver [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
-| Catálogo de versiones | En revisión — TASK-015: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario |
+| Catálogo de versiones | Hecho — TASK-015, fusionado en el PR #10 el 2026-09-30: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario, y `verifyDependencyPolicy` hace cumplir ambos |
 | CI y `VERSION` | No iniciado — TASK-025, TASK-018 |
-| `.gitignore` | Registrado; la aceptación pendiente de TASK-016 es el escaneo de secretos |
+| `.gitignore` | Registrado y completado por la comprobación automática de higiene de TASK-016 — `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set, todos los blobs alcanzables y todas las rutas históricas únicas; TASK-016 está En revisión (issue #12, PR #13; ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036 y LOG-0037) |
 | Capturas (Figma y de la app) | No iniciado |
 
 ## 15. Inventario de dependencias

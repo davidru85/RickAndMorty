@@ -56,15 +56,17 @@ The names below are the only tool names used in this document. Exact commands ar
 | detekt | Kotlin structural analysis: code smells, complexity, unsafe constructs, coroutine misuse | All Kotlin modules |
 | Android Lint | Android platform rules: hardcoded text, content descriptions, touch-target size, manifest and resource rules | Android modules |
 | dependency-analysis (`buildHealth`) | Declared-versus-used dependencies, unused or undeclared edges, module-graph rules | All Gradle modules |
+| Repository hygiene (`verifyRepositoryHygiene`) | Tracked-path hygiene (no build output, IDE/user state, machine-local file or credential carrier tracked) and secret scanning of the commit-eligible working set and all reachable history | The whole repository (root build) |
 | SwiftLint | Swift structural analysis, including force unwrapping | Swift packages and the iOS app |
 | swift-format | Swift formatting | Swift packages and the iOS app |
 | Tests (`TEST-*`) | Behaviour, invariants, parity and policy assertions that no analyser can express | See `TESTING.md` §13.1 for layout |
 
 ### 1.4 Current state
 
-The build skeleton exists on 2026-09-30 (TASK-014: wrapper, convention plugins, the 11 modules, five route declarations) and the dependency-policy verification tasks exist, but no feature code, product test source set or analyser configuration does, so every `Tool:` and `Test:` line that names a product tool or a product test is still a statement about the target build. Two consequences are stated rather than hidden:
+The build skeleton exists on 2026-09-30 (TASK-014: wrapper, convention plugins, the 11 modules, five route declarations) and the repository-policy verification tasks exist — the dependency policy and the repository/secret hygiene check — but no feature code, product test source set or analyser configuration does, so every `Tool:` and `Test:` line that names a product tool or a product test is still a statement about the target build. Three consequences are stated rather than hidden:
 
 - The dependency-policy checks now exist and run in the root `check` (`verifyDependencyPolicy`: `TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`; DEC-061, TASK-015), and **every** rule has an observed failing seed (the S1–S63 matrix of `PROJECT_LOG.md` LOG-0033…LOG-0035). The positive seeds fail their owning rule and the negative seeds pass, which is what the matrix is for. The rule set is P1–P8 (pins), R1–R7 (rationale) and I1–I9 (inventory): exact plain pins on comment-masked text matched over the whole file, one Compose BOM and one catalog, Kotlin DSL scripts with no `buildSrc`, toolchain rows checked against their properties files and failing closed when either is missing, and no bundle, no name lookup and no aliased accessor. Every other tool configuration (`ktlint`, detekt, Android Lint, dependency-analysis, Roborazzi) is still target state, and the change that introduces a tool `MUST` prove it blocks a seeded violation the same way (`TECHNICAL_PLAN.md`, phase P2).
+- The repository/secret hygiene check exists and runs in the root `check` (`verifyRepositoryHygiene`: `TEST-UNIT-026`; DEC-062, TASK-016) and was proved with seeds: the S1–S14 matrix of `PROJECT_LOG.md` LOG-0036 shows each path rule (`HYG-01`…`HYG-07`) and each credential class (`SEC-026-01`…`SEC-026-12`) failing on its own seed, with the clean state passing again after every seed was removed.
 - The earlier module names (`:shared:*`, `:android:designsystem`, `:android:feature:characters`) survive only as history in `DECISION_BOARD.md` §3 and in change-log entries; `adr/0001-module-boundaries.md` and `DESIGN.md` §3 carry the current module set, and `AGENTS.md` §8 is aligned with them.
 
 ## 2. Kotlin: language and correctness rules
@@ -650,7 +652,7 @@ Automated checks cover the assertions that can be made deterministically (labels
 
 No API key, token, credential or machine-specific configuration is committed; none is required by this product (`REQ-SEC-002`, `SECURITY.md` §4). If a value would differ per machine, it is not in the repository. If a secret is ever exposed, the response path is `SECURITY.md` §4.1, not a silent revert.
 
-**Enforcement:** `Test:` `TEST-UNIT-026` (secret scan), the required secret-hygiene check (`DEFINITION.md` §7).
+**Enforcement:** `Tool:` `./gradlew verifyRepositoryHygiene`; `Test:` `TEST-UNIT-026` (working-set and all-refs history scan, tracked-path hygiene), the required repository-hygiene check (`DEFINITION.md` §7, `TESTING.md` §14.2).
 
 ### 11.2 Logging
 
@@ -714,3 +716,4 @@ Rules that constrain deviation:
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Created: Kotlin, source-set, module, presentation, Compose and SwiftUI rules; naming and identifier conventions; test-first workflow and local test rules; documentation, accessibility and security-sensitive coding conventions; the deviation process. Every rule names its enforcing tool, test id or review expectation. | `DEC-052` (feature-per-module layout), `DEC-053` (TDD phase protocol, amending `DEC-041`), `DEC-054` (full both-platform suite blocking on every pull request) |
+| 2026-09-30 | Repository hygiene added as a named tool in §1.3 and as existing state in §1.4; §11.1 names `./gradlew verifyRepositoryHygiene` and `TEST-UNIT-026` as the enforcement. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |

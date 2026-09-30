@@ -22,3 +22,46 @@ node_modules/
 
 # Agent prompts: local inputs for AI agents, not part of the repository.
 prompts/
+
+# Repository hygiene (TASK-016, DEC-062).
+#
+# The KMP template rules above are kept verbatim; this block adds the secret-bearing,
+# signing and machine-local paths that a public, credential-free repository must never
+# track (`REQ-SEC-002`, `TEST-UNIT-026`). `verifyRepositoryHygiene` proves by Git's own
+# `check-ignore` semantics that the paths it names here are ignored.
+
+# Environment files. This project needs no environment-variable configuration, so no
+# `.env.example` exception is tracked; adding one later needs its own decision.
+.env
+.env.*
+
+# Android/Java and Apple signing material.
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+
+# Private-key material.
+*.pem
+*.key
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Service-credential configuration.
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+credentials*.json
+
+# Editor state the template does not cover.
+.vscode/
+.fleet/
+
+# Apple build output and per-user Xcode state.
+DerivedData/
+iosApp/.build/
+*.xcuserstate
