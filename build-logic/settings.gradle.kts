@@ -1,12 +1,8 @@
-// Multiverse Explorer — Gradle settings (TASK-014).
-// Repositories and the root project name are declared here; the module set is
-// included by the module-declaration commits that follow.
+// Settings for the `build-logic` included build: Gradle tooling, not a project
+// module. It reads the root version catalog so a single catalog serves both
+// builds, and uses the same repositories as the main build (OD-3).
 
 pluginManagement {
-    // The convention plugins are Gradle tooling, not a project module: the
-    // included build does not change the ADR-0001 module set (OD-3).
-    includeBuild("build-logic")
-
     repositories {
         google {
             content {
@@ -32,6 +28,13 @@ dependencyResolutionManagement {
         }
         mavenCentral()
     }
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
 }
 
-rootProject.name = "multiverse-explorer"
+rootProject.name = "build-logic"
+
+include(":convention")
