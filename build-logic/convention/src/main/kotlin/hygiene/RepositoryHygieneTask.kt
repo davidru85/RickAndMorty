@@ -14,16 +14,18 @@ import java.io.File
  * One run does four things:
  *
  * 1. it holds the repository-path rules `HYG-01`…`HYG-07` over the tracked tree, the ignore
- *    rules and **every historical path occurrence** reachable from every local ref;
+ *    rules, every path reachable through commits **and** every path inside a local ref that
+ *    peels directly to a tree;
  * 2. it scans the **commit-eligible working set** — every tracked file plus every untracked,
  *    non-ignored file — for the twelve credential classes;
- * 3. it scans **every unique blob reachable from every local ref** for the same classes,
- *    including a blob a local ref points to directly with no tree path;
- * 4. it fails closed on any Git error, a shallow checkout, a symlink that would leave the
- *    repository, a submodule and any object or record it cannot parse.
+ * 3. it scans **every unique blob reachable from every local ref**, including a blob a local ref
+ *    points to directly with no tree path, streaming content so no object is skipped for size;
+ * 4. it fails closed on any Git error, a shallow checkout, a truncated `-z` stream, a malformed
+ *    record, a symlink that would leave the repository, a submodule or an object it cannot parse.
  *
  * Nothing it reports ever contains the text it matched: a finding names a rule id, a
- * root-relative location, a line number where one exists and the blob identity for history.
+ * root-relative location, a line number where one exists and the blob identity for history, and
+ * every rendered field is escaped to one line.
  *
  * The task reads Git and the working tree at execution time and declares no outputs, so it is
  * never up to date and never answers from a re-used configuration-cache or build-cache entry.
@@ -66,10 +68,20 @@ abstract class RepositoryHygieneTask : DefaultTask() {
             "verifyRepositoryHygiene passed: ${workingSet.size} commit-eligible path(s) scanned, " +
                 "${history.objectsConsidered} reachable object(s) considered, " +
                 "${history.blobsScanned} unique blob(s) scanned and verified from all local refs, " +
-                "${history.historicalPaths} historical path occurrence(s) classified, " +
+                "${history.uniquePaths} unique historical path(s) classified, " +
                 "${HygieneRules.RULE_IDS.size} credential rule classes, ${HygieneRules.REQUIRED_IGNORED.size} " +
                 "ignore sentinels, 0 findings (TEST-UNIT-026, REQ-SEC-002, AC-REQ-SEC-002-1).",
         )
+    }
+
+    private fun scannerFor(base: String, log: HygieneViolationLog): ContentScanner =
+        ContentScanner { ruleId, line -> log.add(ruleId, "$base:$line", "matches the $ruleId credential pattern") }
+
+    private fun locationBase(location: String, blobId: String?): String = when {
+        location.isNotEmpty() && blobId != null -> "$location blob ${blobId.take(12)}"
+        location.isNotEmpty() -> location
+        blobId != null -> "blob ${blobId.take(12)}"
+        else -> "unknown"
     }
 
     private fun openRepository(root: File): GitRepository = try {
@@ -122,10 +134,10 @@ abstract class RepositoryHygieneTask : DefaultTask() {
     }
 
     /**
-     * HYG-03 — no tracked path belongs to a prohibited class. The class set is the one the
-     * rule names: build output, IDE/user state, machine-local configuration, signing material
-     * and every credential-carrier path, so a tracked `.env` or key container is reported here
-     * as well as by its owning `SEC-026-*` rule.
+     * HYG-03 — no tracked path belongs to a prohibited class. The class set is the one the rule
+     * names: build output, IDE/user state, machine-local configuration, signing material and
+     * every credential-carrier path, so a tracked `.env` or key container is reported here as
+     * well as by its owning `SEC-026-*` rule.
      */
     private fun checkTrackedPaths(modes: Map<String, String>, log: HygieneViolationLog) {
         modes.keys.forEach { path ->
@@ -159,7 +171,7 @@ abstract class RepositoryHygieneTask : DefaultTask() {
 
     /**
      * The commit-eligible working set: each path is classified, then read without following a
-     * symlink, then scanned for the twelve credential classes.
+     * symlink, then streamed through the twelve credential classes.
      */
     private fun scanWorkingSet(
         git: GitRepository,
@@ -180,36 +192,37 @@ abstract class RepositoryHygieneTask : DefaultTask() {
             HygieneRules.pathRule(path)?.let { ruleId ->
                 log.add(ruleId, path, "the path name itself is a credential carrier and must not be commit-eligible")
             }
-            val bytes = try {
-                git.readCandidate(path)
+            val scanner = scannerFor(locationBase(path, null), log)
+            try {
+                git.streamCandidate(path, scanner::accept)
+                scanner.finish()
             } catch (e: GitRepository.ExternalSymlink) {
                 log.add(
                     "HYG-07",
                     path,
                     "is a symbolic link whose target leaves the repository; the check never follows it",
                 )
-                return@forEach
             } catch (e: GitRepository.GitFailure) {
                 throw GradleException("HYG-07: ${e.message} (TEST-UNIT-026)", e)
             }
-            scanBytes(bytes, location = path, blobId = null, log = log)
         }
     }
 
     /**
-     * The whole reachable history. Every historical path occurrence is classified (`HYG-04`,
-     * `HYG-07`), and every unique object Git classifies as a blob is scanned once for content,
-     * including a blob a local ref reaches directly with no tree path.
+     * The whole reachable history. Every path reachable through a commit and every path inside a
+     * local ref that peels directly to a tree is classified (`HYG-04`, `HYG-07`), and every
+     * unique object Git classifies as a blob is streamed once for content — including a blob a
+     * local ref reaches directly with no tree path.
      */
     private fun scanHistory(git: GitRepository, log: HygieneViolationLog): HistoryCounts {
-        val history = try {
-            git.historyScan()
+        val scans = try {
+            listOf(git.commitHistoryScan(), git.directTreeScan()).reduce { a, b -> a.merge(b) }
         } catch (e: GitRepository.GitFailure) {
             throw GradleException("HYG-04: ${e.message} (TEST-UNIT-026)", e)
         }
 
-        // HYG-04/HYG-07 — exhaustive historical path occurrences, not one name per object.
-        history.paths.forEach { path ->
+        // HYG-04 — every reachable path, deduplicated only after both sources are collected.
+        scans.paths.forEach { path ->
             val className = HygieneRules.classifyProhibited(path)
             val reason = when {
                 HygieneRules.isCarrier(path) -> "is a credential-carrier path"
@@ -224,7 +237,7 @@ abstract class RepositoryHygieneTask : DefaultTask() {
                 }
             }
         }
-        history.gitlinkPaths.forEach { path ->
+        scans.gitlinkPaths.forEach { path ->
             log.add(
                 "HYG-07",
                 path,
@@ -243,21 +256,19 @@ abstract class RepositoryHygieneTask : DefaultTask() {
         } catch (e: GitRepository.GitFailure) {
             throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
         }
-        val missing = ids.filterNot { it in infos }
-        if (missing.isNotEmpty()) {
-            throw GradleException(
-                "HYG-06: Git could not classify ${missing.size} reachable object(s), starting with " +
-                    "`${missing.first().take(12)}`; the history scan is incomplete (TEST-UNIT-026).",
-            )
-        }
 
-        // Every reachable blob is scanned, not only those a tree path names (F-01).
+        // Every reachable blob is streamed, not only those a tree path names.
         val blobIds = infos.filterValues { it.type == "blob" }.keys.sorted()
+        var scanner: ContentScanner? = null
         val consumed = try {
-            git.forEachBlob(blobIds) { blobId, bytes ->
-                val hint = history.blobPathHint[blobId]
-                scanBytes(bytes, location = hint?.let { "$it " } ?: "", blobId = blobId, log = log)
-            }
+            git.forEachBlob(
+                blobIds,
+                onStart = { blobId ->
+                    scanner = scannerFor(locationBase(scans.blobPathHint[blobId]?.let { "$it " } ?: "", blobId), log)
+                },
+                onChunk = { chunk -> scanner?.accept(chunk) },
+                onEnd = { scanner?.finish() },
+            )
         } catch (e: GitRepository.GitFailure) {
             throw GradleException("HYG-06: ${e.message} (TEST-UNIT-026)", e)
         }
@@ -265,26 +276,8 @@ abstract class RepositoryHygieneTask : DefaultTask() {
         return HistoryCounts(
             objectsConsidered = ids.size,
             blobsScanned = consumed,
-            historicalPaths = history.paths.size,
+            uniquePaths = scans.paths.size,
         )
-    }
-
-    /**
-     * Applies every content rule to raw bytes. The bytes are decoded leniently, which keeps
-     * ASCII credential shapes visible in a binary container; a rule that matches reports the
-     * path or the blob identity, never the matched value.
-     */
-    private fun scanBytes(bytes: ByteArray, location: String, blobId: String?, log: HygieneViolationLog) {
-        val text = String(bytes, Charsets.UTF_8)
-        val base = when {
-            location.isNotEmpty() && blobId != null -> "$location blob ${blobId.take(12)}"
-            location.isNotEmpty() -> location
-            blobId != null -> "blob ${blobId.take(12)}"
-            else -> "unknown"
-        }
-        HygieneRules.scanContent(text) { ruleId, line ->
-            log.add(ruleId, "$base:$line", "matches the $ruleId credential pattern")
-        }
     }
 
     private companion object {
@@ -295,6 +288,6 @@ abstract class RepositoryHygieneTask : DefaultTask() {
     private data class HistoryCounts(
         val objectsConsidered: Int,
         val blobsScanned: Int,
-        val historicalPaths: Int,
+        val uniquePaths: Int,
     )
 }

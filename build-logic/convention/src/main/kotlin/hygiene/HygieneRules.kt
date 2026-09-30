@@ -334,67 +334,43 @@ internal object HygieneRules {
     }
 
     /**
-     * Scans text for every content rule and reports findings as (rule id, line number). The
-     * matched text never leaves this method.
+     * Scans text for every content rule and reports findings as (rule id, character offset).
+     * The matched text never leaves this method; the caller maps the offset to a line through
+     * [ContentScanner] or [lineAt].
      */
-    fun scanContent(text: CharSequence, onFinding: (ruleId: String, line: Int) -> Unit) {
-        val lines = LineIndex(text)
-
-        PEM_HEADER.findAll(text).forEach { onFinding(RULE_PEM_HEADER, lines.lineAt(it.range.first)) }
+    fun scanContent(text: CharSequence, onFinding: (ruleId: String, offset: Int) -> Unit) {
+        PEM_HEADER.findAll(text).forEach { onFinding(RULE_PEM_HEADER, it.range.first) }
 
         FIXED_FORMAT_PATTERNS.findAll(text).forEach { match ->
             val ruleId = GROUP_RULES.firstOrNull { (group, _) -> match.groups[group] != null }?.second ?: return@forEach
-            onFinding(ruleId, lines.lineAt(match.range.first))
+            onFinding(ruleId, match.range.first)
         }
 
         AWS_SIGNING_ASSIGNMENT.findAll(text).forEach { match ->
-            if (!isNonValue(match.groupValues.getOrNull(1))) {
-                onFinding(RULE_AWS_SIGNING_VALUE, lines.lineAt(match.range.first))
-            }
+            if (!isNonValue(match.groupValues.getOrNull(1))) onFinding(RULE_AWS_SIGNING_VALUE, match.range.first)
         }
 
         GENERIC_ASSIGNMENT.findAll(text).forEach { match ->
             // Groups 1–3 are the key forms; groups 4–6 are the double-quoted, single-quoted
             // and unquoted value forms. Only the value groups are inspected.
             val value = match.groupValues.drop(VALUE_GROUP_OFFSET).firstOrNull { it.isNotEmpty() }
-            if (!isNonValue(value)) {
-                onFinding(RULE_GENERIC_ASSIGNMENT, lines.lineAt(match.range.first))
-            }
+            if (!isNonValue(value)) onFinding(RULE_GENERIC_ASSIGNMENT, match.range.first)
         }
 
-        BASIC_AUTH_URL.findAll(text).forEach { onFinding(RULE_BASIC_AUTH_URL, lines.lineAt(it.range.first)) }
+        BASIC_AUTH_URL.findAll(text).forEach { onFinding(RULE_BASIC_AUTH_URL, it.range.first) }
 
         DOTENV_ASSIGNMENT.findAll(text).forEach { match ->
             val value = match.groupValues.drop(1).firstOrNull { it.isNotEmpty() }
-            if (!isNonValue(value)) onFinding(RULE_DOTENV_ASSIGNMENT, lines.lineAt(match.range.first))
+            if (!isNonValue(value)) onFinding(RULE_DOTENV_ASSIGNMENT, match.range.first)
         }
     }
 
-    /** Maps a character offset to a 1-based line number by binary search over the line starts. */
-    private class LineIndex(text: CharSequence) {
-
-        private val starts: IntArray
-
-        init {
-            var count = 0
-            for (index in text.indices) if (text[index] == '\n') count++
-            starts = IntArray(count + 1)
-            var next = 1
-            for (index in text.indices) {
-                if (text[index] == '\n') starts[next++] = index + 1
-            }
-        }
-
-        fun lineAt(offset: Int): Int {
-            val target = offset.coerceIn(0, Int.MAX_VALUE)
-            var low = 0
-            var high = starts.size - 1
-            while (low < high) {
-                val middle = (low + high + 1) / 2
-                if (starts[middle] <= target) low = middle else high = middle - 1
-            }
-            return low + 1
-        }
+    /** Maps a character offset to a 1-based line number, counting the newlines before it. */
+    fun lineAt(text: CharSequence, offset: Int): Int {
+        var line = 1
+        val limit = offset.coerceAtMost(text.length)
+        for (index in 0 until limit) if (text[index] == '\n') line++
+        return line
     }
 
     /** The credential rule that owns a path, when the path name alone is a finding. */
