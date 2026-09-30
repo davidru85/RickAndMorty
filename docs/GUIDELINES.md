@@ -476,7 +476,7 @@ Test naming is owned by `TESTING.md` §13.2 and repeated here only as the rule a
   - History is linear and phase commits are preserved: no squash, no amend and no force-push of pushed phase commits (`CONTRIBUTING.md` §3.5).
 - Version and release mechanics (`VERSION`, tags, release notes) are owned by `DEC-043` and `DEFINITION.md` §5 and are not repeated here.
 
-**Enforcement:** `Review:` in the pull request (`CONTRIBUTING.md` §8.1); branch protection and required checks are human-only repository settings (`DEC-049`, `DEC-054`).
+**Enforcement:** `Review:` in the pull request (`CONTRIBUTING.md` §8.1); branch protection and required checks are human-only repository settings (`DEC-049`, `DEC-054`); as of 2026-09-30 a ruleset protects `main` against deletion, force-push and non-linear history and requires a pull request, while the required-check half is still absent (TASK-025, `GAP-002`).
 
 ## 8. Testing conventions
 
