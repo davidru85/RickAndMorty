@@ -198,12 +198,13 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Open conflicts | 2 (§6.3: `CONF-50`, `CONF-51`; every other conflict — `CONF-36`…`CONF-49`, `CONF-52` and `CONF-53` — is resolved in §6.1) |
 | Blocking gaps for the next milestone | `GAP-001`, `GAP-002` |
 
-Next actions, in order: the post-merge correction programme — `TASK-087` (the accepted `DEC-071` decision, this change), `TASK-088` (boundary hardening), `TASK-089` (`VERSION` artifact wiring) and `TASK-090` (the B1 documentation reconciliation) — then B2, whose first obligations are `TASK-024` (the shared fakes and fixtures) and `TASK-025` (the workflows and both runners, with branch protection as the human step). Each is tracked in `BACKLOG.md` and sequenced in `TECHNICAL_PLAN.md`.
+Next actions, in order: the post-merge correction programme is merged — `TASK-087` (PR #42), `TASK-088` (PR #43), `TASK-089` (PR #44) and `TASK-090` (PR #45) — so the next work is B2, whose first obligations are `TASK-024` (the shared fakes and fixtures) and `TASK-025` (the workflows and both runners, with branch protection as the human step). Each is tracked in `BACKLOG.md` and sequenced in `TECHNICAL_PLAN.md`.
 
 ## 9. Change log
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-01 | Post-merge corrections merged: `TASK-087`…`TASK-090` (PRs #42–#45) are `Done`; the correction programme is closed and the audit's next action is B2. | `LOG-0049`…`LOG-0052`, `DEC-071` |
 | 2026-10-01 | B1 post-merge reconciliation (`TASK-090`): `CONF-44` closed (the 11-module wording and the stale §11 item 6, with `TASK-015`'s half re-attributed), `GAP-012` resolved by `TASK-088`, `GAP-013` by `TASK-089`, the inventory count and §8 counts restated, and the protocol-owner pointer in `GUIDELINES.md` §8.1 verified against `CONTRIBUTING.md` §3.1. | `TASK-090`, `DEC-046`, `DOC8` |
 | 2026-10-01 | Post-merge review: `CONF-53` recorded and resolved by `DEC-071` (staged activation of the required set); `GAP-012` (four reproduced boundary false negatives) and `GAP-013` (the reproduced `VERSION` artifact bypass) recorded with their correction tasks. Counts: 12 open gaps, 2 open conflicts. | `DEC-071`, `TASK-087`…`TASK-090`, `LOG-0049` |
 | 2026-10-01 | B1 documentation reconciliation: `CONF-36`, `CONF-37`, `CONF-38`, `CONF-39`, `CONF-40`, `CONF-41`, `CONF-43`, `CONF-44` and `CONF-49` are recorded as resolved (`DEC-069`, `DEC-070`, and the `TASK-019` corrections); the audit now carries 2 open conflicts (`CONF-50`, `CONF-51`). | `TASK-019`, `DEC-069`, `DEC-070` |
