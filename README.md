@@ -174,9 +174,9 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 
 | Task | Command | State |
 | --- | --- | --- |
-| List the module set | `./gradlew projects` | Executed 2026-09-30 — exactly the 11 modules of ADR-0001 |
-| Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-09-30 — succeeded, no Android Lint error |
-| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-09-30 — succeeded with no `iosApp/` present and from a clean clone |
+| List the module set | `./gradlew projects` | Executed 2026-10-01 — the 11 modules of ADR-0001, grouped by the `:core` and `:feature` container projects (13 Gradle projects) |
+| Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-10-01 — succeeded, no Android Lint error |
+| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-10-01 — succeeded with no `iosApp/` present and from a clean clone |
 | Install on a connected device/emulator | `./gradlew :androidApp:installDebug` | Not run — the skeleton's APK has no activity yet (TASK-044) |
 | Build the shared framework for iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Not run — `:core:ios` does not exist yet (`TASK-078`); the module is the one producer of the framework the iOS app links (`DEC-058`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)) |
 | Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run — `iosApp/` does not exist (TASK-051) |
@@ -190,10 +190,11 @@ Every pull request must pass the full suite on both platforms before it can be a
 | All shared and unit tests | `./gradlew test` | Not run — no test source set exists yet (TASK-024) |
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run — Roborazzi is not configured (TASK-029) |
 | Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
-| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |
-| Module-graph rule check (no feature-to-feature edges) | `./gradlew buildHealth` | Not run — `buildHealth` needs the dependency-analysis plugin (TASK-017, TASK-029) |
-| Verify the dependency policy (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | Executed 2026-09-30: passes; also runs as part of `./gradlew check` and `./gradlew build` |
-| Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-09-30: passes (0 findings over the working set, every reachable blob and every unique historical path); corrected on review; also runs as part of `./gradlew check` and `./gradlew build` |
+| Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean (executed 2026-10-01); ktlint, detekt and `buildHealth` are not configured yet (TASK-029), so that half is target state |
+| Module-graph rule check (no feature-to-feature edges, `:core:domain` allow-list, staged destination/package rules) | `./gradlew verifyModuleBoundaries` | Executed 2026-10-01: passes (14 projects); `buildHealth` remains the `TASK-029` declared-versus-used complement |
+| Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-01: passes; also runs as part of `./gradlew check` and `./gradlew build` |
+| Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-01: passes (0 findings over the working set, every reachable blob and every unique historical path); also runs as part of `./gradlew check` and `./gradlew build` |
+| Verify the module boundaries (project edges, source-set kinds, `:core:domain` allow-list) | `./gradlew verifyModuleBoundaries` | Executed 2026-10-01: passes (14 projects); also runs as part of `./gradlew check` and `./gradlew build` |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not run — the harness module needs a decision first (`CONF-41`) |
 | Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
@@ -270,9 +271,12 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
-| `VERSION` | Done — TASK-018: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim, checked by `verifyDependencyPins` and observed in the APK. The real iOS `CFBundleShortVersionString` wiring is `TASK-051` (`DEC-067`) |
+| `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim and `verifyDependencyPins` rejects a second literal. The real iOS `CFBundleShortVersionString` wiring is `TASK-051` (`DEC-067`) |
 | CI | Not started — TASK-025 |
 | `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
+| Module boundaries | Done — TASK-017, merged in PR #33 on 2026-10-01: `verifyModuleBoundaries` checks the project edges, the source-set kinds and the `:core:domain` allow-list in `check` (14 projects, `TEST-UNIT-017`/`043`, `R14`) |
+| Contracts | Accepted — TASK-019, merged in PR #31 on 2026-10-01: `docs/CONTRACTS.md` is the `IC-###` baseline |
+| Process documents | Reconciled — TASK-034, merged in PR #32 on 2026-10-01: DOC1–DOC8 audit recorded |
 | Screenshots (Figma exports and in-app) | Not started |
 
 ## 15. Dependency inventory

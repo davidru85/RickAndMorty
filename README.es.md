@@ -153,9 +153,9 @@ El wrapper de Gradle está incluido (Gradle 9.7.0, con la suma de comprobación 
 
 | Tarea | Comando | Estado |
 | --- | --- | --- |
-| Listar el conjunto de módulos | `./gradlew projects` | Ejecutado 2026-09-30 — exactamente los 11 módulos de ADR-0001 |
-| Compilar todos los módulos, Android y los klib de iOS | `./gradlew assemble` · `./gradlew build` | Ejecutado 2026-09-30 — correcto, sin errores de Android Lint |
-| Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` | Ejecutado 2026-09-30 — correcto sin `iosApp/` y desde un clon limpio |
+| Listar el conjunto de módulos | `./gradlew projects` | Ejecutado 2026-10-01 — los 11 módulos de ADR-0001, agrupados por los proyectos contenedores `:core` y `:feature` (13 proyectos Gradle) |
+| Compilar todos los módulos, Android y los klib de iOS | `./gradlew assemble` · `./gradlew build` | Ejecutado 2026-10-01 — correcto, sin errores de Android Lint |
+| Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` | Ejecutado 2026-10-01 — correcto sin `iosApp/` y desde un clon limpio |
 | Instalar en un dispositivo o emulador | `./gradlew :androidApp:installDebug` | No ejecutado — el APK del esqueleto aún no tiene activity (TASK-044) |
 | Compilar el framework compartido para iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | No ejecutado — `:core:ios` todavía no existe (`TASK-078`); ese módulo es el único productor del framework que enlaza la app iOS (`DEC-058`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)) |
 | Compilar la app iOS | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | No ejecutado — `iosApp/` no existe (TASK-051) |
@@ -169,10 +169,11 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 | Todos los tests compartidos y unitarios | `./gradlew test` | No ejecutado — todavía no hay source set de test (TASK-024) |
 | Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado (TASK-029) |
 | Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (TASK-029) |
-| Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` funciona y está limpio; ktlint, detekt y `buildHealth` no están configurados (TASK-029) |
-| Comprobación del grafo de módulos (sin dependencias entre features) | `./gradlew buildHealth` | No ejecutado — falta el plugin de dependency-analysis (TASK-017, TASK-029) |
-| Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-09-30: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
-| Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-09-30: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+| Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` pasa limpio (ejecutado 2026-10-01); ktlint, detekt y `buildHealth` aún no están configurados (TASK-029), así que esa mitad es estado objetivo |
+| Comprobación del grafo de módulos (sin dependencias entre features, lista blanca de `:core:domain`, reglas escalonadas de destino/paquetes) | `./gradlew verifyModuleBoundaries` | Ejecutado 2026-10-01: pasa (14 proyectos); `buildHealth` sigue siendo el complemento declarado-vs-usado de `TASK-029` |
+| Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+| Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+| Verificar las fronteras entre módulos (aristas de proyecto, tipos de source set, lista blanca de `:core:domain`) | `./gradlew verifyModuleBoundaries` | Ejecutado 2026-10-01: pasa (14 proyectos); también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
 | Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No ejecutado — falta la decisión sobre el módulo del harness (`CONF-41`) |
 | Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | No ejecutado — no existe el test de contrato (TASK-026) |
@@ -192,14 +193,14 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 
 ## 11. Limitaciones conocidas
 
-1. **Las imágenes son de 300 × 300.** La API publica un único avatar cuadrado por personaje y nada mayor. El hero del detalle reescala la fuente; los degradados y el fondo difuminado de iOS lo convierten en una decisión estilística y no en un defecto visible ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
-2. **Una pestaña es provisional.** Episodes es una pantalla "próximamente"; Favorites y Settings sí son funcionales (`DEC-005`, `DEC-055`). El ajuste de sonidos no reproduce nada hasta que se decida qué sonidos habrá.
+1. **Las imágenes son de 300 × 300.** La API publica un único avatar cuadrado por personaje y nada mayor. El hero del detalle reescala la fuente; los degradados y el fondo difuminado de iOS convierten esto en una decisión estilística y no en un defecto visible ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
+2. **Una pestaña es provisional.** Episodes es una pantalla "próximamente"; Favorites y Settings son reales (`DEC-005`, `DEC-055`). El ajuste Sounds no reproduce nada hasta que se decida un conjunto de sonidos.
 3. **La búsqueda por voz no está implementada.** Está aplazada y no se solicita permiso de micrófono ni de voz (`DEC-002`).
 4. **Solo teléfono en vertical.** Sin tablet, plegable ni horizontal (`DEC-027`).
 5. **Sin analítica.** No hay SDK de analítica, seguimiento ni publicidad (`REQ-OBS-003`).
-6. **Solo un artefacto está fijado en una versión preliminar.** Material 3 Expressive `1.5.0-alpha29` está fijado en el catálogo de versiones y ningún módulo lo declara todavía; el riesgo aceptado y el plan de contingencia están en [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). Los otros dos componentes solo-alpha no se adoptan.
-7. **La API no está versionada.** Su forma puede cambiar sin aviso, por lo que los tests de contrato se ejecutan fuera del merge gate (`DEC-029`).
-8. **El dispositivo de referencia para rendimiento aún no está fijado.** Los presupuestos y el método de medición existen; el dispositivo concreto figura como suposición pendiente en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+6. **Solo un artefacto está fijado en una versión preliminar.** Material 3 Expressive `1.5.0-alpha29` está fijado en el catálogo de versiones y ningún módulo lo declara todavía; el riesgo aceptado y el plan de vuelta atrás están en [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). Los otros dos componentes solo-alpha no se adoptan.
+7. **La API no está versionada.** Su forma puede cambiar sin aviso, por lo que los tests de contrato se ejecutan fuera del gate de merge (`DEC-029`).
+8. **El dispositivo de referencia para rendimiento aún no está fijado.** Los presupuestos y el método de medición existen; el dispositivo concreto está registrado como suposición pendiente en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ## 12. Índice de documentación
 
@@ -220,6 +221,8 @@ El índice completo, con propósito y audiencia de cada documento, está en la s
 | [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) | Índice de todas las decisiones y su estado |
 | [`docs/HANDOFF.md`](docs/HANDOFF.md) | Estado actual y siguientes pasos |
 
+Deliberadamente no creados, con motivos en [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) §3: `ARCHITECTURE.md` (fusionado en `DESIGN.md`), `SPECIFICATION.md` (duplicaría los requisitos), `ANALYTICS.md` (no hay analítica — sustituido por `OBSERVABILITY.md`), `SECURITY_ADVISORY_REGISTER.md` (por ahora una sección de `SECURITY.md`), `CHANGELOG.md` (sustituido por `PROJECT_LOG.md` más notas de release generadas).
+
 ## 13. Contribuir
 
 Empieza por [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): puesta en marcha, convenciones de ramas y commits, plantilla de pull request y comprobaciones requeridas. Las convenciones de código están en [`docs/GUIDELINES.md`](docs/GUIDELINES.md) y la definición de terminado en [`docs/DEFINITION.md`](docs/DEFINITION.md).
@@ -238,9 +241,12 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Esqueleto de build | Hecho — TASK-014, fusionado en el PR #6 el 2026-09-30: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementación | No iniciada — ver [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Catálogo de versiones | Hecho — TASK-015, fusionado en el PR #10 el 2026-09-30: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario, y `verifyDependencyPolicy` hace cumplir ambos |
-| `VERSION` | Hecho — TASK-018: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal, verificado por `verifyDependencyPins` y observado en el APK. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
+| `VERSION` | Hecho — TASK-018, fusionado en el PR #34 el 2026-10-01: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal y `verifyDependencyPins` rechaza un segundo literal. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
 | CI | No iniciado — TASK-025 |
 | `.gitignore` | Hecho — TASK-016, fusionado en el PR #13 el 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set, todos los blobs alcanzables y todas las rutas históricas únicas, dentro de `check` y `build` (ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
+| Fronteras entre módulos | Hecho — TASK-017, fusionado en el PR #33 el 2026-10-01: `verifyModuleBoundaries` comprueba las aristas de proyecto, los tipos de source set y la lista blanca de `:core:domain` dentro de `check` (14 proyectos, `TEST-UNIT-017`/`043`, `R14`) |
+| Contratos | Aceptados — TASK-019, fusionado en el PR #31 el 2026-10-01: `docs/CONTRACTS.md` es la base `IC-###` |
+| Documentos de proceso | Reconciliados — TASK-034, fusionado en el PR #32 el 2026-10-01: auditoría DOC1–DOC8 registrada |
 | Capturas (Figma y de la app) | No iniciado |
 
 ## 15. Inventario de dependencias
