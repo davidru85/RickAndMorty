@@ -4,6 +4,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.Optional
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -77,6 +78,17 @@ abstract class DependencyPinsTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val settingsFiles: ConfigurableFileCollection
 
+    /** The single `VERSION` file (`AC-REQ-NFR-006-2`, `DEC-067`). */
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val versionFile: RegularFileProperty
+
+    /** Every build script, so a second version literal can be found wherever it hides (P9). */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val allBuildScripts: ConfigurableFileCollection
+
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
 
@@ -101,6 +113,7 @@ abstract class DependencyPinsTask : DefaultTask() {
         ::onlyTheComposeBom,
         ::onlyTheLibsCatalog,
         ::kotlinDslAndNoBuildSrc,
+        ::singleVersionSource,
     )
 
     /**
@@ -325,6 +338,49 @@ abstract class DependencyPinsTask : DefaultTask() {
         }
     }
 
+
+    /**
+     * P9 — the single `VERSION` source (`AC-REQ-NFR-006-2`, `DEC-067`).
+     *
+     * The file must exist, hold exactly one SemVer value with no prefix, suffix, build metadata,
+     * comment, blank line or surrounding whitespace, and be the **only** version literal in the
+     * build scripts. The Android `versionName` derives from it (the application convention plugin
+     * reads it and sets the field), so a hand-written `versionName` or `versionCode` anywhere is a
+     * violation, and so is a second `VERSION`-like assignment. A missing or unreadable file fails:
+     * an absent source cannot be verified.
+     */
+    private fun singleVersionSource(log: ViolationLog) {
+        val file = versionFile.orNull?.asFile
+        if (file == null || !file.isFile) {
+            log.add(TEST_ID, "VERSION", "the single version source `VERSION` is missing; AC-REQ-NFR-006-2 requires it")
+            return
+        }
+        val raw = file.readText()
+        val value = raw.trimEnd('\n').trimEnd('\r')
+        when {
+            raw.isEmpty() -> log.add(TEST_ID, "VERSION", "the file is empty; one `MAJOR.MINOR.PATCH` line is required")
+            value != raw.removeSuffix("\n").removeSuffix("\r") && raw.trim() != value ->
+                log.add(TEST_ID, "VERSION", "the file carries surrounding whitespace; one clean line is required")
+            !SEMVER.matches(value) ->
+                log.add(TEST_ID, "VERSION", "`$value` is not a `MAJOR.MINOR.PATCH` value with no prefix, suffix or build metadata")
+            raw.lines().size > 2 || (raw.lines().size == 2 && raw.lines()[1].isNotEmpty()) ->
+                log.add(TEST_ID, "VERSION", "the file must contain exactly one line")
+        }
+
+        allBuildScripts.files.sortedBy { it.path }.forEach { script ->
+            val text = KotlinSourceMask.mask(script.readText(), maskStrings = false)
+            VERSION_LITERALS.findAll(text).forEach { match ->
+                log.add(
+                    TEST_ID,
+                    script.relativeTo(rootDirectory.get().asFile).invariantSeparatorsPath + ":" +
+                        BuildScripts.lineOf(text, match.range.first),
+                    "a second version literal (`${match.value}`) exists; `VERSION` is the single source " +
+                        "(AC-REQ-NFR-006-2, DEC-067)",
+                )
+            }
+        }
+    }
+
     private companion object {
         const val TEST_ID = "TEST-UNIT-014"
 
@@ -336,6 +392,8 @@ abstract class DependencyPinsTask : DefaultTask() {
         const val COMPOSE_BOM_COORDINATES = "androidx.compose:compose-bom"
 
         val EXACT_VERSION = Regex("^[0-9A-Za-z][0-9A-Za-z._-]*$")
+        val SEMVER = Regex("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
+        val VERSION_LITERALS = Regex("\\bversionName\\s*[=(]|\\bversionCode\\s*[=(]|\\bversion\\s*=\\s*\"")
         val DYNAMIC = Regex("\\+|latest\\.|snapshot", RegexOption.IGNORE_CASE)
         val FORBIDDEN_CHARS = listOf('[', ']', '(', ')', ',')
         val SHA_256 = Regex("^[0-9a-fA-F]{64}$")
