@@ -57,7 +57,7 @@ The names below are the only tool names used in this document. Exact commands ar
 | Android Lint | Android platform rules: hardcoded text, content descriptions, touch-target size, manifest and resource rules | Android modules |
 | dependency-analysis (`buildHealth`) | Declared-versus-used dependencies, unused or undeclared edges, module-graph rules | All Gradle modules |
 | Repository hygiene (`verifyRepositoryHygiene`) | Tracked-path hygiene (no build output, IDE/user state, machine-local file or credential carrier tracked) and secret scanning of the commit-eligible working set and all reachable history | The whole repository (root build) |
-| Module boundaries (`verifyModuleBoundaries`) | The accepted module graph: project edges, the configuration and source set that declared each edge, the `:core:domain` external allow-list and the staged destination/package rules (`DEC-066`, `DEC-068`) | The whole repository (root build) |
+| Module boundaries (`verifyModuleBoundaries`) | The accepted module graph: the **effective** project and external dependencies of each architecture-relevant configuration (own plus inherited through `extendsFrom`), the configuration and source set that carry each edge and the one that declared it, the `:core:domain` (`R14`) and `:core:designsystem` (`R15`) external allow-lists, and the content-aware destination/package rules of `DEC-068` (`DEC-066`) | The whole repository (root build) |
 | SwiftLint | Swift structural analysis, including force unwrapping | Swift packages and the iOS app |
 | swift-format | Swift formatting | Swift packages and the iOS app |
 | Tests (`TEST-*`) | Behaviour, invariants, parity and policy assertions that no analyser can express | See `TESTING.md` §13.1 for layout |
