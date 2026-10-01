@@ -1,7 +1,7 @@
 # GUIDELINES.md — Engineering Guidelines
 
 - **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); every code rule below describes the code that will be written, not code that exists yet
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** Implementation Engineer (see `../AGENTS.md` §3.5)
 - **Authoritative for:** the coding rules for Kotlin, Compose and SwiftUI, the source-set and presentation rules a change must apply inside the module layout owned by [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md), repository naming and identifier conventions, and — for every rule — the artefact that enforces it. Not for the contribution process (`CONTRIBUTING.md`), the gates (`DEFINITION.md`), the test strategy (`TESTING.md`), the architecture rationale and module graph (`DESIGN.md` §1/§3.4, `adr/`), the interface invariants (`CONTRACTS.md`), the remote contract (`API_SPECS.md`), the visual specification (`UI_SPEC.md`), the failure-to-copy chain (`ERROR_FLOW.md`), the logging contract (`OBSERVABILITY.md`) or security policy (`SECURITY.md`).
 - **Inputs:** `../assessment.md`; `REQUIREMENTS.md`; `API_SPECS.md`; `DESIGN.md`; `CONTRACTS.md`; `UI_SPEC.md`; `ERROR_FLOW.md`; `OBSERVABILITY.md`; `SECURITY.md`; `TESTING.md`; `DEFINITION.md`; `CONTRIBUTING.md`; `adr/0001-module-boundaries.md`…`adr/0009-pagination-strategy.md`; `DECISION_BOARD.md` (`DEC-008`, `DEC-010`, `DEC-011`, `DEC-012`, `DEC-013`, `DEC-015`, `DEC-019` superseded by `DEC-052`, `DEC-032`, `DEC-041` as amended by `DEC-053`, `DEC-052`, `DEC-053`, `DEC-054`); verified toolchain and API facts dated 2026-09-29.
@@ -177,7 +177,7 @@ Layers inside a feature are packages, not modules (`adr/0001-module-boundaries.m
 | `commonMain` | `<feature>/domain/` | Feature use cases and feature-specific models, composed from `:core:domain` repository interfaces |
 | `commonMain` | `<feature>/presentation/` | Feature UI-state classes and intents, shared by both platforms |
 | `androidMain` | `<feature>/ui/` | Compose screens and the feature's Android ViewModel |
-| `commonTest` and the platform unit-test source sets (`androidUnitTest`, `iosTest`) | — | Feature tests; may depend on `:core:testing` |
+| `commonTest` and the platform unit-test source sets (`androidHostTest`, `androidDeviceTest`, `iosTest`) | — | Feature tests; may depend on `:core:testing` (`DEC-069`) |
 
 Because the layering here is a package convention rather than a compiler edge, it is partly review-enforced: a `domain` package importing a UI, HTTP or platform type, or a `ui` package importing a DTO, is a defect (`adr/0001-module-boundaries.md`, consequences).
 
