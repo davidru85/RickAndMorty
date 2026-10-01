@@ -145,7 +145,11 @@ internal object ModuleBoundaryCapture {
         }
     }
 
-    /** Source set and kind of a configuration already known to be declarable. */
+    /**
+     * Source set and kind of a configuration already known to be declarable. This is the one
+     * classifier in the check: it used to live beside a second, unused implementation, which a
+     * review removed so the rule and its classifier cannot drift (`TASK-088`).
+     */
     private fun classify(configuration: String, projectPath: String): Pair<String, SourceSetKind> {
         val lowered = configuration.lowercase()
         val base = when {
