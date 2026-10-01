@@ -1,7 +1,7 @@
 # Test case template
 
 - **Status:** Active
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-01
 - **Owner:** Documentation Maintainer (`../../AGENTS.md` §3.9)
 - **Authoritative for:** the shape of one test case description (`TEST-<FAMILY>-###`) as recorded for contract tests and manual checklist entries. Not authoritative for: the test strategy, the test-id families, the source-set layout, the fixture inventory and the flaky-test policy ([`TESTING.md`](../TESTING.md) owns them), the gates ([`DEFINITION.md`](../DEFINITION.md)). `DEC-051` names this file; no second test-case template exists.
 - **Inputs:** [`DECISION_BOARD.md`](../DECISION_BOARD.md) (DEC-051), [`TESTING.md`](../TESTING.md) §1, §4.3, §13, §15, [`REQUIREMENTS.md`](../REQUIREMENTS.md), [`DEFINITION.md`](../DEFINITION.md) §3, [`CONTRIBUTING.md`](../CONTRIBUTING.md) §3, [`AGENTS.md`](../../AGENTS.md)
@@ -24,7 +24,7 @@
 | Level | `<unit \| contract \| integration \| ui \| a11y \| perf>` |
 | Requirements | `<REQ-…, REQ-…>` |
 | Acceptance criteria | `<AC-…, AC-…>` |
-| Family / source set | `<e.g. commonTest, androidUnitTest, androidInstrumentedTest, iosTest, contract-live>` ([`TESTING.md`](../TESTING.md) §13.1) |
+| Family / source set | `<e.g. commonTest, androidHostTest, androidDeviceTest, iosTest, contract-live>` (`DEC-069`) ([`TESTING.md`](../TESTING.md) §13.1) |
 | Platform(s) | `<common \| Android \| iOS \| both>` |
 | Given | `<the precondition and the state the system is in>` |
 | When | `<the single action, input or event under test>` |
