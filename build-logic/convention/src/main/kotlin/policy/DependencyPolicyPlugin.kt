@@ -89,10 +89,13 @@ class DependencyPolicyPlugin : Plugin<Project> {
         val pins = target.tasks.register<DependencyPinsTask>("verifyDependencyPins") {
             group = VERIFICATION_GROUP
             description = "TEST-UNIT-014: every external version is an exact pin, the build is Kotlin DSL without " +
-                "`buildSrc`, and the Gradle wrapper is pinned by checksum (AC-REQ-NFR-006-1; DEC-061)."
+                "`buildSrc`, the Gradle wrapper is pinned by checksum, and `VERSION` is the single source for the " +
+                "application version (AC-REQ-NFR-006-1, AC-REQ-NFR-006-2; DEC-061, DEC-067)."
             this.catalog.set(catalog)
             catalogFile.set(target.layout.projectDirectory.file("gradle/libs.versions.toml"))
             wrapperProperties.set(target.layout.projectDirectory.file("gradle/wrapper/gradle-wrapper.properties"))
+            versionFile.set(target.layout.projectDirectory.file("VERSION"))
+            this.allBuildScripts.from(mainBuildScripts, buildLogicScripts)
             rootDirectory.set(target.layout.projectDirectory)
             this.mainBuildScripts.from(mainBuildScripts)
             this.buildLogicScripts.from(buildLogicScripts)

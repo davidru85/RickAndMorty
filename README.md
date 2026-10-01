@@ -12,7 +12,7 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
 > **Project status: build skeleton, no application yet.**
-> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014, merged in PR #6: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations), the tracked `.gitignore` and the pinned version catalog with its policy checks (TASK-015). There is no feature behaviour yet, and still no CI, no `VERSION` and no launchable app. The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
+> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014, merged in PR #6: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations), the tracked `.gitignore` and its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the executable module-boundary check (TASK-017), the accepted contract baseline (TASK-019) and the single `VERSION` source (TASK-018). There is no feature behaviour yet, and still no CI and no launchable app; `VERSION` now exists and the Android `versionName` derives from it (`TASK-018`). The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
 
 ## 1. Assessment objectives
 
@@ -271,7 +271,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
-| `VERSION` | Done — TASK-018, PR #34 (in review on 2026-10-01): one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim and `verifyDependencyPins` rejects a second literal. The real iOS `CFBundleShortVersionString` wiring is `TASK-051` (`DEC-067`) |
+| `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim and `verifyDependencyPins` rejects a second literal. The real iOS `CFBundleShortVersionString` wiring is `TASK-051` (`DEC-067`) |
 | CI | Not started — TASK-025 |
 | `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
 | Module boundaries | Done — TASK-017, merged in PR #33 on 2026-10-01: `verifyModuleBoundaries` checks the project edges, the source-set kinds and the `:core:domain` allow-list in `check` (14 projects, `TEST-UNIT-017`/`043`, `R14`) |
