@@ -285,6 +285,7 @@ internal object ModuleBoundaryRules {
                             configuration = edge.configuration,
                             sourceSet = edge.sourceSet,
                             producer = edge.producer,
+                            origin = edge.originConfiguration,
                             reason = "no `:feature:*` module may depend on another `:feature:*` module " +
                                 "(ADR-0001 rule 6, AC-REQ-NFR-009-1)",
                         ),

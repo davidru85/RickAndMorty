@@ -271,7 +271,7 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Pinned | — | TASK-037 |
 | `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Pinned | — | TASK-036 (CONF-47) |
 | `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Pinned | — | TASK-024 |
-| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Pinned | — | TASK-024 |
+| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention` | TASK-024, TASK-091 |
 | `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Pinned | — | TASK-037 |
 | `libs.ktor.client.okhttp` | `io.ktor:ktor-client-okhttp` | `3.6.0` | Pinned | — | TASK-037 |
 | `libs.ktor.client.darwin` | `io.ktor:ktor-client-darwin` | `3.6.0` | Pinned | — | TASK-037 |
@@ -298,7 +298,7 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.androidx.datastore.preferences` | `androidx.datastore:datastore-preferences` | `1.2.1` | Pinned | — | TASK-040, TASK-074 |
 | `libs.coil.compose` | `io.coil-kt.coil3:coil-compose` | `3.6.3` | Pinned | — | TASK-005, TASK-021 |
 | `libs.coil.network.ktor3` | `io.coil-kt.coil3:coil-network-ktor3` | `3.6.3` | Pinned | — | TASK-021, TASK-044 |
-| `libs.junit4` | `junit:junit` | `4.13.2` | Pinned | — | TASK-024, TASK-045 |
+| `libs.junit4` | `junit:junit` | `4.13.2` | Declared | `:build-logic:convention` | TASK-024, TASK-045, TASK-091 |
 | `libs.robolectric` | `org.robolectric:robolectric` | `4.17` | Pinned | — | TASK-045 |
 | `libs.roborazzi` | `io.github.takahirom.roborazzi:roborazzi` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.roborazzi.compose` | `io.github.takahirom.roborazzi:roborazzi-compose` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
