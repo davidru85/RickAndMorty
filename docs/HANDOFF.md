@@ -97,6 +97,21 @@ From 2026-10-01 the actions below map onto the execution blocks of `BACKLOG.md` 
 
 Working rules that apply to every action above: read the precedence chain before touching a file (`AGENTS.md` §2); one owner per file; update the owning document in the same change (DEC-046); never claim a result you did not observe (`AGENTS.md` §4.2); merge without squashing and keep the phase commits (DEC-053); never merge while a required check is failing, skipped or absent (DEC-054).
 
+## 4b. Owner decisions taken from the B2 readiness packet (2026-10-01)
+
+The B2 readiness audit re-verified five blockers (plus a sixth found by probe) and the owner accepted:
+
+| Id | Outcome | Effect |
+| --- | --- | --- |
+| `DEC-073` | `TASK-026` re-scoped to the `DEC-072` pattern | The fixture-mode entry point and the live-mode workflow clause land in B2; the `contract-fixture` activation moves into `TASK-037`'s acceptance |
+| `DEC-074` | `TASK-027` re-scoped | The scheduled non-blocking job, the `contract-live` source set and `TEST-CONTRACT-006` land in B2; each case's live replay activates with its own task |
+| `DEC-075` | detekt stays target state; `TASK-082` closed | No pin and no ADR-0008 change; the static-analysis row activates ktlint, Android Lint and `buildHealth` only; detekt returns against a stable 2.x |
+| `DEC-076` | `TASK-030` re-scoped | The pinned Swift toolchain and both configuration files land in B2; the workflow step and its guard entry move into `TASK-051`'s acceptance |
+| `DEC-077` | Dependency analysis activates now, blocking | The ADR-0001-mandated edges the source-less tree has not consumed are excluded explicitly, behind a guard whose tests fail when a module gains production source or an edge leaves the module table |
+| `DEC-078` | Bookkeeping (`TASK-093`) | `TEST-UNIT-045` is implemented in the workflow guard; the RB-5 citations are re-mapped |
+
+Two items remain owner decisions to schedule (not B2 rows): advisory automation on the catalog/Swift manifests/workflows (`DEC-037`, `SECURITY.md` §9) has no owning `TASK-###`; and the standing ruleset bypass actor review (`LOG-0058`).
+
 ## 5. Unresolved decisions and deferred items
 
 Do not implement a deferred item. The authoritative lists are:
