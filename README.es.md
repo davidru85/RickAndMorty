@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
 - **Status / Estado:** Activo — el esqueleto de build de Gradle/KMP ya existe (TASK-014); la aplicación sigue siendo estado objetivo (ver [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner / Responsable:** Delivery Planner (ver [`AGENTS.md`](AGENTS.md))
 - **Authoritative for / Documento autoritativo para:** el punto de entrada del desarrollador — requisitos previos, comandos de compilación, ejecución, test y calidad, plataformas soportadas, limitaciones conocidas e índice de documentación.
 - **No autoritativo para:** requisitos, arquitectura, contrato remoto, especificación visual ni proceso; cada uno se enlaza más abajo.
@@ -12,9 +12,7 @@ Cliente de [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html
 Proyecto realizado como prueba técnica de desarrollo móvil para ZARA, descrita en [`assessment.md`](assessment.md).
 
 > **Estado del proyecto: herramientas de build y gobernanza, sin aplicación todavía.**
-> El repositorio contiene el conjunto documental, el esqueleto Gradle/KMP (TASK-014), `.gitignore` y su comprobación de higiene (TASK-016), el catálogo de versiones fijado con sus comprobaciones (TASK-015), la base de contratos aceptada (TASK-019), la comprobación ejecutable de fronteras de módulos (TASK-017, endurecida por TASK-088) y la fuente única `VERSION` (`0.1.0`, TASK-018, con todas las tareas de artefacto Android dependiendo de su validación vía TASK-089). No hay comportamiento de producto, ni tests de producto, ni CI, ni app lanzable. Block 1 está integrado y verificado localmente, no `Done` hasta que exista CI (`DEC-071`). Los comandos marcados *ejecutado* se corrieron en la fecha indicada; el resto es la interfaz prevista.
-
-> Versión en inglés (autoritativa): [`README.md`](README.md). Si ambos difieren, prevalece el inglés (`DEC-047`).
+> El repositorio contiene el conjunto documental, el esqueleto Gradle/KMP (TASK-014), `.gitignore` y su comprobación de higiene (TASK-016), el catálogo de versiones fijado con sus comprobaciones (TASK-015), la base de contratos aceptada (TASK-019), la comprobación ejecutable de fronteras de módulos (TASK-017, endurecida por TASK-088), la fuente única `VERSION` (`0.1.0`, TASK-018, con todas las tareas de artefacto Android dependiendo de su validación vía TASK-089), el arnés de pruebas compartido en `:core:testing` (TASK-024), el **gate de pull request en ambos runners** (TASK-025, PR #52) y la cadena de calidad — ktlint, Android Lint, `buildHealth` y la comprobación del gate documentado están activos y bloquean (TASK-029, PR #65), la cadena Swift está fijada con un script verificado por checksum (TASK-030, PR #63), y el guardián de workflows rechaza la integración automatizada y cualquier referencia al modo live desde el gate (TASK-028/TASK-093/TASK-026). Todavía **no hay comportamiento de producto, ni tests de producto, ni app lanzable**; el APK no tiene actividad. Block 1 está *integrado y verificado localmente* porque se fusionó antes de que existiera el gate; cada cambio desde `TASK-025` corre bajo checks requeridos reales (`DEC-071`). Los comandos marcados *ejecutado* se corrieron en la fecha indicada; el resto es la interfaz prevista.
 
 ## 1. Objetivos de la prueba
 

@@ -1,7 +1,7 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-10-01; must be updated on every handoff (`AGENTS.md` §5 step 7).
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
@@ -11,9 +11,9 @@
 
 ## 1. Current state (2026-10-01)
 
-The repository contains the **documentation set**, the **Gradle/KMP build skeleton** (TASK-014, PR #6), the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, PR #13), the **pinned version catalog with its policy checks** (TASK-015, PR #10), the **shared test harness in `:core:testing`** and the **both-runner pull-request gate** (`TASK-024`/`TASK-025`/`TASK-028`, PR #52, merged as `7044869`), the **accepted contract baseline** `docs/CONTRACTS.md` (TASK-019, PR #31), the **executable module-boundary check** `verifyModuleBoundaries` (TASK-017, PR #33, hardened by TASK-088 so it reads effective inherited edges and fails a source file whose Kotlin package contradicts its path) and the **single `VERSION` source** (`0.1.0`, PR #34), whose validation every Android artifact task now consumes (TASK-089). There is still **no feature behaviour, no product test, no Xcode project, no `iosApp/` and no CI workflow**; the APK has no activity, so the product has never been launched.
+The repository contains the **documentation set**, the **Gradle/KMP build skeleton** (TASK-014, PR #6), the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, PR #13), the **pinned version catalog with its policy checks** (TASK-015, PR #10), the **shared test harness in `:core:testing`** and the **both-runner pull-request gate** (`TASK-024`/`TASK-025`/`TASK-028`, PR #52, merged as `7044869`), the **accepted contract baseline** `docs/CONTRACTS.md` (TASK-019, PR #31), the **executable module-boundary check** `verifyModuleBoundaries` (TASK-017, PR #33, hardened by TASK-088 so it reads effective inherited edges and fails a source file whose Kotlin package contradicts its path) and the **single `VERSION` source** (`0.1.0`, PR #34), whose validation every Android artifact task now consumes (TASK-089). There is still **no feature behaviour, no product test, no Xcode project and no `iosApp/`**; the APK has no activity, so the product has never been launched. The pull-request gate (PR #52) and the quality toolchain (PRs #63, #65) are merged, and the workflow guard rejects automated integration and any merge-gate reference to live mode (PRs #64, #67).
 
-Delivery model changed on 2026-10-01: `TASK-016` was the last task executed individually, and the remaining work is delivered in nine execution blocks (`B1`…`B9`, `DEC-063`) owned by `docs/BACKLOG.md` §2.6. **Block 1 is integrated and locally verified, not `Done` under D2**: no B1 pull request had a status-check rollup, because no CI exists (`GAP-002`). `DEC-071` resolves that state model — a check suite becomes mandatory in the change that creates its harness — and the post-merge review's four corrections are merged: `TASK-087` (PR #42), `TASK-088` (PR #43), `TASK-089` (PR #44) and `TASK-090` (PR #45). The dependency-safe source reconciliation keeps `TASK-031` and `TASK-073` together in B2, places `TASK-020` before `TASK-012` and `TASK-075` in B5, and keeps `TASK-021` in B4; no task depends on a later block (`CONF-52`, resolved).
+Delivery model changed on 2026-10-01: `TASK-016` was the last task executed individually, and the remaining work is delivered in nine execution blocks (`B1`…`B9`, `DEC-063`) owned by `docs/BACKLOG.md` §2.6. **Block 1 is integrated and locally verified, not `Done` under D2**: it merged before the gate existed, so no B1 pull request had a status-check rollup (`GAP-002` resolved by `TASK-025`). `DEC-071` resolves that state model — a check suite becomes mandatory in the change that creates its harness — and the post-merge review's four corrections are merged: `TASK-087` (PR #42), `TASK-088` (PR #43), `TASK-089` (PR #44) and `TASK-090` (PR #45). The dependency-safe source reconciliation keeps `TASK-031` and `TASK-073` together in B2, places `TASK-020` before `TASK-012` and `TASK-075` in B5, and keeps `TASK-021` in B4; no task depends on a later block (`CONF-52`, resolved).
 
 
 | Area | State | Notes |
@@ -49,6 +49,13 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 
 Beyond the build checks of LOG-0026 and the repository-policy verification tasks of LOG-0032…LOG-0038, no product test, formatter, static analyser, benchmark or application run has been executed here: no product test source set exists, and `ktlint`, detekt, `dependency-analysis`, the snapshot suites, the benchmark harness and every app run remain TASK-024, TASK-029 and the M1 feature work. Android Lint and the build checks have executed. Statements to the contrary would be false.
 
+## 1.2 Block state (2026-10-02)
+
+**Block 2 is in review.** Eight of its nine rows are merged and `Done` under D2 against the checks active at their stage
+(`TASK-024`, `TASK-025`, `TASK-028` in PR #52; `TASK-031` #62; `TASK-030` #63; `TASK-093` #64; `TASK-029` #65; `TASK-073` #66), `TASK-026` is
+in review (#67) and `TASK-027` is **partially blocked**: the scheduled live job needs a compiled source set the toolchain does not provide
+without an owner decision (see §5). `TASK-082` is closed with the detekt outcome (`DEC-075`).
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
@@ -82,35 +89,13 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 
 Each action names the first concrete step and the document that owns it. A task is not started until its first failing test exists (DEC-053); the exceptions are documentation, build/CI configuration and tooling changes, and their use must be stated explicitly.
 
-From 2026-10-01 the actions below map onto the execution blocks of `BACKLOG.md` §2.6 (`DEC-063`): actions 1–4 were B1 and are closed, actions 5–7 are B2, action 8 (`TASK-035`) is B4, and actions 9–10 are B5–B6. Work starts block by block, and no task in a block depends on a later block.
+From 2026-10-02 the actions map onto the execution blocks of `BACKLOG.md` §2.6 (`DEC-063`). **B1 is closed** and **B2 is closed except `TASK-027`**: the gate, the quality toolchain, the templates and the contract entry point are merged (PRs #52, #62–#67, #69). Work continues block by block, and no task in a block depends on a later block.
 
-1. **The documentation system is merged** (TASK-032 PR #25, TASK-034 PR #32), and the post-merge reconciliation `TASK-090` has merged too (PR #45), so no B1 documentation action remains; the audit's open items are `CONF-50`, `CONF-51` and the open `GAP-*` rows. Owner: `docs/DOCUMENTATION_AUDIT.md`.
-2. **Module-name propagation and the DEC-019 wording are closed** by `TASK-090` (PR #45): both READMEs carry the 11-module set, one boundary row each, no invented benchmark command and the honest current/target version wiring. No action remains here. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
-3. **Repository and boundary checks are merged.** `verifyRepositoryHygiene` (TASK-016, PR #13), `verifyModuleBoundaries` (TASK-017, PR #33; hardened by `TASK-088`, PR #43) and the `VERSION` policy (TASK-018, PR #34; every artifact task wired by `TASK-089`, PR #44) all run inside `check` on `main`. No action remains here. Owner: `docs/BACKLOG.md` rows TASK-016…TASK-018, TASK-088, TASK-089.
-4. **B1 is closed as far as this repository can close it.** All seven tasks and the four corrections are merged (PRs #25, #31–#36, #42–#45) and read `Done` against the checks active at their stage (`DEC-071`). The block stays *integrated and locally verified*, not *Done under D2*, until `TASK-025` creates the CI gate. Owner: `docs/BACKLOG.md` §2.4, `docs/TECHNICAL_PLAN.md` §2.1.
-5. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
-6. **Complete the reusable templates and TDD evidence fields.** `TASK-031` is in review (`docs/reusable-templates`): the five `DEC-051` templates are audited against DOC1 and corrected (`Block` column, `DEC-069` source-set names, the PR template's decision drift). `TASK-073` follows on the same file once this merges. Owner: `docs/templates/`, with acceptance in `docs/BACKLOG.md`.
-7. **Stand up the CI gate on the resulting harness.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
-8. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
-9. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
-10. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
-
-Working rules that apply to every action above: read the precedence chain before touching a file (`AGENTS.md` §2); one owner per file; update the owning document in the same change (DEC-046); never claim a result you did not observe (`AGENTS.md` §4.2); merge without squashing and keep the phase commits (DEC-053); never merge while a required check is failing, skipped or absent (DEC-054).
-
-## 4b. Owner decisions taken from the B2 readiness packet (2026-10-01)
-
-The B2 readiness audit re-verified five blockers (plus a sixth found by probe) and the owner accepted:
-
-| Id | Outcome | Effect |
-| --- | --- | --- |
-| `DEC-073` | `TASK-026` re-scoped to the `DEC-072` pattern | The fixture-mode entry point and the live-mode workflow clause land in B2; the `contract-fixture` activation moves into `TASK-037`'s acceptance |
-| `DEC-074` | `TASK-027` re-scoped | The scheduled non-blocking job, the `contract-live` source set and `TEST-CONTRACT-006` land in B2; each case's live replay activates with its own task |
-| `DEC-075` | detekt stays target state; `TASK-082` closed | No pin and no ADR-0008 change; the static-analysis row activates ktlint, Android Lint and `buildHealth` only; detekt returns against a stable 2.x |
-| `DEC-076` | `TASK-030` re-scoped | The pinned Swift toolchain and both configuration files land in B2; the workflow step and its guard entry move into `TASK-051`'s acceptance |
-| `DEC-077` | Dependency analysis activates now, blocking | The ADR-0001-mandated edges the source-less tree has not consumed are excluded explicitly, behind a guard whose tests fail when a module gains production source or an edge leaves the module table |
-| `DEC-078` | Bookkeeping (`TASK-093`) | `TEST-UNIT-045` is implemented in the workflow guard; the RB-5 citations are re-mapped |
-
-Two items remain owner decisions to schedule (not B2 rows): advisory automation on the catalog/Swift manifests/workflows (`DEC-037`, `SECURITY.md` §9) has no owning `TASK-###`; and the standing ruleset bypass actor review (`LOG-0058`).
+1. **B1 closed.** All seven tasks and their corrections merged (PRs #25, #31–#36, #42–#45); the audit's open items are now `CONF-50`, `CONF-54` and the open `GAP-*` rows. Owner: `docs/DOCUMENTATION_AUDIT.md`.
+2. **B2 closed except `TASK-027`.** `TASK-024`, `TASK-025` and `TASK-028` merged in PR #52; `TASK-031` in #62, `TASK-030` in #63, `TASK-093` in #64, `TASK-029` in #65, `TASK-073` in #66 and `TASK-026` in #67. `TASK-027` (the scheduled live job) is **blocked on an owner decision**: its probes need a compiled source set the toolchain does not provide without an ADR-0002 amendment or a narrowing of `DEC-070`. Owner: `docs/TESTING.md` §11/§14.3.
+3. **Human repository settings remain.** Naming `android` and `ios` as required status checks, and reviewing the ruleset's standing bypass actor (`LOG-0058`). Both are human-only (`DEC-049`); the exact configuration is in `CONTRIBUTING.md` §5.3.
+4. **B3 opens next** (`TASK-036`, `TASK-037`, `TASK-038`, `TASK-039`, `TASK-040`, `TASK-041`, `TASK-047`): the shared core and the data layer, which also carry the activation obligations `DEC-073`/`DEC-074` wrote into `TASK-037` and the interface-bound fakes `DEC-072` moved. Owner: `docs/BACKLOG.md` §4.
+5. **Then the delivery blocks** in order: B4 (design system and Android shell), B5/B6 (Android features and validation), B7–B9 (iOS and closure). Each block's members and its intra-block order are in `docs/BACKLOG.md` §2.6.
 
 ## 5. Unresolved decisions and deferred items
 
@@ -166,7 +151,7 @@ Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-ske
 | Install on a connected device or emulator | `./gradlew :androidApp:installDebug` | Not run: the APK has no activity to launch (TASK-044) |
 | Build the shared framework for the iOS simulator | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Not run — `:core:ios` does not exist yet (`TASK-078`). `CONF-40` is resolved: one framework from `:core:ios` exports the five features plus the other core modules (`DEC-058`, [ADR-0012](adr/0012-ios-framework-export.md)) |
 | Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run: `iosApp/` does not exist (TASK-051) |
-| Shared and unit tests | `./gradlew test` | Not run: no test source set exists yet (TASK-024) |
+| Shared and unit tests | `./gradlew test` | **Executed 2026-10-01** — the shared suites run on the JVM host-test target and both Apple targets (`TEST-UNIT-015`; `TASK-024`) |
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run: Roborazzi is not configured (TASK-029) |
 | Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run: no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available: `lintDebug` runs and is clean; ktlint, detekt and `buildHealth` are not configured (TASK-029) |

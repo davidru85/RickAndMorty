@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
 - **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); the application itself is still target state (see [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner:** Delivery Planner (see [`AGENTS.md`](AGENTS.md))
 - **Authoritative for:** the developer entry point — prerequisites, build, run, test and quality commands, platform support, known limitations, documentation index.
 - **Not authoritative for:** requirements, architecture, the remote contract, the visual specification or process — each links below.
@@ -12,7 +12,7 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
 > **Project status: build tooling and governance, no application yet.**
-> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014), the tracked `.gitignore` and its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the accepted contract baseline (TASK-019), the executable module-boundary check (TASK-017, hardened by TASK-088) and the single `VERSION` source (`0.1.0`, TASK-018, with every Android artifact task depending on its validation via TASK-089). There is no feature behaviour yet, no product test, no CI and no launchable app. Block 1 is integrated and locally verified, not `Done` until CI exists (`DEC-071`). Commands marked *executed* were run on the recorded date; every other command is the intended one.
+> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014), the tracked `.gitignore` with its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the accepted contract baseline (TASK-019), the executable module-boundary check (TASK-017, hardened by TASK-088), the single `VERSION` source (`0.1.0`, TASK-018, with every Android artifact task depending on its validation via TASK-089), the shared test harness in `:core:testing` (TASK-024), the **both-runner pull-request gate** (TASK-025, PR #52) and the quality toolchain — ktlint, Android Lint, `buildHealth` and the documented-gate check are active and blocking (TASK-029, PR #65), the Swift toolchain is pinned with a checksum-verified script (TASK-030, PR #63), and the workflow guard rejects automated integration and any merge-gate reference to live mode (TASK-028/TASK-093/TASK-026). There is **no feature behaviour, no product test and no launchable app** yet; the APK has no activity. Block 1 is *integrated and locally verified* because it merged before the gate existed; every change from `TASK-025` onward runs under real required checks (`DEC-071`). Commands marked *executed* were run on the recorded date; every other command is the intended one.
 
 ## 1. Assessment objectives
 
