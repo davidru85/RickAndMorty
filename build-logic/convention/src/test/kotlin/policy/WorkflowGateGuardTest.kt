@@ -140,4 +140,87 @@ class WorkflowGateGuardTest {
             "TEST-UNIT-044: the gate must not be satisfied by having no workflow at all",
         )
     }
+
+    // --- TEST-UNIT-045 (TASK-093, DEC-078): no workflow step may merge, tag, release or push ---
+
+    /** A workflow that passes every existing rule plus one automated integration step. */
+    private fun withIntegrationStep(step: String): File {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        val text = file.readText().trimEnd().removeSuffix("jobs:").trimEnd()
+        // `complete()` writes jobs as lines; rebuild a readable workflow with one extra step.
+        file.writeText(
+            buildString {
+                appendLine("name: pull-request")
+                appendLine("on:")
+                appendLine("  pull_request:")
+                appendLine("jobs:")
+                appendLine("  android:")
+                appendLine("    runs-on: ubuntu-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: |")
+                step.trim().lines().forEach { appendLine("          $it") }
+                appendLine("  ios:")
+                appendLine("    runs-on: macos-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: ./gradlew check :androidApp:assembleDebug")
+                appendLine("      - run: ./gradlew iosSimulatorArm64Test")
+                appendLine("      - run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy")
+                appendLine("      - run: ./gradlew verifyRepositoryHygiene verifyNoLiveHosts")
+            },
+        )
+        return root
+    }
+
+    private fun integrationFindings(step: String): List<String> {
+        val root = withIntegrationStep(step)
+        return findings(root).map { it.reason }
+    }
+
+    @Test
+    fun `an automated merge step is rejected`() {
+        assertTrue(
+            integrationFindings("gh pr merge --squash --admin").any { it.contains("merge") },
+            "TEST-UNIT-045: a step that merges must fail the guard (AC-REQ-FUNC-014-2)",
+        )
+    }
+
+    @Test
+    fun `an automated tag or release step is rejected`() {
+        val tagged = integrationFindings("git tag v1.0.0 && git push origin v1.0.0")
+        assertTrue(
+            tagged.any { it.contains("tag") || it.contains("push") },
+            "TEST-UNIT-045: a step that tags or pushes must fail the guard (AC-REQ-FUNC-014-2); observed: $tagged",
+        )
+    }
+
+    @Test
+    fun `a workflow that asks for write permission is rejected`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(file.readText() + "permissions:\n  contents: write\n")
+        assertTrue(
+            findings(root).any { it.reason.contains("contents: write") },
+            "TEST-UNIT-045: a write token could push, so it must fail the guard (AC-REQ-FUNC-014-2)",
+        )
+    }
+
+    @Test
+    fun `the real workflows pass every rule`() {
+        val root = File("").absoluteFile.let { dir ->
+            generateSequence(dir) { it.parentFile }.first { File(it, "build-logic/settings.gradle.kts").isFile }
+        }
+        val workflows = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+            .listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
+            ?.toList()
+            ?: emptyList()
+        assertTrue(workflows.isNotEmpty(), "the repository has at least one workflow")
+        assertEquals(
+            emptyList(),
+            findings(root).map { it.reason },
+            "TEST-UNIT-045: the repository's own workflows must satisfy every rule",
+        )
+    }
 }
