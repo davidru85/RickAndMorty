@@ -13,6 +13,8 @@
 
 The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, merged in PR #13 on 2026-09-30, issue #12 closed), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
+Delivery model changed on 2026-10-01: `TASK-016` was the last task executed individually, and the remaining work is now delivered in nine execution blocks (`B1`…`B9`) owned by `docs/BACKLOG.md` §2.6 (`DEC-063`). A block is an execution grouping inside one milestone; each member still lands as its own pull request with its own TDD cycle (DEC-053) and its own required check set (DEC-054). The grouping contains no dependency on a later block; the three intra-milestone adjustments it required are recorded in `BACKLOG.md` §2.6.
+
 | Area | State | Notes |
 | --- | --- | --- |
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
@@ -72,6 +74,8 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 ## 4. Next recommended actions, in priority order
 
 Each action names the first concrete step and the document that owns it. A task is not started until its first failing test exists (DEC-053); the exceptions are documentation, build/CI configuration and tooling changes, and their use must be stated explicitly.
+
+From 2026-10-01 the actions below map onto the execution blocks of `BACKLOG.md` §2.6 (`DEC-063`): actions 1–4 are B1, actions 5–6 are B2, action 7 (`TASK-035`) is B4, and actions 8–9 are B5–B6. Work starts block by block, and no task in a block depends on a later block.
 
 1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
