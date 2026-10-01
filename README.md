@@ -11,8 +11,8 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
-> **Project status: build skeleton, no application yet.**
-> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014, merged in PR #6: wrapper, convention plugins, the 11 modules of ADR-0001 and five navigation route declarations), the tracked `.gitignore` and its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the executable module-boundary check (TASK-017), the accepted contract baseline (TASK-019) and the single `VERSION` source (TASK-018). There is no feature behaviour yet, and still no CI and no launchable app; `VERSION` now exists and the Android `versionName` derives from it (`TASK-018`). The commands in §8 that the skeleton supports are marked as executed; every other command is the **intended** command and is marked as such. Nothing in this README has been produced by running the app.
+> **Project status: build tooling and governance, no application yet.**
+> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014), the tracked `.gitignore` and its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the accepted contract baseline (TASK-019), the executable module-boundary check (TASK-017, hardened by TASK-088) and the single `VERSION` source (`0.1.0`, TASK-018, with every Android artifact task depending on its validation via TASK-089). There is no feature behaviour yet, no product test, no CI and no launchable app. Block 1 is integrated and locally verified, not `Done` until CI exists (`DEC-071`). Commands marked *executed* were run on the recorded date; every other command is the intended one.
 
 ## 1. Assessment objectives
 
@@ -21,7 +21,7 @@ The assignment ([`assessment.md`](assessment.md)) asks for:
 | Requirement | How this project answers it |
 | --- | --- |
 | List all characters and inspect the selected one | Character list (paginated, searchable, filterable) and character detail |
-| Review how the project is structured, whether SOLID is applied | Eight explicit modules with inward-only dependencies, Clean Architecture layers, documented contracts and ADRs |
+| Review how the project is structured, whether SOLID is applied | The 11 modules of ADR-0001 with inward-only dependencies, Clean Architecture layers inside each feature, documented contracts and ADRs |
 | "Very image oriented company, UX is important" | Image-first design system, dynamic portrait accents, shared-element transitions, screenshot-tested UI |
 | Performance discussion | Numeric budgets with a measurement method in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | Extras: image caching, error handling, response caching, tests, filter/search | All committed — see the feature table in §3 |
@@ -191,12 +191,11 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run — Roborazzi is not configured (TASK-029) |
 | Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean (executed 2026-10-01); ktlint, detekt and `buildHealth` are not configured yet (TASK-029), so that half is target state |
-| Module-graph rule check (no feature-to-feature edges, `:core:domain` allow-list, staged destination/package rules) | `./gradlew verifyModuleBoundaries` | Executed 2026-10-01: passes (14 projects); `buildHealth` remains the `TASK-029` declared-versus-used complement |
+| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy` | Executed 2026-10-01: both pass — 14 projects checked (`R1`–`R13`, `R15`, `S1`–`S3`, effective inherited edges and Compose-only for `:core:designsystem`), and `VERSION` validated with every Android artifact task depending on it |
 | Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-01: passes; also runs as part of `./gradlew check` and `./gradlew build` |
 | Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-01: passes (0 findings over the working set, every reachable blob and every unique historical path); also runs as part of `./gradlew check` and `./gradlew build` |
-| Verify the module boundaries (project edges, source-set kinds, `:core:domain` allow-list) | `./gradlew verifyModuleBoundaries` | Executed 2026-10-01: passes (14 projects); also runs as part of `./gradlew check` and `./gradlew build` |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
-| Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not run — the harness module needs a decision first (`CONF-41`) |
+| Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not defined: no benchmark module exists and `PERF-Q1` is unresolved, so the command is target state rather than a real task |
 | Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
 | Contract suite against the live API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractTestLive` | Not run — no live job exists (TASK-027) |
 
@@ -207,7 +206,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 | Item | Value | Where |
 | --- | --- | --- |
 | API base URL | `https://rickandmortyapi.com/api/` | Build constant; not discovered at runtime |
-| App version | Single `VERSION` source feeding `versionName` and `CFBundleShortVersionString` | `DEC-043` |
+| App version | Single `VERSION` source (`0.1.0`). The Android `versionName` is that value verbatim today; the iOS `CFBundleShortVersionString` derives from it from `TASK-051` onward (`DEC-043`, `DEC-067`) | `DEC-043` |
 | Remote protocol | Both ship and the user picks in Settings: REST API (default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Cache freshness | 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback | `DEC-012` |
 | Release mechanism | Tag `vMAJOR.MINOR.PATCH`, GitHub Release with the APK attached | `DEC-043` |
@@ -268,13 +267,12 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/adr/`](docs/adr/), [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Visual specification | Complete, pending two Figma screens (error states) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Process documentation | Complete — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
-| Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules build, with the Android app assembling while no `iosApp/` exists; see `docs/PROJECT_LOG.md` LOG-0026 |
+| Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules of ADR-0001 build, with the Android app assembling while no `iosApp/` exists yet |
 | Implementation | Not started — see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
-| `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim and `verifyDependencyPins` rejects a second literal. The real iOS `CFBundleShortVersionString` wiring is `TASK-051` (`DEC-067`) |
+| `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim, `verifyDependencyPins` rejects every malformed value, and every Android artifact task depends on its validation (TASK-089). The iOS `CFBundleShortVersionString` derivation arrives with `TASK-051` |
 | CI | Not started — TASK-025 |
 | `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
-| Module boundaries | Done — TASK-017, merged in PR #33 on 2026-10-01: `verifyModuleBoundaries` checks the project edges, the source-set kinds and the `:core:domain` allow-list in `check` (14 projects, `TEST-UNIT-017`/`043`, `R14`) |
 | Contracts | Accepted — TASK-019, merged in PR #31 on 2026-10-01: `docs/CONTRACTS.md` is the `IC-###` baseline |
 | Process documents | Reconciled — TASK-034, merged in PR #32 on 2026-10-01: DOC1–DOC8 audit recorded |
 | Screenshots (Figma exports and in-app) | Not started |
