@@ -1,0 +1,17 @@
+{
+  "bytes": 8143,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "graphql-page-01.json",
+  "kind": "graphql",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "CharacterPage",
+  "path": "/graphql",
+  "pins": "GraphQL parity: same domain values as character-page-01.json",
+  "sha256": "b395182b0a821f9ffca7b1f8334cf79dc9116c574e9d5662f54fc724e6c3af9a",
+  "status": 200,
+  "variables": {
+    "page": 1
+  }
+}

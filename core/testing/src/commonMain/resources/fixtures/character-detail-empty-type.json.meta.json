@@ -1,0 +1,13 @@
+{
+  "bytes": 2670,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-detail-empty-type.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/2",
+  "pins": "Empty type string does not break mapping or display",
+  "sha256": "6cc4a2c47fd4b5b0e44e912d439e1872582da430932f4a1d88a5f3ed621ac343",
+  "status": 200
+}

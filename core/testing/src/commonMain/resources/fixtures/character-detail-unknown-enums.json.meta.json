@@ -1,0 +1,14 @@
+{
+  "bytes": 3071,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "character-detail.json",
+  "fixture": "character-detail-unknown-enums.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/1",
+  "pins": "An unknown status/gender string is preserved, not crashed on",
+  "sha256": "a5c3ae2ecfe206d72f978c195df33ae892644a43c99a2efdf2ade83271b17d40",
+  "status": 200
+}

@@ -1,0 +1,148 @@
+# Pull-request gate (TASK-025, DEC-054 as amended by DEC-071).
+#
+# The required-check set is owned by docs/TESTING.md §14 and its names by
+# docs/CONTRIBUTING.md §5.3. Every job below runs on every pull request and is required;
+# none may be skipped. Under DEC-071 the set is activated in stages: a row becomes
+# mandatory and non-empty in the same change that introduces its harness. This workflow
+# therefore runs, as blocking checks, exactly the suites that exist today:
+#
+#   - the shared suites (commonTest) on the JVM via the Android host-test target and on
+#     Kotlin/Native via the two Apple targets;
+#   - the build-logic regression suite, which runs inside the root `check`;
+#   - every policy task: module boundaries, dependency pins/rationale/inventory,
+#     repository hygiene and the live-host guard;
+#   - the Android assemble, and the shared iOS compile/link.
+#
+# Rows whose harness does not exist yet (Roborazzi snapshots, the fixture-mode contract
+# suite, the accessibility suites, static analysis and dependency analysis) are recorded
+# against their activation tasks in docs/TESTING.md §14.2 and MUST NOT be faked here by
+# an empty or always-green job: an absent check is a missing check, not a pass.
+#
+# Security: every action is pinned by full commit SHA, never by a moving tag (SECURITY.md
+# §9, DEC-037). A floating tag could change the code that executes with this repository's
+# token.
+
+name: pull-request
+
+on:
+  pull_request:
+    branches: [main]
+  # `main` is gated too: AC-REQ-FUNC-014-1 requires that `main` builds at every commit, and a
+  # post-merge run is the evidence for the merged head rather than for the pull request that
+  # produced it.
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run on the same pull request. The gate still
+# evaluates the final state of the pull request (TESTING.md §14.1), so cancelling an
+# obsolete run is safe and saves minutes.
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The daemon JVM is declared by the repository (gradle/gradle-daemon-jvm.properties);
+  # this is the toolchain the wrapper provisions and the version both runners install.
+  JAVA_VERSION: "25"
+
+jobs:
+  # The Linux runner: shared suites on the JVM, the build-logic suite, every policy task
+  # and the Android assemble. Covers the `shared-tests`, `static-analysis` (the parts that
+  # exist), `dependency-analysis`, `repository-hygiene`, `android-assemble` and
+  # `milestone-independence` rows of TESTING.md §14.2.
+  android:
+    name: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The hygiene check scans every blob reachable from all local refs and fails closed
+          # on a shallow clone, so the full history is required (TESTING.md §14.2, DEC-062).
+          fetch-depth: 0
+
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Run the local gate
+        run: ./gradlew check --stacktrace
+
+      - name: Assemble the Android application
+        run: ./gradlew :androidApp:assembleDebug --stacktrace
+
+      - name: Upload the test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: android-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+            build-logic/convention/build/reports/tests/**
+            build-logic/convention/build/test-results/**
+          if-no-files-found: ignore
+
+  # The macOS runner: the same gate plus the Kotlin/Native Apple targets, which is where
+  # the shared suites execute natively (`ios-verify` in its current, pre-app form). Android
+  # is not built here: the Android SDK would add nothing the Linux job does not already
+  # prove, and the required set is about the suites, not about doubling the same work.
+  ios:
+    name: ios
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Run the shared suites on both Apple targets
+        run: |
+          ./gradlew \
+            :core:domain:iosSimulatorArm64Test \
+            :core:data:iosSimulatorArm64Test \
+            :core:presentation:iosSimulatorArm64Test \
+            :core:testing:iosSimulatorArm64Test \
+            --stacktrace
+
+      - name: Compile the shared code for both Apple targets
+        run: |
+          ./gradlew \
+            :core:domain:compileKotlinIosArm64 :core:domain:compileKotlinIosSimulatorArm64 \
+            :core:data:compileKotlinIosArm64 :core:data:compileKotlinIosSimulatorArm64 \
+            :core:presentation:compileKotlinIosArm64 :core:presentation:compileKotlinIosSimulatorArm64 \
+            :core:testing:compileKotlinIosArm64 :core:testing:compileKotlinIosSimulatorArm64 \
+            --stacktrace
+
+      - name: Run the policy checks
+        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts --stacktrace
+
+      - name: Upload the test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          if-no-files-found: ignore

@@ -1,0 +1,14 @@
+{
+  "bytes": 3225,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-page-42.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "Last page: info.next == null terminates pagination",
+  "query": "page=42",
+  "sha256": "60ca28f509c8d5cce78226defa0b2946af41e34fe49f70397fdf2d8d6c648ac6",
+  "status": 200
+}

@@ -166,11 +166,11 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 
 | Tarea | Comando | Estado |
 | --- | --- | --- |
-| Todos los tests compartidos y unitarios | `./gradlew test` | No ejecutado — todavía no hay source set de test (TASK-024) |
+| Todos los tests compartidos y unitarios | `./gradlew test` | Ejecutado 2026-10-01: las suites compartidas corren en el target host-test de la JVM y en ambos targets Apple — 7 tests del harness en `:core:testing`; `TASK-024` añadió el harness y `TASK-025` lo ejecuta en CI |
 | Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado (TASK-029) |
 | Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (TASK-029) |
 | Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` pasa limpio (ejecutado 2026-10-01); ktlint, detekt y `buildHealth` aún no están configurados (TASK-029), así que esa mitad es estado objetivo |
-| Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R13`, `R15`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
+| Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R16`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
 | Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
@@ -270,12 +270,12 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.kotlinx.serialization.core` | `org.jetbrains.kotlinx:kotlinx-serialization-core` | `1.11.0` | Declared | `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
 | `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Pinned | — | TASK-037 |
 | `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Pinned | — | TASK-036 (CONF-47) |
-| `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Pinned | — | TASK-024 |
-| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention` | TASK-024, TASK-091 |
-| `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Pinned | — | TASK-037 |
+| `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Declared | `:core:testing` | TASK-024 |
+| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention`, `:core:testing` | TASK-024, TASK-091 |
+| `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Declared | `:core:testing` | TASK-024, TASK-037 |
 | `libs.ktor.client.okhttp` | `io.ktor:ktor-client-okhttp` | `3.6.0` | Pinned | — | TASK-037 |
 | `libs.ktor.client.darwin` | `io.ktor:ktor-client-darwin` | `3.6.0` | Pinned | — | TASK-037 |
-| `libs.ktor.client.mock` | `io.ktor:ktor-client-mock` | `3.6.0` | Pinned | — | TASK-024, TASK-026 |
+| `libs.ktor.client.mock` | `io.ktor:ktor-client-mock` | `3.6.0` | Declared | `:core:testing` | TASK-024, TASK-026 |
 | `libs.okhttp` | `com.squareup.okhttp3:okhttp` | `5.5.0` | Pinned | — | TASK-020, TASK-037 |
 | `libs.okhttp.mockwebserver` | `com.squareup.okhttp3:mockwebserver3` | `5.5.0` | Pinned | — | TASK-020, TASK-037 |
 | `libs.koin.core` | `io.insert-koin:koin-core` | `4.2.2` | Pinned | — | TASK-044 |

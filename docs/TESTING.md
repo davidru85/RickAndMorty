@@ -561,6 +561,8 @@ Every check below runs on **every** pull request (feature branches such as `docs
 
 **Activation (`DEC-071`).** The table above is the complete required set and stays the target. Under the owner decision of 2026-10-01 it is **activated in stages**: a row becomes mandatory and non-empty in the same change that introduces its harness (`TASK-024` for the shared fakes and fixtures, `TASK-025` for the workflows and both runners, the M1/M2 tasks for the snapshot, contract and accessibility suites), and until then it is recorded against its activation task rather than claimed green. No existing check is ever skipped, and the milestone and release gates still require the complete set. A pull request before CI exists is *integrated and locally verified*, not *Done under D2* (`GAP-002`).
 
+**Observed gate evidence (`TASK-025`).** On 2026-10-01 the workflow ran on pull request #52. A deliberate failing test was committed to the branch and both jobs reported it: the `android` job failed at *Run the local gate* and the `ios` job failed at *Run the shared suites on both Apple targets*, while every other step succeeded — so the gate blocks on a red suite rather than on an unrelated configuration error. The seed was then reverted and the head pushed clean. The same workflow runs on `push` to `main`, which is the evidence for `AC-REQ-FUNC-014-1` (*main* builds at every commit).
+
 **Branch protection** is what makes these checks binding. That is a repository setting and therefore a human action (`DEC-049`); agents open the pull request, and a maintainer configures and verifies the required-check list. As of 2026-09-30 `main` carries an active ruleset that forbids deletion and force-push and requires a pull request, but it names **no** required status check, so the rows above are not yet enforced; until the workflows of TASK-025 exist and are named in that ruleset, this list remains a convention (`GAP-002`), and so is the gate.
 
 ### 14.3 Scheduled and on-demand work
@@ -589,6 +591,20 @@ While a test that backs a `REQ-` row is quarantined, failing, or absent, that re
 | No evidence from quarantine | A quarantined test `MUST NOT` be cited as evidence for any acceptance criterion. While a test that backs a `REQ-` row is quarantined, that requirement is **unverified**, and the milestone DoD in `DEFINITION.md` counts it as such. |
 | Quarantine budget | More than five quarantined tests at once `SHOULD` stop new feature work until the count drops, because the suite can no longer be trusted as a gate. |
 | Snapshot baselines | "The snapshot is flaky" is not a quarantine reason for a baseline: either the rendering is non-deterministic (a defect to fix) or the baseline is wrong (§8.2). |
+
+### 15.1 Quarantine register
+
+The live register the rules above operate on. A row is **appended**, never edited in place after its
+deadline: the table is a record of what was true at the time. A row past its deadline without a fix
+is escalated, not renewed.
+
+| `TEST-###` id | Case | Reason | Owner role | Tracking item | Quarantined (ISO 8601) | Deadline (ISO 8601) | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| — | No test is quarantined as of 2026-10-01. The register is empty: that is the current state, not a pending entry. | — | — | — | — | — | — |
+
+**Current count:** 0 of the 5 permitted before new feature work stops. A quarantined test is excluded
+from the required set of §14.2 and is **never cited as evidence**: while it stays quarantined, the
+requirement it backed is unverified and `DEFINITION.md` §3 counts it as such.
 
 ## 16. Traceability: requirement → test
 
@@ -699,6 +715,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §15.1 quarantine register created by `TASK-028`: the mechanics stay owned by §15, and the state lives in the register the milestone gate (RR7) and the release checklist read. The register is empty, which is the current state rather than a pending entry. | `TASK-028`, `DEC-054` |
 | 2026-10-01 | §14.2 states the staged activation of the required set (`DEC-071`, `CONF-53`): every row keeps its owner, a suite becomes mandatory in the change that creates its harness, and no existing check may be skipped. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | `TEST-UNIT-017`/`TEST-UNIT-043` extended with `R16` (the required leaf set of ADR-0001; `GAP-014`) and a durable build-logic regression suite (`TASK-092`) wired into the root `check`; the suite runs without network, clock or machine paths. | `TASK-091`, `TASK-092`, `GAP-014`, `GAP-015` |
 | 2026-10-01 | `TEST-UNIT-017`/`TEST-UNIT-043` restated after `TASK-088`: effective (inherited) project and external dependencies, the `:core:designsystem` Compose-only rule `R15`, and content-aware `S1`–`S3`; the reproduced red matrix and its controls recorded. | `TASK-088`, `GAP-012` |

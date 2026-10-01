@@ -39,6 +39,11 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                     this.namespace = namespace
                     compileSdk = catalog.version("android-compileSdk")
                     minSdk = catalog.version("android-minSdk")
+
+                    // The Android host test target, so `commonTest` really executes on a JVM:
+                    // without it a shared test source set compiles nowhere on the Linux runner and
+                    // the gate would report a green suite that ran nothing (`TASK-024`/`TASK-025`).
+                    withHostTest { }
                     compilerOptions {
                         jvmTarget.set(JvmTarget.JVM_17)
                     }

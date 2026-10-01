@@ -1,0 +1,13 @@
+{
+  "bytes": 433,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-detail-unknown-reference.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/8",
+  "pins": "unknown values and an empty reference URL survive mapping",
+  "sha256": "39226ce5668b1cc6d7da0749c9b8de3c14f05ee42078467913940e7bb08381e2",
+  "status": 200
+}

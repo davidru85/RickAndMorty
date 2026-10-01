@@ -1,0 +1,13 @@
+{
+  "bytes": 2719,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-detail.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/1",
+  "pins": "Detail object: episode URL list, origin/location shape, image URL",
+  "sha256": "aac4e5c80a5d97b398b3d4fa69419568d89c52d7a3aebb4b7f829982b76e9156",
+  "status": 200
+}

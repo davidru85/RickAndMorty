@@ -1,0 +1,15 @@
+{
+  "bytes": 198,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "graphql-errors-only.json",
+  "kind": "graphql",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "Broken",
+  "path": "/graphql",
+  "pins": "errors-only envelope; maps to ApiFailure.GraphQl",
+  "sha256": "a203e99bfe3f350263085d217aad06bb234bfe5b267cf45545f03637e250295a",
+  "status": 400,
+  "variables": {}
+}

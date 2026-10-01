@@ -1,0 +1,14 @@
+{
+  "bytes": 33,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-filter-empty-404.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "Filtered 404 with the error body; maps to Empty, never to an error",
+  "query": "name=zzzznotreal",
+  "sha256": "7f1153c82aaa2fee9ec9db52f9b65181bfde7248f95fb7433e34ffe2e51455f8",
+  "status": 404
+}

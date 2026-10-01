@@ -1,0 +1,18 @@
+{
+  "bytes": 22509,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "graphql-page-01.json plus an errors array",
+  "fixture": "graphql-partial-with-errors.json",
+  "kind": "derived",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "CharacterPage",
+  "path": "/graphql",
+  "pins": "Usable data plus errors: mapped with warnings only when every required field is valid, and never cached",
+  "sha256": "96a4747976d4d1772c9c8ef2453ff68ed149974e29b4b33aa583bc312dfef7fd",
+  "status": 200,
+  "variables": {
+    "page": 1
+  }
+}

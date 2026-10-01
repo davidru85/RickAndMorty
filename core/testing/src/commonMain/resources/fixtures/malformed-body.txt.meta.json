@@ -1,0 +1,15 @@
+{
+  "bytes": 9748,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "text/plain",
+  "derivedFrom": "character-page-01.json (truncated)",
+  "fixture": "malformed-body.txt",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "Malformed JSON; maps to MalformedResponse",
+  "query": "page=1",
+  "sha256": "502fda867a0c31f43b6f5e63779aef2e57cd3d452f783ccbe596e999e56405e0",
+  "status": 200
+}

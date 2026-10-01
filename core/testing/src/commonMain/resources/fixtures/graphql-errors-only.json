@@ -1,0 +1,1 @@
+{"errors":[{"message":"Cannot query field \"nope\" on type \"Character\". Did you mean \"name\" or \"type\"?","locations":[{"line":3,"column":5}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}
