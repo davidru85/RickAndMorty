@@ -11,7 +11,7 @@
 
 ## 1. Purpose and scope
 
-The repository held a documentation-only baseline on 2026-09-29; the Gradle/KMP build skeleton landed on 2026-09-30 (TASK-014, `PROJECT_LOG.md` LOG-0026), `.gitignore` is tracked and TASK-015 pinned the version catalog with its policy checks (`PROJECT_LOG.md` LOG-0032). There is still no feature code, no CI and no `VERSION`. This plan sequences the work that takes it from that baseline to a released Android app, a released iOS app, and a hardened release, in that order.
+The repository held a documentation-only baseline on 2026-09-29; the Gradle/KMP build skeleton landed on 2026-09-30 (TASK-014, `PROJECT_LOG.md` LOG-0026), `.gitignore` is tracked and TASK-015 pinned the version catalog with its policy checks (`PROJECT_LOG.md` LOG-0032). By 2026-10-01 the B1 technical work had merged as well: `VERSION` exists (`0.1.0`, TASK-018) and the module-boundary check is executable (TASK-017, hardened by TASK-088). There is still no feature code, no CI and no launchable app. This plan sequences the work that takes it from that baseline to a released Android app, a released iOS app, and a hardened release, in that order.
 
 In scope: milestone objectives with entry and exit criteria, deliverables and review evidence; architectural build order; the phase plan; prerequisite constraints; the gate that applies at each phase boundary; risk-sequencing consequences; release readiness and release mechanics; ordering without invented dates; and the milestone → requirement coverage matrix.
 
