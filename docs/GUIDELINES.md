@@ -488,7 +488,7 @@ Test naming is owned by `TESTING.md` §13.2 and repeated here only as the rule a
 
 ### 8.1 Test-first is the default workflow
 
-`DEC-053` makes the TDD cycle mandatory. A behaviour change follows the cycle, and the commit history preserves it.
+`DEC-053` makes the TDD cycle mandatory. **`CONTRIBUTING.md` §3.1 owns the twelve-step phase-and-commit protocol** (Ready gate, red, green, refactor, evidence, handoff); this subsection states only the shape a reviewer checks.
 
 ```mermaid
 flowchart LR

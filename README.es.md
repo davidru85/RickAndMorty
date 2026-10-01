@@ -11,8 +11,8 @@ Cliente de [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html
 
 Proyecto realizado como prueba técnica de desarrollo móvil para ZARA, descrita en [`assessment.md`](assessment.md).
 
-> **Estado del proyecto: esqueleto de build, todavía sin aplicación.**
-> El repositorio contiene el conjunto de documentación, el esqueleto de build de Gradle/KMP (TASK-014, fusionado en el PR #6: wrapper, plugins de convención, los 11 módulos de ADR-0001 y cinco declaraciones de ruta de navegación), el `.gitignore` registrado y el catálogo de versiones fijado con sus comprobaciones de política (TASK-015). Todavía no hay funcionalidad, y sigue sin haber CI, `VERSION` ni aplicación ejecutable. Los comandos de §8 que el esqueleto ya soporta están marcados como ejecutados; el resto son los **previstos**. Nada de lo aquí descrito se ha obtenido ejecutando la aplicación.
+> **Estado del proyecto: herramientas de build y gobernanza, sin aplicación todavía.**
+> El repositorio contiene el conjunto documental, el esqueleto Gradle/KMP (TASK-014), `.gitignore` y su comprobación de higiene (TASK-016), el catálogo de versiones fijado con sus comprobaciones (TASK-015), la base de contratos aceptada (TASK-019), la comprobación ejecutable de fronteras de módulos (TASK-017, endurecida por TASK-088) y la fuente única `VERSION` (`0.1.0`, TASK-018, con todas las tareas de artefacto Android dependiendo de su validación vía TASK-089). No hay comportamiento de producto, ni tests de producto, ni CI, ni app lanzable. Block 1 está integrado y verificado localmente, no `Done` hasta que exista CI (`DEC-071`). Los comandos marcados *ejecutado* se corrieron en la fecha indicada; el resto es la interfaz prevista.
 
 > Versión en inglés (autoritativa): [`README.md`](README.md). Si ambos difieren, prevalece el inglés (`DEC-047`).
 
@@ -23,7 +23,7 @@ La prueba ([`assessment.md`](assessment.md)) pide:
 | Requisito | Cómo lo responde este proyecto |
 | --- | --- |
 | Listar todos los personajes y ver el seleccionado | Listado paginado, con búsqueda y filtro, y pantalla de detalle |
-| Revisar cómo está estructurado el proyecto y si se aplica SOLID | Ocho módulos explícitos con dependencias hacia dentro, capas de Clean Architecture, contratos documentados y ADRs |
+| Revisar cómo está estructurado el proyecto y si se aplica SOLID | Los 11 módulos de ADR-0001 con dependencias hacia dentro, capas de Clean Architecture, contratos documentados y ADRs |
 | "Somos una empresa muy visual, la UX es importante" | Sistema de diseño centrado en la imagen, color derivado del retrato, transiciones compartidas y UI verificada con capturas |
 | Hablar de rendimiento | Presupuestos numéricos y método de medición en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | Extras: caché de imágenes, gestión de errores, caché de respuestas, tests, filtro/búsqueda | Todos comprometidos — ver la tabla de funcionalidades en el `README.md` en inglés (§3) |
@@ -170,12 +170,11 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 | Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado (TASK-029) |
 | Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (TASK-029) |
 | Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` pasa limpio (ejecutado 2026-10-01); ktlint, detekt y `buildHealth` aún no están configurados (TASK-029), así que esa mitad es estado objetivo |
-| Comprobación del grafo de módulos (sin dependencias entre features, lista blanca de `:core:domain`, reglas escalonadas de destino/paquetes) | `./gradlew verifyModuleBoundaries` | Ejecutado 2026-10-01: pasa (14 proyectos); `buildHealth` sigue siendo el complemento declarado-vs-usado de `TASK-029` |
+| Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R13`, `R15`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
 | Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
-| Verificar las fronteras entre módulos (aristas de proyecto, tipos de source set, lista blanca de `:core:domain`) | `./gradlew verifyModuleBoundaries` | Ejecutado 2026-10-01: pasa (14 proyectos); también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
-| Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No ejecutado — falta la decisión sobre el módulo del harness (`CONF-41`) |
+| Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No definido: no existe módulo de benchmark y `PERF-Q1` sigue abierto, así que el comando es estado objetivo, no una tarea real |
 | Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | No ejecutado — no existe el test de contrato (TASK-026) |
 | Suite de contrato contra la API real (señal programada, no bloqueante) | `./gradlew :core:data:contractTestLive` | No ejecutado — no existe el job live (TASK-027) |
 
@@ -186,7 +185,7 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 | Elemento | Valor | Dónde |
 | --- | --- | --- |
 | URL base de la API | `https://rickandmortyapi.com/api/` | Constante de compilación; no se descubre en tiempo de ejecución |
-| Versión de la app | Un único `VERSION` que alimenta `versionName` y `CFBundleShortVersionString` | `DEC-043` |
+| Versión de la app | Fuente única `VERSION` (`0.1.0`). El `versionName` de Android es ese valor literal hoy; el `CFBundleShortVersionString` de iOS deriva de él desde `TASK-051` (`DEC-043`, `DEC-067`) | `DEC-043` |
 | Protocolo remoto | Ambos se entregan y el usuario elige en Ajustes: REST API (por defecto) o GraphQL, con el mismo cliente Ktor | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Frescura de caché | 24 h fresco, 7 d revalidación en segundo plano, 30 d en modo offline | `DEC-012` |
 | Publicación | Etiqueta `vMAJOR.MINOR.PATCH`, GitHub Release con el APK adjunto | `DEC-043` |
@@ -244,7 +243,6 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | `VERSION` | Hecho — TASK-018, fusionado en el PR #34 el 2026-10-01: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal y `verifyDependencyPins` rechaza un segundo literal. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
 | CI | No iniciado — TASK-025 |
 | `.gitignore` | Hecho — TASK-016, fusionado en el PR #13 el 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set, todos los blobs alcanzables y todas las rutas históricas únicas, dentro de `check` y `build` (ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
-| Fronteras entre módulos | Hecho — TASK-017, fusionado en el PR #33 el 2026-10-01: `verifyModuleBoundaries` comprueba las aristas de proyecto, los tipos de source set y la lista blanca de `:core:domain` dentro de `check` (14 proyectos, `TEST-UNIT-017`/`043`, `R14`) |
 | Contratos | Aceptados — TASK-019, fusionado en el PR #31 el 2026-10-01: `docs/CONTRACTS.md` es la base `IC-###` |
 | Documentos de proceso | Reconciliados — TASK-034, fusionado en el PR #32 el 2026-10-01: auditoría DOC1–DOC8 registrada |
 | Capturas (Figma y de la app) | No iniciado |
