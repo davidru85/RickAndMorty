@@ -89,7 +89,7 @@ This audit covers the entire documentation set of the repository after the docum
 
 ## 5. Reconciliation rule (documentation vs implementation)
 
-The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30: wrapper, settings, convention plugins, the 11 modules of ADR-0001 and the five feature route declarations), the tracked `.gitignore` and the **pinned version catalog with its enforcement** (TASK-015, merged in PR #10 on 2026-09-30), and **no feature behaviour**: no repository, use case, screen, product test or CI (`GAP-001`). Outside the build configuration and the route declarations, every normative document still describes **target state** (DEC-046). The rule that keeps this honest:
+The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30: wrapper, settings, convention plugins, the 11 modules of ADR-0001 and the five feature route declarations), the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, merged in PR #13 on 2026-09-30), the **pinned version catalog with its enforcement** (TASK-015, merged in PR #10 on 2026-09-30) and the **accepted internal contract baseline** (TASK-019, PR #31), and **no feature behaviour**: no repository, use case, screen, product test or CI (`GAP-001`, `GAP-002`). Outside the build configuration and the route declarations, every normative document still describes **target state** (DEC-046). The rule that keeps this honest:
 
 1. Until a feature is implemented, a document describes intended behaviour and says so in its `Status` header.
 2. The change that implements or alters a behaviour **must update the owning document in the same pull request** (DEC-046). A document that contradicts shipped code is a defect in the document.
@@ -147,7 +147,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 
 | ID | Sev | Gap | Impact | Owner | Status |
 | --- | --- | --- | --- | --- | --- |
-| `GAP-001` | S1 | No feature implementation: the Gradle/KMP build skeleton is merged (TASK-014, PR #6), the `.gitignore` is tracked and completed (TASK-016 adds the automated hygiene check) and the version catalog is complete (TASK-015, merged in PR #10), but there is no domain model, data layer, screen or product test | Every normative document describes target state; the assignment requires a deliverable | Implementation Engineer | Partially addressed: build skeleton, catalog and the automated repository-hygiene scan exist; feature source code from M1 |
+| `GAP-001` | S1 | No feature implementation: the Gradle/KMP build skeleton is merged (TASK-014, PR #6), the `.gitignore` is tracked and completed and the hygiene check is merged (TASK-016, PR #13 on 2026-09-30), the version catalog is complete (TASK-015, merged in PR #10), and the internal contract baseline is accepted (TASK-019, PR #31), but there is no domain model, data layer, screen or product test | Every normative document describes target state; the assignment requires a deliverable | Implementation Engineer | Partially addressed: build skeleton, catalog and the automated repository-hygiene scan exist; feature source code from M1 |
 | `GAP-002` | S1 | No CI exists, while the merge gate requires the full suite on both platforms (DEC-054) | The gate cannot be enforced until workflows and branch protection exist | Delivery Planner | Open — workflows tracked in `BACKLOG.md`; branch protection is a human repository setting |
 | `GAP-003` | S2 | No design-token export (`tokens.json`) and no code-generation or parity test yet | The token parity requirement (`REQ-UX-002`) is specified but unenforced | Implementation Engineer | Open — tracked in `BACKLOG.md` |
 | `GAP-004` | S2 | Figma file is inaccessible to anonymous clients and no PNG exports are committed | The visual specification cannot be checked by a reviewer without Figma access (`RISK-008`) | UI/UX Designer | Open — directory and procedure in `docs/figma/README.md`; exports tracked in `BACKLOG.md` |
@@ -189,7 +189,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Item | State |
 | --- | --- |
 | Documents created | 24 |
-| Documents amended after the audit | 12 (the `TASK-014` and `TASK-015` changes) |
+| Documents amended after the audit | 12 (the `TASK-014` and `TASK-015` changes) + the `TASK-016`…`TASK-019`, `TASK-032`, `TASK-034` reconciliations |
 | Documents amended | 9 |
 | Documents renamed | 2 (design briefs) |
 | Documents rejected | 6 (listed in §4) |
