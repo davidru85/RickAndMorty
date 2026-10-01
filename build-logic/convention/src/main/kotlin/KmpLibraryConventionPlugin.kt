@@ -23,6 +23,14 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("com.android.kotlin.multiplatform.library")
             pluginManager.apply("org.jetbrains.kotlin.multiplatform")
+            pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+            pluginManager.apply("com.autonomousapps.dependency-analysis")
+
+            extensions.configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+                filter {
+                    exclude { element -> element.file.path.contains("/build/generated/") }
+                }
+            }
 
             val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
             val namespace = libraryNamespace().get()

@@ -267,15 +267,18 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | --- | --- | --- | --- | --- | --- |
 | `libs.android.gradle.plugin` | `com.android.tools.build:gradle` | `9.3.1` | Declared | `:build-logic:convention` | — |
 | `libs.kotlin.gradle.plugin` | `org.jetbrains.kotlin:kotlin-gradle-plugin` | `2.4.20` | Declared | `:build-logic:convention` | — |
+| `libs.ktlint.gradle` | `org.jlleitschuh.gradle:ktlint-gradle` | `14.2.0` | Declared | `:build-logic:convention` | TASK-029 |
 | `libs.kotlinx.serialization.core` | `org.jetbrains.kotlinx:kotlinx-serialization-core` | `1.11.0` | Declared | `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
 | `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Pinned | — | TASK-037 |
-| `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Pinned | — | TASK-036 (CONF-47) |
+| `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Declared | `:core:testing` | TASK-036 (CONF-47) |
 | `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Declared | `:core:testing` | TASK-024 |
 | `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention`, `:core:testing` | TASK-024, TASK-091 |
+| `libs.kotlin.test.junit` | `org.jetbrains.kotlin:kotlin-test-junit` | `2.4.20` | Declared | `:core:testing` | TASK-029 |
 | `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Declared | `:core:testing` | TASK-024, TASK-037 |
 | `libs.ktor.client.okhttp` | `io.ktor:ktor-client-okhttp` | `3.6.0` | Pinned | — | TASK-037 |
 | `libs.ktor.client.darwin` | `io.ktor:ktor-client-darwin` | `3.6.0` | Pinned | — | TASK-037 |
 | `libs.ktor.client.mock` | `io.ktor:ktor-client-mock` | `3.6.0` | Declared | `:core:testing` | TASK-024, TASK-026 |
+| `libs.ktor.http` | `io.ktor:ktor-http` | `3.6.0` | Declared | `:core:testing` | TASK-029 |
 | `libs.okhttp` | `com.squareup.okhttp3:okhttp` | `5.5.0` | Pinned | — | TASK-020, TASK-037 |
 | `libs.okhttp.mockwebserver` | `com.squareup.okhttp3:mockwebserver3` | `5.5.0` | Pinned | — | TASK-020, TASK-037 |
 | `libs.koin.core` | `io.insert-koin:koin-core` | `4.2.2` | Pinned | — | TASK-044 |
@@ -310,8 +313,8 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.plugins.android.library` | `com.android.library` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.android.kotlin.multiplatform.library` | `com.android.kotlin.multiplatform.library` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.roborazzi` | `io.github.takahirom.roborazzi` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
-| `libs.plugins.ktlint` | `org.jlleitschuh.gradle.ktlint` | `14.2.0` | Pinned | — | TASK-029 |
-| `libs.plugins.dependency.analysis` | `com.autonomousapps.dependency-analysis` | `3.19.2` | Pinned | — | TASK-017, TASK-029 |
+| `libs.plugins.ktlint` | `org.jlleitschuh.gradle.ktlint` | `14.2.0` | Declared | `:` | — |
+| `libs.plugins.dependency.analysis` | `com.autonomousapps.dependency-analysis` | `3.19.2` | Declared | `:` | — |
 
 <!-- dependency-inventory:end -->
 

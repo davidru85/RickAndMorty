@@ -22,9 +22,38 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
+    alias(libs.plugins.ktlint) apply false
     id("multiverse.dependency.policy")
     id("multiverse.repository.hygiene")
     id("multiverse.module.boundaries")
+    alias(libs.plugins.dependency.analysis)
+}
+
+// DEC-077 (`TASK-029`): dependency analysis is blocking, and the ADR-0001-mandated edges that the
+// source-less modules have not consumed yet are excluded explicitly, per module, from one committed
+// register. The register is guarded by `verifyDependencyAdviceRegister`, so an exclusion cannot
+// outlive the code that consumes the edge. Every other piece of advice fails the build.
+configure<com.autonomousapps.DependencyAnalysisExtension> {
+    val register = file("gradle/dependency-advice-exclusions.txt")
+    val excluded = register.readLines()
+        .mapNotNull { line ->
+            val trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith("#")) return@mapNotNull null
+            val parts = trimmed.split("|")
+            if (parts.size == 3) parts[0].trim() to parts[1].trim() else null
+        }
+        .groupBy({ it.first }, { it.second })
+
+    issues {
+        all {
+            onAny { severity("fail") }
+        }
+        excluded.forEach { (modulePath, dependencies) ->
+            project(modulePath) {
+                onUnusedDependencies { exclude(*dependencies.toTypedArray()) }
+            }
+        }
+    }
 }
 
 // The build-logic regression suite is part of the local gate: a rule that fails open while the

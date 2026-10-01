@@ -13,7 +13,6 @@ package io.github.davidru85.multiverse.testing
  * (`TESTING.md` §4.4).
  */
 public object FixtureLoader {
-
     /** Every fixture name, sorted, excluding the sidecars. */
     public fun names(): List<String> = GeneratedFixtures.names.sorted()
 
@@ -24,10 +23,11 @@ public object FixtureLoader {
      *   deliberate: a test that reads a renamed or deleted fixture must break rather than assert
      *   against an empty body.
      */
-    public fun text(name: String): String = GeneratedFixtures.contents[name]
-        ?: throw IllegalArgumentException(
-            "No fixture named `$name`. Available: ${names().joinToString(", ")}",
-        )
+    public fun text(name: String): String =
+        GeneratedFixtures.contents[name]
+            ?: throw IllegalArgumentException(
+                "No fixture named `$name`. Available: ${names().joinToString(", ")}",
+            )
 
     /** The bytes of [name], encoded as UTF-8. */
     public fun bytes(name: String): ByteArray = text(name).encodeToByteArray()
@@ -57,19 +57,20 @@ public data class FixtureMeta(
 
 /** The sidecars of the committed fixtures, read through [FixtureLoader]. */
 public object FixtureCatalog {
-
     /** The sidecar of [name], parsed from `<name>.meta.json`. */
     public fun meta(name: String): FixtureMeta {
         val raw = FixtureLoader.text(name + META_SUFFIX)
         return FixtureMeta(
             fixture = field(raw, "fixture") ?: name,
-            capturedAt = field(raw, "capturedAt")
-                ?: error("fixture `$name` has no capturedAt in its sidecar"),
+            capturedAt =
+                field(raw, "capturedAt")
+                    ?: error("fixture `$name` has no capturedAt in its sidecar"),
             method = field(raw, "method") ?: error("fixture `$name` has no method in its sidecar"),
             path = field(raw, "path") ?: error("fixture `$name` has no path in its sidecar"),
             query = field(raw, "query"),
-            status = (field(raw, "status") ?: error("fixture `$name` has no status"))
-                .toInt(),
+            status =
+                (field(raw, "status") ?: error("fixture `$name` has no status"))
+                    .toInt(),
             pins = field(raw, "pins") ?: "",
             sha256 = field(raw, "sha256") ?: "",
             bytes = (field(raw, "bytes") ?: "0").toInt(),
@@ -86,7 +87,10 @@ public object FixtureCatalog {
      * depending on a serialization runtime here would make every consumer of the harness
      * configure one before its first test.
      */
-    private fun field(raw: String, key: String): String? {
+    private fun field(
+        raw: String,
+        key: String,
+    ): String? {
         val match = Regex("\"$key\"\\s*:\\s*(\"([^\"\\\\]*)\"|-?[0-9]+|null)").find(raw) ?: return null
         val value = match.groupValues[1]
         if (value == "null") return null

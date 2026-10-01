@@ -169,11 +169,92 @@ class DependencyPolicyPlugin : Plugin<Project> {
             rootDirectory.set(target.layout.projectDirectory)
         }
 
+        // TASK-029 (`TEST-UNIT-015`, AC-REQ-NFR-007-1): the documented local gate commands must
+        // exist and the aggregate must really depend on the checks its row claims. A task cannot
+        // inspect another task's graph, and tasks registered later by other plugins are invisible
+        // before the build is configured, so both values are captured once, after evaluation
+        // (G-03); the hook sets plain values, so the entry stays configuration-cache compatible.
+        val documentedGate = target.tasks.register<VerifyDocumentedGateTask>("verifyDocumentedGate") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-015: every documented local gate command exists and the aggregate " +
+                "really runs the checks its row claims (AC-REQ-NFR-007-1)."
+            this.documents.from(
+                target.layout.projectDirectory.file("README.md"),
+                target.layout.projectDirectory.file("docs/CONTRIBUTING.md"),
+            )
+        }
+        target.gradle.projectsEvaluated {
+            val paths = mutableListOf<String>()
+            val names = mutableListOf<String>()
+            target.rootProject.allprojects.forEach { project ->
+                project.tasks.names.forEach { name ->
+                    names += name
+                    paths += if (project.path == ":") ":$name" else "${project.path}:$name"
+                }
+            }
+            documentedGate.configure {
+                registeredTaskPaths.set(paths.sorted())
+                registeredTaskNames.set(names.sorted())
+                claimedAggregateDependencies.set(mapOf(":check" to listOf(":verifyDependencyPolicy")))
+                // `dependsOn` may hold `TaskProvider`s, so the resolved dependency set is read
+                // through `taskDependencies`, not by filtering the raw list (G-03).
+                val aggregateTask = target.rootProject.tasks.findByName("check")
+                val direct = aggregateTask?.taskDependencies?.getDependencies(aggregateTask)
+                    ?.map { it.path }?.sorted() ?: emptyList()
+                directDependencies.set(mapOf(":check" to direct))
+            }
+        }
+
+        // DEC-077: the buildHealth exclusion register may not outlive the placeholder state.
+        // TestKit fixtures do not declare the package root, and the register guard does not need
+        // it to decide staleness, so it stays optional here.
+        val packageRoot = target.findProperty("multiverse.packageRoot")?.toString().orEmpty()
+        val adviceRegister = target.tasks.register<VerifyDependencyAdviceRegisterTask>("verifyDependencyAdviceRegister") {
+            group = VERIFICATION_GROUP
+            description = "DEC-077: every buildHealth exclusion names a live module, a declared " +
+                "dependency the module does not yet consume, and the task that removes it."
+            this.register.set(target.layout.projectDirectory.file("gradle/dependency-advice-exclusions.txt"))
+            this.declaredProjectDependencies.set(
+                target.rootProject.allprojects.associate { project ->
+                    val declared = project.configurations
+                        .mapNotNull { configuration ->
+                            runCatching {
+                                configuration.dependencies
+                                    .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
+                                    .map { it.path }
+                            }.getOrNull()
+                        }
+                        .flatten()
+                        .toSortedSet()
+                        .toList()
+                    project.path to declared
+                },
+            )
+            this.packagePrefixes.set(
+                target.rootProject.allprojects.associate { project ->
+                    val path = project.path
+                    val prefix = when {
+                        path == ":androidApp" -> "$packageRoot.app"
+                        path.startsWith(":core:") -> "$packageRoot.${path.removePrefix(":core:")}"
+                        path.startsWith(":feature:") -> "$packageRoot.feature.${path.removePrefix(":feature:")}"
+                        else -> null
+                    }
+                    path to prefix
+                }.filterValues { it != null } as Map<String, String>,
+            )
+            this.productionSources.from(
+                target.fileTree(rootDir) {
+                    include("**/src/*Main/kotlin/**/*.kt", "**/src/main/kotlin/**/*.kt")
+                    exclude(*BUILD_STATE_EXCLUDES)
+                },
+            )
+        }
+
         val aggregate = target.tasks.register("verifyDependencyPolicy") {
             group = VERIFICATION_GROUP
             description = "Verifies the dependency policy: exact pins, per-entry rationale and README inventory " +
                 "(TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051; DEC-061)."
-            dependsOn(pins, rationale, inventory, liveHosts, workflowGate)
+            dependsOn(pins, rationale, inventory, liveHosts, workflowGate, documentedGate, adviceRegister)
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
