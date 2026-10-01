@@ -510,6 +510,15 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Validation:** Observed on 2026-10-01 on branch `docs/b1-bookkeeping-after-merge` from `main` `d806b16`: the four merge commits are reachable from `main` (`gh pr view` 42–45) and `./gradlew check build :androidApp:assembleDebug verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene` passes. The state scan finds no remaining `In review` row for `TASK-087`…`TASK-090`.
 - **Not verified:** D2 (both-runner required checks) remains unevaluable because no CI exists (`GAP-002`); `TASK-025` owns creating it, and Block 1 therefore stays *integrated and locally verified*, not *Done under D2*.
 
+### LOG-0054 · 2026-10-01 · Residual B1 state fragments refreshed after the correction merges (`TASK-090` follow-up)
+
+- **Event:** with the four correction pull requests merged (`#42`–`#45`, then the bookkeeping `#46`), `HANDOFF.md` still carried fragments that predated them: the documentation-system row read *being established* and pointed at the branch `docs/documentation-system`; the decision ranges stopped at `DEC-063`; the priority list described actions 1–4 as B1 work still to do, including *"land the B1 definitions, then add the boundary check (`TASK-017`) and the `VERSION` wiring (`TASK-018`)"*, although both are merged; and the block bullet named the pre-merge `main` SHA. The file now states the merged state, `DEC-001`…`DEC-071`, the closed B1 actions and *B1 closed as far as this repository can close it*.
+- **Rationale:** `DEC-046` treats a current-state document that contradicts the repository as a defect, and `HANDOFF.md` is the first file a takeover reads (`AGENTS.md` §5 step 7). The fragments were accurate when written but not after the merges, so they are reconciled rather than preserved.
+- **Affected artifacts:** `docs/HANDOFF.md` §1, §1.1 table, §2, §3, §4; this entry.
+- **Decision / ADR:** no new decision; applies `DEC-046` and `DEC-071`.
+- **Validation:** Observed on 2026-10-01 on branch `docs/handoff-post-b1-refresh` from `main` `20c3690`: `./gradlew check verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene` passes; the link and conflict-marker scans of every `*.md` report no problem; no remaining fragment calls a merged B1 task pending or a block action open.
+- **Not verified:** D2 (both-runner required checks) remains unevaluable until `TASK-025` exists (`GAP-002`), so the block is *integrated and locally verified*, not *Done under D2*; this change does not alter that.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
