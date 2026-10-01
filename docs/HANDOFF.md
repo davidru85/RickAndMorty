@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-09-30; must be updated on every handoff (`AGENTS.md` §5.7).
+- **Status:** Active. Describes the repository as of 2026-10-01; must be updated on every handoff (`AGENTS.md` §5.7).
 - **Last verified:** 2026-10-01
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -9,18 +9,18 @@
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
 
-## 1. Current state (2026-09-30)
+## 1. Current state (2026-10-01)
 
 The repository contains the **Gradle/KMP build skeleton** (TASK-014, merged in PR #6 on 2026-09-30) with the **five feature route declarations**, the tracked `.gitignore` and the **repository-hygiene check** (TASK-016, merged in PR #13 on 2026-09-30, issue #12 closed), the **pinned version catalog with its policy checks** (TASK-015, merged in PR #10 on 2026-09-30) and the documentation set. There is still no feature behaviour, no product test, no Xcode project, no `iosApp/`, no CI workflow and no `VERSION`. The skeleton has been built and is recorded in `PROJECT_LOG.md` LOG-0026; the product itself has never been compiled, installed or run.
 
-Delivery model changed on 2026-10-01: `TASK-016` was the last task executed individually, and the remaining work is now delivered in nine execution blocks (`B1`…`B9`) owned by `docs/BACKLOG.md` §2.6 (`DEC-063`). A block is an execution grouping inside one milestone; each member still lands as its own pull request with its own TDD cycle (DEC-053) and its own required check set (DEC-054). The grouping contains no dependency on a later block; the three intra-milestone adjustments it required are recorded in `BACKLOG.md` §2.6.
+Delivery model changed on 2026-10-01: `TASK-016` was the last task executed individually, and the remaining work is now delivered in nine execution blocks (`B1`…`B9`) owned by `docs/BACKLOG.md` §2.6 (`DEC-063`). A block is an execution grouping inside one milestone; each member still lands as its own pull request with its own TDD cycle (DEC-053) and its own required check set (DEC-054). The dependency-safe source reconciliation keeps `TASK-031` and `TASK-073` together in B2, places `TASK-020` before `TASK-012` and `TASK-075` in B5, and keeps `TASK-021` in B4; no task depends on a later block (`CONF-52`, resolved).
 
 | Area | State | Notes |
 | --- | --- | --- |
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Being established | Set authored on the branch `docs/documentation-system`; inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-062` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-063` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
@@ -75,17 +75,18 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 
 Each action names the first concrete step and the document that owns it. A task is not started until its first failing test exists (DEC-053); the exceptions are documentation, build/CI configuration and tooling changes, and their use must be stated explicitly.
 
-From 2026-10-01 the actions below map onto the execution blocks of `BACKLOG.md` §2.6 (`DEC-063`): actions 1–4 are B1, actions 5–6 are B2, action 7 (`TASK-035`) is B4, and actions 8–9 are B5–B6. Work starts block by block, and no task in a block depends on a later block.
+From 2026-10-01 the actions below map onto the execution blocks of `BACKLOG.md` §2.6 (`DEC-063`): actions 1–4 are B1, actions 5–7 are B2, action 8 (`TASK-035`) is B4, and actions 9–10 are B5–B6. Work starts block by block, and no task in a block depends on a later block.
 
 1. **Land the documentation system.** First step: review the change on `docs/documentation-system` against `docs/DOCUMENTATION_AUDIT.md` and resolve its open `CONF-###` conflicts. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **Close the module-name propagation.** First step: update `docs/DESIGN.md` §3 and the command tables in `README.md` §8–§9 to the DEC-052 names and dependency rules. Owner: `docs/DESIGN.md` (with `docs/CONTRACTS.md`).
 3. **Repository-hygiene change merged.** TASK-016 landed in PR #13 on 2026-09-30 (`verifyRepositoryHygiene`, `TEST-UNIT-026`), so the working-set and history scan of `AC-REQ-SEC-002-1` now runs in `check` on `main`; the next repository step is the `TASK-017` boundary check and the `TASK-018` `VERSION` wiring (action 4). Owner: `docs/BACKLOG.md` rows TASK-016, TASK-017, TASK-018.
 4. **Add the boundary check (TASK-017) and the `VERSION` wiring (TASK-018).** First step: make the module-boundary rules a build property that fails on a seeded violation, then add the `VERSION` rule to `verifyDependencyPins`. TASK-015 pinned the catalog and left the policy plugin's rule list ready for it; the build skeleton it extends is merged as TASK-014. Owner: `docs/DESIGN.md` §3.5, `docs/BACKLOG.md` for the rows.
-5. **Stand up the CI gate on an empty suite.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
-6. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
-7. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
-8. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
-9. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
+5. **Build the test harness and the shared fakes.** First step: `:core:testing`, the JSON fixtures and the fake clock, so the first red commit has somewhere to live. Owner: `docs/TESTING.md`.
+6. **Complete the reusable templates and TDD evidence fields.** First step: verify all five `docs/templates/` artifacts against `TASK-031`, then verify the pull-request template's red, green and exception fields against `TASK-073`. Owner: `docs/templates/`, with acceptance in `docs/BACKLOG.md`.
+7. **Stand up the CI gate on the resulting harness.** First step: add both platform workflows and the required-check list exactly as specified, and turn on branch protection (a human action — DEC-049). Owner: `docs/TESTING.md` for the check list, `docs/DEFINITION.md` for the gate.
+8. **Export the Figma PNGs.** First step: confirm read access to the Figma file and render the screens into `docs/figma/` so `docs/UI_SPEC.md` references become checkable by a reviewer. Owner: `docs/UI_SPEC.md` §1.
+9. **Start M1 feature work with a red test.** First step: take the first Android task from `docs/BACKLOG.md` and commit the failing test with its observed failure in the message (DEC-053). Owner: `docs/BACKLOG.md`.
+10. **Publish the first release artefacts.** First step: confirm the `VERSION`/tag/GitHub Release mechanics and generate release notes from history (there is no `CHANGELOG.md` — DEC-042). Owner: `docs/CONTRIBUTING.md` and the release workflow in `docs/TECHNICAL_PLAN.md`.
 
 Working rules that apply to every action above: read the precedence chain before touching a file (`AGENTS.md` §2); one owner per file; update the owning document in the same change (DEC-046); never claim a result you did not observe (`AGENTS.md` §4.2); merge without squashing and keep the phase commits (DEC-053); never merge while a required check is failing, skipped or absent (DEC-054).
 
