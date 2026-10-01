@@ -1,6 +1,6 @@
 # TESTING.md — Test Strategy and Verification Plan
 
-- **Status:** Active — target state. The build skeleton exists (TASK-014); the repository contains no test code yet (§Preamble, *Current state vs target state*).
+- **Status:** Active — mixed. The build skeleton (TASK-014), the shared harness with its fixtures (TASK-024) and the both-runner gate (TASK-025) are merged, and the fixture/replay contract entry point exists (TASK-026); there is **no product test yet** — the harness's own tests are the only cases that execute (§Preamble, *Current state vs target state*).
 - **Last verified:** 2026-10-02
 - **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
@@ -47,7 +47,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 
 ### Current state vs target state
 
-- **Current state (2026-10-01):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist: `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061) and `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062, TASK-016), both wired into the root `check`. No product test source set, no fixture and no CI exist. Every other statement below is the target state.
+- **Current state (2026-10-02):** the Gradle/KMP build skeleton exists (TASK-014, PR #6) with the 11 modules and five route declarations; the repository-policy checks run in the root `check` — `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061), `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062), `verifyModuleBoundaries` (TASK-017) and `verifyWorkflowGate` (TASK-028); the shared harness with twenty dated fixtures and the `MockEngine`/time-control helpers is merged (TASK-024, PR #52), and its own tests are the only cases that execute today; the fixture/replay contract entry point `:core:data:contractTestReplay` exists and fails on zero cases (TASK-026); the both-runner pull-request gate runs (TASK-025, PR #52) and the quality toolchain is active and blocking — ktlint, Android Lint and `buildHealth` (TASK-029, PR #65), with the Swift toolchain pinned (TASK-030, PR #63). **No product test exists yet**: every `TEST-UNIT-###`/`TEST-CONTRACT-###` case below is the target state until the task that owns it lands its first red test. The activation order is `DEC-071`'s, one harness at a time.
 - **Target state:** the layers, IDs, layout and policies defined here, implemented in the Android milestone (M1) and extended in the iOS milestone (M2) (`DEC-040`, `REQ-PLAT-004`).
 
 ### Stated assumptions
