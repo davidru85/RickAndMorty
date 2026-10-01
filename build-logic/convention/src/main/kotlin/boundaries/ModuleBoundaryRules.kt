@@ -35,13 +35,15 @@ internal object ModuleBoundaryRules {
     /** Modules a shared production source set of a feature may depend on (R8). */
     private val FEATURE_SHARED_CORE = setOf(":core:domain", ":core:data", ":core:presentation")
 
-    /** The only external library `:core:domain` may declare (`DEC-066`, R14). */
-    private val DOMAIN_ALLOWED_EXTERNALS = setOf("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-
-    /** What `:core:ios` may depend on if it is introduced (ADR-0012, R12). */
+    /**
+     * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
+     * production core modules and the five accepted feature modules, never `:core:designsystem`
+     * (Android-only) and never `:core:testing` (test-only). The allow-list names the accepted
+     * modules instead of accepting any `:feature:*` prefix, so a path outside the set fails closed
+     * (`GAP-014`).
+     */
     private fun isCoreIosAllowed(producer: String): Boolean =
-        producer == ":core:domain" || producer == ":core:data" || producer == ":core:presentation" ||
-            producer in FEATURE_SHARED_CORE || producer.startsWith(":feature:")
+        producer in FEATURE_SHARED_CORE || ModuleSet.isAcceptedFeature(producer)
 
     fun evaluate(
         snapshot: ModuleGraphSnapshot,
@@ -246,8 +248,9 @@ internal object ModuleBoundaryRules {
                         configuration = edge.configuration,
                         sourceSet = edge.sourceSet,
                         producer = edge.producer,
-                        reason = "`:core:ios` exports the five features and the four other core modules only " +
-                            "(ADR-0012, DEC-058)",
+                        reason = "`:core:ios` exports the five accepted features and the three shared " +
+                            "production core modules only (`:core:designsystem` is Android-only and " +
+                            "`:core:testing` is test-only; ADR-0012, `CONF-54`)",
                     ),
                 )
             }
@@ -361,7 +364,7 @@ internal object ModuleBoundaryRules {
     private fun domainExternalPurity(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         snapshot.byKind(ModuleKind.CORE_DOMAIN).forEach { project ->
             project.externalDependencies
-                .filterNot { it.coordinates in DOMAIN_ALLOWED_EXTERNALS }
+                .filterNot { it.coordinates in ModuleDependencyAllowLists.DOMAIN }
                 .forEach { dependency ->
                     log.add(
                         ModuleBoundaryViolation(
