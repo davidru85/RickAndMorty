@@ -60,7 +60,7 @@ Development is **trunk-based** (DEC-041, retained after DEC-053). Branches are s
 | --- | --- |
 | Base | Branch from the current `main`, not from another feature branch. |
 | Name | `<type>/<short-slug>`, where `<type>` is one of `feat`, `fix`, `docs`, `test`, `build`, `chore` and `<short-slug>` is lowercase, hyphenated and descriptive of the change (for example `feat/discovery-status-filter`, `docs/documentation-system`, `fix/cache-key-collision`). |
-| Length | Short-lived: one logical change, merged as soon as it is green and reviewed. A branch alive long enough to need regular rebases is a signal that the change is too large. |
+| Length | Short-lived: one logical change, merged as soon as it is green and reviewed. A branch alive long enough to need regular rebases is a signal that the change is too large. Bringing an already-open branch up to date uses a **merge commit** (`git merge main`), never a rebase that rewrites its pushed phase commits (`DEC-059`). |
 | `main` | `main` `MUST` always build. A change that leaves `main` broken is treated as a defect in the change, not as transient state. |
 | Direct commits | No direct commits or pushes to `main`. Every change arrives through a pull request (§5). |
 | Deletion | Delete the branch after merge; the phase commits (§3) remain in `main`'s history. |
@@ -73,12 +73,24 @@ The repository owner (human) may create branches and pull requests; an agent may
 
 Behaviour changes follow red → green → refactor, and the commit history preserves the cycle. The phase meanings are fixed:
 
-| Phase | What happens | Commit message | Note |
+The protocol is twelve steps, in this order. Steps 1–2 are the Ready gate (`../docs/DEFINITION.md` §2, R11), steps 3–9 are the phases, and steps 10–12 are the merge gate.
+
+| # | Step | What happens | Commit message |
 | --- | --- | --- | --- |
-| Red | Write the failing test for the next behaviour increment, run it, and **observe** the failure. | `test(<scope>): add failing test for <behaviour>` | The message `MUST` state the observed failure, not the expected one. |
-| Green | The minimal implementation that makes the test pass; run it and observe the pass. | `feat(<scope>): <behaviour>` or `fix(<scope>): <defect>` | Minimal means minimal: no opportunistic refactor, no unrelated cleanup (`../AGENTS.md` §4.2). |
-| Refactor | Improve structure with the tests still green. | `refactor(<scope>): <change>` | If the phase produces no change, say so and commit nothing. Do not manufacture a commit to fill the phase. |
-| Push | Push the phase commits. | — | Pushed phase commits `MUST NOT` be amended or force-pushed away. |
+| 1 | Ready | The task satisfies `DEFINITION.md` §2 before any work starts | — |
+| 2 | Test first | The failing test is written before the implementation exists | — |
+| 3 | **Red** | Run the test and **observe** the failure | `test(<scope>): add failing test for <behaviour>` — the message states the observed failure, not the expected one |
+| 4 | Record the red | The observed failure goes in the commit message and the pull-request evidence | — |
+| 5 | **Green** | The minimal implementation that makes the test pass | `feat(<scope>): <behaviour>` or `fix(<scope>): <defect>`; minimal means minimal — no opportunistic refactor, no unrelated cleanup (`../AGENTS.md` §4.2) |
+| 6 | Observe the green | Run the focused test and observe the pass | — |
+| 7 | **Refactor** | Structure only, with the tests still green | `refactor(<scope>): <change>`, or state explicitly that the phase produced no diff and commit nothing |
+| 8 | Preserve | The three phase commits stay individual; a pushed phase commit is never amended or force-pushed away | — |
+| 9 | Push | Push the phase commits and open the pull request (§5) | — |
+| 10 | Final state | The complete required check set (§5.3, `DEC-054`) is green on the **final** state of the pull request; the red commit failing by design is expected, not a violation | — |
+| 11 | Review | A human reviews the phase sequence, the red evidence and the documents | — |
+| 12 | Integrate | A **merge commit** and no other method (`DEC-059`); the branch and its phase commits stay reachable | — |
+
+The explicit exception classes are only **pure documentation**, **build/CI configuration** and **tooling**. An exception is stated in the issue, the commit body and the pull request, and it removes the artificial red/green/refactor commit obligation for that change — not verification, not the seed tests a new tool owes, not the documentation update and not the final gate. A change that alters behaviour is never covered by an exception.
 
 Rules that hold across the protocol:
 
@@ -396,6 +408,7 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §3.1 states the protocol as twelve ordered steps (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit) with the three exception classes; §2 states that bringing an open branch up to date merges `main` rather than rewriting its phase commits. | `DEC-053`, `DEC-059`, `REQ-NFR-010`, `TASK-072` |
 | 2026-10-01 | §1.2 no longer points at a single documentation branch: changes are prepared on a typed branch and merged into `main`, the only integrated branch (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-059`, `DEC-046` |
 | 2026-09-29 | Created: setup and prerequisites, trunk-based branching with the allowed branch types, the TDD phase-and-commit protocol with rebase-merge policy, Conventional Commits and release-note derivation, the issue workflow against `BACKLOG.md`, pull-request expectations with the required-check list, per-change testing and documentation requirements, the review process, the agent permission boundary, the mirrored vulnerability-reporting route and the completion checklist. | DEC-041, DEC-042, DEC-043, DEC-044, DEC-046, DEC-048, DEC-049, DEC-051, DEC-052, DEC-053, DEC-054 |
 | 2026-09-30 | Provisional `repository-hygiene` required check added to §5.3 (full history on both runners); §6's tooling-exception row now requires a seeded violation for an introduced tool; §7's tooling row re-runs `verifyRepositoryHygiene`. No workflow created. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
