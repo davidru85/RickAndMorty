@@ -68,7 +68,7 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 - **Merged but not `Done` under D2 (`DEC-071`; no CI), and the genuinely absent items:**
   - CI workflows (both platform workflows plus the fixture/replay contract job) — DEC-054;
   - the module-boundary enforcement check and its seeded violations — **merged** (TASK-017, PR #33; hardened by TASK-088, PR #43);
-  - the module-boundary **topology completeness** rule and the durable build-logic regression suite — **In review** (`TASK-091`, `TASK-092` on `test/module-topology-hardening`): `R16` fails when a required module is missing, and `./gradlew check` runs the suite;
+  - the module-boundary **topology completeness** rule and the durable build-logic regression suite — **merged** (`TASK-091`, `TASK-092`, PR #50 as `9cf6217`): `R16` fails when a required module is missing, `:feature:*` classification is restricted to the accepted five, and `./gradlew check` runs the 59-test suite;
   - the `VERSION` source — **merged** (TASK-018, PR #34; every artifact task consumes its validation since TASK-089, PR #44);
   - the repository-hygiene check that completes `.gitignore` is **merged in TASK-016** (PR #13, 2026-09-30): `verifyRepositoryHygiene` holds the ignore-rule and credential rules and runs in `check`;
   - the `tokens.json` parity test — DEC-022;
