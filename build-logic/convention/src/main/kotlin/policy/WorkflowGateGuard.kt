@@ -65,6 +65,17 @@ internal object WorkflowGateGuard {
         "git\\s+push",
     )
 
+    /**
+     * `TEST-UNIT-044` (`TASK-026`, `DEC-073`): markers that identify the live contract mode. A
+     * workflow triggered by a pull request or a push may never reference one: the fixture/replay
+     * suite is the gate's contract check, and live mode is a scheduled signal
+     * (`AC-REQ-NFR-011-2`).
+     */
+    private val LIVE_MODE_MARKERS = listOf("contract-live", "contractTestLive", "contractLiveProbe")
+
+    /** The triggers that make a workflow part of the merge gate. */
+    private val MERGE_GATE_TRIGGERS = listOf("pull_request", "push")
+
     fun scan(workflows: Collection<File>, root: File): List<Finding> {
         val findings = mutableListOf<Finding>()
         val files = workflows.filter { it.isFile && (it.extension == "yml" || it.extension == "yaml") }
@@ -106,6 +117,26 @@ internal object WorkflowGateGuard {
                     1,
                     "`$command` is not reachable from any job; an omitted check is a missing check, not a pass",
                 )
+            }
+        }
+
+        // TEST-UNIT-044 (`TASK-026`, `DEC-073`): a workflow triggered by a pull request or a push
+        // may never reference the live mode. Comment lines do not count: a comment is not a step.
+        files.filter { file ->
+            val body = file.readLines().joinToString("\n") { it.substringBefore('#') }
+            MERGE_GATE_TRIGGERS.any { Regex("(?m)^\\s*" + it + "\\s*:").containsMatchIn(body) }
+        }.forEach { file ->
+            file.readLines().forEachIndexed { index, raw ->
+                val reference = LIVE_MODE_MARKERS.firstOrNull { raw.substringBefore('#').contains(it) }
+                if (reference != null) {
+                    findings += Finding(
+                        file.relativeTo(root).invariantSeparatorsPath,
+                        index + 1,
+                        "a pull-request- or push-triggered workflow references `$reference`; the merge " +
+                            "gate runs the contract suite in fixture/replay mode only " +
+                            "(AC-REQ-NFR-011-2, DEC-073)",
+                    )
+                }
             }
         }
 

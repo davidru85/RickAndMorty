@@ -158,6 +158,10 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 include("**/src/*Test/**/*.kt", "**/src/*test/**/*.kt")
                 include("**/src/commonTest/**/*.kt", "**/src/androidHostTest/**/*.kt", "**/src/androidDeviceTest/**/*.kt")
                 include("**/src/*TestFixtures/**/*.kt")
+                // The scheduled live source set (`TASK-027`, `DEC-074`): the guard itself exempts
+                // this directory by name, so it must be in the scanned set — otherwise the
+                // exemption would be an omission rather than a decision.
+                include("**/src/contractLive/**/*.kt")
                 exclude(*BUILD_STATE_EXCLUDES)
             },
         )
