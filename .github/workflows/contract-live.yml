@@ -1,0 +1,57 @@
+# Scheduled live contract signal (TASK-027, DEC-074, AC-REQ-NFR-011-2).
+#
+# This workflow is a **signal**, never a merge gate: the API it talks to is unversioned, so its
+# availability must not decide whether a pull request merges. `verifyWorkflowGate` enforces that:
+# this file is reachable only from `schedule` and `workflow_dispatch`, and no pull-request- or
+# push-triggered workflow may reference the live mode.
+#
+# It never commits, never opens a pull request and never quarantines. Its captures feed the
+# fixture-refresh pull request that a human opens (TESTING.md 11.4).
+
+name: contract-live
+
+on:
+  schedule:
+    # Weekly, Monday 06:00 UTC. The service publishes no rate-limit contract, so the cadence stays
+    # low and the request budget stays one per probe (API_SPECS.md 9).
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-live
+  cancel-in-progress: false
+
+env:
+  JAVA_VERSION: "25"
+
+jobs:
+  live:
+    name: live
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Record the live API's shape
+        run: ./gradlew :core:data:contractLiveProbe --stacktrace
+
+      - name: Upload the observations
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: contract-live-observations
+          path: core/data/build/observations/**
+          if-no-files-found: error

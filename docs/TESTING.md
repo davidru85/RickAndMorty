@@ -573,7 +573,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 
 | Trigger | Test work | Blocking |
 | --- | --- | --- |
-| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11), Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
+| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11) — `.github/workflows/contract-live.yml` runs `./gradlew :core:data:contractLiveProbe` weekly and uploads the captures (`TASK-027`, `DEC-074`); Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
 | On demand | The performance job, for milestone evidence | No |
 | Release | The release-readiness checklist in `DEFINITION.md`, over a green required set | Yes, at release time — a suite may not be waived |
 | Quarantine job | Quarantined cases only, with their tracking metadata (§15) | No — quarantined tests are excluded from the required set, with a recorded justification |
@@ -720,6 +720,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | `TASK-027` (`DEC-074`, `DEC-079`): the live source set compiles on an opt-in JVM target, `:core:data:contractLiveProbe` records `TEST-CONTRACT-006` observations weekly from a schedule-only workflow, and the guard proves no merge-gate trigger can reach it. | `TASK-027`, `DEC-079`, `AC-REQ-NFR-011-2` |
 | 2026-10-02 | `TASK-026` (`DEC-073`): the fixture/replay entry point `:core:data:contractTestReplay` exists and fails on zero executed `TEST-CONTRACT-*` cases; `TEST-UNIT-044` gained the clause that no pull-request- or push-triggered workflow may reference the live mode; `TEST-UNIT-024` now sees the `contractLive` source set, so its exemption is a decision rather than an omission. | `TASK-026`, `DEC-073`, `AC-REQ-NFR-011-2` |
 | 2026-10-01 | `TEST-UNIT-045` implemented by `TASK-093`: observed red without the rule (3 failures) and green with it (10 tests). The guard reads comment lines as absent, closing a false negative in its own command-reachability rule. | `TASK-093`, `DEC-078`, `AC-REQ-FUNC-014-2` |
 | 2026-10-01 | B2 readiness packet recorded (`DEC-073`…`DEC-078`): the `contract-fixture` row's activation moves to `TASK-037` while `TASK-026` delivers the non-empty entry point; the live workflow, `contract-live` and `TEST-CONTRACT-006` are `TASK-027`'s now; the `static-analysis` row activates for ktlint, Android Lint and `buildHealth` (`TASK-029`), with detekt recorded against a stable 2.x (`DEC-075`) and SwiftLint/swift-format against `TASK-051` (`DEC-076`); `TEST-UNIT-015` is owned by `TASK-029` and `TEST-UNIT-045` by `TASK-093`. | `DEC-073`…`DEC-078`, `CONF-51`, `CONF-56`…`CONF-60` |

@@ -35,11 +35,21 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
             val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
             val namespace = libraryNamespace().get()
 
+            // ADR-0002 as amended (`TASK-027`, `DEC-079`): a module may opt into a JVM target when
+            // it needs one to run a JVM-only verification path — the scheduled live contract job is
+            // the only case today. The opt-in is a module property, so every other module's target
+            // set is unchanged and `verifyModuleBoundaries` keeps classifying the graph.
+            val wantsJvmTarget = findProperty("multiverse.jvmTarget") == "true"
+
             extensions.configure<KotlinMultiplatformExtension> {
-                // Only the targets ADR-0002 permits. No jvm, js, wasm, desktop,
-                // tvOS or watchOS target, no `iosX64`, and no framework binary.
+                // Only the targets ADR-0002 permits: the Android target, the two Apple targets, and
+                // the JVM target when a module opts in. No js, wasm, desktop, tvOS or watchOS
+                // target, no `iosX64`, and no framework binary.
                 iosArm64()
                 iosSimulatorArm64()
+                if (wantsJvmTarget) {
+                    jvm()
+                }
 
                 explicitApi()
 

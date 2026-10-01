@@ -108,8 +108,39 @@ The platform facts are fixed and dated: Android API 37 is stable and Kotlin 2.4.
 - DEC-054 (both platforms' full test suite required on every pull request; supersedes DEC-028), DEC-040 (milestones).
 - Decision status index: [`DECISION_BOARD.md`](../DECISION_BOARD.md).
 
+## Amendment — 2026-10-02: an opt-in JVM target (`TASK-027`, `DEC-079`)
+
+The accepted decision above states the target set as Android plus the two Apple targets. The owner
+amended it on 2026-10-02, and the amendment is recorded here as a pointer rather than as a rewrite,
+because the original rationale is immutable once accepted (`AGENTS.md` §6).
+
+**What changed.** A `:core:*` KMP module MAY declare a JVM target when it needs one to run a
+JVM-only verification path. The target is **opt-in per module** through the module's own
+`gradle.properties`:
+
+```properties
+multiverse.jvmTarget=true
+```
+
+**Why it was needed.** The scheduled live contract job (`TASK-027`, `DEC-074`) has to compile and run
+Kotlin that issues live HTTP requests. Every alternative route was probed and rejected with
+evidence (`PROJECT_LOG.md` LOG-0062):
+
+| Route | Observed outcome |
+| --- | --- |
+| The probes on the Android host-test classpath | breaks the fixture/replay entry point's `TEST-CONTRACT-*` filter and the formatter's view of the test sources |
+| A dedicated module or Gradle project for the probes | contradicts `DEC-070` ("a source set/directory, not a Gradle project") |
+| A custom compilation on the existing Android KMP target | the AGP KMP library plugin allows only the compilations it declares |
+
+**What did not change.** No other module gains a target: the opt-in is a per-module property, and the
+two modules that set it today are `:core:domain` and `:core:data`, which the probes depend on.
+No JVM target is added to `:androidApp`, to a `:feature:*` module or to `:core:designsystem`, and
+`verifyModuleBoundaries` classifies targets, so an unintended opt-in fails the graph check rather
+than passing quietly. The Apple targets, the Android target and the absence of `iosX64` are as the
+decision states.
+
 ## Superseded and superseding ADRs
 
 - **Supersedes:** none.
-- **Superseded by:** none as of 2026-09-29.
+- **Superseded by:** none as of 2026-09-29. **Amended:** 2026-10-02 by `DEC-079` (an opt-in JVM target, recorded in the amendment section above).
 - **Related:** ADR-0003 (iOS interop and the glass availability split), ADR-0008 (the alpha artifacts each platform consumes), ADR-0001 (the modules these targets create).
