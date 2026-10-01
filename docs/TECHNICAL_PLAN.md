@@ -229,6 +229,8 @@ No calendar dates are committed. The reason is a property of this project rather
 
 M3 MAY begin its observability, security and documentation work after T5 if the iOS work is delayed, provided no M3 item changes a contract that T6 still depends on and no M3 item claims a platform as hardened before that platform's exit criteria hold. When the project gains a team, a velocity record or an external deadline, this section MUST be replaced by a dated plan in a change that cites the decision introducing the commitment.
 
+The T0–T8 ordering is enforced at task level by `BACKLOG.md` §2.6, which groups the remaining tasks into nine execution blocks (`B1`…`B9`, `DEC-063`) under the rule that **no task may depend on a task in a later block**. The blocks sit inside this ordering: B1–B2 are T0/T1, B3 is T2, B4 is T3, B5–B6 are T4/T5, B7 is T6, B8 is T7 and B9 is T8. A block is an execution grouping only — it changes no milestone objective, entry criterion, exit criterion or required check, and each task inside it still lands as its own pull request under its own id (DEC-053, DEC-054).
+
 ## 10. Traceability: milestone and requirement coverage
 
 The coverage rules are owned by `REQUIREMENTS.md` §15 and audited in `DOCUMENTATION_AUDIT.md` §6. This matrix states which milestone is accountable for each requirement group; the task-level mapping is in `BACKLOG.md` §8.
@@ -247,3 +249,4 @@ The coverage rules are owned by `REQUIREMENTS.md` §15 and audited in `DOCUMENTA
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-09-29 | Created on branch `docs/documentation-system`: milestones M0–M3 with entry criteria, exit criteria and review evidence; architectural build order; phase plan with requirement coverage per phase; sequencing constraints; gate-to-boundary mapping; risk-sequencing table; release readiness and mechanics; undated ordering table; milestone coverage matrix. Written against the feature-per-module layout, the TDD phase protocol and the mandatory both-platform CI gate. | DEC-040, DEC-042, DEC-043, DEC-044, DEC-046, DEC-050, DEC-052, DEC-053, DEC-054 |
+| 2026-10-01 | §9 gains the block-based execution pointer: the remaining work is grouped into nine execution blocks (`B1`…`B9`) owned by `BACKLOG.md` §2.6, under the rule that no task depends on a later block. Milestone objectives, exit criteria and the required check set are unchanged. | DEC-063 |
