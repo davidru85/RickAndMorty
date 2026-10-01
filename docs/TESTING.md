@@ -590,6 +590,20 @@ While a test that backs a `REQ-` row is quarantined, failing, or absent, that re
 | Quarantine budget | More than five quarantined tests at once `SHOULD` stop new feature work until the count drops, because the suite can no longer be trusted as a gate. |
 | Snapshot baselines | "The snapshot is flaky" is not a quarantine reason for a baseline: either the rendering is non-deterministic (a defect to fix) or the baseline is wrong (§8.2). |
 
+### 15.1 Quarantine register
+
+The live register the rules above operate on. A row is **appended**, never edited in place after its
+deadline: the table is a record of what was true at the time. A row past its deadline without a fix
+is escalated, not renewed.
+
+| `TEST-###` id | Case | Reason | Owner role | Tracking item | Quarantined (ISO 8601) | Deadline (ISO 8601) | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| — | No test is quarantined as of 2026-10-01. The register is empty: that is the current state, not a pending entry. | — | — | — | — | — | — |
+
+**Current count:** 0 of the 5 permitted before new feature work stops. A quarantined test is excluded
+from the required set of §14.2 and is **never cited as evidence**: while it stays quarantined, the
+requirement it backed is unverified and `DEFINITION.md` §3 counts it as such.
+
 ## 16. Traceability: requirement → test
 
 Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test ID. The `Priority` column uses the `REQUIREMENTS.md` section markers: `Must` for §5.1 and §6–§11, `Should` for §5.2. Only `REQ-FUNC-020`…`023` are marked Should there; `DEC-002` commits them to the deliverable (`REQUIREMENTS.md` §1.3), so they are verified by the same gate as the Must rows, and a red test backing any row in this table blocks the merge (§14.2).
@@ -699,6 +713,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §15.1 quarantine register created by `TASK-028`: the mechanics stay owned by §15, and the state lives in the register the milestone gate (RR7) and the release checklist read. The register is empty, which is the current state rather than a pending entry. | `TASK-028`, `DEC-054` |
 | 2026-10-01 | §14.2 states the staged activation of the required set (`DEC-071`, `CONF-53`): every row keeps its owner, a suite becomes mandatory in the change that creates its harness, and no existing check may be skipped. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | `TEST-UNIT-017`/`TEST-UNIT-043` extended with `R16` (the required leaf set of ADR-0001; `GAP-014`) and a durable build-logic regression suite (`TASK-092`) wired into the root `check`; the suite runs without network, clock or machine paths. | `TASK-091`, `TASK-092`, `GAP-014`, `GAP-015` |
 | 2026-10-01 | `TEST-UNIT-017`/`TEST-UNIT-043` restated after `TASK-088`: effective (inherited) project and external dependencies, the `:core:designsystem` Compose-only rule `R15`, and content-aware `S1`–`S3`; the reproduced red matrix and its controls recorded. | `TASK-088`, `GAP-012` |

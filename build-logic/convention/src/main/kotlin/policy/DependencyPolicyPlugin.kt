@@ -134,6 +134,20 @@ class DependencyPolicyPlugin : Plugin<Project> {
             rootDirectory.set(target.layout.projectDirectory)
         }
 
+        // TASK-028 (`TEST-UNIT-044`, TESTING.md 14.2): the required-check set must be present and
+        // blocking in the workflow configuration. A workflow that omits a suite, or neutralises it
+        // with `continue-on-error`, produces a green rollup while proving less than the gate claims.
+        val workflowFiles = target.fileTree(rootDir.resolve(".github")) {
+            include("workflows/*.yml", "workflows/*.yaml")
+        }
+        val workflowGate = target.tasks.register<VerifyWorkflowGateTask>("verifyWorkflowGate") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-044: the required-check set is present and blocking in the workflow " +
+                "configuration, and every action is pinned by full commit SHA (AC-REQ-NFR-011-1; DEC-037, DEC-054)."
+            this.workflows.from(workflowFiles)
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
         // TASK-024 (`TEST-UNIT-024`, TESTING.md 4.1): no test source set outside the scheduled
         // `contract-live` source set may name a live API host. The task scans test sources only —
         // a production source set legitimately names the host — and fails closed.
@@ -159,7 +173,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
             group = VERIFICATION_GROUP
             description = "Verifies the dependency policy: exact pins, per-entry rationale and README inventory " +
                 "(TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051; DEC-061)."
-            dependsOn(pins, rationale, inventory, liveHosts)
+            dependsOn(pins, rationale, inventory, liveHosts, workflowGate)
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
