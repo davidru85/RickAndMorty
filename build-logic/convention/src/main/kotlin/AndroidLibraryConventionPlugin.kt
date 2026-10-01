@@ -21,6 +21,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.library")
+            pluginManager.apply("org.jlleitschuh.gradle.ktlint")
 
             val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
             val namespace = libraryNamespace().get()

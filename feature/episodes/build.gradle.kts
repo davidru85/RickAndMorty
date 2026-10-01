@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core:presentation"))
-            implementation(libs.kotlinx.serialization.core)
+            api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
             implementation(project(":core:designsystem"))

@@ -6,4 +6,6 @@ import kotlinx.serialization.Serializable
 
 /** The character-detail destination — `DESIGN.md` §4.2. */
 @Serializable
-public data class CharacterDetail(public val id: String)
+public data class CharacterDetail(
+    public val id: String,
+)

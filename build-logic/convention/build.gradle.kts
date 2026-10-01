@@ -18,6 +18,8 @@ group = "io.github.davidru85.multiverse.buildlogic"
 dependencies {
     compileOnly(libs.android.gradle.plugin)
     compileOnly(libs.kotlin.gradle.plugin)
+    // The ktlint extension type the convention plugins configure (TASK-029).
+    compileOnly(libs.ktlint.gradle)
 
     // TASK-091: the durable regression suite for the boundary and policy logic. `kotlin-test`
     // and `junit4` are already pinned in the catalog for the shared test harness (TASK-024) and
