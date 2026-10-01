@@ -1,7 +1,7 @@
 # Pull request description template
 
 - **Status:** Active
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-01
 - **Owner:** Documentation Maintainer (`../../AGENTS.md` §3.9)
 - **Authoritative for:** the shape of a pull request description. Not authoritative for: branching, commit-message forms, the TDD phase protocol and the merge policy ([`CONTRIBUTING.md`](../CONTRIBUTING.md) owns them, DEC-053), the gate and its required checks ([`DEFINITION.md`](../DEFINITION.md)), the test strategy ([`TESTING.md`](../TESTING.md)), the agent permission boundary (`DEC-049`). `DEC-051` names this file; no second pull-request template exists.
 - **Inputs:** [`DECISION_BOARD.md`](../DECISION_BOARD.md) (DEC-046, DEC-049, DEC-051, DEC-053, DEC-054), [`DEFINITION.md`](../DEFINITION.md) §3/§7, [`CONTRIBUTING.md`](../CONTRIBUTING.md) §3/§5, [`TESTING.md`](../TESTING.md) (§13.2, §14, §15, §16), [`REQUIREMENTS.md`](../REQUIREMENTS.md), [`SECURITY.md`](../SECURITY.md), [`AGENTS.md`](../../AGENTS.md)
@@ -20,8 +20,8 @@
 | Field | Value |
 | --- | --- |
 | Title | `<type>(<scope>): <imperative summary>` ([`CONTRIBUTING.md`](../CONTRIBUTING.md)) |
-| Branch | `<feat\|fix\|docs\|test\|build\|chore>/<short-slug>` ([`CONTRIBUTING.md`](../CONTRIBUTING.md) §2); the documentation system itself is authored on `docs/documentation-system` |
-| Base | `<main>` |
+| Branch | `feat\|fix\|docs\|test\|build\|chore/<short-slug>` ([`CONTRIBUTING.md`](../CONTRIBUTING.md) §2); every change is prepared on its own typed branch from the current `main` |
+| Base | `main` |
 | Task | `TASK-<###>` |
 | Closes | `<GitHub Issue link, or None>` |
 | Platform impact | `<Android \| iOS \| shared \| all platforms>` (determines which required checks apply, [`CONTRIBUTING.md`](../CONTRIBUTING.md) §5.2) |
@@ -58,7 +58,7 @@ Record the command and the observed result. Do not write "works" without both.
 | 6 | `<e.g. dependency analysis and exact pinning>` | `<exact command>` | `<…>` |
 | 7 | `<manual or device check, if any>` | `<what was done>` | `<what was observed>` |
 
-- **Required checks:** the full set the gate requires applies to every pull request, on both platforms (`DEC-054`). The gate definition and what each check blocks are owned by [`DEFINITION.md`](../DEFINITION.md) and [`TESTING.md`](../TESTING.md): link the CI run rather than copying the list.
+- **Required checks:** the full set the gate requires applies to every pull request, on both platforms (`DEC-054` as amended by `DEC-071`: each row is mandatory from the change that introduces its harness). The gate definition and what each check blocks are owned by [`DEFINITION.md`](../DEFINITION.md) and [`TESTING.md`](../TESTING.md): link the CI run rather than copying the list.
 - **Red / green evidence (`DEC-053`):** `<red commit message + the observed failure> / <green commit message + the observed pass> / <refactor commit, or "no refactor change">`.
 - **TDD exception, when one applies:** `<pure documentation, build/CI configuration or tooling change — state which, per DEFINITION.md §3. Otherwise None.>`
 - **Not verified:** `<what was deliberately not run, and why. Never leave this blank when a check was skipped.>`
@@ -94,7 +94,7 @@ Record the command and the observed result. Do not write "works" without both.
 | --- | --- | --- | --- |
 | `<name>` | `<added / removed / upgraded>` | `<exact version, no range>` | `<the DESIGN.md section or ADR that records the rationale; REQ-NFR-002, REQ-NFR-006>` |
 
-`<No dependency change: state it. A second solution for a concern that already has one is prohibited (AGENTS.md §4.2).>`
+`<No dependency change: state it. A third solution for a concern, or a second one without a recorded rationale, is prohibited (`DEC-065`, `AGENTS.md` §4.2).>`
 
 ## Security and privacy considerations
 

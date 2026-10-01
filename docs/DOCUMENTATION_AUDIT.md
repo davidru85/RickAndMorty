@@ -47,7 +47,7 @@ This audit covers the entire documentation set of the repository after the docum
 | `docs/design/01-android-m3-expressive.md` | Historical Figma generation brief | UI/UX Designer | Superseded as a specification | Input | Never |
 | `docs/design/02-ios-liquid-glass.md` | Historical Figma generation brief | UI/UX Designer | Superseded as a specification | Input | Never |
 | `docs/figma/README.md` | Design-export location and procedure | UI/UX Designer | Active | Working | When exports land |
-| `docs/templates/backlog-item.md` · `test-case.md` · `pull-request.md` · `bug-report.md` | Working templates | Documentation Maintainer | Active | Template | Rarely |
+| `docs/templates/backlog-item.md` · `test-case.md` · `pull-request.md` · `bug-report.md` | Working templates (the fifth `DEC-051` template, the ADR one, is `docs/adr/0000-adr-template.md`) | Documentation Maintainer | Active | Template | Rarely |
 | `docs/DOCUMENTATION_AUDIT.md` | This file | Documentation Maintainer | Active | Working | Per milestone |
 
 ## 3. Ownership map — one authoritative source per topic
@@ -218,6 +218,7 @@ Next actions, in order: the post-merge correction programme is merged — `TASK-
 | Date | Change | Reference |
 | --- | --- | --- |
 | 2026-10-01 | `TASK-030` (`DEC-076`): the Swift toolchain is pinned at its real location — SwiftLint `0.65.1` (SHA-256 in `tools/swift-tools.lock`) and swift-format by Xcode 27.0 — replacing the "pinned in the Swift manifests" statement that named no manifest; the gate refuses an empty input set and passes `--strict`, because both tools fail open otherwise. | `TASK-030`, `DEC-076` |
+| 2026-10-01 | `TASK-031`: the five `DEC-051` templates audited against DOC1 and corrected — the backlog template gained the `Block` column of `BACKLOG.md` §2.1 (`DEC-063`) and lost a placeholder-shaped `Issue` syntax; the test-case template now names `androidHostTest`/`androidDeviceTest` (`DEC-069`); the PR template's fixed `<main>`, single documentation branch, `DEC-054`-without-`DEC-071` and one-vs-two-solutions wording are corrected. The TDD evidence structure stays with `TASK-073`. | `TASK-031`, `DEC-063`, `DEC-065`, `DEC-069`, `DEC-071`, `DEC-078` |
 | 2026-10-01 | B2 readiness packet: `CONF-51` resolved by `DEC-075` (detekt stays target state after the 2026-10-01 re-probe and the JDK-25 probe); `CONF-56`…`CONF-60` recorded and resolved by `DEC-073`…`DEC-078` (the `TASK-026`/`TASK-027`/`TASK-030` re-scopes, the blocking dependency analysis with guarded placeholder exclusions, and the test-id/template bookkeeping including `TASK-093`). §8 now counts 2 open conflicts. | `DEC-073`…`DEC-078`, `TASK-082`, `TASK-093` |
 | 2026-10-01 | Post-merge corrections merged: `TASK-087`…`TASK-090` (PRs #42–#45) are `Done`; the correction programme is closed and the audit's next action is B2. | `LOG-0049`…`LOG-0052`, `DEC-071` |
 | 2026-10-01 | `CONF-55` recorded and resolved by `DEC-072`: `TASK-024` could not satisfy its acceptance inside B2 because the components its fakes serve are owned by later blocks; the task is re-scoped to the harness (fixtures with sidecars, `FixtureLoader`, `MockEngine`, time control, the `TEST-UNIT-024` guard) and the interface-bound fakes move to their interface owners. | `TASK-024`, `DEC-072` |
