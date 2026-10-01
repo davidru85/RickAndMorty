@@ -31,7 +31,7 @@ class ModuleBoundariesPlugin : Plugin<Project> {
         // `Project` and the snapshot remains a configuration-cache input.
         val graph = target.objects.property(ModuleGraphSnapshot::class.java)
         target.gradle.projectsEvaluated {
-            graph.set(ModuleBoundaryCapture.capture(target.allprojects, includeStructure = true))
+            graph.set(ModuleBoundaryCapture.capture(target.allprojects))
         }
 
         val featureSources = target.fileTree(target.rootDir) {
