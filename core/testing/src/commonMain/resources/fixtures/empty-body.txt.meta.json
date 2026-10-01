@@ -1,0 +1,14 @@
+{
+  "bytes": 0,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "text/plain",
+  "fixture": "empty-body.txt",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "Zero-length 200; maps to EmptyBody, never cached",
+  "query": "page=1",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "status": 200
+}

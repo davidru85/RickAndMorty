@@ -134,11 +134,32 @@ class DependencyPolicyPlugin : Plugin<Project> {
             rootDirectory.set(target.layout.projectDirectory)
         }
 
+        // TASK-024 (`TEST-UNIT-024`, TESTING.md 4.1): no test source set outside the scheduled
+        // `contract-live` source set may name a live API host. The task scans test sources only —
+        // a production source set legitimately names the host — and fails closed.
+        val liveTests = target.files(
+            target.fileTree(rootDir) {
+                // Every Kotlin test source set of every module. The guard itself decides which
+                // source set is a test source set and which one is the exempt scheduled job.
+                include("**/src/*Test/**/*.kt", "**/src/*test/**/*.kt")
+                include("**/src/commonTest/**/*.kt", "**/src/androidHostTest/**/*.kt", "**/src/androidDeviceTest/**/*.kt")
+                include("**/src/*TestFixtures/**/*.kt")
+                exclude(*BUILD_STATE_EXCLUDES)
+            },
+        )
+        val liveHosts = target.tasks.register<VerifyNoLiveHostsTask>("verifyNoLiveHosts") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-024: no test source set outside `contract-live` names a live API host " +
+                "(REQ-NFR-005; TESTING.md 4.1)."
+            this.testSources.from(liveTests)
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
         val aggregate = target.tasks.register("verifyDependencyPolicy") {
             group = VERIFICATION_GROUP
             description = "Verifies the dependency policy: exact pins, per-entry rationale and README inventory " +
                 "(TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051; DEC-061)."
-            dependsOn(pins, rationale, inventory)
+            dependsOn(pins, rationale, inventory, liveHosts)
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }

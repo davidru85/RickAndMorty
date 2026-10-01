@@ -1,0 +1,15 @@
+{
+  "bytes": 167,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "graphql-validation-error-400.json",
+  "kind": "graphql",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "Bad",
+  "path": "/graphql",
+  "pins": "HTTP 400 GRAPHQL_VALIDATION_FAILED; maps to InvalidRequest, non-retryable",
+  "sha256": "8568ae51ecdf02e6dc4d4210fb7cede68dd32c17b610b84428c6f2fdfcf0d96f",
+  "status": 400,
+  "variables": {}
+}

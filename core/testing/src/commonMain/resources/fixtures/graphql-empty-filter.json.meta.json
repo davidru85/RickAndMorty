@@ -1,0 +1,20 @@
+{
+  "bytes": 97,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "graphql-empty-filter.json",
+  "kind": "graphql",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "CharacterPage",
+  "path": "/graphql",
+  "pins": "All info fields null with results: []; an empty result, not a malformed response",
+  "sha256": "4f4d8b6daecce18eb8b071b4d4f7afcf194e2d4a0f6cf4ad99eab39a8e9c14dc",
+  "status": 200,
+  "variables": {
+    "filter": {
+      "name": "zzzznotreal"
+    },
+    "page": 1
+  }
+}

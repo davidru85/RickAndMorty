@@ -1,0 +1,17 @@
+{
+  "bytes": 27,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "graphql-null-root.json",
+  "kind": "graphql",
+  "method": "POST",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "operationName": "CharacterDetail",
+  "path": "/graphql",
+  "pins": "data.character == null with HTTP 200; maps to NotFound",
+  "sha256": "b155164813c08b759aec3646e03e767e41378dcc6a1fa5ea00c42bc00e8b5e1c",
+  "status": 200,
+  "variables": {
+    "id": "99999"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "bytes": 3490,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "episode-batch.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/episode/1,2,3",
+  "pins": "Episode batch used for enrichment and air_date mapping",
+  "sha256": "c944972c0d196bb580113e2b14a158e211b9b1f62564a9f26badd1211d46e589",
+  "status": 200
+}

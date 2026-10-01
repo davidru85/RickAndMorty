@@ -1,0 +1,14 @@
+{
+  "bytes": 19496,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-page-01.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "First page: 20 items, non-null info.next, info.count present",
+  "query": "page=1",
+  "sha256": "ed2d6856a6f06d59b8386b017fe88c5bec5be49f7398febe298b56bf45cddf61",
+  "status": 200
+}

@@ -1,0 +1,13 @@
+{
+  "bytes": 2721,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "fixture": "character-batch-mixed.json",
+  "kind": "rest",
+  "method": "GET",
+  "note": "Dated observation captured for TASK-024. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/1,99999",
+  "pins": "Batch array containing only the resources that exist",
+  "sha256": "ceb3c4ade845f034ae6211c0075b36cc22ca8b74835e17e53e3e086164ce07dd",
+  "status": 200
+}
