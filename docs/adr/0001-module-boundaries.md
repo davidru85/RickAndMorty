@@ -16,6 +16,8 @@
 
 > **Amended 2026-10-01 by owner decision (`DEC-066`), resolving `CONF-47`:** the `:core:domain` rule is widened by exactly two permitted libraries. `:core:domain` MUST depend on no project module and on no platform, HTTP, UI or persistence library; the **Kotlin standard library and `kotlinx-coroutines-core`** are permitted, because `IC-008` (`FavoritesRepository.observe(): Flow<Set<CharacterId>>`) and `IC-009` (`ObserveFavoriteIds`) expose `Flow` and the contract baseline cannot be implemented or consumed without them. Nothing else in the module set, its edges or its rationale changes. Every document that stated "`:core:domain` depends on nothing" cites this amendment: `DESIGN.md` §3.1/§3.4, `REQUIREMENTS.md` `AC-REQ-NFR-009-3`, `TESTING.md` §3.2, `DEFINITION.md` §3 D7 and the `CONTRACTS.md` overview diagram. The version catalog already pins `libs.kotlinx.coroutines.core` `1.11.0` for this purpose (`DESIGN.md` §3.5).
 
+> **Wording aligned 2026-10-01 by owner decision (`DEC-069`), resolving `CONF-39`:** the `:core:testing` row below reads “test classpath only”, which the build cannot express as a module property. The module declares `:core:domain` and `:core:data`; the test-only rule is a **consumption** rule — no production source set may reference `:core:testing` — and is owned by `DESIGN.md` §3.4 rule 9 and enforced by `TEST-UNIT-017` in the `TASK-017` boundary check. No module edge changes.
+
 ## Owners
 
 - **Decision owner:** System Architect — accountable for the boundary rules and the review trigger below.

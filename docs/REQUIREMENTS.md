@@ -188,7 +188,7 @@ Every change `MUST` be delivered through a branch and a pull request that is rev
 
 - `AC-REQ-FUNC-014-1` `main` builds at every commit; work happens on `feat|fix|docs|test|build|chore/<slug>` branches.
 - `AC-REQ-FUNC-014-2` An agent may open a pull request but `MUST NOT` merge, tag or release it.
-- Task: `TASK-014` · Decision: `DEC-041`, `DEC-049` · Tests: `TEST-UNIT-045`
+- Task: `TASK-028` · Decision: `DEC-041`, `DEC-049` · Tests: `TEST-UNIT-045`
 
 ### 5.2 Should have
 
@@ -428,5 +428,6 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | `REQ-FUNC-014`'s task citation corrected from `TASK-014` to `TASK-028` (`CONF-36`); `AC-REQ-NFR-006-2`/`-3` split by `DEC-067` and `AC-REQ-NFR-009-3` restated under the `DEC-066` amendment; the `REQ-NFR-008` identifier gap recorded as deliberate. | `TASK-019`, `DEC-066`, `DEC-067` |
 | 2026-09-29 | Rewritten from the initial 27-line draft: stable IDs, acceptance criteria, MoSCoW rebuilt against `assessment.md`, scope/non-goals, platform, UX, security and observability requirements added. | DEC-002, DEC-004, DEC-007, DEC-046 |
 | 2026-09-30 | Settings replaces Locations as the fourth destination (`REQ-FUNC-008`); `REQ-FUNC-033`…`REQ-FUNC-035` added as Should-have (sounds preference, REST/GraphQL selection, delete all favorites), not traceable to `assessment.md` but to owner decisions; `REQ-FUNC-036` and `DEF-005` defer the sound set; `REQ-NFR-009` module list updated. | DEC-055, DEC-056 |
