@@ -78,6 +78,15 @@ jobs:
       - name: Run the local gate
         run: ./gradlew check --stacktrace
 
+      # TASK-029: the quality toolchain is part of the gate, not a local convention.
+      # ktlint, Android Lint and the dependency policy run inside `check`; `buildHealth`
+      # and the documented-gate check are separate tasks and are visible as named steps.
+      - name: Verify dependency health
+        run: ./gradlew buildHealth --stacktrace
+
+      - name: Verify the documented gate
+        run: ./gradlew verifyDocumentedGate --stacktrace
+
       - name: Assemble the Android application
         run: ./gradlew :androidApp:assembleDebug --stacktrace
 
@@ -135,7 +144,7 @@ jobs:
             --stacktrace
 
       - name: Run the policy checks
-        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts --stacktrace
+        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyDocumentedGate --stacktrace
 
       - name: Upload the test reports
         if: always()

@@ -27,6 +27,12 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // The ktlint Gradle plugin is published on the Gradle Plugin Portal, not Maven Central
+        // (`org.jlleitschuh.gradle:ktlint-gradle`). The repository is filtered to that one group,
+        // so no other artifact can be resolved from the portal (SECURITY.md 9.1).
+        gradlePluginPortal {
+            content { includeGroup("org.jlleitschuh.gradle") }
+        }
     }
     versionCatalogs {
         create("libs") {

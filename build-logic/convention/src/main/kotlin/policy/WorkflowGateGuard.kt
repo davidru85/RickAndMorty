@@ -43,6 +43,8 @@ internal object WorkflowGateGuard {
         "verifyDependencyPolicy",
         "verifyRepositoryHygiene",
         "verifyNoLiveHosts",
+        "buildHealth",
+        "verifyDocumentedGate",
     )
 
     /** The jobs that must exist, because each carries part of the required set. */
@@ -78,7 +80,13 @@ internal object WorkflowGateGuard {
             )
         }
 
-        val text = files.joinToString("\n") { it.readText() }
+        // TEST-UNIT-044: a required command must be reachable from a step, not merely mentioned.
+        // Comments explain the rules and quote these commands, so reachability is decided on the
+        // workflow with comment lines removed; the SHA-pin and integration checks below still read
+        // the raw lines, because they need the line number a reviewer sees.
+        val text = files.joinToString("\n") { file ->
+            file.readLines().joinToString("\n") { line -> line.substringBefore('#') }
+        }
         val relative = files.joinToString(", ") { it.relativeTo(root).invariantSeparatorsPath }
 
         REQUIRED_JOBS.forEach { job ->

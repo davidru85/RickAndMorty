@@ -15,7 +15,6 @@ import kotlinx.coroutines.test.runTest
  * `delay` or `Thread.sleep`.
  */
 public object TestTime {
-
     /** A single-threaded dispatcher whose virtual clock only advances when a test says so. */
     public fun dispatcher(): TestDispatcher = StandardTestDispatcher()
 
@@ -40,7 +39,6 @@ public object TestTime {
  * timezone or a date format, and a wider clock would invite a test to depend on them.
  */
 public fun interface FakeClock {
-
     /** The current instant, in epoch milliseconds. */
     public fun nowMillis(): Long
 }
@@ -51,8 +49,9 @@ public fun interface FakeClock {
  * The contract is `nowMillis()` plus an explicit advance; a system-clock change never alters an
  * assertion because nothing here reads the system clock.
  */
-public class MutableFakeClock(private var currentMillis: Long = 0L) : FakeClock {
-
+public class MutableFakeClock(
+    private var currentMillis: Long = 0L,
+) : FakeClock {
     override fun nowMillis(): Long = currentMillis
 
     /** Moves the clock forward by [millis]. Negative values are rejected: time does not run back. */

@@ -2,11 +2,9 @@ package io.github.davidru85.multiverse.testing
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.request.HttpRequestData
-import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 
@@ -21,7 +19,6 @@ import io.ktor.http.headersOf
  * records the requests it served so a test can assert what the code asked for.
  */
 public object MockHttp {
-
     /** One request the harness served, reduced to the fields a test legitimately asserts on. */
     public data class Served(
         public val method: String,
@@ -38,23 +35,26 @@ public object MockHttp {
      */
     public fun client(vararg routes: Route): Pair<HttpClient, MutableList<Served>> {
         val served = mutableListOf<Served>()
-        val engine = MockEngine { request ->
-            served += Served(
-                method = request.method.value,
-                url = request.url.toString(),
-                body = request.body.toByteArray().decodeToString(),
-            )
-            val route = routes.firstOrNull { it.matches(request) }
-                ?: error(
-                    "No fixture route matched ${request.method.value} ${request.url}. " +
-                        "Add a route that serves a committed fixture rather than inlining a body.",
+        val engine =
+            MockEngine { request ->
+                served +=
+                    Served(
+                        method = request.method.value,
+                        url = request.url.toString(),
+                        body = request.body.toByteArray().decodeToString(),
+                    )
+                val route =
+                    routes.firstOrNull { it.matches(request) }
+                        ?: error(
+                            "No fixture route matched ${request.method.value} ${request.url}. " +
+                                "Add a route that serves a committed fixture rather than inlining a body.",
+                        )
+                respond(
+                    content = route.body,
+                    status = HttpStatusCode.fromValue(route.status),
+                    headers = headersOf("content-type", route.contentType),
                 )
-            respond(
-                content = route.body,
-                status = HttpStatusCode.fromValue(route.status),
-                headers = headersOf("content-type", route.contentType),
-            )
-        }
+            }
         return HttpClient(engine) to served
     }
 

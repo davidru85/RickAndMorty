@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
  * every failure line, which the assertions below carry in their messages.
  */
 class FixtureLoaderTest {
-
     @Test
     fun `every committed fixture is loadable and matches its sidecar`() {
         val names = FixtureLoader.names()
@@ -34,9 +33,10 @@ class FixtureLoaderTest {
 
     @Test
     fun `an unknown fixture fails loudly rather than serving an empty body`() {
-        val failure = assertFailsWith<IllegalArgumentException> {
-            FixtureLoader.text("this-fixture-does-not-exist.json")
-        }
+        val failure =
+            assertFailsWith<IllegalArgumentException> {
+                FixtureLoader.text("this-fixture-does-not-exist.json")
+            }
         assertTrue(
             failure.message!!.contains("this-fixture-does-not-exist.json"),
             "TEST-UNIT-024: the failure must name the missing fixture: ${failure.message}",
@@ -56,9 +56,10 @@ class FixtureLoaderTest {
 
     @Test
     fun `a derived fixture records its provenance in the sidecar`() {
-        val derived = FixtureLoader.names().filter { name ->
-            FixtureLoader.text("$name.meta.json").contains("\"kind\": \"derived\"")
-        }
+        val derived =
+            FixtureLoader.names().filter { name ->
+                FixtureLoader.text("$name.meta.json").contains("\"kind\": \"derived\"")
+            }
         assertTrue(
             derived.isNotEmpty(),
             "TEST-UNIT-024: the synthesised fixtures must record that they are derived, not captured",
@@ -68,7 +69,6 @@ class FixtureLoaderTest {
 
 /** The time and dispatcher helpers (`TESTING.md` §5, `REQ-REL-004`). */
 class TestTimeTest {
-
     @Test
     fun `the fake clock only moves when a test says so`() {
         val clock = MutableFakeClock(1_000L)
@@ -85,15 +85,15 @@ class TestTimeTest {
     }
 
     @Test
-    fun `a suspending body waits in virtual time rather than real time`() = TestTime.run { _ ->
-        val started = testScheduler.currentTime
-        kotlinx.coroutines.delay(3_000L)
-        val elapsed = testScheduler.currentTime - started
-        assertEquals(
-            3_000L,
-            elapsed,
-            "TEST-UNIT-024: a 3 s debounce must cost 3 s of virtual time and no wall-clock wait",
-        )
-    }
-
+    fun `a suspending body waits in virtual time rather than real time`() =
+        TestTime.run { _ ->
+            val started = testScheduler.currentTime
+            kotlinx.coroutines.delay(3_000L)
+            val elapsed = testScheduler.currentTime - started
+            assertEquals(
+                3_000L,
+                elapsed,
+                "TEST-UNIT-024: a 3 s debounce must cost 3 s of virtual time and no wall-clock wait",
+            )
+        }
 }

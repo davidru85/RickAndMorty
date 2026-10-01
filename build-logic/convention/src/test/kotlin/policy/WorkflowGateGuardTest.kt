@@ -42,22 +42,31 @@ class WorkflowGateGuardTest {
 
     /** A workflow that satisfies every rule the guard enforces. */
     private fun complete(): File {
-        val root = workflow(
-            "android" to "ubuntu-latest",
-            "ios" to "macos-latest",
-        )
-        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText(
-            file.readText() +
-                """
-                # ./gradlew check
-                # :androidApp:assembleDebug
-                # iosSimulatorArm64Test
-                # verifyModuleBoundaries
-                # verifyDependencyPolicy
-                # verifyRepositoryHygiene
-                # verifyNoLiveHosts
-                """.trimIndent() + "\n",
+        val root = kotlin.io.path.createTempDirectory("workflow-guard-complete").toFile()
+        val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+        dir.mkdirs()
+        File(dir, "pull-request.yml").writeText(
+            buildString {
+                appendLine("name: pull-request")
+                appendLine("on:")
+                appendLine("  pull_request:")
+                appendLine("jobs:")
+                listOf("android" to "ubuntu-latest", "ios" to "macos-latest").forEach { (name, runner) ->
+                    appendLine("  $name:")
+                    appendLine("    runs-on: $runner")
+                    appendLine("    steps:")
+                    appendLine("      - uses: $pinned")
+                    appendLine("      - name: Run the gate")
+                    appendLine("        run: |")
+                    appendLine("          ./gradlew check")
+                    appendLine("          ./gradlew :androidApp:assembleDebug")
+                    appendLine("          ./gradlew iosSimulatorArm64Test")
+                    appendLine("          ./gradlew verifyModuleBoundaries verifyDependencyPolicy")
+                    appendLine("          ./gradlew verifyRepositoryHygiene verifyNoLiveHosts")
+                    appendLine("          ./gradlew buildHealth")
+                    appendLine("          ./gradlew verifyDocumentedGate")
+                }
+            },
         )
         return root
     }
@@ -94,7 +103,7 @@ class WorkflowGateGuardTest {
     fun `an omitted check is reported rather than silently narrowing the gate`() {
         val root = complete()
         val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText(file.readText().replace("# verifyNoLiveHosts", "# (removed)"))
+        file.writeText(file.readText().replace("./gradlew verifyRepositoryHygiene verifyNoLiveHosts", "./gradlew verifyRepositoryHygiene"))
         assertTrue(
             findings(root).any { it.reason.contains("verifyNoLiveHosts") },
             "TEST-UNIT-044: deleting a check from the workflow must fail the guard",
