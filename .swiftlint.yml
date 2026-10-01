@@ -1,0 +1,60 @@
+# SwiftLint configuration (TASK-030, DEC-076, DEC-032).
+#
+# Scope: the iOS Swift sources of `iosApp/` and its feature packages. The repository has no Swift
+# source until TASK-051; the step that runs this gate activates with that task, because a lint over
+# zero files is not a check (DEC-071).
+#
+# `GUIDELINES.md` §1.3 names SwiftLint as the owner of Swift structural analysis, including force
+# unwrapping, so the opt-in rules below are the ones the guidelines cite rather than a broad preset.
+
+included:
+  - iosApp
+
+excluded:
+  - .build
+  - build
+  - DerivedData
+
+opt_in_rules:
+  - force_unwrapping
+  - force_cast
+  - force_try
+  - empty_count
+  - explicit_init
+  - closure_spacing
+  - redundant_nil_coalescing
+  - sorted_imports
+  - overridden_super_call
+  - prohibited_super_call
+  - fatal_error_message
+  - discouraged_optional_boolean
+  - toggle_bool
+
+disabled_rules:
+  # Formatting is swift-format's concern (`GUIDELINES.md` §1.3); two formatters would disagree.
+  - trailing_whitespace
+  - trailing_newline
+  - indentation_width
+
+line_length:
+  warning: 120
+  error: 140
+
+identifier_name:
+  min_length:
+    warning: 3
+  excluded:
+    - id
+    - x
+    - y
+    - i
+
+type_name:
+  min_length: 3
+
+# `unused_import` only runs under `swiftlint analyze`, so it is declared where it belongs.
+analyzer_rules:
+  - unused_import
+
+reporter: xcode
+strict: true

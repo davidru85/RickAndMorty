@@ -317,4 +317,4 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 
 **Dependencias implícitas.** El plugin de Gradle de Kotlin añade `org.jetbrains.kotlin:kotlin-stdlib` a toda compilación Kotlin, por lo que aparece en el grafo resuelto sin entrada en el catálogo. La versión observada es `2.4.20`.
 
-Los paquetes del lado iOS — swift-snapshot-testing, SwiftLint, swift-format y el SDK de Xcode — se fijan en los manifiestos Swift y en el proyecto de Xcode, no en este inventario (DEC-024, DEC-025, DEC-032).
+Las herramientas del lado iOS se fijan fuera de este inventario Gradle, en su ubicación real (DEC-076): SwiftLint `0.65.1` por versión exacta con el SHA-256 de su artefacto de release en `tools/swift-tools.lock`; swift-format por la versión de Xcode que lo incluye (Xcode 27.0 — `macos-latest` por sí solo no fija el toolchain); swift-snapshot-testing con las fuentes Swift de la app iOS en `TASK-051` (DEC-024, DEC-025, DEC-032).

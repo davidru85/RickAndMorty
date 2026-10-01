@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "lineLength": 120,
+  "indentation": { "spaces": 4 },
+  "respectsExistingLineBreaks": true,
+  "lineBreakBeforeControlFlowKeywords": false,
+  "indentBlankLines": false,
+  "fileScopedDeclarationPrivacy": { "accessLevel": "private" },
+  "spacesAroundRangeFormationOperators": false,
+  "multiElementCollectionTrailingCommas": true,
+  "rules": {
+    "AlwaysUseLowerCamelCase": false,
+    "NoBlockComments": true,
+    "UseSingleLinePropertyGetter": true
+  }
+}
