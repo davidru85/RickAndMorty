@@ -1,7 +1,7 @@
 # TESTING.md — Test Strategy and Verification Plan
 
 - **Status:** Active — target state. The build skeleton exists (TASK-014); the repository contains no test code yet (§Preamble, *Current state vs target state*).
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`DESIGN.md`](DESIGN.md), [`UI_SPEC.md`](UI_SPEC.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), `ERROR_FLOW.md`, `CONTRACTS.md`, `PERFORMANCE.md`, `DEFINITION.md`, `CONTRIBUTING.md`, `GUIDELINES.md`, [`../AGENTS.md`](../AGENTS.md)
@@ -205,7 +205,7 @@ Assertions about the build that a Gradle task cannot express (branch protection 
 
 ### 4.1 Rule: no test performs real network I/O
 
-- No test in `commonTest`, `androidUnitTest`, `androidInstrumentedTest` or `iosTest` `MUST` open a socket. The remote boundary is always Ktor `MockEngine` (`DEC-030`) or a fake seam.
+- No test in `commonTest`, `androidHostTest`, `androidDeviceTest` or `iosTest` `MUST` open a socket (`DEC-069`). The remote boundary is always Ktor `MockEngine` (`DEC-030`) or a fake seam.
 - The only test code allowed to contact `rickandmortyapi.com` is the `contract-live` source set of the scheduled job (§11). `TEST-UNIT-024` enforces this by scanning the other test source sets for live host literals.
 - `MockEngine` responses are served from the committed fixtures in §4.3; a test `MUST NOT` inline a response body, because inlined bodies drift from the captured API shape silently.
 
@@ -214,7 +214,7 @@ Assertions about the build that a Gradle task cannot express (branch protection 
 | Concern | Mechanism | Layer |
 | --- | --- | --- |
 | DTO decoding, mapping, failure classification, pager behaviour | Ktor `MockEngine` + fixtures | `commonTest` (`TEST-UNIT-###`, `TEST-CONTRACT-###`) |
-| HTTP disk-cache policy: freshness headers, revalidation, and the REST `404` → `Cache-Control: no-store` rewrite required by `API_SPECS.md` §7.1 | Android integration test with `MockWebServer` behind the OkHttp engine, because `MockEngine` does not exercise OkHttp's cache | `androidUnitTest` (`TEST-INT-001`) |
+| HTTP disk-cache policy: freshness headers, revalidation, and the REST `404` → `Cache-Control: no-store` rewrite required by `API_SPECS.md` §7.1 | Android integration test with `MockWebServer` behind the OkHttp engine, because `MockEngine` does not exercise OkHttp's cache | `androidHostTest` (`TEST-INT-001`) |
 | Live API shape | Scheduled live-mode run of the same contract IDs plus observation probes | `contract-live` (§11) |
 
 ### 4.3 Fixture inventory
@@ -290,7 +290,7 @@ Fakes are behaviourally faithful to the production seam. A fake that returns wha
 
 | Not testable in `commonTest` | Replaced by |
 | --- | --- |
-| DataStore's real file I/O, corruption recovery and migration behaviour | `TEST-INT-004` in `androidUnitTest` against a real (non-robolectric-mocked) store, or an instrumented test where the harness requires it |
+| DataStore's real file I/O, corruption recovery and migration behaviour | `TEST-INT-004` in `androidHostTest` against a real (non-robolectric-mocked) store, or a device test (`androidDeviceTest`) where the harness requires it |
 | `UserDefaults` persistence across a real process restart | `TEST-INT-004` in `iosTest`, plus the manual milestone entry in §2.1 |
 | Platform `HttpCache`/`URLCache` disk behaviour | `TEST-INT-001` on Android (OkHttp + `MockWebServer`); the iOS side is covered by the same contract executed against `URLCache` in `iosTest` where the harness allows, otherwise by the manual checklist |
 | Keychain/Keystore, permissions, background execution | Out of scope — the app stores no secrets and requests no runtime permission (`REQ-SEC-002`, `REQ-SEC-004`) |
@@ -486,15 +486,15 @@ core/
   testing/src/commonTest/kotlin/...          # tests for the helpers themselves (rare)
   domain/src/commonTest/kotlin/...           # domain rules, cross-feature use cases
   data/src/commonTest/kotlin/...             # mappers, response cache, pager, remote adapter → contract fixtures
-  data/src/androidUnitTest/kotlin/...        # DataStore favorites store, OkHttp cache integration (TEST-INT-001)
+  data/src/androidHostTest/kotlin/...        # DataStore favorites store, OkHttp cache integration (TEST-INT-001)
   data/src/iosTest/kotlin/...                # UserDefaults-backed favorites store, shared contract suite
   presentation/src/commonTest/kotlin/...     # formatters, copy-key parity, state logic
   designsystem/src/test/kotlin/...           # Android component tests and Roborazzi baselines (Compose only)
 
 feature/
   <feature>/src/commonTest/kotlin/...        # feature use cases + feature presentation state
-  <feature>/src/androidUnitTest/kotlin/...   # Android ViewModel, Compose semantics, Roborazzi tests
-  <feature>/src/androidUnitTest/snapshots/   # committed Android snapshot baselines
+  <feature>/src/androidHostTest/kotlin/...   # Android ViewModel, Compose semantics, Roborazzi tests
+  <feature>/src/androidHostTest/snapshots/   # committed Android snapshot baselines
   <feature>/src/iosTest/kotlin/...           # shared-logic tests executed for the iOS target
 
 androidApp/src/test/kotlin/...               # app-shell tests: DI graph wiring, splash timing, navigation entry points
