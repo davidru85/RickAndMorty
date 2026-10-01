@@ -498,6 +498,7 @@ flowchart LR
 ```
 
 - The red test exists **before** the implementation; the observed red failure and the observed green pass are the evidence, not the existence of a passing suite (`DEFINITION.md` §3 D2–D4).
+- The twelve ordered steps of the cycle (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit), the commit forms and the three exception classes are owned by `CONTRIBUTING.md` §3.1 and are referenced, not restated, here (`TASK-072`).
 - One phase per commit: one red, one green, one refactor commit per behaviour increment.
 - Exceptions are explicit and limited to **pure documentation, build/CI configuration and tooling changes**; any other change that skips the red phase states why in the pull request (`DEFINITION.md` §3 D4).
 - A snapshot baseline is recorded only after the state it depicts is implemented and correct; a baseline is never used to make a red run green (`TESTING.md` §1.1).
@@ -716,6 +717,7 @@ Rules that constrain deviation:
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §8.1 points at the twelve-step protocol of `CONTRIBUTING.md` §3.1 instead of implying the cycle is only three commits. | `DEC-053`, `TASK-072` |
 | 2026-10-01 | §1.3 and §3.1 name the executable boundary check (`verifyModuleBoundaries`, `TASK-017`) and its rule set, and distinguish it from `buildHealth` (`TASK-029`). | `TASK-017`, `DEC-066`, `DEC-068` |
 | 2026-09-29 | Created: Kotlin, source-set, module, presentation, Compose and SwiftUI rules; naming and identifier conventions; test-first workflow and local test rules; documentation, accessibility and security-sensitive coding conventions; the deviation process. Every rule names its enforcing tool, test id or review expectation. | `DEC-052` (feature-per-module layout), `DEC-053` (TDD phase protocol, amending `DEC-041`), `DEC-054` (full both-platform suite blocking on every pull request) |
 | 2026-09-30 | Repository hygiene added as a named tool in §1.3 and as existing state in §1.4; §11.1 names `./gradlew verifyRepositoryHygiene` and `TEST-UNIT-026` as the enforcement. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
