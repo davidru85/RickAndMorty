@@ -3,6 +3,10 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
 import java.io.Serializable
 
 /**
+ * One boundary violation. `originConfiguration` is rendered only when it differs from the
+ * effective configuration, so an inherited edge names both the classpath it reaches and the
+ * declaration that introduced it (`GAP-012`).
+ *
  * The test ids the module-boundary check implements (`TESTING.md` §3.3, §17; `DEC-068`).
  *
  * - [GRAPH] owns the module-graph rules — project edges, source-set kinds and the fail-closed
@@ -22,7 +26,7 @@ internal object BoundaryTestIds {
  * never prints an absolute machine path.
  *
  * @param testId the `TEST-###` id that owns the rule, so a failure line is greppable.
- * @param ruleId the stable rule id inside this check (`R1`…`R13`, `S1`…`S3`).
+ * @param ruleId the stable rule id inside this check (`R1`…`R15`, `S1`…`S3`).
  * @param consumer the consuming project path, or a project path for a structure rule.
  * @param configuration the Gradle configuration that declared the edge, empty for structure rules.
  * @param sourceSet the classified source set, empty when the rule is not source-set scoped.
@@ -36,6 +40,8 @@ data class ModuleBoundaryViolation(
     val configuration: String,
     val sourceSet: String,
     val producer: String,
+    /** The configuration that declared the dependency, when it differs from the effective one. */
+    val originConfiguration: String = "",
     val reason: String,
 ) : Serializable {
 
@@ -45,6 +51,9 @@ data class ModuleBoundaryViolation(
         if (configuration.isNotEmpty()) append(" configuration=").append(configuration)
         if (sourceSet.isNotEmpty()) append(" sourceSet=").append(sourceSet)
         if (producer.isNotEmpty()) append(" producer=").append(producer)
+        if (originConfiguration.isNotEmpty() && originConfiguration != configuration) {
+            append(" origin=").append(originConfiguration)
+        }
         append(": ").append(reason)
     }
 }

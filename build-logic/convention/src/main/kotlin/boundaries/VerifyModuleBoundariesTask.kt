@@ -35,7 +35,11 @@ abstract class VerifyModuleBoundariesTask : DefaultTask() {
     @get:Input
     abstract val graph: Property<ModuleGraphSnapshot>
 
-    /** Feature production sources, read for the `S2` app-wide-`NavHost` scan only. */
+    /**
+     * Every feature's production Kotlin source, declared as task inputs so the structure rules
+     * (`S1`–`S3`) and the `NavHost` scan read content at execution time and stay correct under
+     * up-to-date checks and the configuration cache.
+     */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val featureSources: ConfigurableFileCollection
@@ -45,8 +49,9 @@ abstract class VerifyModuleBoundariesTask : DefaultTask() {
 
     @TaskAction
     fun verify() {
-        val log = ModuleBoundaryRules.evaluate(graph.get())
-        scanForAppWideNavHost(log)
+        val byProject = featureSourceMap()
+        val log = ModuleBoundaryRules.evaluate(graph.get(), byProject)
+        scanForAppWideNavHost(log, byProject)
 
         if (!log.isEmpty()) {
             logger.error(log.render())
@@ -58,36 +63,46 @@ abstract class VerifyModuleBoundariesTask : DefaultTask() {
         }
         logger.lifecycle(
             "verifyModuleBoundaries passed: ${graph.get().projects.size} project(s) checked against the module " +
-                "rules of ADR-0001 as amended (R1–R14, S1–S3; TEST-UNIT-017, TEST-UNIT-012, TEST-UNIT-043).",
+                "rules of ADR-0001 as amended (R1–R15, S1–S3; TEST-UNIT-017, TEST-UNIT-012, TEST-UNIT-043).",
         )
     }
 
+    /**
+     * `module path -> production sources`, read once per run. The contents are task inputs, so a
+     * change to a source file invalidates the task and no configuration-time read is smuggled past
+     * up-to-date tracking.
+     */
+    private fun featureSourceMap(): Map<String, List<FeatureSource>> {
+        val root = rootDirectory.get().asFile
+        return featureSources.files
+            .groupBy { file -> projectPathOf(file.relativeTo(root).invariantSeparatorsPath) }
+            .mapValues { (_, files) -> files.map { file -> FeatureSources.read(root, file) } }
+    }
+
     /** `S2` — the app-wide `NavHost` belongs to the shell; a feature source must not name it. */
-    private fun scanForAppWideNavHost(log: BoundaryViolationLog) {
-        featureSources.files.sortedBy { it.path }.forEach { file ->
-            val relative = file.relativeToOrNull(rootDirectory.get().asFile)?.invariantSeparatorsPath ?: file.name
-            val text = file.readText()
-            KotlinSources.mask(text).let { code ->
-                if (APP_WIDE_NAV_HOST.containsMatchIn(code)) {
-                    val project = projectPathOf(relative)
-                    log.add(
-                        ModuleBoundaryViolation(
-                            testId = BoundaryTestIds.STRUCTURE,
-                            ruleId = "S2",
-                            consumer = project,
-                            configuration = "",
-                            sourceSet = "",
-                            producer = "",
-                            reason = "`$relative` names the app-wide `NavHost`; the application shell owns the graph " +
-                                "(ADR-0001 rule 7, AC-REQ-NFR-009-2)",
-                        ),
-                    )
-                }
+    private fun scanForAppWideNavHost(
+        log: BoundaryViolationLog,
+        byProject: Map<String, List<FeatureSource>>,
+    ) {
+        byProject.forEach { (project, sources) ->
+            sources.filter { it.namesAppWideNavHost }.forEach { source ->
+                log.add(
+                    ModuleBoundaryViolation(
+                        testId = BoundaryTestIds.STRUCTURE,
+                        ruleId = "S2",
+                        consumer = project,
+                        configuration = "",
+                        sourceSet = "",
+                        producer = "",
+                        reason = "`${source.path}` names the app-wide `NavHost`; the application shell owns the " +
+                            "graph (ADR-0001 rule 7, AC-REQ-NFR-009-2)",
+                    ),
+                )
             }
         }
     }
 
-    /** `src/...` under `feature/<name>/` belongs to `:feature:<name>`. */
+    /** `feature/<name>/src/...` belongs to `:feature:<name>`. */
     private fun projectPathOf(relative: String): String {
         val parts = relative.split('/')
         val featureIndex = parts.indexOf("feature")
@@ -98,12 +113,6 @@ abstract class VerifyModuleBoundariesTask : DefaultTask() {
         }
     }
 
-    private fun File.relativeToOrNull(root: File): File? =
-        runCatching { relativeTo(root) }.getOrNull()
-
-    private companion object {
-        val APP_WIDE_NAV_HOST = Regex("\\bNavHost(?:\\s*\\(|\\b)")
-    }
 }
 
 /**

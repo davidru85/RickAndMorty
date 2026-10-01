@@ -8,6 +8,7 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  * - `R2` `:core:data` depends only on `:core:domain`.
  * - `R3` `:core:presentation` depends only on `:core:domain`.
  * - `R4` `:core:designsystem` declares no project dependency.
+ * - `R15` `:core:designsystem` declares Compose-only external dependencies (`DESIGN.md` §3.4 rule 4).
  * - `R5` `:core:testing` may depend on `:core:domain` and `:core:data`.
  * - `R6` no production source set consumes `:core:testing`.
  * - `R7` no `:feature:*` depends on another `:feature:*`.
@@ -39,7 +40,10 @@ internal object ModuleBoundaryRules {
         producer == ":core:domain" || producer == ":core:data" || producer == ":core:presentation" ||
             producer in FEATURE_SHARED_CORE || producer.startsWith(":feature:")
 
-    fun evaluate(snapshot: ModuleGraphSnapshot): BoundaryViolationLog {
+    fun evaluate(
+        snapshot: ModuleGraphSnapshot,
+        featureSources: Map<String, List<FeatureSource>>,
+    ): BoundaryViolationLog {
         val log = BoundaryViolationLog()
 
         knownModules(snapshot, log)
@@ -52,7 +56,8 @@ internal object ModuleBoundaryRules {
         features(snapshot, log)
         androidApp(snapshot, log)
         domainExternalPurity(snapshot, log)
-        structure(snapshot, log)
+        designSystemComposeOnly(snapshot, log)
+        structure(snapshot, featureSources, log)
 
         return log
     }
@@ -332,43 +337,69 @@ internal object ModuleBoundaryRules {
         }
     }
 
-    /** S1–S3 — the staged structure rules of `DEC-068` (`TEST-UNIT-043`). */
-    private fun structure(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+    /**
+     * R15 — `:core:designsystem` may declare Compose only (ADR-0001, `DESIGN.md` §3.4 rule 4).
+     * The rule covers **effective** externals, so a non-Compose library inherited from a custom
+     * configuration fails exactly like a direct one (`GAP-012`).
+     */
+    private fun designSystemComposeOnly(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        snapshot.byKind(ModuleKind.CORE_DESIGN_SYSTEM).forEach { project ->
+            project.externalDependencies
+                .filterNot { ModuleDependencyAllowLists.isToolchainImplicit(it.coordinates) }
+                .filterNot { ModuleDependencyAllowLists.isDesignSystemAllowed(it.coordinates) }
+                .forEach { dependency ->
+                    log.add(
+                        violation(
+                            rule = "R15",
+                            consumer = project.path,
+                            configuration = dependency.configuration,
+                            sourceSet = dependency.sourceSet,
+                            producer = dependency.coordinates,
+                            origin = dependency.originConfiguration,
+                            reason = "`:core:designsystem` may declare Compose only; " +
+                                "`${dependency.coordinates}` is not a Compose artifact (ADR-0001, DESIGN.md §3.4 rule 4)",
+                        ),
+                    )
+                }
+        }
+    }
+
+    /** S1–S3 — the staged structure rules of `DEC-068` (`TEST-UNIT-043`), content-aware (`GAP-012`). */
+    private fun structure(
+        snapshot: ModuleGraphSnapshot,
+        featureSources: Map<String, List<FeatureSource>>,
+        log: BoundaryViolationLog,
+    ) {
         snapshot.byKind(ModuleKind.FEATURE).forEach { project ->
-            val sources = project.sourceFiles
-            val navigation = sources.filter { it.contains("/navigation/") }
-            if (navigation.isEmpty()) {
+            val sources = featureSources[project.path].orEmpty()
+            val navigation = sources.filter { it.path.contains("/navigation/") }
+            val destinations = navigation.filter { it.declaresDestination }
+            if (destinations.isEmpty()) {
                 log.add(
                     structureViolation(
                         rule = "S1",
                         consumer = project.path,
-                        reason = "the feature declares no navigation destination; each feature owns its own route " +
-                            "declaration (ADR-0001 rule 7, AC-REQ-NFR-009-2)",
+                        reason = "the feature declares no typed navigation destination; a file under `navigation/` " +
+                            "counts only when it declares an `@Serializable` destination (`DESIGN.md` §4.2, " +
+                            "AC-REQ-NFR-009-2)",
                     ),
                 )
             }
-            val appWideNavHost = sources.filter { it.contains("NavHost") }
-            if (appWideNavHost.isNotEmpty()) {
-                log.add(
-                    structureViolation(
-                        rule = "S2",
-                        consumer = project.path,
-                        reason = "a feature source names the app-wide `NavHost`; the application shell owns the " +
-                            "graph (ADR-0001 rule 7, AC-REQ-NFR-009-2)",
-                    ),
-                )
-            }
-            val outsideNavigation = sources.filterNot { it.contains("/navigation/") }
+
+            val outsideNavigation = sources.filterNot { it.path.contains("/navigation/") }
             if (outsideNavigation.isNotEmpty()) {
-                val domain = sources.any { it.contains("/domain/") }
-                val presentation = sources.any { it.contains("/presentation/") }
+                val packageRoot = "io.github.davidru85.multiverse.feature." +
+                    project.path.removePrefix(":feature:").replace("-", "")
+                val domain = outsideNavigation.any { it.packageName == "$packageRoot.domain" }
+                val presentation = outsideNavigation.any { it.packageName == "$packageRoot.presentation" }
                 if (!domain || !presentation) {
                     log.add(
                         structureViolation(
                             rule = "S3",
                             consumer = project.path,
-                            reason = "the feature declares production source outside its route declaration, so its " +
-                                "own `domain` and `presentation` packages are required (DEC-068, AC-REQ-NFR-009-2)",
+                            reason = "the feature declares production source outside its route declaration, so real " +
+                                "Kotlin packages `$packageRoot.domain` and `$packageRoot.presentation` are required; " +
+                                "a directory name alone does not satisfy this rule (DEC-068, AC-REQ-NFR-009-2)",
                         ),
                     )
                 }
@@ -382,6 +413,7 @@ internal object ModuleBoundaryRules {
         configuration: String = "",
         sourceSet: String = "",
         producer: String = "",
+        origin: String = "",
         reason: String,
     ) = ModuleBoundaryViolation(
         testId = BoundaryTestIds.GRAPH,
@@ -390,6 +422,7 @@ internal object ModuleBoundaryRules {
         configuration = configuration,
         sourceSet = sourceSet,
         producer = producer,
+        originConfiguration = origin,
         reason = reason,
     )
 

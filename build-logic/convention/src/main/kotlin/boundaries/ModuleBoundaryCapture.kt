@@ -41,14 +41,14 @@ internal object ModuleBoundaryCapture {
         }
     }
 
-    fun capture(projects: Iterable<Project>, includeStructure: Boolean): ModuleGraphSnapshot =
+    fun capture(projects: Iterable<Project>): ModuleGraphSnapshot =
         ModuleGraphSnapshot(
             projects
-                .map { project -> snapshot(project, includeStructure) }
+                .map { project -> snapshot(project) }
                 .sortedBy { it.path },
         )
 
-    private fun snapshot(project: Project, includeStructure: Boolean): ProjectSnapshot {
+    private fun snapshot(project: Project): ProjectSnapshot {
         val declarable = declarableConfigurations(project)
         val edges = mutableListOf<DeclaredEdge>()
         val externals = mutableListOf<DeclaredExternalDependency>()
@@ -56,27 +56,36 @@ internal object ModuleBoundaryCapture {
         project.configurations.forEach { configuration ->
             if (configuration.name !in declarable) return@forEach
             val (sourceSet, kind) = classify(configuration.name, project.path)
-            configuration.dependencies.forEach { dependency ->
-                when (dependency) {
-                    is ProjectDependency -> if (dependency.path != project.path) {
-                        edges += DeclaredEdge(
+
+            // The **effective** declarations of this architecture-relevant configuration: its own
+            // plus every ancestor reachable through `extendsFrom`. A dependency hidden in a custom
+            // configuration and inherited into `commonMain` is still an edge of `commonMain`,
+            // which is the case a post-merge review reproduced (`GAP-012`).
+            effectiveOrigins(configuration, project).forEach { (origin, dependencies) ->
+                dependencies.forEach { dependency ->
+                    when (dependency) {
+                        is ProjectDependency -> if (dependency.path != project.path) {
+                            edges += DeclaredEdge(
+                                consumer = project.path,
+                                configuration = configuration.name,
+                                sourceSet = sourceSet,
+                                kind = kind,
+                                producer = dependency.path,
+                                originConfiguration = origin,
+                            )
+                        }
+
+                        is ExternalModuleDependency -> externals += DeclaredExternalDependency(
                             consumer = project.path,
                             configuration = configuration.name,
                             sourceSet = sourceSet,
-                            kind = kind,
-                            producer = dependency.path,
+                            group = dependency.group.orEmpty(),
+                            name = dependency.name,
+                            originConfiguration = origin,
                         )
+
+                        else -> Unit
                     }
-
-                    is ExternalModuleDependency -> externals += DeclaredExternalDependency(
-                        consumer = project.path,
-                        configuration = configuration.name,
-                        sourceSet = sourceSet,
-                        group = dependency.group.orEmpty(),
-                        name = dependency.name,
-                    )
-
-                    else -> Unit
                 }
             }
         }
@@ -85,14 +94,40 @@ internal object ModuleBoundaryCapture {
             path = project.path,
             directory = project.projectDir.relativeTo(project.rootDir).invariantSeparatorsPath,
             moduleKind = moduleKindOf(project.path),
-            edges = edges.sortedWith(compareBy({ it.configuration }, { it.producer })),
-            externalDependencies = externals.sortedWith(compareBy({ it.configuration }, { it.coordinates })),
-            sourceFiles = if (includeStructure && project.path.startsWith(":feature:")) {
-                productionSources(project)
-            } else {
-                emptyList()
-            },
+            edges = edges
+                .distinctBy { listOf(it.configuration, it.producer, it.originConfiguration) }
+                .sortedWith(compareBy({ it.configuration }, { it.producer }, { it.originConfiguration })),
+            externalDependencies = externals
+                .distinctBy { listOf(it.configuration, it.coordinates, it.originConfiguration) }
+                .sortedWith(compareBy({ it.configuration }, { it.coordinates }, { it.originConfiguration })),
         )
+    }
+
+    /**
+     * The declarations effective on [configuration]: its own dependencies plus those of every
+     * configuration reachable through `extendsFrom`, each paired with the declaring
+     * configuration. The walk is recursive and cycle-safe, so an inherited edge is attributed to
+     * the declaration that introduced it while the diagnostic still names the architecture
+     * configuration it reaches.
+     */
+    private fun effectiveOrigins(
+        configuration: org.gradle.api.artifacts.Configuration,
+        project: Project,
+    ): List<Pair<String, List<org.gradle.api.artifacts.Dependency>>> {
+        val byOrigin = linkedMapOf<String, List<org.gradle.api.artifacts.Dependency>>()
+        byOrigin[configuration.name] = configuration.dependencies.toList()
+
+        val seen = mutableSetOf(configuration.name)
+        val queue = ArrayDeque(configuration.extendsFrom.map { it.name })
+        while (queue.isNotEmpty()) {
+            val name = queue.removeFirst()
+            if (!seen.add(name)) continue
+            val ancestor = project.configurations.findByName(name) ?: continue
+            val dependencies = ancestor.dependencies.toList()
+            if (dependencies.isNotEmpty()) byOrigin[name] = dependencies
+            ancestor.extendsFrom.forEach { queue.add(it.name) }
+        }
+        return byOrigin.map { (origin, dependencies) -> origin to dependencies }
     }
 
     /**
@@ -110,7 +145,11 @@ internal object ModuleBoundaryCapture {
         }
     }
 
-    /** Source set and kind of a configuration already known to be declarable. */
+    /**
+     * Source set and kind of a configuration already known to be declarable. This is the one
+     * classifier in the check: it used to live beside a second, unused implementation, which a
+     * review removed so the rule and its classifier cannot drift (`TASK-088`).
+     */
     private fun classify(configuration: String, projectPath: String): Pair<String, SourceSetKind> {
         val lowered = configuration.lowercase()
         val base = when {
@@ -132,17 +171,4 @@ internal object ModuleBoundaryCapture {
 
     private fun lowerSuffix(suffix: String) = suffix
 
-    /**
-     * Root-relative paths of the project's production Kotlin/Swift sources: everything under
-     * `src/` except a test source-set directory. Test files are irrelevant to the staged rules.
-     */
-    private fun productionSources(project: Project): List<String> {
-        val root = project.rootDir
-        return project.fileTree(project.projectDir.resolve("src")) {
-            include("**/*.kt", "**/*.swift")
-            exclude("**/*Test/**", "**/*test/**", "**/build/**")
-        }.files
-            .map { it.relativeTo(root).invariantSeparatorsPath }
-            .sorted()
-    }
 }

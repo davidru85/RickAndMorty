@@ -25,10 +25,18 @@ enum class SourceSetKind : Serializable { PRODUCTION, ANDROID_UI, TEST }
  */
 data class DeclaredEdge(
     val consumer: String,
+    /** The architecture-relevant configuration whose effective classpath carries the edge. */
     val configuration: String,
     val sourceSet: String,
     val kind: SourceSetKind,
     val producer: String,
+    /**
+     * The configuration that actually **declares** the dependency; it differs from
+     * [configuration] when the edge is inherited through `extendsFrom`, which is the case a
+     * post-merge review reproduced: a rule must see the effective edge and still name the
+     * declaration that introduced it (`GAP-012`).
+     */
+    val originConfiguration: String = configuration,
 ) : Serializable
 
 /** One externally-declared module dependency, used for the `:core:domain` purity rule. */
@@ -38,6 +46,8 @@ data class DeclaredExternalDependency(
     val sourceSet: String,
     val group: String,
     val name: String,
+    /** The configuration that declares the module; see [DeclaredEdge.originConfiguration]. */
+    val originConfiguration: String = configuration,
 ) : Serializable {
     /** `group:name`, the coordinate form the allow-list is written in. */
     val coordinates: String get() = "$group:$name"
@@ -71,12 +81,6 @@ data class ProjectSnapshot(
     val moduleKind: ModuleKind,
     val edges: List<DeclaredEdge>,
     val externalDependencies: List<DeclaredExternalDependency>,
-    /**
-     * Root-relative `/`-separated paths of the project's production source files under `src/`,
-     * used only by the staged structure rules of `DEC-068`. A file name is enough to decide
-     * package and destination presence; contents are read separately and only for the `S2` scan.
-     */
-    val sourceFiles: List<String> = emptyList(),
 ) : Serializable
 
 /**
