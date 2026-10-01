@@ -14,6 +14,8 @@
 
 > **Amended 2026-09-30 by [ADR-0010](0010-settings-destination.md) (`DEC-055`):** `:feature:settings` and `iosApp/Features/Settings` replace `:feature:locations` and `iosApp/Features/Locations` wherever this ADR lists them. ADR-0010 is authoritative for that one module. Every other boundary, rule and rationale below is unchanged.
 
+> **Amended 2026-10-01 by owner decision (`DEC-066`), resolving `CONF-47`:** the `:core:domain` rule is widened by exactly two permitted libraries. `:core:domain` MUST depend on no project module and on no platform, HTTP, UI or persistence library; the **Kotlin standard library and `kotlinx-coroutines-core`** are permitted, because `IC-008` (`FavoritesRepository.observe(): Flow<Set<CharacterId>>`) and `IC-009` (`ObserveFavoriteIds`) expose `Flow` and the contract baseline cannot be implemented or consumed without them. Nothing else in the module set, its edges or its rationale changes. Every document that stated "`:core:domain` depends on nothing" cites this amendment: `DESIGN.md` §3.1/§3.4, `REQUIREMENTS.md` `AC-REQ-NFR-009-3`, `TESTING.md` §3.2, `DEFINITION.md` §3 D7 and the `CONTRACTS.md` overview diagram. The version catalog already pins `libs.kotlinx.coroutines.core` `1.11.0` for this purpose (`DESIGN.md` §3.5).
+
 ## Owners
 
 - **Decision owner:** System Architect — accountable for the boundary rules and the review trigger below.
@@ -28,7 +30,7 @@ The project is organised feature-per-module, with Clean Architecture layers as p
 
 | Module | Kind | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| `:core:domain` | KMP | Domain models, repository interfaces, `ApiFailure`, `DataResult`, genuinely cross-feature use cases | nothing |
+| `:core:domain` | KMP | Domain models, repository interfaces, `ApiFailure`, `DataResult`, genuinely cross-feature use cases | Kotlin stdlib + `kotlinx-coroutines-core` only (`DEC-066`) |
 | `:core:data` | KMP | Ktor client, DTOs, mappers, app-level response cache, shared pager, favorites stores, repository implementations | `:core:domain` |
 | `:core:presentation` | KMP | Cross-feature presentation primitives only: `LoadState`, display formatters, canonical copy keys | `:core:domain` |
 | `:core:designsystem` | Android | Material 3 Expressive tokens and components (`MultiverseTheme`, `MultiverseColors`, `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons) | Compose only |
@@ -59,7 +61,7 @@ The project is organised feature-per-module, with Clean Architecture layers as p
 
 - A feature module MAY depend on `:core:domain`, `:core:data`, `:core:presentation` and, from Android UI source sets only, `:core:designsystem`. Test source sets MAY depend on `:core:testing`.
 - A feature module MUST NOT depend on another feature module. Cross-feature needs go through `:core:*`.
-- `:core:domain` MUST depend on nothing; `:core:data` and `:core:presentation` MUST depend only on `:core:domain`.
+- `:core:domain` MUST depend on no project module and on no platform, HTTP, UI or persistence library; the Kotlin standard library and `kotlinx-coroutines-core` are the only permitted dependencies (amendment of 2026-10-01, `DEC-066`, resolving `CONF-47`). `:core:data` and `:core:presentation` MUST depend only on `:core:domain`.
 - `:core:designsystem` MUST NOT depend on any project module; its components take primitives only (strings, colours, image URL, a mirrored status value).
 - Navigation: each feature declares its own route/destination; the app shell composes the graph. No feature owns the app-wide `NavHost`.
 - Feature-specific use cases stay in the feature's `domain` package; only genuinely cross-feature use cases live in `:core:domain`.
@@ -210,7 +212,7 @@ A feature-per-module split has one known failure mode: each feature re-implement
 
 - `TEST-UNIT-012` — domain purity: the domain module compiles and its tests run without any platform, HTTP or UI dependency.
 - **Observable:** no `:feature:*` module declares a dependency on another `:feature:*` module — observed in the dependency-analysis report (DEC-032).
-- **Observable:** `:core:domain` declares no project dependency, `:core:data` and `:core:presentation` declare only `:core:domain`, and `:core:designsystem` declares no project dependency — observed in the same report.
+- **Observable:** `:core:domain` declares no project dependency and no platform, HTTP, UI or persistence library — its only dependencies are the Kotlin standard library and `kotlinx-coroutines-core` (the `DEC-066` amendment); `:core:data` and `:core:presentation` declare only `:core:domain`, and `:core:designsystem` declares no project dependency — observed in the same report.
 - **Observable:** no DTO type appears in a public signature outside `:core:data` — observed by the domain-purity test (`AC-REQ-NFR-001-2`).
 - **Observable:** a clean clone builds and runs the Android app with the iOS directories removed — observed by a smoke run of the app from that tree (`AC-REQ-PLAT-004-1`).
 - **Observable:** the dependency inventory in `README.md` matches the resolved Gradle graph (`AC-REQ-NFR-002-1`).
@@ -241,5 +243,5 @@ A feature-per-module split has one known failure mode: each feature re-implement
 
 - **Supersedes:** none. This ADR supersedes decision `DEC-019` (keep the eight-module structure), which is marked `Superseded` on the board; `DEC-019` never had a separate ADR file.
 - **Superseded by:** none as of 2026-09-30.
-- **Amended by:** ADR-0010 (Settings replaces Locations in the module set), 2026-09-30.
+- **Amended by:** ADR-0010 (Settings replaces Locations in the module set), 2026-09-30; the `:core:domain` dependency rule (Kotlin stdlib + `kotlinx-coroutines-core`), 2026-10-01 by owner decision `DEC-066` resolving `CONF-47` — an amendment pointer, no new ADR.
 - **Related:** ADR-0002 (platform targets and the shells), ADR-0003 (where sharing stops), ADR-0005 (response cache in `:core:data`), ADR-0006 (presentation-state ownership and DI), ADR-0007 (favorites store placement), ADR-0009 (shared pager in `:core:data`).

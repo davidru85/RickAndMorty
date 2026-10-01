@@ -168,7 +168,7 @@ flowchart TB
 
 | Module | Target | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | — |
+| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | Kotlin stdlib + `kotlinx-coroutines-core` only (`DEC-066`) |
 | `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, shared pager, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy. | `:core:domain` |
 | `:core:presentation` | `commonMain` | Cross-feature presentation primitives only: `LoadState`, display formatters ("Unknown" casing, status labels, dimension derivation), canonical copy keys. No screen-specific state. | `:core:domain` |
 | `:core:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme, no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors`, components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons, empty-state component. | Compose only |
@@ -209,7 +209,7 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 
 ### 3.4 Dependency rules (enforced)
 
-1. `:core:domain` depends on nothing.
+1. `:core:domain` depends on no project module and on no platform, HTTP, UI or persistence library; the Kotlin standard library and `kotlinx-coroutines-core` are the only permitted dependencies (the `DEC-066` amendment to [ADR-0001](adr/0001-module-boundaries.md) resolving `CONF-47`).
 2. `:core:data` depends only on `:core:domain`.
 3. `:core:presentation` depends only on `:core:domain`.
 4. `:core:designsystem` depends on Compose only — never on domain types.
@@ -537,3 +537,4 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | 2026-09-30 | §3.5 records that the daemon JDK is pinned by `gradle/gradle-daemon-jvm.properties` and is independent of the JVM bytecode target. | DEC-057, TASK-014 |
 | 2026-09-30 | `:core:ios` added to §3, §3.1, the §3.4 rules and §3.5 as the single framework producer for the iOS app (ADR-0012, `DEC-058`); `CONF-40` resolved. | DEC-058, ADR-0012, TASK-078 |
 | 2026-09-30 | §3.5 rewritten for TASK-015: the machine-checked rationale table (one row per catalog entry), the dependency-policy paragraph and the "Not pinned" register (material-color-utilities, `CONF-50`; detekt, moved there on review, `CONF-51`); the policy checks enforce exact plain pins, the single Compose BOM, no bundles and no catalog lookups by name outside the policy plugin. | DEC-060, DEC-061, TASK-015 |
+| 2026-10-01 | §3.1 and §3.4 rule 1 realigned to the `DEC-066` amendment of ADR-0001: `:core:domain` permits the Kotlin stdlib and `kotlinx-coroutines-core` and forbids every project, platform, HTTP, UI and persistence dependency, so the `Flow` signatures of `IC-008`/`IC-009` are implementable (`CONF-47` resolved). | DEC-066, ADR-0001 |

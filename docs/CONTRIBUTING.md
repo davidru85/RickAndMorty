@@ -346,7 +346,7 @@ Agents are first-class contributors to the repository, with a hard permission bo
 | Push further phase commits to its own pull request in response to review | Force-push or rewrite pushed phase commits (§3.1) |
 | Record an escalation with options and a recommendation (`../AGENTS.md` §6) | Delete or rewrite another author's work to make its own change easier |
 
-While the project is in its documentation phase, agent writes are limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md` (`../AGENTS.md` §4.3). That restriction lifts when the build exists, and it does not relax any other rule here.
+While the agent write boundary is the rule of `../AGENTS.md` §4.3, agent writes are limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md`; any write outside those paths requires an explicit, task-scoped owner authorization that names the paths and the task. The restriction is **task-scoped, not tied to a documentation phase** and does not lift because the build exists (`DEC-064`, resolving `CONF-46`); it does not relax any other rule here.
 
 An agent-authored pull request `MUST` state, in the description and without prompting:
 
@@ -398,3 +398,4 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 | --- | --- | --- |
 | 2026-09-29 | Created: setup and prerequisites, trunk-based branching with the allowed branch types, the TDD phase-and-commit protocol with rebase-merge policy, Conventional Commits and release-note derivation, the issue workflow against `BACKLOG.md`, pull-request expectations with the required-check list, per-change testing and documentation requirements, the review process, the agent permission boundary, the mirrored vulnerability-reporting route and the completion checklist. | DEC-041, DEC-042, DEC-043, DEC-044, DEC-046, DEC-048, DEC-049, DEC-051, DEC-052, DEC-053, DEC-054 |
 | 2026-09-30 | Provisional `repository-hygiene` required check added to §5.3 (full history on both runners); §6's tooling-exception row now requires a seeded violation for an introduced tool; §7's tooling row re-runs `verifyRepositoryHygiene`. No workflow created. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
+| 2026-10-01 | §9 corrected for the agent write boundary: the limit is task-scoped, not phase-scoped, and no longer claims to lift when the build exists (`DEC-064`, `CONF-46` resolved). No other rule changed. | `DEC-064`, `PROJECT_LOG.md` LOG-0042 |
