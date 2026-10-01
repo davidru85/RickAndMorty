@@ -59,9 +59,28 @@ Record the command and the observed result. Do not write "works" without both.
 | 7 | `<manual or device check, if any>` | `<what was done>` | `<what was observed>` |
 
 - **Required checks:** the full set the gate requires applies to every pull request, on both platforms (`DEC-054` as amended by `DEC-071`: each row is mandatory from the change that introduces its harness). The gate definition and what each check blocks are owned by [`DEFINITION.md`](../DEFINITION.md) and [`TESTING.md`](../TESTING.md): link the CI run rather than copying the list.
-- **Red / green evidence (`DEC-053`):** `<red commit message + the observed failure> / <green commit message + the observed pass> / <refactor commit, or "no refactor change">`.
-- **TDD exception, when one applies:** `<pure documentation, build/CI configuration or tooling change — state which, per DEFINITION.md §3. Otherwise None.>`
 - **Not verified:** `<what was deliberately not run, and why. Never leave this blank when a check was skipped.>`
+
+## TDD evidence
+
+A green suite alone does not satisfy this section: it must show the observed red failure before the implementation and the observed passing run after it (`AC-REQ-NFR-010-2`). A failing red commit is expected — the gate evaluates the final state of the pull request (`AC-REQ-NFR-011-3`). The twelve-step protocol is owned by [`CONTRIBUTING.md`](../CONTRIBUTING.md) §3.1 and the gate by [`DEFINITION.md`](../DEFINITION.md) §3 D3/D4; neither is restated here.
+
+| Phase | Commit SHA | Exact command | Observed result | CI run |
+| --- | --- | --- | --- | --- |
+| **Red** | `<sha>` | `<the command that was run>` | `<the failing assertion, verbatim>` | `<run link, or None>` |
+| **Green** | `<sha>` | `<the command that was run>` | `<the passing test ids>` | `<run link, or None>` |
+| **Refactor** | `<sha, or "no change">` | `<the command that was run, or "—">` | `<"no change" stated explicitly, or the still-green ids>` | `<run link, or None>` |
+
+## Exception
+
+Fill this only when the change is pure documentation, build/CI configuration or tooling — the three classes [`DEFINITION.md`](../DEFINITION.md) §3 D4 allows. Otherwise write `None` and complete the table above.
+
+| Field | Value |
+| --- | --- |
+| Class | `<pure documentation \| build/CI configuration \| tooling \| None>` |
+| Justification | `<why the red phase does not apply>` |
+| Compensating verification | `<the seed matrix an introduced tool owes: what was seeded, and the observed failure>` |
+
 
 ## Tests added or updated
 
