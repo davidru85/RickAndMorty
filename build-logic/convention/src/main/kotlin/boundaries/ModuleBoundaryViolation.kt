@@ -75,6 +75,9 @@ internal class BoundaryViolationLog {
 
     fun size(): Int = violations.size
 
+    /** The accumulated violations, for a test or a caller that needs the structured form. */
+    fun all(): List<ModuleBoundaryViolation> = violations.toList()
+
     fun render(): String = buildString {
         appendLine("verifyModuleBoundaries failed with ${violations.size} violation(s):")
         violations

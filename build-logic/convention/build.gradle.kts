@@ -18,6 +18,16 @@ group = "io.github.davidru85.multiverse.buildlogic"
 dependencies {
     compileOnly(libs.android.gradle.plugin)
     compileOnly(libs.kotlin.gradle.plugin)
+
+    // TASK-091: the durable regression suite for the boundary and policy logic. `kotlin-test`
+    // and `junit4` are already pinned in the catalog for the shared test harness (TASK-024) and
+    // are reused here rather than introducing a second framework; TestKit ships with Gradle.
+    // `kotlin.gradle.plugin` is a test dependency so a TestKit fixture can apply the plugins
+    // under test without the Android/Kotlin plugin classes missing at runtime.
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.junit4)
+    testImplementation(libs.kotlin.gradle.plugin)
+    testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
