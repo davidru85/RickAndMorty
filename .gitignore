@@ -65,3 +65,6 @@ credentials*.json
 DerivedData/
 iosApp/.build/
 *.xcuserstate
+
+# Downloaded Swift tool artifacts, verified at use (TASK-030, DEC-076).
+tools/.cache/
