@@ -220,7 +220,7 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 9. Test source sets may depend on `:core:testing`; production source sets may not.
 10. `:core:ios` is the only module that declares a native framework binary, and the only module that depends on all five `:feature:*` modules. `iosApp` depends on `:core:ios` and on nothing else from the shared core. No Android source set may depend on `:core:ios`, and no other module may depend on it (ADR-0012).
 
-**Enforcement:** `dependency-analysis`/Gradle module-graph checks plus a CI rule reject a forbidden edge; `GUIDELINES.md` states the rule and its enforcement (`DEC-032`).
+**Enforcement:** the executable rule set is `./gradlew verifyModuleBoundaries`, from the dependency-free plugin `multiverse.module.boundaries` (`build-logic/convention/src/main/kotlin/boundaries/`), wired into the root `check` (`TASK-017`, `TEST-UNIT-017`/`012`/`043`). It captures each project's **own** declared project dependencies from the Gradle model — the declarations `DEC-057` requires in the consuming module's build script — classifies the configuration and source set that declared each edge, and fails on a forbidden edge, on an unrecognised module (fail closed), on an external dependency outside the `:core:domain` allow-list (`DEC-066`), and on the staged destination/package rules of `DEC-068`. Diagnostics are collected for every rule, sorted and repository-relative; a seeded violation fails its owning rule. `dependency-analysis`/`buildHealth` remains the `TASK-029` complement, not a substitute: this check decides the accepted graph, `buildHealth` reports declared-versus-used and unused declarations.
 
 **Design-system rule:** `:core:designsystem` and the iOS `DesignSystem` package never depend on domain types. Components take primitives (strings, colours, image URL, status enum mirror), which keeps them previewable, screenshot-testable and 1:1 with the Figma components listed in `UI_SPEC.md` §1.2.
 
@@ -530,6 +530,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §3.4's enforcement statement names the executable check: `verifyModuleBoundaries` from `multiverse.module.boundaries` in the root `check`, its rule set (project edges, source-set kinds, the `:core:domain` allow-list, the staged `DEC-068` rules) and its fail-closed behaviour (`TASK-017`). | `TASK-017`, `DEC-066`, `DEC-068`, `REQ-NFR-009` |
 | 2026-09-29 | Restructured to feature-per-module with Clean Architecture inside each feature module; platform floors, Ktor, Koin, favorites and pager questions resolved into decisions; failure chain delegated to `ERROR_FLOW.md`; system overview added. | DEC-011…DEC-021, DEC-052 |
 | 2026-09-30 | `:feature:settings` replaces `:feature:locations`; navigation order Characters · Episodes · Favorites · Settings; §4.6 app settings added; `:core:data` carries both remote protocols. | DEC-055, DEC-056 |
 | 2026-09-30 | Data-source inventory made explicit: §1 and §2 show the per-request protocol selector over the two `IC-011` adapters; §4.6 adds the three-data-source table including the `IC-022` settings store; §6 class diagram gains the GraphQL adapter and the settings store. | DEC-056, DEC-055 |
