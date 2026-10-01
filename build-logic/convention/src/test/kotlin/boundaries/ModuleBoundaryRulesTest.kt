@@ -297,6 +297,26 @@ class ModuleBoundaryRulesTest {
     }
 
     @Test
+    fun `R12 accepts the three production cores and the five features, and nothing else`() {
+        val ios = ":core:ios"
+        (ModuleSet.FEATURES + setOf(":core:domain", ":core:data", ":core:presentation")).forEach { producer ->
+            val log = ModuleBoundaryRules.evaluate(
+                complete(project(ios, edges = listOf(edge(ios, producer)))),
+                emptyMap(),
+            )
+            assertEquals(emptyList(), only(log, "R12").map { it.render() }, "$producer is an accepted export")
+        }
+        // :core:designsystem is Android-only and :core:testing is test-only; neither may ship.
+        listOf(":core:designsystem", ":core:testing").forEach { producer ->
+            val log = ModuleBoundaryRules.evaluate(
+                complete(project(ios, edges = listOf(edge(ios, producer)))),
+                emptyMap(),
+            )
+            assertEquals(1, only(log, "R12").size, "$producer must not be exported by :core:ios")
+        }
+    }
+
+    @Test
     fun `R13 rejects an unknown project and an edge to an absent producer`() {
         val unknown = ModuleBoundaryRules.evaluate(
             complete(project(":services:shared")),
