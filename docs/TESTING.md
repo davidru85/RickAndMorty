@@ -558,6 +558,8 @@ Every check below runs on **every** pull request (feature branches such as `docs
 | Assemble | Android assemble and the iOS build | The change compiles and links on both platforms |
 | Milestone independence | `TEST-UNIT-019` | `REQ-PLAT-004`: Android must stay releasable with the iOS app absent |
 
+**Activation (`DEC-071`).** The table above is the complete required set and stays the target. Under the owner decision of 2026-10-01 it is **activated in stages**: a row becomes mandatory and non-empty in the same change that introduces its harness (`TASK-024` for the shared fakes and fixtures, `TASK-025` for the workflows and both runners, the M1/M2 tasks for the snapshot, contract and accessibility suites), and until then it is recorded against its activation task rather than claimed green. No existing check is ever skipped, and the milestone and release gates still require the complete set. A pull request before CI exists is *integrated and locally verified*, not *Done under D2* (`GAP-002`).
+
 **Branch protection** is what makes these checks binding. That is a repository setting and therefore a human action (`DEC-049`); agents open the pull request, and a maintainer configures and verifies the required-check list. As of 2026-09-30 `main` carries an active ruleset that forbids deletion and force-push and requires a pull request, but it names **no** required status check, so the rows above are not yet enforced; until the workflows of TASK-025 exist and are named in that ruleset, this list remains a convention (`GAP-002`), and so is the gate.
 
 ### 14.3 Scheduled and on-demand work
@@ -696,6 +698,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §14.2 states the staged activation of the required set (`DEC-071`, `CONF-53`): every row keeps its owner, a suite becomes mandatory in the change that creates its harness, and no existing check may be skipped. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | `TEST-UNIT-017`/`TEST-UNIT-043` restated after `TASK-088`: effective (inherited) project and external dependencies, the `:core:designsystem` Compose-only rule `R15`, and content-aware `S1`–`S3`; the reproduced red matrix and its controls recorded. | `TASK-088`, `GAP-012` |
 | 2026-10-01 | `TEST-UNIT-017` and `TEST-UNIT-043` marked **implemented** as `./gradlew verifyModuleBoundaries` (plugin `multiverse.module.boundaries`, root `check`, `TASK-017`), with the rule ids `R1`–`R14`/`S1`–`S3` and the fail-closed behaviour stated; `R14` is the external half of `TEST-UNIT-012`; §14.2 gains the module-boundary required check. Seeded violations observed for S1–S11 in a disposable worktree. | `TASK-017`, `DEC-066`, `DEC-068` |
 | 2026-10-01 | `TEST-UNIT-014`'s `VERSION` half marked implemented by P9 of `verifyDependencyPins` (`TASK-018`): the file's shape, the single line, the exact SemVer form and the absence of a second version literal in any build script; `AC-REQ-NFR-006-3` remains with `TASK-051` (`DEC-067`). | `TASK-018`, `DEC-061`, `DEC-067` |
