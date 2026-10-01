@@ -49,6 +49,13 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 
 Beyond the build checks of LOG-0026 and the repository-policy verification tasks of LOG-0032…LOG-0038, no product test, formatter, static analyser, benchmark or application run has been executed here: no product test source set exists, and `ktlint`, detekt, `dependency-analysis`, the snapshot suites, the benchmark harness and every app run remain TASK-024, TASK-029 and the M1 feature work. Android Lint and the build checks have executed. Statements to the contrary would be false.
 
+## 1.2 Block state (2026-10-02)
+
+**Block 2 is in review.** Eight of its nine rows are merged and `Done` under D2 against the checks active at their stage
+(`TASK-024`, `TASK-025`, `TASK-028` in PR #52; `TASK-031` #62; `TASK-030` #63; `TASK-093` #64; `TASK-029` #65; `TASK-073` #66), `TASK-026` is
+in review (#67) and `TASK-027` is **partially blocked**: the scheduled live job needs a compiled source set the toolchain does not provide
+without an owner decision (see §5). `TASK-082` is closed with the detekt outcome (`DEC-075`).
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
