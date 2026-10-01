@@ -1,7 +1,7 @@
 # Backlog item template
 
 - **Status:** Active
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-01
 - **Owner:** Documentation Maintainer (`../../AGENTS.md` §3.9)
 - **Authoritative for:** the shape of one backlog item (`TASK-###`) as recorded in [`BACKLOG.md`](../BACKLOG.md) and in its GitHub Issue. Not authoritative for: backlog content, the column set and the size definitions (`BACKLOG.md` owns them), the readiness and done gates ([`DEFINITION.md`](../DEFINITION.md)), test design and identifiers ([`TESTING.md`](../TESTING.md)). `DEC-051` names this file; no second backlog template exists.
 - **Inputs:** [`DECISION_BOARD.md`](../DECISION_BOARD.md) (DEC-044, DEC-051), [`BACKLOG.md`](../BACKLOG.md), [`DEFINITION.md`](../DEFINITION.md), [`REQUIREMENTS.md`](../REQUIREMENTS.md), [`TESTING.md`](../TESTING.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`AGENTS.md`](../../AGENTS.md)
@@ -24,6 +24,7 @@
 | ID | `TASK-<###>` |
 | Title | `<imperative, sentence case, one line, no trailing period>` |
 | Type | `<Product \| Tech \| Doc \| Test \| Risk>` |
+| Block | `<B1 \| … \| B9, or — for a task outside the block plan>` (`DEC-063`, [`BACKLOG.md`](../BACKLOG.md) §2.6) |
 | Milestone | `<M0 \| M1 \| M2 \| M3>` |
 | Value | `<why the task exists: the review, requirement or decision it serves>` |
 | Requirements | `<REQ-… ids the task delivers, or the governing DEC-### when no requirement applies>` |
@@ -45,7 +46,7 @@ If [`BACKLOG.md`](../BACKLOG.md) changes a size definition, this reminder follow
 ## Recording the item
 
 - **Index row:** the twelve-field row in [`BACKLOG.md`](../BACKLOG.md), grouped by milestone.
-- **Issue:** title `TASK-<###> — <title>`; labels from the type vocabulary in [`CONTRIBUTING.md`](../CONTRIBUTING.md) §4 (`type:product`, `type:tech`, `type:test`, `type:doc`, `type:risk`) plus the milestone; body = the fields above. The `Status` column mirrors the issue state and is never the only record of it (`DEC-044`).
+- **Issue:** title is the item's `ID`, an em dash and its `Title` — for example `TASK-029 — Add ktlint, Android Lint and dependency-analysis to the build`; labels from the type vocabulary in [`CONTRIBUTING.md`](../CONTRIBUTING.md) §4 (`type:product`, `type:tech`, `type:test`, `type:doc`, `type:risk`) plus the milestone; body = the fields above. The `Status` column mirrors the issue state and is never the only record of it (`DEC-044`).
 - **Deferred work:** an item whose requirement is `Could have` or `Deferred` is recorded as such and not started ([`DECISION_BOARD.md`](../DECISION_BOARD.md) §4, [`REQUIREMENTS.md`](../REQUIREMENTS.md) §1.3).
 
 ## Before starting
