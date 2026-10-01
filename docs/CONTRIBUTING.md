@@ -166,7 +166,7 @@ Release notes are **generated from the Conventional Commits in the range since t
 
 Rules:
 
-- The version is bumped in the single `VERSION` file, which feeds `versionName` and `CFBundleShortVersionString`; no platform-specific version literal is changed by hand (DEC-043, `REQ-NFR-006`, `DEFINITION.md` §5, REL1).
+- The version is bumped in the single `VERSION` file. Android is implemented now: `verifyDependencyPins` validates the file and every Android artifact task consumes that validation, so `versionName` is the file's value verbatim and no platform-specific version literal is changed by hand. The iOS `CFBundleShortVersionString` derives from the same file **from `TASK-051` onward** (`DEC-043`, `DEC-061`, `DEC-067`).
 - The bump follows the commit types in the range: a breaking change increments `MAJOR`, a `feat` increments `MINOR`, any other changed range increments `PATCH`.
 - The release is a tag named `vMAJOR.MINOR.PATCH` on the released commit, and the GitHub Release publishes the Android APK (DEC-043).
 - Release notes `MUST NOT` be edited to describe something the tagged commit does not contain, and a note `MUST NOT` claim a fix that is not in the range. `DEFINITION.md` §5, REL7 requires the documented limitations to match the release.

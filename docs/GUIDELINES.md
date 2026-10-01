@@ -498,7 +498,7 @@ flowchart LR
 ```
 
 - The red test exists **before** the implementation; the observed red failure and the observed green pass are the evidence, not the existence of a passing suite (`DEFINITION.md` §3 D2–D4).
-- The twelve ordered steps of the cycle (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit), the commit forms and the three exception classes are owned by `CONTRIBUTING.md` §3.1 and are referenced, not restated, here (`TASK-072`).
+- The ordered steps of the cycle, the commit forms and the exception classes are owned by `CONTRIBUTING.md` §3.1 and are referenced, not restated, here (`TASK-072`, `TASK-090`).
 - One phase per commit: one red, one green, one refactor commit per behaviour increment.
 - Exceptions are explicit and limited to **pure documentation, build/CI configuration and tooling changes**; any other change that skips the red phase states why in the pull request (`DEFINITION.md` §3 D4).
 - A snapshot baseline is recorded only after the state it depicts is implemented and correct; a baseline is never used to make a red run green (`TESTING.md` §1.1).
