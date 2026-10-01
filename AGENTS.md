@@ -1,8 +1,8 @@
 # AGENTS.md — Master Instruction Manual
 
 - **Status:** Active
-- **Last verified:** 2026-09-30
-- **Owner:** Documentation maintainer
+- **Last verified:** 2026-10-01
+- **Owner:** Documentation Maintainer
 - **Authoritative for:** operating rules for AI agents working in this repository — precedence, roles, permissions, workflow, escalation, completion.
 - **Not authoritative for:** product requirements (`docs/REQUIREMENTS.md`), architecture (`docs/DESIGN.md`), code conventions (`docs/GUIDELINES.md`), contribution process (`docs/CONTRIBUTING.md`), gates (`docs/DEFINITION.md`). Link to those; never restate them.
 
@@ -24,9 +24,9 @@ This file applies to every agent, human-supervised or autonomous, working in thi
 | Verification | Tests plus measurable performance evidence — DEC-029, DEC-033 |
 | Emphasis | Code and architecture quality; interview discussion centres on it (`assessment.md` l.8) — DEC-003 |
 
-**Current repository state:** the Gradle/KMP build skeleton (TASK-014, merged in PR #6 on 2026-09-30) and the five feature route declarations exist, `.gitignore` is tracked and completed, the repository-hygiene check exists on TASK-016's branch/PR and is wired into `check`, and the version catalog pins the full planned dependency inventory with its policy checks in `check` (TASK-015, merged in PR #10 on 2026-09-30); no feature behaviour, no product tests, no CI and no `VERSION` exist yet. Documentation describes the **target** state and is updated in the same change that ships a feature (DEC-046). Never claim that unbuilt code works.
+**Current repository state (verified 2026-10-01):** the Gradle/KMP build skeleton (TASK-014, merged in PR #6 on 2026-09-30) and the five feature route declarations exist; `.gitignore` is tracked and completed and the repository-hygiene check (`verifyRepositoryHygiene`) is merged and wired into `check` (TASK-016, merged in PR #13 on 2026-09-30); and the version catalog pins the full planned dependency inventory with its policy checks in `check` (TASK-015, merged in PR #10 on 2026-09-30). No feature behaviour, no product test, no CI and no `VERSION` exist yet, and the APK has no activity, so the product has never been launched. From 2026-10-01 the remaining work is delivered in nine execution blocks (`B1`…`B9`) owned by `docs/BACKLOG.md` §2.6 (DEC-063): a block is a scheduling grouping, each task still lands as its own pull request under its own `TASK-###` with its own TDD cycle (DEC-053) and check set (DEC-054). Documentation describes the **target** state and is updated in the same change that ships a feature (DEC-046). Never claim that unbuilt code works.
 
-Agent writes stay limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md` except where the owner grants an explicit, task-scoped authorization (§4.3, TASK-014 OD-1).
+Agent writes stay limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md` except where the owner grants an explicit, task-scoped authorization (§4.3). The rule holds after the build landed: `docs/CONTRIBUTING.md` §9 no longer claims the limit lifts on its own, and `DEC-064` records that the restriction is task-scoped rather than phase-scoped.
 
 ---
 
@@ -57,6 +57,8 @@ Do not begin from memory or from a similar project. Repository state is evidence
 ## 3. Specialized agents
 
 Each role has a core objective, required inputs and a deliverable. A role may be filled by a human, an AI agent, or the same agent wearing two hats — but its deliverable must exist and must live in the file named.
+
+The nine names below are the **only** `Owner:` values a document header may use: the nine sections of this section are the role vocabulary, and a document whose `Owner:` is not one of them fails the documentation gate (`docs/DEFINITION.md` §6, DOC1). Where a template or a specification shows a role as a metavariable — `docs/adr/0000-adr-template.md` and `docs/GUIDELINES.md` §9.1 — the author replaces it with one of the nine names; it is template notation, not a fourth kind of owner.
 
 ### 3.1 Requirements Analyst
 
@@ -131,6 +133,7 @@ Each role has a core objective, required inputs and a deliverable. A role may be
 - Opening a pull request (branch `feat|fix|docs|test|build|chore/<slug>`, Conventional Commits).
 - Adding a dependency when the justification is recorded in `docs/DESIGN.md` or an ADR.
 - Adding a new document only when an established workflow needs it (a template with a single user is not a workflow).
+- Writing outside the documentation paths listed in §4.3 only under an explicit, task-scoped owner authorization that names the paths and the task (`DEC-064`).
 
 ### 4.2 Prohibited — no exceptions without an explicit human instruction
 
@@ -143,11 +146,11 @@ Each role has a core objective, required inputs and a deliverable. A role may be
 - Reporting unverified results as verified. Never state that a build, test or app run succeeded unless you observed it.
 - Adding analytics, tracking, advertising or telemetry SDKs (`REQ-OBS-003`).
 - Adding microphone or speech permissions while voice search is deferred (`REQ-SEC-004`).
-- Introducing a second solution for a concern that already has one (for example a second HTTP client or a second image loader) — `REQ-NFR-002`.
+- Introducing a third solution for a concern that already has two, or a second solution without a recorded rationale (for example a second HTTP client or a second image loader) — `REQ-NFR-002`; rationale is recorded in `docs/DESIGN.md` §3.5 or an ADR. `TEST-UNIT-013` rule R5 enforces the cap of two.
 
 ### 4.3 Permission boundary for AI agents
 
-Agents may create and edit files and open pull requests. A human performs merging, tagging, releases, repository-settings changes and secret management (DEC-049). While the project is in its documentation phase, agent writes are limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md`.
+Agents may create and edit files and open pull requests. A human performs merging, tagging, releases, repository-settings changes and secret management (DEC-049). Agent writes are limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.md`; any write outside those paths requires an explicit, task-scoped authorization from the owner naming the paths and the task — the restriction is task-scoped, not tied to a phase, and it does not lift on its own (`DEC-064`; `docs/CONTRIBUTING.md` §9).
 
 An agent-authored pull request must state which documents it touched and which checks it actually ran. A claim without a command and an observed result is a defect.
 
@@ -173,9 +176,9 @@ flowchart LR
 4. **Verify by executing.** Run the commands in `README.md`/`CONTRIBUTING.md` that cover your change and record the observed result. A test that was not run is not evidence.
 5. **Update documents in the same change** (DEC-046): the authoritative document for the behaviour you changed, the backlog row, and `docs/PROJECT_LOG.md` when the change is decision-relevant.
 6. **Hand off via pull request** using `docs/templates/pull-request.md`, naming requirement, decision and test IDs.
-7. **On handoff to another agent or developer,** update `docs/HANDOFF.md`: current state, what changed, what is next, what is blocked.
+7. **On handoff to another agent or developer,** update `docs/HANDOFF.md`: current state, what changed, what is next, what is blocked. The block model does not change this: every task handoff follows it (DEC-063).
 
-When two agents work concurrently: one owner per file, and the integration owner is decided before editing. Communicate interface expectations (module boundaries, contract signatures) before writing code against them.
+When two agents work concurrently: one owner per file, and the integration owner is decided before editing. Communicate interface expectations (module boundaries, contract signatures) before writing code against them. A block does not relax this rule — block members still land as separate pull requests and must not edit the same tracking rows concurrently (DEC-063); where two tasks would touch one file, the later task starts from the merged `main`, not from the earlier task's branch.
 
 ---
 
@@ -185,7 +188,7 @@ When two agents work concurrently: one owner per file, and the integration owner
 - ADRs are immutable once `Accepted`: supersede with a new ADR and mark the old one `Superseded`. Never rewrite the rationale of an accepted decision.
 - Never resolve a conflict silently. Record it in `docs/DOCUMENTATION_AUDIT.md` with a `CONF-###` id, severity, and the blocked artifact, then escalate.
 - Escalate to the human owner when: a requirement contradicts `assessment.md`; two authoritative documents disagree; a gate in `docs/DEFINITION.md` cannot be met; a change needs a prohibited action; a decision is `Deferred` but the task requires it.
-- When escalating, state: what you were asked to do, what you found, the options with trade-offs, your recommendation, and what is blocked. Do not stop at the problem.
+- When escalating, state: what you were asked to do, what you found (with file/section or command evidence), the options with their trade-offs, your recommendation, and the tasks and acceptance criteria blocked. Do not stop at the problem. This shape is the one every `CONF-###` escalation in `docs/DOCUMENTATION_AUDIT.md` follows and the one an owner-decision packet must carry.
 - A waiver of a gate must be explicit, dated, recorded in `docs/DEFINITION.md`, and given an expiry.
 
 ---
@@ -197,7 +200,7 @@ When two agents work concurrently: one owner per file, and the integration owner
 - Distinguish current state from target state (DEC-046). Documentation may describe behaviour that does not exist yet; say which it is.
 - When documentation and implementation disagree, implementation is the current truth and documentation is the defect — report it, do not silently "fix" the code to match the document.
 - Treat existing content as intentional. Do not delete, rename or reorganize another author's work without explaining why and proposing the replacement.
-- Verify external facts (library versions, platform API availability, API behaviour) against a primary source and record the verification date. Facts in `local://decision-brief.md` and in this repository's documents carry 2026-09-29 as their verification date; anything older must be re-checked before being relied on.
+- Verify external facts (library versions, platform API availability, API behaviour) against a primary source and record the verification date. The decision interview that produced the initial decision set is recorded on 2026-09-29 in the owning documents (its working brief is not a repository artifact); those facts carry 2026-09-29 as their verification date, and anything older must be re-checked before being relied on.
 
 ---
 
@@ -217,7 +220,7 @@ When two agents work concurrently: one owner per file, and the integration owner
 
 ## 9. Testing requirements
 
-- `docs/TESTING.md` is authoritative for strategy, layers, tooling and naming. `docs/DEFINITION.md` is authoritative for the gate.
+- `docs/TESTING.md` is authoritative for strategy, layers, tooling and naming. `docs/DEFINITION.md` is authoritative for the gate. The phase-and-commit protocol (red `test:` → green `feat:`/`fix:` → `refactor:`, pushed commits never rewritten, integration by merge commit) is owned by `docs/CONTRIBUTING.md` §3 and stated for authors in `docs/GUIDELINES.md` §8.1 (DEC-053, DEC-059); it is not restated here.
 - Every behaviour change ships with the tests that would fail without it, or a recorded justification in the pull request. Bug fixes carry a regression test where practical.
 - Do not write tests that assert incidental implementation detail, tautologies, mock echoes or source text; delete such a test rather than re-pinning it when the implementation changes.
 - No test performs real network I/O or depends on wall-clock time; use the injected clock and dispatchers (`REQ-REL-004`).
@@ -230,7 +233,7 @@ When two agents work concurrently: one owner per file, and the integration owner
 - One authoritative owner per topic; normative statements appear in exactly one file and are referenced elsewhere by identifier.
 - Every document carries a header block: `Status:`, `Last verified:`, `Owner:`, `Authoritative for:`, `Inputs:`.
 - Update the owning document in the same change that alters the behaviour it describes (DEC-046).
-- Use stable identifiers from `local://decision-brief.md` §2; never renumber or reuse one.
+- Use stable identifiers from the owning index — `REQ-*`/`AC-*` (`docs/REQUIREMENTS.md`), `DEC-###` (`docs/DECISION_BOARD.md`), `TASK-###` (`docs/BACKLOG.md`), `TEST-*` (`docs/TESTING.md`), `IC-###` (`docs/CONTRACTS.md`); never renumber or reuse one (`docs/GUIDELINES.md` §7.1).
 - Documentation is written in English; `README.es.md` is the only translated document (DEC-047).
 - Keep links relative and working; verify links in any document you touch.
 - No placeholders, TODOs or unresolved angle-bracket templates in a merged document. If a fact cannot be verified, mark it as an assumption with an owner and a date.
