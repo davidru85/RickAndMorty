@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
-- **Status:** Active — target state; no code exists yet (see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-30
+- **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
+- **Last verified:** 2026-10-01
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -299,7 +299,7 @@ Mitigations for the pinned-alpha surface are those of `RISK-002`: exact pins, a 
 ### 9.3 Known gaps, stated as gaps
 
 - No Gradle dependency-verification metadata (checksums) and no dependency lockfile is configured. The build exists (TASK-014, merged in PR #6) and TASK-015 pinned the catalog, but the adoption is unowned and recorded as `GAP-010`; the version catalog pins versions, not artifact bytes. Owner: Security Reviewer, dated 2026-09-30. Target state: verification metadata or a lockfile for the Gradle dependency graph, so a re-pointed or tampered artifact fails resolution.
-- No CI exists yet, so none of §9.1's automated checks are running today; they are target state and are tracked as work in `BACKLOG.md`. Nothing in this document should be read as a claim that they already execute.
+- - No CI exists yet, so none of §9.1's automated checks are running today; they are target state and are tracked as work in `BACKLOG.md` (`TASK-025`). Two do execute locally in the root `check` on every build today: `verifyRepositoryHygiene` (`TEST-UNIT-026`, §4) and `verifyDependencyPolicy` (`TEST-UNIT-013`/`014`/`051`). Nothing else should be read as a claim that it already runs.
 
 ## 10. Vulnerability reporting
 
@@ -421,6 +421,7 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-01 | §9.3 states the observed position: the two policy checks that run locally in `check` are named, `GAP-010` is indexed as `TASK-084`, and the CI prerequisite for artifact verification is recorded (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-046`, `TASK-084` |
 | 2026-09-30 | App preferences (row 4a) added to the data inventory and stores; GraphQL variables noted as a transmission path; "Delete favorites" added to row 4 retention. | DEC-055, DEC-056 |
 | 2026-09-29 | Created: app-level threat model, trust boundaries, data classification, secret/permission policy, transport and storage policy, redaction obligations, dependency-security policy, vulnerability-reporting route and the empty `SEC-###` register. | DEC-035, DEC-036, DEC-037, DEC-039, DEC-052 |
 | 2026-09-30 | §4 states the executable secret-scanning policy: command, working-set and all-refs history boundary, fail-closed shallow/incomplete behaviour and redaction, implemented as `verifyRepositoryHygiene` (`TEST-UNIT-026`). No `SEC-###` row added: the scan finds nothing. | DEC-062, TASK-016, `PROJECT_LOG.md` LOG-0036 |

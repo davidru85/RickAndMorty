@@ -47,7 +47,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 
 ### Current state vs target state
 
-- **Current state (2026-09-30):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist: `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061) and `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062, TASK-016), both wired into the root `check`. No product test source set, no fixture and no CI exist. Every other statement below is the target state.
+- **Current state (2026-10-01):** the Gradle/KMP build skeleton exists (TASK-014, merged in PR #6 and recorded in LOG-0026) with the 11 modules and five route declarations, and the repository-policy checks exist: `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061) and `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062, TASK-016), both wired into the root `check`. No product test source set, no fixture and no CI exist. Every other statement below is the target state.
 - **Target state:** the layers, IDs, layout and policies defined here, implemented in the Android milestone (M1) and extended in the iOS milestone (M2) (`DEC-040`, `REQ-PLAT-004`).
 
 ### Stated assumptions
@@ -693,6 +693,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | Current-state line re-dated after the B1 merges; `TASK-034`'s DOC1–DOC8 audit found no drift in this document's headers, links, ids or traceability rows. | `TASK-034`, `DEC-046` |
 | 2026-09-29 | Document created: test principles, layer distribution, shared/network/coroutine/cache/image/UI/accessibility/performance/contract test plans, coverage policy, organisation and naming, CI gates, flaky-test policy and the requirement → test traceability matrix. | `DEC-023`, `DEC-024`, `DEC-025`, `DEC-028`, `DEC-029`, `DEC-030`, `DEC-031`, `DEC-033`, `DEC-034` |
 | 2026-09-29 | Module names, source-set layout and coverage scopes moved to the feature-per-module layout; `:core:testing` owns the shared fakes and fixtures; `TEST-UNIT-037`…`041` added and wired into the matrix. §13.1 now carries the dependency rules that constrain tests. | `DEC-052` (supersedes `DEC-019`) |
 | 2026-09-29 | Test-first workflow added (§1.1, P10): observed red before green, phase-per-commit, which layer owns the red test, and how the cycle interacts with snapshots and the quarantine policy. | `DEC-053` |

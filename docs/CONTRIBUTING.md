@@ -48,7 +48,7 @@ cd RickAndMorty
 
 Build, run and quality commands are **owned by [`README.md`](../README.md)** §8 (build and run) and §9 (test and quality commands). This file does not duplicate them; a command copied into two documents drifts. The Android build is milestone M1 and the iOS build is M2 (DEC-040), and both platforms are required on every pull request (§5.3).
 
-The current documentation change is made on branch `docs/documentation-system` and merged into `main` through the normal pull-request path (§5).
+Changes are prepared on a `feat|fix|docs|test|build|chore/<slug>` branch and merged into `main` through the normal pull-request path (§5); `main` is the only integrated branch (`DEC-059`).
 
 `README.md` §8 is authoritative for the command names; if the build lands and a command changes, `README.md` changes in the same pull request (DEC-046) and this file is only updated if the process around it changes.
 
@@ -396,6 +396,7 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §1.2 no longer points at a single documentation branch: changes are prepared on a typed branch and merged into `main`, the only integrated branch (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-059`, `DEC-046` |
 | 2026-09-29 | Created: setup and prerequisites, trunk-based branching with the allowed branch types, the TDD phase-and-commit protocol with rebase-merge policy, Conventional Commits and release-note derivation, the issue workflow against `BACKLOG.md`, pull-request expectations with the required-check list, per-change testing and documentation requirements, the review process, the agent permission boundary, the mirrored vulnerability-reporting route and the completion checklist. | DEC-041, DEC-042, DEC-043, DEC-044, DEC-046, DEC-048, DEC-049, DEC-051, DEC-052, DEC-053, DEC-054 |
 | 2026-09-30 | Provisional `repository-hygiene` required check added to §5.3 (full history on both runners); §6's tooling-exception row now requires a seeded violation for an introduced tool; §7's tooling row re-runs `verifyRepositoryHygiene`. No workflow created. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
 | 2026-10-01 | §9 corrected for the agent write boundary: the limit is task-scoped, not phase-scoped, and no longer claims to lift when the build exists (`DEC-064`, `CONF-46` resolved). No other rule changed. | `DEC-064`, `PROJECT_LOG.md` LOG-0042 |

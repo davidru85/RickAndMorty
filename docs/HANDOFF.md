@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-01; must be updated on every handoff (`AGENTS.md` §5.7).
+- **Status:** Active. Describes the repository as of 2026-10-01; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-01
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.

@@ -5,7 +5,7 @@
 - **Owner:** Documentation Maintainer (see `AGENTS.md` §3.9)
 - **Authoritative for:** the chronological record of *why* the project changed — one entry per meaningful event, with the event, its rationale, the artifacts it touched, the decision it belongs to, and what was actually verified. Identifier scheme: `LOG-####`.
 - **Not authoritative for:** the current status of a decision (`DECISION_BOARD.md`), the current state of work (`BACKLOG.md`), requirement or contract content (`REQUIREMENTS.md`, `CONTRACTS.md`), release notes (GitHub Releases).
-- **Inputs:** the repository commit history on `main` (14 commits, all dated 2026-09-29; `main` was the only branch until the current documentation change, which is made on `docs/documentation-system`), plus `assessment.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`.
+- **Inputs:** the repository commit history on `main` (15 pre-audit commits dated 2026-09-29/30 plus every tracked change since; `main` is the only integrated branch), plus `assessment.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`.
 
 ## 1. What this log is
 
