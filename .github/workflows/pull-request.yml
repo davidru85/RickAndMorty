@@ -27,6 +27,11 @@ name: pull-request
 on:
   pull_request:
     branches: [main]
+  # `main` is gated too: AC-REQ-FUNC-014-1 requires that `main` builds at every commit, and a
+  # post-merge run is the evidence for the merged head rather than for the pull request that
+  # produced it.
+  push:
+    branches: [main]
   workflow_dispatch:
 
 # A newer push supersedes an in-flight run on the same pull request. The gate still
