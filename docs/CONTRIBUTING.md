@@ -256,7 +256,9 @@ Every pull request requires the full suite on **both platforms**; the checks bel
 
 Notes that keep the list honest:
 
-- **The check names are provisional until the workflow files land.** The authoritative definitions are `DEFINITION.md` §3/§7 and `TESTING.md` §14; where a workflow job name diverges from this table, `TESTING.md` and the workflow are the truth and this table is corrected in the same change.
+- **Activation is staged (`DEC-071`).** The list above is the complete set and does not shrink. Each row becomes blocking when its harness exists — the shared suites and the policy tasks from `TASK-024`/`TASK-025` onward, the snapshot, contract and accessibility suites with the M1/M2 tasks that create them. Until CI exists, a pull request is *integrated and locally verified* and `DEFINITION.md` D2 is not satisfied; that is recorded, not waived.
+
+**The check names are provisional until the workflow files land.** The authoritative definitions are `DEFINITION.md` §3/§7 and `TESTING.md` §14; where a workflow job name diverges from this table, `TESTING.md` and the workflow are the truth and this table is corrected in the same change.
 - **Branch protection is a repository setting and therefore a human action** (DEC-049). The required-check set above `MUST` be configured as required status checks on `main`, each named individually; until that configuration exists the gate is a convention that reviewers and authors honour, not an enforced one, and an agent `MUST NOT` change repository settings.
 - **No retry-to-green.** Automatic retries are forbidden on the blocking gate, and re-running a failing check until it passes is not an acceptable response (`TESTING.md` §15). A test that fails intermittently is quarantined with an owner and a deadline, with the justification recorded, and is excluded from the required set only on that basis.
 - **Both platform runners are mandatory.** The Android suites and the macOS runner that executes the iOS suites are required on every pull request; the cost of the macOS runner is accepted (DEC-054). A job that is skipped for cost, or absent, is a missing required check, not a pass.
@@ -408,6 +410,7 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §5.3 states the staged activation of the required set (`DEC-071`, `CONF-53`) and that a pre-CI pull request is integrated and locally verified, never *Done under D2*. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | §3.1 states the protocol as twelve ordered steps (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit) with the three exception classes; §2 states that bringing an open branch up to date merges `main` rather than rewriting its phase commits. | `DEC-053`, `DEC-059`, `REQ-NFR-010`, `TASK-072` |
 | 2026-10-01 | §1.2 no longer points at a single documentation branch: changes are prepared on a typed branch and merged into `main`, the only integrated branch (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-059`, `DEC-046` |
 | 2026-09-29 | Created: setup and prerequisites, trunk-based branching with the allowed branch types, the TDD phase-and-commit protocol with rebase-merge policy, Conventional Commits and release-note derivation, the issue workflow against `BACKLOG.md`, pull-request expectations with the required-check list, per-change testing and documentation requirements, the review process, the agent permission boundary, the mirrored vulnerability-reporting route and the completion checklist. | DEC-041, DEC-042, DEC-043, DEC-044, DEC-046, DEC-048, DEC-049, DEC-051, DEC-052, DEC-053, DEC-054 |
