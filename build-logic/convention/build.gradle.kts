@@ -42,5 +42,9 @@ gradlePlugin {
             id = "multiverse.repository.hygiene"
             implementationClass = "io.github.davidru85.multiverse.buildlogic.hygiene.RepositoryHygienePlugin"
         }
+        register("moduleBoundaries") {
+            id = "multiverse.module.boundaries"
+            implementationClass = "io.github.davidru85.multiverse.buildlogic.boundaries.ModuleBoundariesPlugin"
+        }
     }
 }

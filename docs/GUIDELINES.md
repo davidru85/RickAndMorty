@@ -57,6 +57,7 @@ The names below are the only tool names used in this document. Exact commands ar
 | Android Lint | Android platform rules: hardcoded text, content descriptions, touch-target size, manifest and resource rules | Android modules |
 | dependency-analysis (`buildHealth`) | Declared-versus-used dependencies, unused or undeclared edges, module-graph rules | All Gradle modules |
 | Repository hygiene (`verifyRepositoryHygiene`) | Tracked-path hygiene (no build output, IDE/user state, machine-local file or credential carrier tracked) and secret scanning of the commit-eligible working set and all reachable history | The whole repository (root build) |
+| Module boundaries (`verifyModuleBoundaries`) | The accepted module graph: project edges, the configuration and source set that declared each edge, the `:core:domain` external allow-list and the staged destination/package rules (`DEC-066`, `DEC-068`) | The whole repository (root build) |
 | SwiftLint | Swift structural analysis, including force unwrapping | Swift packages and the iOS app |
 | swift-format | Swift formatting | Swift packages and the iOS app |
 | Tests (`TEST-*`) | Behaviour, invariants, parity and policy assertions that no analyser can express | See `TESTING.md` §13.1 for layout |
@@ -165,7 +166,7 @@ Invariants that follow, and are not negotiable in code:
 3. `:core:designsystem` and `iosApp/DesignSystem` MUST NOT depend on domain types; components take primitives (strings, colours, image URL, a mirrored status value).
 4. The Android deliverable builds, installs and runs with the iOS modules absent (`REQ-PLAT-004`).
 
-**Enforcement:** `Tool:` Gradle module graph and dependency-analysis (`buildHealth`) reject a forbidden edge (verified by the required `dependency-analysis` check, `DEC-054`); `Test:` `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-019`; `Review:` a feature declaring a dependency it does not use, or reaching a sibling feature's state class.
+**Enforcement:** `Tool:` `verifyModuleBoundaries` decides the accepted graph (`TEST-UNIT-017`, `TEST-UNIT-043`, `R14` of `TEST-UNIT-012`) and dependency-analysis (`buildHealth`, `TASK-029`) reports declared-versus-used; both are required checks (`DEC-054`); `Test:` `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-019`; `Review:` a feature declaring a dependency it does not use, or reaching a sibling feature's state class.
 
 ### 3.2 Inside a feature module
 
@@ -715,5 +716,6 @@ Rules that constrain deviation:
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | §1.3 and §3.1 name the executable boundary check (`verifyModuleBoundaries`, `TASK-017`) and its rule set, and distinguish it from `buildHealth` (`TASK-029`). | `TASK-017`, `DEC-066`, `DEC-068` |
 | 2026-09-29 | Created: Kotlin, source-set, module, presentation, Compose and SwiftUI rules; naming and identifier conventions; test-first workflow and local test rules; documentation, accessibility and security-sensitive coding conventions; the deviation process. Every rule names its enforcing tool, test id or review expectation. | `DEC-052` (feature-per-module layout), `DEC-053` (TDD phase protocol, amending `DEC-041`), `DEC-054` (full both-platform suite blocking on every pull request) |
 | 2026-09-30 | Repository hygiene added as a named tool in §1.3 and as existing state in §1.4; §11.1 names `./gradlew verifyRepositoryHygiene` and `TEST-UNIT-026` as the enforcement. | `DEC-062`, TASK-016, `PROJECT_LOG.md` LOG-0036 |
