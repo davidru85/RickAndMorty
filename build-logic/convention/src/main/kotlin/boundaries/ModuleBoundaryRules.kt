@@ -21,8 +21,11 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  * - `R14` (`TEST-UNIT-012`) `:core:domain` declares no external dependency beyond the Kotlin
  *   standard library and `kotlinx-coroutines-core` (`DEC-066`).
  *
+ * - `R16` the build contains the required leaf modules of ADR-0001 (`GAP-014`, `TASK-091`); a
+ *   missing module fails closed, and a `:feature:*` path outside the accepted five is unknown.
+ *
  * Staged structure rules (`TEST-UNIT-043`, `DEC-068`):
- * - `S1` every `:feature:*` declares its own navigation destination.
+ * - `S1` every accepted feature declares its own navigation destination.
  * - `S2` no feature source references the app-wide `NavHost`.
  * - `S3` a feature that declares production source outside its route declaration has its own
  *   `domain` and `presentation` packages.
@@ -32,13 +35,15 @@ internal object ModuleBoundaryRules {
     /** Modules a shared production source set of a feature may depend on (R8). */
     private val FEATURE_SHARED_CORE = setOf(":core:domain", ":core:data", ":core:presentation")
 
-    /** The only external library `:core:domain` may declare (`DEC-066`, R14). */
-    private val DOMAIN_ALLOWED_EXTERNALS = setOf("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-
-    /** What `:core:ios` may depend on if it is introduced (ADR-0012, R12). */
+    /**
+     * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
+     * production core modules and the five accepted feature modules, never `:core:designsystem`
+     * (Android-only) and never `:core:testing` (test-only). The allow-list names the accepted
+     * modules instead of accepting any `:feature:*` prefix, so a path outside the set fails closed
+     * (`GAP-014`).
+     */
     private fun isCoreIosAllowed(producer: String): Boolean =
-        producer == ":core:domain" || producer == ":core:data" || producer == ":core:presentation" ||
-            producer in FEATURE_SHARED_CORE || producer.startsWith(":feature:")
+        producer in FEATURE_SHARED_CORE || ModuleSet.isAcceptedFeature(producer)
 
     fun evaluate(
         snapshot: ModuleGraphSnapshot,
@@ -47,6 +52,7 @@ internal object ModuleBoundaryRules {
         val log = BoundaryViolationLog()
 
         knownModules(snapshot, log)
+        requiredTopology(snapshot, log)
         coreDomain(snapshot, log)
         coreData(snapshot, log)
         corePresentation(snapshot, log)
@@ -61,6 +67,44 @@ internal object ModuleBoundaryRules {
 
         return log
     }
+
+    /**
+     * `R16` — the build contains exactly the leaf modules ADR-0001 requires today (`GAP-014`,
+     * `TASK-091`).
+     *
+     * The other rules are all prohibitions: they reject an edge, a dependency or a source file.
+     * A build that has silently lost a module has less to prohibit, so every prohibition still
+     * passes and the check certifies a repository that no longer matches the accepted topology.
+     * This rule states the positive half — the required set is present — and is the only rule that
+     * can fail because something is **absent**.
+     *
+     * A planned module is legal but not required until the task that introduces it promotes it, so
+     * `TASK-078` adds `:core:ios` to [ModuleSet.REQUIRED] in its own change.
+     *
+     * Diagnostics are sorted and repository-relative; the check never prints a machine path.
+     */
+    private fun requiredTopology(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        val present = snapshot.projects.map { it.path }.toSet()
+        (ModuleSet.REQUIRED - present).sorted().forEach { missing ->
+            log.add(
+                topologyViolation(
+                    reason = "the required module `$missing` of ADR-0001 is not part of the build; a missing " +
+                        "module weakens every other rule, so the topology fails closed (ADR-0001, " +
+                        "AC-REQ-NFR-009-3)",
+                ),
+            )
+        }
+    }
+
+    private fun topologyViolation(reason: String) = ModuleBoundaryViolation(
+        testId = BoundaryTestIds.TOPOLOGY,
+        ruleId = "R16",
+        consumer = "",
+        configuration = "",
+        sourceSet = "",
+        producer = "",
+        reason = reason,
+    )
 
     /** R13 — an included project the check does not understand fails rather than passes. */
     private fun knownModules(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
@@ -204,8 +248,9 @@ internal object ModuleBoundaryRules {
                         configuration = edge.configuration,
                         sourceSet = edge.sourceSet,
                         producer = edge.producer,
-                        reason = "`:core:ios` exports the five features and the four other core modules only " +
-                            "(ADR-0012, DEC-058)",
+                        reason = "`:core:ios` exports the five accepted features and the three shared " +
+                            "production core modules only (`:core:designsystem` is Android-only and " +
+                            "`:core:testing` is test-only; ADR-0012, `CONF-54`)",
                     ),
                 )
             }
@@ -243,6 +288,7 @@ internal object ModuleBoundaryRules {
                             configuration = edge.configuration,
                             sourceSet = edge.sourceSet,
                             producer = edge.producer,
+                            origin = edge.originConfiguration,
                             reason = "no `:feature:*` module may depend on another `:feature:*` module " +
                                 "(ADR-0001 rule 6, AC-REQ-NFR-009-1)",
                         ),
@@ -318,7 +364,7 @@ internal object ModuleBoundaryRules {
     private fun domainExternalPurity(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         snapshot.byKind(ModuleKind.CORE_DOMAIN).forEach { project ->
             project.externalDependencies
-                .filterNot { it.coordinates in DOMAIN_ALLOWED_EXTERNALS }
+                .filterNot { it.coordinates in ModuleDependencyAllowLists.DOMAIN }
                 .forEach { dependency ->
                     log.add(
                         ModuleBoundaryViolation(

@@ -8,7 +8,7 @@
 - **Authoritative for:** the module set, the source-set layout inside a feature module, and the permitted dependency edges between modules. Not the layer responsibilities themselves (`DESIGN.md` §1) and not the class-level contracts (`CONTRACTS.md`).
 - **Inputs:** `DEC-052` in [`DECISION_BOARD.md`](../DECISION_BOARD.md) (supersedes `DEC-019`); `DEC-001` (ADR-0002), `DEC-013` (ADR-0003), `DEC-015` (ADR-0006), `DEC-016` (ADR-0009), `DEC-017` (ADR-0007); `REQ-NFR-001`, `REQ-NFR-002`, `REQ-PLAT-001`, `REQ-PLAT-004`, `REQ-FUNC-001`…`REQ-FUNC-008` in [`REQUIREMENTS.md`](../REQUIREMENTS.md); [`DESIGN.md`](../DESIGN.md) §1, §3, §4; repository-owner directive of 2026-09-29 replacing the three-shared-module layout
 
-> `DEC-019` (keep the eight-module structure) is **Superseded** by `DEC-052`. The module names in this ADR are authoritative; `DESIGN.md` §3 is being realigned to them and currently still shows the superseded layout.
+> `DEC-019` (keep the eight-module structure) is **Superseded** by `DEC-052`. The module names in this ADR are authoritative, and `DESIGN.md` §3 now names the same set; the realignment completed in `TASK-014` and the boundary check asserts the leaf set (`R16`, `TASK-091`).
 
 > **Amended 2026-09-30 by [ADR-0012](0012-ios-framework-export.md) (`DEC-058`):** one module is added to the set above — `:core:ios`, a Kotlin Multiplatform module with the two Apple targets and no Android variant, whose only purpose is to export the five `:feature:*` and the four other `:core:*` modules to Swift as a single framework. It removes no module, changes no other module's responsibility, and adds no permitted edge from an existing module: instead it adds one consumer at the edge of the graph (`iosApp` → `:core:ios` → the shared modules). Every rule and rationale below is unchanged.
 
@@ -46,7 +46,7 @@ The project is organised feature-per-module, with Clean Architecture layers as p
 | `:feature:character-detail` | Detail screen and favourite toggle | `REQ-FUNC-002`, `REQ-FUNC-006`, `REQ-FUNC-009`, `REQ-FUNC-023` |
 | `:feature:favorites` | Favorites list and empty state | `REQ-FUNC-006`, `REQ-FUNC-008` |
 | `:feature:episodes` | Placeholder screen only | `REQ-FUNC-008`, `REQ-FUNC-031` (deferred) |
-| `:feature:locations` | Placeholder screen only | `REQ-FUNC-008`, `REQ-FUNC-032` (deferred) |
+| `:feature:locations` | Superseded name: replaced by `:feature:settings` per the ADR-0010 amendment below (`DEC-055`) | `REQ-FUNC-008`, `REQ-FUNC-032` (deferred) |
 
 **Inside every feature module** the layers are packages in one Gradle module:
 
@@ -82,7 +82,7 @@ flowchart TD
         detail[":feature:character-detail"]
         favorites[":feature:favorites"]
         episodes[":feature:episodes"]
-        locations[":feature:locations"]
+        settings[":feature:settings"]
     end
     subgraph Core
         coreIos[":core:ios (export only)"]
@@ -105,18 +105,18 @@ flowchart TD
     androidApp --> detail
     androidApp --> favorites
     androidApp --> episodes
-    androidApp --> locations
+    androidApp --> settings
     androidApp --> coreDS
     discovery --> coreDS
     detail --> coreDS
     favorites --> coreDS
     episodes --> coreDS
-    locations --> coreDS
+    settings --> coreDS
     discovery --> corePres
     detail --> corePres
     favorites --> corePres
     episodes --> corePres
-    locations --> corePres
+    settings --> corePres
     discovery --> coreData
     detail --> coreData
     favorites --> coreData
@@ -130,7 +130,7 @@ flowchart TD
     coreIos --> detail
     coreIos --> favorites
     coreIos --> episodes
-    coreIos --> locations
+    coreIos --> settings
     coreIos --> corePres
     coreIos --> coreData
     coreIos --> coreDomain
@@ -236,7 +236,7 @@ A feature-per-module split has one known failure mode: each feature re-implement
 ## Related implementation areas
 
 - `:core:domain`, `:core:data`, `:core:presentation`, `:core:designsystem`, `:core:testing`, `:feature:discovery`, `:feature:character-detail`, `:feature:favorites`, `:feature:episodes`, `:feature:locations`, `:androidApp`, `iosApp` with `iosApp/Features/Discovery`, `CharacterDetail`, `Favorites`, `Episodes`, `Locations`, and `iosApp/DesignSystem`.
-- [`DESIGN.md`](../DESIGN.md) §1 (layers), §3 (module table being realigned to this ADR), §4.2 (navigation ownership).
+- [`DESIGN.md`](../DESIGN.md) §1 (layers), §3 (module table, aligned with this ADR since `TASK-014`), §4.2 (navigation ownership).
 - [`UI_SPEC.md`](../UI_SPEC.md) §1.2 for the Figma component list `:core:designsystem` mirrors.
 - DEC-024 / DEC-034 (screenshot-test placement per feature), DEC-053 (TDD phase-and-commit protocol), DEC-054 (full suite required on every pull request), DEC-030 (`:core:testing` fixtures), DEC-032 (dependency-analysis check), DEC-050 (diagram ownership).
 - Decision status index: [`DECISION_BOARD.md`](../DECISION_BOARD.md).

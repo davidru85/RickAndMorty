@@ -57,7 +57,11 @@ class DependencyPolicyPlugin : Plugin<Project> {
         }
         val buildLogicSources = target.fileTree(buildLogicDir) {
             include("**/src/**/*.kt", "**/src/**/*.gradle.kts")
-            exclude(*BUILD_STATE_EXCLUDES)
+            // Test sources are not build logic. They assert the policy's own behaviour and
+            // legitimately carry version literals as data, so scanning them would make the
+            // policy reject its own regression suite (TASK-091). The build scripts and the
+            // production build logic remain fully scanned.
+            exclude(*BUILD_STATE_EXCLUDES, TEST_SOURCE_GLOB)
         }
         // The policy package is excluded from the name-lookup rule on purpose:
         // `CatalogCapture` must read the catalog this task verifies.
@@ -168,6 +172,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
         )
         const val BUILD_LOGIC = "build-logic"
         const val POLICY_PACKAGE_GLOB = "**/src/main/kotlin/policy/**"
+        const val TEST_SOURCE_GLOB = "**/src/test/**"
         val SETTINGS_NAMES = listOf("settings.gradle.kts", "settings.gradle")
         val BUILD_STATE_EXCLUDES = arrayOf("**/build/**", "**/.gradle/**", "**/.kotlin/**")
     }

@@ -63,7 +63,7 @@ abstract class VerifyModuleBoundariesTask : DefaultTask() {
         }
         logger.lifecycle(
             "verifyModuleBoundaries passed: ${graph.get().projects.size} project(s) checked against the module " +
-                "rules of ADR-0001 as amended (R1–R15, S1–S3; TEST-UNIT-017, TEST-UNIT-012, TEST-UNIT-043).",
+                "rules of ADR-0001 as amended (R1–R16, S1–S3; TEST-UNIT-017, TEST-UNIT-012, TEST-UNIT-043).",
         )
     }
 

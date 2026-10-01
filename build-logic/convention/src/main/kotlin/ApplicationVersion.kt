@@ -18,8 +18,13 @@ internal object ApplicationVersion {
      * A `null` result is a build failure for the caller: an application cannot be assembled
      * without the single version source.
      */
-    fun read(project: Project): String? {
-        val file = project.rootProject.layout.projectDirectory.file("VERSION").asFile
-        return if (file.isFile) file.readText().trimEnd('\n', '\r') else null
-    }
+    fun read(project: Project): String? = read(project.rootProject.layout.projectDirectory.file("VERSION").asFile)
+
+    /**
+     * The `VERSION` value of [file] with its final line terminator removed, or `null` when the file
+     * is absent. Kept separate from the `Project` overload so the reader is testable without a
+     * Gradle build while the caller keeps passing the root project directory.
+     */
+    fun read(file: java.io.File): String? =
+        if (file.isFile) file.readText().trimEnd('\n', '\r') else null
 }

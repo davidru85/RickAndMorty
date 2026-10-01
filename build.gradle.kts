@@ -26,3 +26,11 @@ plugins {
     id("multiverse.repository.hygiene")
     id("multiverse.module.boundaries")
 }
+
+// The build-logic regression suite is part of the local gate: a rule that fails open while the
+// clean repository still passes is exactly what `TASK-091`/`TASK-092` exist to prevent, and a suite
+// nobody runs cannot prevent it. The reference is lazy and names no task instance, so the entry
+// stays configuration-cache compatible. CI (`TASK-025`) wires the same suite into the active set.
+tasks.named("check") {
+    dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
+}

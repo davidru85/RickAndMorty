@@ -47,11 +47,20 @@ internal object FeatureSources {
     /** Reads one source file into its masked facts. */
     fun read(rootDirectory: File, file: File): FeatureSource {
         val masked = KotlinSources.mask(file.readText())
-        return FeatureSource(
-            path = file.relativeTo(rootDirectory).invariantSeparatorsPath,
-            packageName = PACKAGE.find(masked)?.groupValues?.get(1),
-            declaresDestination = DESTINATION.containsMatchIn(masked),
-            namesAppWideNavHost = NAV_HOST.containsMatchIn(masked),
-        )
+        return analyse(file.relativeTo(rootDirectory).invariantSeparatorsPath, masked)
     }
+
+    /**
+     * The same facts for source held in memory, so a test can pin one declaration form without a
+     * file. The caller passes the **masked** text; [analyseText] masks it first.
+     */
+    fun analyse(path: String, masked: String): FeatureSource = FeatureSource(
+        path = path,
+        packageName = PACKAGE.find(masked)?.groupValues?.get(1),
+        declaresDestination = DESTINATION.containsMatchIn(masked),
+        namesAppWideNavHost = NAV_HOST.containsMatchIn(masked),
+    )
+
+    /** Masks [text] and analyses it as if it were a file at [path]. */
+    fun analyseText(path: String, text: String): FeatureSource = analyse(path, KotlinSources.mask(text))
 }
