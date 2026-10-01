@@ -269,7 +269,7 @@ The codebase `MUST` be organised as one module per user-facing capability (`:fea
 
 - `AC-REQ-NFR-009-1` No feature module depends on another feature module; a dependency-analysis check fails the build on a forbidden edge.
 - `AC-REQ-NFR-009-2` Each feature module contains its own `domain` and `presentation` packages and declares its own navigation destination; no feature module owns the app-wide `NavHost`.
-- `AC-REQ-NFR-009-3` `:core:domain` depends on nothing, `:core:data` and `:core:presentation` depend only on `:core:domain`, and `:core:designsystem` depends on Compose only.
+- `AC-REQ-NFR-009-3` `:core:domain` depends on no project module and on no platform, HTTP, UI or persistence library — the Kotlin standard library and `kotlinx-coroutines-core` are its only permitted dependencies (`DEC-066`, amending `ADR-0001`); `:core:data` and `:core:presentation` depend only on `:core:domain`, and `:core:designsystem` depends on Compose only.
 - Reference: `DESIGN.md` §3, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md) · Decision: `DEC-052` · Tests: `TEST-UNIT-017`, `TEST-UNIT-043`
 
 #### REQ-NFR-010 — Test-driven development protocol
@@ -321,8 +321,9 @@ Unit, mapping, cache and paging logic `MUST` be covered by automated tests in `c
 The build `MUST` pin every dependency and toolchain version, and `MUST` build from a clean clone with one documented command.
 
 - `AC-REQ-NFR-006-1` No dynamic version ranges (`+`, `latest.release`) anywhere in the build.
-- `AC-REQ-NFR-006-2` `VERSION` is the single source for `versionName` and `CFBundleShortVersionString`.
-- Reference: `TECHNICAL_PLAN.md` · DEC-043
+- `AC-REQ-NFR-006-2` `VERSION` is the single repository source for the application version: one SemVer value, validated, feeding the Android `versionName` exactly, with no second version literal anywhere in the build (`TASK-018`, `DEC-067`).
+- `AC-REQ-NFR-006-3` The real iOS `CFBundleShortVersionString` consumes the same `VERSION` source rather than a hand-edited literal (`TASK-051`, M2; `DEC-067`).
+- Reference: `TECHNICAL_PLAN.md` §5 S8, §8.2 · Decision: `DEC-043`, `DEC-067` · Tests: `TEST-UNIT-014` (`VERSION` half, `TASK-018`); the iOS wiring is verified at `TASK-051`
 
 #### REQ-NFR-007 — Quality gates
 Formatting, static analysis, dependency analysis and the complete test suite for both platforms `MUST` pass before a pull request can be approved.

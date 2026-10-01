@@ -28,7 +28,7 @@ Module names, source-set layout and dependency direction follow `adr/0001-module
 
 ```mermaid
 flowchart LR
-    subgraph Domain[":core:domain — depends on nothing"]
+    subgraph Domain[":core:domain — stdlib + kotlinx-coroutines-core only (DEC-066)"]
         ID[IC-001..005<br/>API_SPECS declarations]
         REPO[IC-007 CharacterRepository<br/>IC-008 FavoritesRepository<br/>IC-009 use cases<br/>IC-010 filters<br/>IC-021 AppSettingsRepository<br/>failure = IC-003 Failure]
     end
