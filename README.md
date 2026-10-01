@@ -187,11 +187,11 @@ Every pull request must pass the full suite on both platforms before it can be a
 
 | Task | Command | State |
 | --- | --- | --- |
-| All shared and unit tests | `./gradlew test` | Not run — no test source set exists yet (TASK-024) |
+| All shared and unit tests | `./gradlew test` | Executed 2026-10-01: the shared suites run on the JVM host-test target and on both Apple targets — 7 harness tests in `:core:testing`; `TASK-024` added the harness and `TASK-025` runs it in CI |
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run — Roborazzi is not configured (TASK-029) |
 | Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Partially available — `lintDebug` runs clean (executed 2026-10-01); ktlint, detekt and `buildHealth` are not configured yet (TASK-029), so that half is target state |
-| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy` | Executed 2026-10-01: both pass — 14 projects checked (`R1`–`R13`, `R15`, `S1`–`S3`, effective inherited edges and Compose-only for `:core:designsystem`), and `VERSION` validated with every Android artifact task depending on it |
+| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-01: all pass — 14 projects checked (`R1`–`R16`, `S1`–`S3`, effective inherited edges and Compose-only for `:core:designsystem`), and `VERSION` validated with every Android artifact task depending on it |
 | Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-01: passes; also runs as part of `./gradlew check` and `./gradlew build` |
 | Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-01: passes (0 findings over the working set, every reachable blob and every unique historical path); also runs as part of `./gradlew check` and `./gradlew build` |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
