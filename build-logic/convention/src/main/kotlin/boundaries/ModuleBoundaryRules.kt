@@ -21,8 +21,11 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  * - `R14` (`TEST-UNIT-012`) `:core:domain` declares no external dependency beyond the Kotlin
  *   standard library and `kotlinx-coroutines-core` (`DEC-066`).
  *
+ * - `R16` the build contains the required leaf modules of ADR-0001 (`GAP-014`, `TASK-091`); a
+ *   missing module fails closed, and a `:feature:*` path outside the accepted five is unknown.
+ *
  * Staged structure rules (`TEST-UNIT-043`, `DEC-068`):
- * - `S1` every `:feature:*` declares its own navigation destination.
+ * - `S1` every accepted feature declares its own navigation destination.
  * - `S2` no feature source references the app-wide `NavHost`.
  * - `S3` a feature that declares production source outside its route declaration has its own
  *   `domain` and `presentation` packages.
@@ -47,6 +50,7 @@ internal object ModuleBoundaryRules {
         val log = BoundaryViolationLog()
 
         knownModules(snapshot, log)
+        requiredTopology(snapshot, log)
         coreDomain(snapshot, log)
         coreData(snapshot, log)
         corePresentation(snapshot, log)
@@ -61,6 +65,44 @@ internal object ModuleBoundaryRules {
 
         return log
     }
+
+    /**
+     * `R16` — the build contains exactly the leaf modules ADR-0001 requires today (`GAP-014`,
+     * `TASK-091`).
+     *
+     * The other rules are all prohibitions: they reject an edge, a dependency or a source file.
+     * A build that has silently lost a module has less to prohibit, so every prohibition still
+     * passes and the check certifies a repository that no longer matches the accepted topology.
+     * This rule states the positive half — the required set is present — and is the only rule that
+     * can fail because something is **absent**.
+     *
+     * A planned module is legal but not required until the task that introduces it promotes it, so
+     * `TASK-078` adds `:core:ios` to [ModuleSet.REQUIRED] in its own change.
+     *
+     * Diagnostics are sorted and repository-relative; the check never prints a machine path.
+     */
+    private fun requiredTopology(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        val present = snapshot.projects.map { it.path }.toSet()
+        (ModuleSet.REQUIRED - present).sorted().forEach { missing ->
+            log.add(
+                topologyViolation(
+                    reason = "the required module `$missing` of ADR-0001 is not part of the build; a missing " +
+                        "module weakens every other rule, so the topology fails closed (ADR-0001, " +
+                        "AC-REQ-NFR-009-3)",
+                ),
+            )
+        }
+    }
+
+    private fun topologyViolation(reason: String) = ModuleBoundaryViolation(
+        testId = BoundaryTestIds.TOPOLOGY,
+        ruleId = "R16",
+        consumer = "",
+        configuration = "",
+        sourceSet = "",
+        producer = "",
+        reason = reason,
+    )
 
     /** R13 — an included project the check does not understand fails rather than passes. */
     private fun knownModules(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {

@@ -98,9 +98,16 @@ data class ModuleGraphSnapshot(val projects: List<ProjectSnapshot>) : Serializab
     val paths: List<String> get() = projects.map { it.path }.sorted()
 }
 
-/** Classifies a project by its path. Unknown paths are `UNKNOWN` so a rule can fail closed. */
+/**
+ * Classifies a project by its path. Unknown paths are `UNKNOWN` so a rule can fail closed.
+ *
+ * A `:feature:*` path is a feature **only when it is one of the five modules ADR-0001 accepts**
+ * (`GAP-014`): classifying every `:feature:*` prefix as a valid feature made the rule set
+ * open-ended, so an invented module inherited every feature rule and passed. A path outside the
+ * accepted set is `UNKNOWN` and fails closed under `R13`.
+ */
 internal fun moduleKindOf(path: String): ModuleKind = when {
-    path == ":" || path == ":core" || path == ":feature" -> ModuleKind.CONTAINER
+    path in ModuleSet.CONTAINERS -> ModuleKind.CONTAINER
     path == ":core:domain" -> ModuleKind.CORE_DOMAIN
     path == ":core:data" -> ModuleKind.CORE_DATA
     path == ":core:presentation" -> ModuleKind.CORE_PRESENTATION
@@ -108,6 +115,6 @@ internal fun moduleKindOf(path: String): ModuleKind = when {
     path == ":core:testing" -> ModuleKind.CORE_TESTING
     path == ":core:ios" -> ModuleKind.CORE_IOS
     path == ":androidApp" -> ModuleKind.ANDROID_APP
-    path.startsWith(":feature:") -> ModuleKind.FEATURE
+    path in ModuleSet.FEATURES -> ModuleKind.FEATURE
     else -> ModuleKind.UNKNOWN
 }

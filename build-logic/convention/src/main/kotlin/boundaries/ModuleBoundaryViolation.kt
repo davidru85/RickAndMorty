@@ -14,11 +14,13 @@ import java.io.Serializable
  * - [DOMAIN_PURITY] owns the external-library rule for `:core:domain`, which is the half of
  *   the purity assertion the Gradle model can decide (`DEC-066`).
  * - [STRUCTURE] owns the staged destination/package rules that `DEC-068` assigns to `TASK-017`.
+ * - [TOPOLOGY] owns the positive half: the required leaf modules of ADR-0001 are present (`GAP-014`).
  */
 internal object BoundaryTestIds {
     const val GRAPH = "TEST-UNIT-017"
     const val DOMAIN_PURITY = "TEST-UNIT-012"
     const val STRUCTURE = "TEST-UNIT-043"
+    const val TOPOLOGY = "TEST-UNIT-043"
 }
 
 /**
