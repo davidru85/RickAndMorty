@@ -58,8 +58,8 @@ The names below are the only tool names used in this document. Exact commands ar
 | dependency-analysis (`buildHealth`) | Declared-versus-used dependencies, unused or undeclared edges, module-graph rules | All Gradle modules |
 | Repository hygiene (`verifyRepositoryHygiene`) | Tracked-path hygiene (no build output, IDE/user state, machine-local file or credential carrier tracked) and secret scanning of the commit-eligible working set and all reachable history | The whole repository (root build) |
 | Module boundaries (`verifyModuleBoundaries`) | The accepted module graph: the **effective** project and external dependencies of each architecture-relevant configuration (own plus inherited through `extendsFrom`), the configuration and source set that carry each edge and the one that declared it, the `:core:domain` (`R14`) and `:core:designsystem` (`R15`) external allow-lists, the `R16` **required leaf set** of ADR-0001, and the content-aware destination/package rules of `DEC-068` (`DEC-066`, `TASK-091`) | The whole repository (root build) |
-| SwiftLint | Swift structural analysis, including force unwrapping | Swift packages and the iOS app |
-| swift-format | Swift formatting | Swift packages and the iOS app |
+| SwiftLint | Swift structural analysis, including force unwrapping (pinned `0.65.1`; the CI step activates with `TASK-051`, `DEC-076`) | Swift packages and the iOS app |
+| swift-format | Swift formatting (pinned by the Xcode version that ships it; `tools/swift-lint.sh` runs it with `--strict`, because without that flag a violation still exits 0) | Swift packages and the iOS app |
 | Tests (`TEST-*`) | Behaviour, invariants, parity and policy assertions that no analyser can express | See `TESTING.md` §13.1 for layout |
 
 ### 1.4 Current state
