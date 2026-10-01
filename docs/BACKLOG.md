@@ -326,6 +326,8 @@ The audit's open items are `CONF-50`, `CONF-51` and the open `GAP-*` rows of `DO
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-01 | Post-merge review corrections registered: `TASK-087` (the `DEC-071` bootstrap decision), `TASK-088` (boundary hardening), `TASK-089` (`VERSION` artifact wiring) and `TASK-090` (B1 documentation reconciliation); §2.4 now distinguishes *integrated and locally verified* from *Done under D2*. | `DEC-071`, `LOG-0049` |
+| 2026-10-01 | Post-merge correction `TASK-089` registered and moved to `In review`: the artifact paths now depend on the canonical validation (`GAP-013`). | `TASK-089`, `DEC-067`, `LOG-0051` |
 | 2026-10-01 | B1 post-merge reconciliation (`TASK-090`): the present-tense preamble, the decision-row classification, the resolved-conflict statement and both READMEs are corrected; `AGENTS.md`, `HANDOFF.md`, `TECHNICAL_PLAN.md`, `DOCUMENTATION_AUDIT.md`, `GUIDELINES.md` and `CONTRIBUTING.md` follow the same state. | `TASK-090`, `DEC-046`, `DEC-071`, `LOG-0052` |
 | 2026-10-01 | Post-merge review corrections registered: `TASK-087` (the `DEC-071` bootstrap decision), `TASK-088` (boundary hardening), `TASK-089` (`VERSION` artifact wiring) and `TASK-090` (B1 documentation reconciliation). `TASK-088`…`TASK-090` are `In review`. | `GAP-012`, `GAP-013`, `CONF-53`, `LOG-0049`…`LOG-0051` |
 | 2026-10-01 | **Block 1 complete:** `TASK-017`, `TASK-018`, `TASK-019`, `TASK-033`, `TASK-034` and `TASK-072` moved to `Done` after PRs #33, #34, #31, #35, #32 and #36 merged; issues #17–#23 are closed. `LOG-0048` records the closure. D2 remains unevaluable (no CI, `GAP-002`). | `DEC-063`, `LOG-0048` |
