@@ -138,10 +138,34 @@ class DependencyPolicyPlugin : Plugin<Project> {
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
+
+        // TASK-089 (`GAP-013`): the documented artifact commands must not bypass the single
+        // `VERSION` source. Every task that can produce, package or install an Android
+        // application artifact depends on the canonical validator, so a malformed `VERSION`
+        // fails before a usable artifact exists. The wiring is lazy and configuration-cache
+        // compatible: it names the aggregate, never a `Project` or `Task` instance.
+        target.allprojects.forEach { project ->
+            project.pluginManager.withPlugin("com.android.application") {
+                project.tasks.configureEach {
+                    if (ANDROID_ARTIFACT_TASKS.matches(name)) {
+                        dependsOn(aggregate)
+                    }
+                }
+            }
+        }
     }
 
     private companion object {
         const val VERIFICATION_GROUP = "verification"
+
+        /**
+         * The artifact-producing task families of the Android application plugin: assemble,
+         * bundle, package, install and their per-variant forms. A name outside these families is
+         * not an artifact path and is not wired (`TASK-089`).
+         */
+        val ANDROID_ARTIFACT_TASKS = Regex(
+            "^(assemble|bundle|package|install|connected|uninstall|extract|zipApksFor).*",
+        )
         const val BUILD_LOGIC = "build-logic"
         const val POLICY_PACKAGE_GLOB = "**/src/main/kotlin/policy/**"
         val SETTINGS_NAMES = listOf("settings.gradle.kts", "settings.gradle")
