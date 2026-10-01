@@ -51,6 +51,18 @@ internal object WorkflowGateGuard {
     /** The runners the gate must cover: one Linux/Android, one macOS (`DEC-054`). */
     private val REQUIRED_RUNNERS = listOf("ubuntu-latest", "macos-latest")
 
+    /**
+     * `TEST-UNIT-045` (`TASK-093`, `DEC-078`): the automated-integration patterns a workflow step
+     * may never contain. Integration reaches `main` through a human merge only (`DEC-049`).
+     */
+    private val INTEGRATION_PATTERNS = listOf(
+        "gh\\s+pr\\s+merge",
+        "gh\\s+release\\s+create",
+        "git\\s+merge",
+        "git\\s+tag",
+        "git\\s+push",
+    )
+
     fun scan(workflows: Collection<File>, root: File): List<Finding> {
         val findings = mutableListOf<Finding>()
         val files = workflows.filter { it.isFile && (it.extension == "yml" || it.extension == "yaml") }
@@ -99,6 +111,41 @@ internal object WorkflowGateGuard {
                         "`continue-on-error: true` neutralises a check; a required check cannot be made advisory",
                     )
                 }
+                // TEST-UNIT-045 (`TASK-093`, AC-REQ-FUNC-014-1/-2): a workflow may never merge,
+                // tag, release or push. Integration is a human action (DEC-049), so a step that
+                // does any of them is an automated integration path. Comment lines are skipped —
+                // they explain the rules and legitimately quote the words — and the `on: push:`
+                // trigger is not a step.
+                val code = line.substringBefore('#')
+                val integration = INTEGRATION_PATTERNS.firstOrNull { Regex(it).containsMatchIn(code) }
+                if (integration != null) {
+                    findings += Finding(
+                        file.relativeTo(root).invariantSeparatorsPath,
+                        lineNumber,
+                        "`$integration` makes a workflow integrate automatically; merging, tagging, " +
+                            "releasing and pushing are human-only actions (AC-REQ-FUNC-014-2, DEC-049)",
+                    )
+                }
+                if (Regex("contents\\s*:\\s*write").containsMatchIn(code)) {
+                    findings += Finding(
+                        file.relativeTo(root).invariantSeparatorsPath,
+                        lineNumber,
+                        "`contents: write` gives a workflow the token it would need to push; the gate " +
+                            "runs read-only (AC-REQ-FUNC-014-2, SECURITY.md 9)",
+                    )
+                }
+
+                val releaseAction = Regex("uses:\\s*(\\S*(?:action-gh-release|create-release|gh-release|gh-actions-release)[^\\s#]*)")
+                    .find(code)?.groupValues?.get(1)
+                if (releaseAction != null) {
+                    findings += Finding(
+                        file.relativeTo(root).invariantSeparatorsPath,
+                        lineNumber,
+                        "`$releaseAction` publishes a release automatically; releasing is a human-only " +
+                            "action (AC-REQ-FUNC-014-2, DEC-049)",
+                    )
+                }
+
                 val action = Regex("uses:\\s*([^\\s#]+)").find(line)?.groupValues?.get(1) ?: return@forEachIndexed
                 // A local action (`./…`) or a Docker reference is not a supply-chain risk of the
                 // same kind; every remote action must be pinned by full commit SHA.
