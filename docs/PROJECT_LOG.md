@@ -501,6 +501,15 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Validation:** Observed on 2026-10-01 on branch `docs/b1-review-reconciliation`: link resolution across every `*.md` under `docs/` and the root (0 broken), conflict-marker scan (0), declaration-id uniqueness spot checks (`CONF-44`, `GAP-012`, `GAP-013` appear once each) and the state-contradiction scan (no “no `VERSION`” or “Block 1 complete” claim remains in a current-state source). “Eight explicit modules” survives only in the historical audit row that records its removal. `./gradlew verifyModuleBoundaries verifyDependencyPins verifyRepositoryHygiene` passes.
 - **Not verified:** the two language versions are checked for the same claims, not for translation quality; `CONF-50`, `CONF-51` and the remaining `GAP-*` rows stay open and are not part of this change.
 
+### LOG-0053 · 2026-10-01 · The post-merge correction programme is merged (`TASK-087`…`TASK-090`)
+
+- **Event:** the owner merged the four correction pull requests: #42 `DEC-071` (`TASK-087`, merge `852f674`), #43 the boundary hardening (`TASK-088`, merge `de0504b`), #44 the `VERSION` artifact wiring (`TASK-089`, merge `c652bd2`) and #45 the B1 documentation reconciliation (`TASK-090`, merge `d806b16`). The four rows move to `Done`, issue #38 is closed, and the bookkeeping in `BACKLOG.md` §2.4, `HANDOFF.md` §1/§3/§4, `TECHNICAL_PLAN.md` §1/§2 and `DOCUMENTATION_AUDIT.md` §8 no longer describes them as open or in review.
+- **Rationale:** `DEC-046` makes the tracked state part of the change; several documents still said "open for review" after the merges, and `BACKLOG.md`'s rows are the canonical task state (`AGENTS.md` §5). The correction programme is the last item of the review verdict; with it closed, the next work is B2.
+- **Affected artifacts:** `docs/BACKLOG.md`; `docs/HANDOFF.md`; `docs/TECHNICAL_PLAN.md`; `docs/DOCUMENTATION_AUDIT.md`; this entry.
+- **Decision / ADR:** no new decision; applies `DEC-071` and `DEC-046`.
+- **Validation:** Observed on 2026-10-01 on branch `docs/b1-bookkeeping-after-merge` from `main` `d806b16`: the four merge commits are reachable from `main` (`gh pr view` 42–45) and `./gradlew check build :androidApp:assembleDebug verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene` passes. The state scan finds no remaining `In review` row for `TASK-087`…`TASK-090`.
+- **Not verified:** D2 (both-runner required checks) remains unevaluable because no CI exists (`GAP-002`); `TASK-025` owns creating it, and Block 1 therefore stays *integrated and locally verified*, not *Done under D2*.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
