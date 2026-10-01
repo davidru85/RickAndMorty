@@ -16,7 +16,7 @@
 | Owned | Detail |
 | --- | --- |
 | Source-layer error taxonomy | `API-ERR-###` identifiers for every condition that can fail a request, with retryability (§2). |
-| Failure mapping | `ApiFailure` ([`API_SPECS.md`](API_SPECS.md) §6) to `LoadState`/`UiState` field ([`DESIGN.md`](DESIGN.md) §4.1) to rendered state (§4). |
+| Failure mapping | `ApiFailure` ([`API_SPECS.md`](API_SPECS.md) §6) to `LoadState` (`IC-015`) or a `UiState` field ([`CONTRACTS.md`](CONTRACTS.md) `IC-018`…`IC-023`) to rendered state (§4). |
 | Copy binding | Which canonical copy key each rendered state uses (§4, §9). The key names and the English/Spanish values are owned by the canonical key list in `:core:presentation` (DEC-015, DEC-020); the rendered form of each state is specified in [`UI_SPEC.md`](UI_SPEC.md) §8. This file binds state to key and never redefines either. |
 | Retry affordances and recovery actions | Per failure class, including the fresh-attempt-budget rule (§10). |
 | Non-error outcomes | Filtered `404`, paging `404`, GraphQL empty results, unknown field values (§5). |
@@ -29,7 +29,7 @@
 | Topic | Owner |
 | --- | --- |
 | `ApiFailure` sealed interface, `DataResult`, retry policy (attempt count, backoff, jitter), timeout values, cache policy | [`API_SPECS.md`](API_SPECS.md) §3, §6.3, §7 |
-| `LoadState`, `CharacterListUiState`, `CharacterDetailUiState`, intent names | [`DESIGN.md`](DESIGN.md) §4.1, read with DEC-052/DEC-015: `LoadState` is a cross-feature primitive in `:core:presentation`; `CharacterListUiState` and `CharacterListIntent` are owned by `:feature:discovery`; `CharacterDetailUiState` and `CharacterDetailIntent` by `:feature:character-detail`. |
+| `LoadState`, `CharacterListUiState`, `CharacterDetailUiState`, `FavoritesUiState`, `SettingsUiState` and their intents | [`CONTRACTS.md`](CONTRACTS.md) `IC-015` (cross-feature primitive in `:core:presentation`), `IC-018`/`IC-019` (`:feature:discovery`, `:feature:character-detail`), `IC-020` (`:feature:favorites`), `IC-023` (`:feature:settings`); ownership map in `CONTRACTS.md` §3, read with DEC-052/DEC-015. |
 | Remote conditions and their REST/GraphQL mapping rules | [`API_SPECS.md`](API_SPECS.md) §6.1, §6.2 |
 | Visual layout, component choice and platform treatment of the states | [`UI_SPEC.md`](UI_SPEC.md) §8 |
 | English/Spanish strings and the canonical key list | canonical key list in `:core:presentation` (DEC-015, DEC-020); rendered form per [`UI_SPEC.md`](UI_SPEC.md) §8 |
@@ -87,7 +87,7 @@ flowchart LR
 Chain invariants:
 
 1. A source-layer exception `MUST` be converted to an `ApiFailure` inside `:core:data`; no platform exception type reaches a feature `presentation` package or a view.
-2. A rendered error state `MUST` be reachable from a `LoadState.Error` or from `isStale = true` on a `Content` state; there is no third path ([`DESIGN.md`](DESIGN.md) §4.1).
+2. A rendered error state `MUST` be reachable from a `LoadState.Error` or from `isStale = true` on a `Content` state; there is no third path ([`CONTRACTS.md`](CONTRACTS.md) `IC-018` precedence).
 3. Copy `MUST` be selected by the key in §4, resolved from localisable resources; no view builds an error message from a failure field (`REQ-FUNC-013`, `REQ-UX-008`).
 4. A retry affordance `MUST` dispatch the intent named in §4; a view `MUST NOT` call the repository directly (`DESIGN.md` §1).
 
