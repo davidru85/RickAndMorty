@@ -8,7 +8,6 @@
 # Format: <module path>|<excluded dependency>|<task that consumes it>
 # The guard `verifyDependencyAdviceRegister` fails when the module gains production Kotlin
 # source outside its route declaration, so an exclusion cannot outlive its placeholder state.
-:core:data|:core:domain|TASK-037
 :core:presentation|:core:domain|TASK-041
 :core:testing|:core:data|TASK-024
 :feature:character-detail|:core:data|TASK-037

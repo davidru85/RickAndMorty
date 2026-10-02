@@ -112,6 +112,11 @@ kotlin {
             // is declared where it is used (`onUsedTransitiveDependencies`, DEC-077).
             implementation(libs.kotlinx.coroutines.test)
         }
+        jvmMain.dependencies {
+            // The opt-in JVM target (`DEC-079`, `DEC-089`) is analysed on its own, and dependency
+            // analysis asks for the domain edge to be stated for it as well.
+            api(project(":core:domain"))
+        }
         androidHostTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)

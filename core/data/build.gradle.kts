@@ -10,7 +10,26 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core:domain"))
+            // `IC-011` returns domain types, and the REST adapter takes the one Ktor client (`DEC-011`)
+            // and a dispatcher, so all three are part of the module's surface.
+            api(project(":core:domain"))
+            api(libs.ktor.client.core)
+            api(libs.kotlinx.coroutines.core)
+            // The adapter builds and validates URLs with `io.ktor.http` types directly.
+            implementation(libs.ktor.http)
+            implementation(libs.kotlinx.serialization.json)
+        }
+        jvmMain.dependencies {
+            // The opt-in JVM target (`DEC-079`) is analysed on its own, and dependency analysis asks for
+            // the domain edge to be stated for it as well; it is the same edge as `commonMain`'s.
+            api(project(":core:domain"))
+        }
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.okhttp)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             // `DEC-089`: the data layer's tests consume the shared harness — fixtures, `MockHttp`
@@ -122,7 +141,6 @@ kotlin.targets.named("jvm") {
         // either need the same trick or break the fixture/replay filter (TASK-026).
         defaultSourceSet.kotlin.srcDir("src/contractLive/kotlin")
         defaultSourceSet.dependencies {
-            implementation(project(":core:domain"))
             // The record type is part of the surface the case reads, so the codec is `api`.
             api(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)

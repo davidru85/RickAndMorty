@@ -24,10 +24,14 @@ import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -136,7 +140,10 @@ class RestCharacterRemoteDataSourceContractTest {
 
             val page = result.success()
             assertTrue(page.characters.isEmpty(), "TEST-CONTRACT-001: a filtered 404 is an empty page (API-CHAR-005)")
-            assertEquals(listOf(1, null, null, null, null), listOf(page.page, page.pageCount, page.totalCount, page.nextPage, page.previousPage))
+            assertEquals(
+                listOf(1, null, null, null, null),
+                listOf(page.page, page.pageCount, page.totalCount, page.nextPage, page.previousPage),
+            )
         }
 
     @Test
@@ -288,11 +295,14 @@ class RestCharacterRemoteDataSourceContractTest {
             val reset = HttpClient(MockEngine { throw broken }) { rickAndMortyDefaults() }
 
             assertEquals(ApiFailure.Timeout, source(timeout, dispatcher).characterPage(CharacterFilter(), 1).failure())
-            assertEquals(
-                ApiFailure.Unknown(broken),
-                source(reset, dispatcher).characterPage(CharacterFilter(), 1).failure(),
-                "TEST-CONTRACT-001: an unclassified transport failure is Unknown, never an escaping exception",
-            )
+            // Coroutines may recover the stack trace into a copy, so the cause is compared by type and message.
+            val unknown =
+                assertIs<ApiFailure.Unknown>(
+                    source(reset, dispatcher).characterPage(CharacterFilter(), 1).failure(),
+                    "TEST-CONTRACT-001: an unclassified transport failure is Unknown, never an escaping exception",
+                )
+            assertIs<IOException>(unknown.cause, "TEST-CONTRACT-001: the transport cause is kept")
+            assertEquals(broken.message, unknown.cause?.message)
         }
 
     // ------------------------------------------------------------------ TEST-CONTRACT-003
@@ -307,7 +317,11 @@ class RestCharacterRemoteDataSourceContractTest {
                 )
             val adapter = source(client, dispatcher)
 
-            assertEquals(ApiFailure.MalformedResponse, adapter.characterPage(CharacterFilter(), 1).failure(), "TEST-CONTRACT-003 (AC-REQ-NFR-004-1)")
+            assertEquals(
+                ApiFailure.MalformedResponse,
+                adapter.characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-003 (AC-REQ-NFR-004-1)",
+            )
             assertEquals(ApiFailure.EmptyBody, adapter.characterPage(CharacterFilter(), 2).failure(), "TEST-CONTRACT-003 (API-ERR-008)")
         }
 
@@ -331,16 +345,22 @@ class RestCharacterRemoteDataSourceContractTest {
                     MockHttp.route("character-detail-empty-type.json", urlContains = "/character/2"),
                 )
             val adapter = source(client, dispatcher)
-            val unknownEnums = FixtureLoader.text("character-detail-unknown-enums.json")
+            val unknownEnums = Json.parseToJsonElement(FixtureLoader.text("character-detail-unknown-enums.json")).jsonObject
 
             val enums = adapter.characterDetails(CharacterId("1")).success()
             val reference = adapter.characterDetails(CharacterId("8")).success()
             val emptyType = adapter.characterDetails(CharacterId("2")).success()
 
-            val rawStatus = (enums.status as CharacterStatus.Unsupported).raw
-            val rawGender = (enums.gender as CharacterGender.Unsupported).raw
-            assertTrue("\"status\":\"$rawStatus\"" in unknownEnums, "TEST-CONTRACT-003: the raw status is kept verbatim")
-            assertTrue("\"gender\":\"$rawGender\"" in unknownEnums, "TEST-CONTRACT-003: the raw gender is kept verbatim")
+            assertEquals(
+                CharacterStatus.Unsupported(unknownEnums.getValue("status").jsonPrimitive.content),
+                enums.status,
+                "TEST-CONTRACT-003: an unknown status is preserved verbatim (AC-REQ-NFR-004-2)",
+            )
+            assertEquals(
+                CharacterGender.Unsupported(unknownEnums.getValue("gender").jsonPrimitive.content),
+                enums.gender,
+                "TEST-CONTRACT-003: an unknown gender is preserved verbatim",
+            )
             assertNull(reference.origin.id, "TEST-CONTRACT-003: an empty reference URL has no id")
             assertEquals("unknown", reference.origin.name, "TEST-CONTRACT-003: the raw name is kept for presentation")
             assertNull(emptyType.type, "TEST-CONTRACT-003: an empty type is absent in the domain")
@@ -357,6 +377,8 @@ class RestCharacterRemoteDataSourceContractTest {
             assertEquals(1, served.size, "TEST-CONTRACT-003: nothing is followed")
         }
 
+    // `runCurrent` is the virtual-time control `TESTING.md` §5 prescribes; it is marked experimental.
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `TEST-CONTRACT-003 given_a_caller_cancelled_mid_request_when_awaited_then_cancellation_propagates_and_is_never_a_failure`() =
         TestTime.run { dispatcher ->

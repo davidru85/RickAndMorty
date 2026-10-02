@@ -226,8 +226,10 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 **Target set.** ADR-0002 as amended by `DEC-079` permits one more target than the
 decision first stated: a `:core:*` module MAY declare a JVM target through its own
 `multiverse.jvmTarget=true` property when it needs a JVM-only verification path. `:core:domain` and
-`:core:data` set it for the scheduled live contract job (`TASK-027`); no `:feature:*` module, no
-`:core:designsystem` and no `:androidApp` does, and `verifyModuleBoundaries` classifies targets.
+`:core:data` set it for the scheduled live contract job (`TASK-027`), and `:core:testing` sets it because
+`:core:data`'s JVM test compilation compiles `commonTest` against the shared harness (`DEC-089`); no
+`:feature:*` module, no `:core:designsystem` and no `:androidApp` does, and `verifyModuleBoundaries`
+classifies targets.
 
 **Enforcement:** the executable rule set is `./gradlew verifyModuleBoundaries`, from the dependency-free plugin `multiverse.module.boundaries` (`build-logic/convention/src/main/kotlin/boundaries/`), wired into the root `check` (`TASK-017`, hardened by `TASK-088`; topology completeness `R16` added by `TASK-091`; `TEST-UNIT-017`/`012`/`043`), with its own regression suite under `build-logic/convention/src/test` run by `check` (`TASK-092`). It reads each project's **effective** declared dependencies from the Gradle model — its own plus everything reachable through `extendsFrom`, so an edge hidden in a custom configuration and inherited into a shared source set is still an edge of that source set — classifies the configuration and source set that carry each edge, records the configuration that declared it, and fails on a forbidden edge, on an unrecognised module (fail closed), on an external dependency outside a module's allow-list (`R14` for `:core:domain`, `R15` for `:core:designsystem`), and on the staged, content-aware destination/package rules of `DEC-068`. Diagnostics are collected for every rule, sorted and repository-relative. `dependency-analysis`/`buildHealth` remains the `TASK-029` complement.
 

@@ -6,6 +6,7 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpTimeoutCapability
+import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
@@ -41,11 +42,13 @@ class RemoteClientTest {
         }
         val settings = RemoteJson.configuration
         assertTrue(settings.ignoreUnknownKeys, "TEST-UNIT-054")
-        assertFalse(settings.coerceInputValues || settings.isLenient || settings.allowSpecialFloatingPointValues, "TEST-UNIT-054")
+        assertFalse(settings.coerceInputValues, "TEST-UNIT-054: no coerced values")
+        assertFalse(settings.isLenient, "TEST-UNIT-054: no lenient syntax")
+        assertFalse(settings.allowSpecialFloatingPointValues, "TEST-UNIT-054: no special floating-point values")
     }
 
     @Test
-    fun `TEST-UNIT-054 given_the_defaults_when_a_request_is_sent_then_the_documented_timeouts_travel_with_it_and_redirects_are_not_followed`() =
+    fun `TEST-UNIT-054 given_the_defaults_when_a_request_is_sent_then_its_timeouts_are_set_and_redirects_are_off`() =
         runTest {
             var captured: HttpRequestData? = null
             val engine =
