@@ -119,4 +119,111 @@ class ContractTestEntryPointTest {
             dir.deleteRecursively()
         }
     }
+
+    // --- TASK-100 (B2-R03, GAP-017): the outcome, per target --------------------------------
+
+    /**
+     * A fixture whose single case carries `body` inside the `<testcase>` element, written as a
+     * committed JUnit report. The verifier reads reports, so a report is what a bypass has to fake.
+     */
+    private fun reportFixture(target: String, caseName: String, body: String): File {
+        val dir = kotlin.io.path.createTempDirectory("contract-report").toFile()
+        val reports = File(dir, "build/test-results/$target")
+        reports.mkdirs()
+        File(reports, "TEST-cases.Case.xml").writeText(
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="cases.Case" tests="1" skipped="0" failures="0" errors="0">
+              <testcase name="$caseName" classname="cases.Case">$body</testcase>
+            </testsuite>
+            """.trimIndent() + "\n",
+        )
+        File(dir, "settings.gradle.kts").writeText(
+            """
+            pluginManagement {
+                includeBuild("${repositoryRoot.resolve("build-logic").invariantSeparatorsPath}")
+                repositories { mavenCentral() }
+            }
+            dependencyResolutionManagement { repositories { mavenCentral() } }
+            rootProject.name = "contract-report"
+            """.trimIndent() + "\n",
+        )
+        // Only the verifier runs: the report is committed, so no test task needs to execute.
+        File(dir, "build.gradle.kts").writeText(
+            """
+            plugins { id("multiverse.contract.tests") }
+
+            tasks.named<io.github.davidru85.multiverse.buildlogic.testing.VerifyContractCasesTask>(
+                "verifyContractCases",
+            ) {
+                reports.from(layout.buildDirectory.dir("test-results/$target").map { fileTree(it) { include("*.xml") } })
+                targetReportDirectories.set(mapOf("$target" to layout.buildDirectory.dir("test-results/$target").get().asFile.absolutePath))
+            }
+            """.trimIndent() + "\n",
+        )
+        return dir
+    }
+
+    @Test
+    fun `a skipped contract case is not counted as executed`() {
+        val dir = reportFixture("test", "TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes", "<skipped/>")
+        try {
+            val result = gradle(dir, "verifyContractCases", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                result.output.contains("skipped") || result.output.contains("executed no TEST-CONTRACT-"),
+                "GAP-017: a skipped case must not stand in for an executed one:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a failing contract case is reported as a failure`() {
+        val dir =
+            reportFixture(
+                "test",
+                "TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes",
+                "<failure message=\"boom\">stack</failure>",
+            )
+        try {
+            val result = gradle(dir, "verifyContractCases", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                result.output.contains("failed") || result.output.contains("did not pass"),
+                "GAP-017: a failing contract case must be a failure:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a target that produced no report fails even when another target passed`() {
+        val dir = reportFixture("testAndroidHostTest", "TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes", "")
+        try {
+            // The fixture declares only the JVM host target; the entry point claims both, so the
+            // native target's absence must be the finding. A total over both would have passed.
+            File(dir, "build.gradle.kts").appendText(
+                """
+                tasks.named<io.github.davidru85.multiverse.buildlogic.testing.VerifyContractCasesTask>(
+                    "verifyContractCases",
+                ) {
+                    targetReportDirectories.set(
+                        mapOf(
+                            "testAndroidHostTest" to layout.buildDirectory.dir("test-results/testAndroidHostTest").get().asFile.absolutePath,
+                            "iosSimulatorArm64Test" to layout.buildDirectory.dir("test-results/iosSimulatorArm64Test").get().asFile.absolutePath,
+                        ),
+                    )
+                }
+                """.trimIndent() + "\n",
+            )
+            val result = gradle(dir, "verifyContractCases", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                result.output.contains("iosSimulatorArm64Test"),
+                "GAP-017: a missing native report must fail even when the JVM target passed:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
