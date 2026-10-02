@@ -362,7 +362,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 | --- | --- | --- | --- |
 | REQ-REL-001 | The cache `MUST` be keyed by the complete normalized request identity (path, page, filters, protocol), so pages and filters never collide. | `AC-REQ-REL-001-1` Cache isolation tests fail if two filter combinations share an entry. | `API_SPECS.md` §7.3 |
 | REQ-REL-002 | Concurrent identical requests `MUST` be deduplicated. | `AC-REQ-REL-002-1` Two simultaneous identical loads produce one network call. | `API_SPECS.md` §8 |
-| REQ-REL-003 | Retries `MUST` be bounded to two automatic attempts with backoff and jitter, and `MUST NOT` apply to schema, validation, decoding or cancellation outcomes. | `AC-REQ-REL-003-1` A 4xx and a decode failure each produce exactly one attempt. | `API_SPECS.md` §6.3 |
+| REQ-REL-003 | Retries `MUST` be bounded to **at most three attempts in total** — the original request plus two automatic retries — with backoff and jitter; a `429` gets at most one automatic retry and only after a valid `Retry-After`; and retries `MUST NOT` apply to schema, validation, decoding or cancellation outcomes (`DEC-084`). | `AC-REQ-REL-003-1` A 4xx and a decode failure each produce exactly one attempt. | `API_SPECS.md` §6.3, `DEC-084` |
 | REQ-REL-004 | Stale cached data `MUST` be visibly marked, and a client clock change `MUST NOT` break freshness evaluation. | `AC-REQ-REL-004-1` Tests inject a fake clock; no test depends on wall-clock time. | DEC-012, DEC-018 |
 
 ## 10. Security and privacy requirements

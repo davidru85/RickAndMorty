@@ -1,7 +1,7 @@
 # OBSERVABILITY.md — Logging Contract, Redaction and Debug Diagnostics
 
 - **Status:** Active — target state; no code exists yet (see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-02
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7) — this document decides *what may be recorded*
 - **Authoritative for:** the shared logging contract (levels, permitted fields, prohibited fields), the `LOG-###` structured event catalogue, redaction rules and their enforcement, the debug-only diagnostics surface, and the metrics vocabulary produced by the logging contract.
 - **Not authoritative for:** the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract and its cache policy (`API_SPECS.md` §6–§7, §9), the security policy and prohibitions (`SECURITY.md` §7), the test strategy and test ids (`TESTING.md`), the gate (`DEFINITION.md`), requirements (`REQUIREMENTS.md`).
@@ -10,7 +10,7 @@
 
 > `SECURITY.md` is authoritative for policy and prohibitions; this document is authoritative for what may be recorded and how. Requirements are owned by `REQUIREMENTS.md` and are referenced here by ID, never restated.
 
-The contract is implemented once and consumed by both platforms. The implementing role is the Implementation Engineer (`../AGENTS.md` §3.5): the logger lives in the shared core (`:core:data` for network/cache/pager events, `:core:presentation` for state-level events) and each app shell provides only the platform sink.
+The contract is implemented once and consumed by both platforms. The implementing role is the Implementation Engineer (`../AGENTS.md` §3.5). **Placement (amended 2026-10-02 by `DEC-087`, [ADR-0013](adr/0013-observability-placement.md)):** the one contract (`AppLogger`, `LogLevel`, the closed `LogEvent` catalogue; `CONTRACTS.md` `IC-024`) is declared in `:core:domain`, so `:core:data`, `:core:presentation` and the feature state holders all reach the same interface without a data↔presentation edge; the validating, redacting implementation lives in `:core:data` behind an injected `LogSink`; and each app shell provides only the platform sink. The debug-only diagnostic surface of §5 reads the validated records from the separate `:core:diagnostics` module (`DEC-088`). The earlier sentence that split the logger between `:core:data` and `:core:presentation` is superseded: it required either two interfaces, contradicting §2.1, or an edge ADR-0001 forbids (`CONF-67`).
 
 ## 1. Purpose, scope and the absence of analytics
 
@@ -33,7 +33,7 @@ The identifiers in this document therefore describe **local diagnostics only**. 
 Both platforms `MUST` log through a single shared abstraction — one interface with a level set and a fixed field envelope. Platform code `MUST NOT` call `android.util.Log`, `os.Logger`/`print`, or a platform crash reporter directly for app diagnostics; the app shells provide an implementation of the shared interface that writes to the platform sink (`Logcat` on Android, `os.Logger` on iOS). `TEST-UNIT-032` asserts that both platforms use the contract with permitted fields only (`AC-REQ-OBS-001-1`).
 
 ```kotlin
-// :core:data / :core:presentation — shape only; canonical signatures belong to CONTRACTS.md
+// :core:domain — shape only; the canonical signatures are CONTRACTS.md IC-024 (DEC-087)
 enum class LogLevel { DEBUG, INFO, WARN, ERROR }
 
 interface AppLogger {
@@ -166,6 +166,8 @@ Because `TEST-UNIT-029` and `TEST-UNIT-032` guard a behaviour change, they are w
 ## 5. Debug-only diagnostics surface
 
 `REQ-OBS-002` requires a diagnostics surface in debug builds that exposes the last failure and the current data source. This section defines its content and its gating.
+
+**Staging and hosting (`DEC-085`, `DEC-088`).** The surface is delivered in three steps. B3 (`TASK-047`, Phase 3.2) delivers the read-only diagnostic **API** in `:core:diagnostics`, proved on real request and pager paths; values that later integrations own (cache counts, the favourites count, the screen) are reported as unavailable, never as an invented zero or a fabricated screen. B4 (`TASK-044`) renders the visible Android panel from a debug-only source set of `:androidApp`, which is the only Android configuration that declares `:core:diagnostics`. B7 (`TASK-051`) supplies the iOS host and links the module in the app's Debug configuration only. Until each step lands, its part of the surface is target state.
 
 | Item | Shown | Format |
 | --- | --- | --- |

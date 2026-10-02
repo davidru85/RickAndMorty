@@ -610,9 +610,9 @@ Observed validation errors use HTTP `400` and an `errors` array with extension c
 
 ### 6.3 Retry policy
 
-- Maximum two automatic retries after the original attempt.
-- Exponential backoff with jitter: approximately 500 ms, then 1,500 ms.
-- Retry only I/O failures, `408`, `429` when instructed, and `5xx`.
+- **At most three attempts in total** (`DEC-084`): attempt 1 is the original request, attempts 2 and 3 are the two automatic retries. A successful attempt ends the sequence, and the retries of one layer are the whole budget — an engine, client or repository retry layer `MUST NOT` multiply it.
+- Exponential backoff with jitter: approximately 500 ms before attempt 2, then 1,500 ms before attempt 3.
+- Retry only I/O failures, `408` and `5xx` within that budget. A `429` gets **at most one** automatic retry, and only after a valid `Retry-After` value; a missing or invalid `Retry-After` means no automatic retry.
 - Never retry schema/validation errors, other `4xx`, decoding errors, or cancellations.
 - REST `GET` is safe to retry.
 - GraphQL operations in this schema are read-only queries, but generic clients do not automatically retry `POST`; any retry interceptor must verify the operation is a query.

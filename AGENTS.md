@@ -178,6 +178,8 @@ flowchart LR
 6. **Hand off via pull request** using `docs/templates/pull-request.md`, naming requirement, decision and test IDs.
 7. **On handoff to another agent or developer,** update `docs/HANDOFF.md`: current state, what changed, what is next, what is blocked. The block model does not change this: every task handoff follows it (DEC-063).
 
+**B3 packaging exception (`DEC-082`).** Block 3 alone lands as three phase pull requests — 3.1 `TASK-036`+`TASK-037`, 3.2 `TASK-038`+`TASK-039`+`TASK-047`, 3.3 `TASK-040`+`TASK-041` — instead of one per task. Each member keeps its own backlog row, issue, acceptance and red/green evidence inside the phase pull request; each phase starts from merged `main` after the owner merges the previous one; no extra prerequisite, documentation, CI or task-level pull request is opened for B3. Every other block keeps one pull request per task (`DEC-063`, `BACKLOG.md` §2.6).
+
 When two agents work concurrently: one owner per file, and the integration owner is decided before editing. Communicate interface expectations (module boundaries, contract signatures) before writing code against them. A block does not relax this rule — block members still land as separate pull requests and must not edit the same tracking rows concurrently (DEC-063); where two tasks would touch one file, the later task starts from the merged `main`, not from the earlier task's branch.
 
 ---

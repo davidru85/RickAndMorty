@@ -45,7 +45,7 @@ Every condition below is a *source-layer* condition: it is detected in `:core:da
 | ID | Source layer | Condition | Maps to `ApiFailure` | Automatic retry | Verification | Cross-reference |
 | --- | --- | --- | --- | --- | --- | --- |
 | `API-ERR-001` | Transport | Connectivity, DNS or socket failure (no route, connection refused, reset before response) | `Offline`; `Unknown` when the cause cannot be classified | Yes while the failure is transient inside an attempt; a persistent offline condition is recovered by a user-initiated retry | `TEST-UNIT-010` (mapping), `TEST-UI-011` (no-network first launch) | `API_SPECS.md` §6.1 |
-| `API-ERR-002` | Transport | Connect timeout (10 s), read timeout (15 s) or total call timeout (20 s) | `Timeout` | Yes, bounded (two attempts, backoff with jitter) | `TEST-UNIT-010`, `TEST-CONTRACT-001` | `API_SPECS.md` §6.1, §6.3 |
+| `API-ERR-002` | Transport | Connect timeout (10 s), read timeout (15 s) or total call timeout (20 s) | `Timeout` | Yes, bounded (at most three attempts in total: the original plus two retries, backoff with jitter; `DEC-084`) | `TEST-UNIT-010`, `TEST-CONTRACT-001` | `API_SPECS.md` §6.1, §6.3 |
 | `API-ERR-003` | Transport | TLS handshake or certificate failure | `Unknown` | No automatic retry | `TEST-UNIT-010` | `API_SPECS.md` §6.1 |
 | `API-ERR-004` | HTTP | `408 Request Timeout` | `Timeout` | Yes, bounded | `TEST-UNIT-010`, `TEST-CONTRACT-001` | `API_SPECS.md` §6.1 |
 | `API-ERR-005` | HTTP | `429 Too Many Requests` | `RateLimited(retryAfterSeconds)` | Only after `Retry-After`, when present | `TEST-UNIT-010`, `TEST-UNIT-022` | `API_SPECS.md` §6.1, §6.3 |
@@ -208,7 +208,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 
 | Failure class | Automatic attempts | Recovery action | Verification | Notes |
 | --- | --- | --- | --- | --- |
-| `API-ERR-001` transport, `API-ERR-002` timeout, `API-ERR-004` `408`, `API-ERR-007` `5xx` | Up to two, exponential backoff with jitter (≈500 ms, ≈1,500 ms) after the original attempt | Retry in the error state, or the next lifecycle-driven load | `TEST-UNIT-022`, `TEST-UNIT-010` | [`API_SPECS.md`](API_SPECS.md) §6.3 |
+| `API-ERR-001` transport, `API-ERR-002` timeout, `API-ERR-004` `408`, `API-ERR-007` `5xx` | Up to two retries after the original attempt — at most three attempts in total (`DEC-084`) — with exponential backoff and jitter (≈500 ms, ≈1,500 ms) | Retry in the error state, or the next lifecycle-driven load | `TEST-UNIT-022`, `TEST-UNIT-010` | [`API_SPECS.md`](API_SPECS.md) §6.3 |
 | `API-ERR-005` `429` | At most one, and only after `Retry-After` when the header is present | Retry; the message carries the countdown | `TEST-UNIT-022`, `TEST-UNIT-010` | No numeric quota may be assumed ([`API_SPECS.md`](API_SPECS.md) §9) |
 | `API-ERR-003` TLS, `API-ERR-006` other `4xx`, `API-ERR-008` empty body, `API-ERR-009` malformed, `API-ERR-010`/`012`/`013` GraphQL | None | Retry in the error state, or Back on the detail surface | `TEST-UNIT-022`, `TEST-UNIT-010` | A retry of an invalid request is a fresh user-visible attempt; it is not expected to succeed without a code or data change |
 | `API-ERR-016` detail `404` | None | Back navigation | `TEST-UNIT-010`, `TEST-UI-002` | Terminal for that identifier |
@@ -217,7 +217,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 
 Rules:
 
-1. A user-initiated retry (`CharacterListIntent.Retry`, `CharacterDetailIntent.Retry`) starts a **fresh attempt budget**: the two automatic attempts are available again for the new user-visible attempt (`REQ-FUNC-011`, `API_SPECS.md` §6.3).
+1. A user-initiated retry (`CharacterListIntent.Retry`, `CharacterDetailIntent.Retry`) starts a **fresh attempt budget**: the original attempt plus the two automatic retries are available again for the new user-visible attempt (`REQ-FUNC-011`, `API_SPECS.md` §6.3, `DEC-084`).
 2. Retry `MUST` clear `LoadState.Error` on success and `MUST` preserve the active filter and the page position on the list surface.
 3. An automatic retry `MUST NOT` be triggered by schema, validation, decoding or cancellation outcomes (`REQ-REL-003`, `AC-REQ-REL-003-1`).
 4. A retry of a paging request `MUST NOT` discard already loaded pages; a retry of the first page `MUST` use the same canonical cache key.

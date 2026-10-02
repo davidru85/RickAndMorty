@@ -1,7 +1,7 @@
 # DESIGN.md - System Architecture Design
 
 - **Status:** Active — the architecture below is target state; the Gradle/KMP build skeleton (TASK-014) exists, no feature behaviour does (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
 - **Not authoritative for:** requirement IDs and acceptance criteria (`REQUIREMENTS.md`), internal interface signatures and invariants (`CONTRACTS.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), visual specification (`UI_SPEC.md`).
@@ -219,8 +219,9 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 6. **No `:feature:*` module may depend on another `:feature:*` module.** Anything a feature needs from another feature moves to `:core:*`.
 7. Navigation: each feature declares its own destination; the application shell composes the graph. No feature owns the app-wide `NavHost`.
 8. Use-case placement: feature-specific use cases live in the feature's `domain` package; only genuinely cross-feature use cases live in `:core:domain`.
-9. Test source sets may depend on `:core:testing`; production source sets may not.
+9. Test source sets may depend on `:core:testing`; production source sets may not. This holds for `:core:data` and `:core:presentation` as for every feature (`R2`/`R3`, `DEC-089`). `:core:domain`'s test source sets are the one exception: they may declare the approved test libraries `kotlin-test`, `kotlin-test-junit` and `kotlinx-coroutines-test` (`R14`) but no project module (`R1`), so a domain test never reaches the HTTP-bearing harness.
 10. `:core:ios` is the only module that declares a native framework binary, and the only module that depends on all five `:feature:*` modules and on the three shared production `:core:*` modules (`:core:domain`, `:core:data`, `:core:presentation`). It never depends on `:core:designsystem` (Android-only) or `:core:testing` (test-only); the accepted export set is recorded in `CONF-54` and the rule `R12` enforces it. `iosApp` depends on `:core:ios` and on nothing else from the shared core. No Android source set may depend on `:core:ios`, and no other module may depend on it (ADR-0012).
+11. `:core:diagnostics` (`DEC-088`, [ADR-0013](adr/0013-observability-placement.md), created by `TASK-047`; target state until then) depends on `:core:domain` only and is declared by debug configurations only: `debugImplementation` in `:androidApp` and the iOS app's Debug configuration. No release configuration and no `:core:*`/`:feature:*` production source set depends on it.
 
 **Target set.** ADR-0002 as amended by `DEC-079` permits one more target than the
 decision first stated: a `:core:*` module MAY declare a JVM target through its own
