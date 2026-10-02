@@ -1,7 +1,7 @@
 # PROJECT_LOG.md — Project Event Log
 
 - **Status:** Active. Entries `LOG-0001`…`LOG-0015` record pre-audit documentation work that was never executable and was not verified; see §1.3.
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner:** Documentation Maintainer (see `AGENTS.md` §3.9)
 - **Authoritative for:** the chronological record of *why* the project changed — one entry per meaningful event, with the event, its rationale, the artifacts it touched, the decision it belongs to, and what was actually verified. Identifier scheme: `LOG-####`.
 - **Not authoritative for:** the current status of a decision (`DECISION_BOARD.md`), the current state of work (`BACKLOG.md`), requirement or contract content (`REQUIREMENTS.md`, `CONTRACTS.md`), release notes (GitHub Releases).

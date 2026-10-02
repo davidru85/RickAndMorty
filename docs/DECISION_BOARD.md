@@ -1,7 +1,7 @@
 # DECISION_BOARD.md — Decision Index and Status Board
 
 - **Status:** Active
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** the current *status* and *location* of every project decision. Rationale lives in the ADR files; chronology lives in `PROJECT_LOG.md`. This file MUST NOT restate rationale.
 
