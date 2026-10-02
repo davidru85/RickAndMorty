@@ -127,6 +127,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
+      # TASK-102 (`B2-R05`, `GAP-019`): the macOS runner covers every current KMP library, not the
+      # four `:core:*` modules it used to. A module omitted here compiles nowhere natively, so its
+      # shared code could break Apple builds while the `ios` job stayed green.
+      #
+      # `:core:designsystem` is Android-only (`DEC-069`) and `:androidApp` is not a KMP module, so
+      # neither has an Apple target to compile. `:core:ios` does not exist yet (`TASK-078`).
       - name: Run the shared suites on both Apple targets
         run: |
           ./gradlew \
@@ -134,6 +140,11 @@ jobs:
             :core:data:iosSimulatorArm64Test \
             :core:presentation:iosSimulatorArm64Test \
             :core:testing:iosSimulatorArm64Test \
+            :feature:character-detail:iosSimulatorArm64Test \
+            :feature:discovery:iosSimulatorArm64Test \
+            :feature:episodes:iosSimulatorArm64Test \
+            :feature:favorites:iosSimulatorArm64Test \
+            :feature:settings:iosSimulatorArm64Test \
             --stacktrace
 
       - name: Compile the shared code for both Apple targets
@@ -143,10 +154,34 @@ jobs:
             :core:data:compileKotlinIosArm64 :core:data:compileKotlinIosSimulatorArm64 \
             :core:presentation:compileKotlinIosArm64 :core:presentation:compileKotlinIosSimulatorArm64 \
             :core:testing:compileKotlinIosArm64 :core:testing:compileKotlinIosSimulatorArm64 \
+            :feature:character-detail:compileKotlinIosArm64 :feature:character-detail:compileKotlinIosSimulatorArm64 \
+            :feature:discovery:compileKotlinIosArm64 :feature:discovery:compileKotlinIosSimulatorArm64 \
+            :feature:episodes:compileKotlinIosArm64 :feature:episodes:compileKotlinIosSimulatorArm64 \
+            :feature:favorites:compileKotlinIosArm64 :feature:favorites:compileKotlinIosSimulatorArm64 \
+            :feature:settings:compileKotlinIosArm64 :feature:settings:compileKotlinIosSimulatorArm64 \
             --stacktrace
 
+      # `TEST-UNIT-044` proves the commands above are executable steps of this job and that the
+      # required set is carried; `verifyWorkflowGate` runs it. The module list itself is kept honest
+      # by `R17` (`TASK-101`), which fails when a KMP module loses a target, and by the required
+      # set: a module that stops being covered here still has to compile and test for the gate.
+      #
+      # The build-logic regression suite, the formatting/static-analysis checks and the blocking
+      # dependency analysis are part of the required set on BOTH runners (`TESTING.md` §14.2,
+      # `DEC-054`). Omitting them here meant a rule that fails open on macOS could merge green.
+      - name: Run the build-logic regression suite and the static checks
+        run: ./gradlew -p build-logic :convention:check --stacktrace
+
+      # ktlint formats both the Kotlin sources and the Gradle scripts, so it runs from the root
+      # build. Its own module's check does not include it (the plugin is applied by the root).
+      - name: Run the formatting check
+        run: ./gradlew ktlintCheck --stacktrace
+
+      - name: Run the dependency analysis
+        run: ./gradlew buildHealth --stacktrace
+
       - name: Run the policy checks
-        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyDocumentedGate --stacktrace
+        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyDocumentedGate verifyWorkflowGate --stacktrace
 
       - name: Upload the test reports
         if: always()
