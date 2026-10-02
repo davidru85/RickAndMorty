@@ -480,7 +480,7 @@ Test naming is owned by `TESTING.md` §13.2 and repeated here only as the rule a
   - Phase commits are preserved and the branch is kept: integration uses a merge commit (DEC-059), so no squash, no amend and no force-push of pushed phase commits (`CONTRIBUTING.md` §3.5). The history on `main` is non-linear by design; the rule it replaces required linear history and a rebase merge, which discarded the branch record.
 - Version and release mechanics (`VERSION`, tags, release notes) are owned by `DEC-043` and `DEFINITION.md` §5 and are not repeated here.
 
-**Enforcement:** `Review:` in the pull request (`CONTRIBUTING.md` §8.1); branch protection and required checks are human-only repository settings (`DEC-049`, `DEC-054`); as of 2026-09-30 a ruleset protects `main` against deletion, force-push and non-linear history and requires a pull request, while the required-check half is still absent (TASK-025, `GAP-002`).
+**Enforcement:** `Review:` in the pull request (`CONTRIBUTING.md` §8.1); branch protection and required checks are repository settings applied by the owner (`DEC-049`, `DEC-054`); a ruleset protects `main` against deletion, force-push and non-linear history, requires a pull request, and names the required status checks (`android`, plus `ios` while the iOS job is not suspended) — `CONTRIBUTING.md` §5.3.
 
 ## 8. Testing conventions
 
