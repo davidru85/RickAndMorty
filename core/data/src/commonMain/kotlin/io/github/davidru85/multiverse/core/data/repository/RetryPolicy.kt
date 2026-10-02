@@ -1,5 +1,13 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.logging.currentCorrelationId
+import io.github.davidru85.multiverse.core.data.logging.errorClass
+import io.github.davidru85.multiverse.core.data.logging.statusFamily
+import io.github.davidru85.multiverse.core.domain.logging.AppLogger
+import io.github.davidru85.multiverse.core.domain.logging.LogEvent
+import io.github.davidru85.multiverse.core.domain.logging.LogLevel
+import io.github.davidru85.multiverse.core.domain.logging.LogOperation
+import io.github.davidru85.multiverse.core.domain.logging.log
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import kotlinx.coroutines.delay
@@ -17,18 +25,35 @@ import kotlin.random.Random
  * budget; waits are cancellable, and a cancellation is never turned into a failure.
  *
  * The engine does not retry underneath this layer (`apiOkHttpClient`), so the budget is not multiplied.
+ * Each scheduled retry is logged as `LOG-013` through [logger], with the failure's class and the
+ * advised delay, in the request's correlation scope.
  */
 internal class RetryPolicy(
     private val random: Random,
+    private val logger: AppLogger,
 ) {
-    suspend fun <T> run(attempt: suspend () -> DataResult<T>): DataResult<T> {
+    suspend fun <T> run(
+        operation: LogOperation,
+        attempt: suspend () -> DataResult<T>,
+    ): DataResult<T> {
         var attempts = 1
         var rateLimitRetried = false
         while (true) {
             val result = attempt()
             if (result !is DataResult.Failure) return result
             val wait = waitBeforeNext(result.failure, attempts, rateLimitRetried) ?: return result
-            if (result.failure is ApiFailure.RateLimited) rateLimitRetried = true
+            val failure = result.failure
+            if (failure is ApiFailure.RateLimited) rateLimitRetried = true
+            val correlationId = currentCorrelationId()
+            logger.log(LogLevel.WARN) {
+                LogEvent.RetryScheduled(
+                    operation,
+                    failure.errorClass(),
+                    failure.statusFamily(),
+                    (failure as? ApiFailure.RateLimited)?.retryAfterSeconds,
+                    correlationId,
+                )
+            }
             delay(wait)
             attempts++
         }

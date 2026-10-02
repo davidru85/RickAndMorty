@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.remote.rest
 
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
@@ -17,6 +18,7 @@ import io.github.davidru85.multiverse.core.domain.result.DataSource
 import io.github.davidru85.multiverse.testing.FixtureLoader
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
+import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -53,7 +55,7 @@ class RestCharacterRemoteDataSourceContractTest {
     private fun source(
         client: HttpClient,
         dispatcher: CoroutineDispatcher,
-    ) = RestCharacterRemoteDataSource(client, dispatcher, MutableFakeClock())
+    ) = RestCharacterRemoteDataSource(client, dispatcher, MutableFakeClock(), ValidatingAppLogger.forDebug(RecordingLogSink()))
 
     private fun client(vararg routes: MockHttp.Route): Pair<HttpClient, MutableList<MockHttp.Served>> {
         val (raw, served) = MockHttp.client(*routes)

@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.paging
 
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterPage
@@ -13,6 +14,7 @@ import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.testing.FakeCatalogue
 import io.github.davidru85.multiverse.testing.FakeCharacterRepository
 import io.github.davidru85.multiverse.testing.FakeCharacterRepository.Call
+import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,6 +57,9 @@ class CharacterPagerTest {
 
     private fun ids(range: IntRange) = range.map { "$it" }
 
+    /** The production logger over a recording sink, so every pager path also runs its instrumentation. */
+    private fun logger() = ValidatingAppLogger.forDebug(RecordingLogSink())
+
     private val PagerState.ids get() = items.map { it.id.value }
 
     /** Every state the pager publishes, in order: an unconfined collector sees each value it is set to. */
@@ -87,7 +92,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_a_new_pager_when_its_state_is_collected_then_the_current_state_replays_and_nothing_loads`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
 
             val first = pager.state.first()
             advanceUntilIdle()
@@ -104,7 +109,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_a_filter_when_set_then_page_one_alone_loads_with_the_server_metadata`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             val rick = CharacterFilter(query = "Rick")
 
             pager.setFilter(rick)
@@ -124,7 +129,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_pages_remaining_when_next_runs_then_each_appends_in_order_until_info_next_is_null`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             val rick = CharacterFilter(query = "Rick")
 
             pager.setFilter(rick)
@@ -144,7 +149,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_a_load_in_flight_when_next_is_called_again_then_no_second_request_starts`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45), latency = 300.milliseconds)
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
 
             listOf(async { pager.setFilter(all) }, async { pager.next() }).awaitAll()
             listOf(async { pager.next() }, async { pager.next() }).awaitAll()
@@ -161,7 +166,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_loads_when_observed_then_isAppending_marks_appends_only_and_content_never_turns_empty`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45), latency = 300.milliseconds)
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             val states = record(pager)
 
             pager.setFilter(all)
@@ -180,7 +185,7 @@ class CharacterPagerTest {
         TestTime.run {
             val repository =
                 FakeCharacterRepository(catalogue(45) { if (it % 2 == 0) "Rick $it" else "Morty $it" }, latency = 300.milliseconds)
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             val morty = CharacterFilter(query = "Morty")
             pager.setFilter(CharacterFilter(query = "Rick"))
             pager.next()
@@ -230,7 +235,7 @@ class CharacterPagerTest {
                     },
                     latency = 300.milliseconds,
                 )
-            val pager = RepositoryCharacterPager(LateRepository(repository, worker = this), this)
+            val pager = RepositoryCharacterPager(LateRepository(repository, worker = this), this, logger())
             val morty = CharacterFilter(query = "Morty")
             val states = record(pager)
 
@@ -251,7 +256,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_a_page_after_the_first_not_found_when_reached_by_next_then_pagination_ends_without_failure`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             repository.serve(catalogue(15))
 
@@ -269,7 +274,7 @@ class CharacterPagerTest {
     @Test
     fun `TEST-UNIT-016 given_page_one_not_found_when_loaded_then_it_is_a_failure_not_the_end`() =
         TestTime.run {
-            val pager = RepositoryCharacterPager(FakeCharacterRepository(FakeCatalogue(emptyList())), this)
+            val pager = RepositoryCharacterPager(FakeCharacterRepository(FakeCatalogue(emptyList())), this, logger())
 
             pager.setFilter(all)
 
@@ -282,7 +287,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_ids_repeated_across_pages_when_appended_then_the_first_occurrence_is_kept`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             // A character inserted ahead of the loaded page shifts page 2 back by one: it now starts at 20.
             repository.serve(FakeCatalogue((0..45).map { FakeCatalogue.character("$it", name = "Rick $it") }))
@@ -301,7 +306,7 @@ class CharacterPagerTest {
         TestTime.run {
             val rick = CharacterFilter(query = "Rick")
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(rick)
             repository.serve(catalogue(45) { "Morty $it" })
 
@@ -319,7 +324,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_an_append_failure_then_items_stay_next_is_suppressed_and_retry_loads_the_failed_page`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             repository.failNext(ApiFailure.Offline)
 
@@ -347,7 +352,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-016 given_a_failed_first_page_when_retried_then_page_one_loads_and_without_a_failure_retry_does_nothing`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             repository.failNext(ApiFailure.Offline)
             pager.setFilter(all)
             val failed = pager.state.value
@@ -371,7 +376,7 @@ class CharacterPagerTest {
         TestTime.run {
             val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
             val repository = FakeCharacterRepository(catalogue(45), latency = 300.milliseconds)
-            val pager = RepositoryCharacterPager(repository, owner)
+            val pager = RepositoryCharacterPager(repository, owner, logger())
             pager.setFilter(all)
 
             val append = async { pager.next() }
@@ -390,7 +395,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-007 given_a_fresh_cached_first_page_when_refreshed_then_page_one_is_requested_with_force_network`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45), cached = catalogue(45) { "Cached $it" })
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             val cached = pager.state.value
 
@@ -414,7 +419,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-007 given_a_failed_refresh_then_items_and_the_established_pagination_state_are_kept`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             repeat(2) { pager.next() }
             val before = pager.state.value
@@ -436,7 +441,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-007 given_appended_pages_when_a_refresh_succeeds_then_page_one_replaces_them_and_paging_restarts`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             pager.next()
             repository.failNext(ApiFailure.Offline)
@@ -461,7 +466,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-007 given_a_failed_refresh_when_retried_then_it_is_retried_as_a_refresh`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45))
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
             pager.setFilter(all)
             repository.failNext(ApiFailure.Offline)
             pager.refresh()
@@ -480,7 +485,7 @@ class CharacterPagerTest {
     fun `TEST-UNIT-007 given_stale_cached_items_then_isStale_follows_result_provenance_and_a_failed_refresh_keeps_it`() =
         TestTime.run {
             val repository = FakeCharacterRepository(catalogue(45), cached = catalogue(45), cachedIsStale = true)
-            val pager = RepositoryCharacterPager(repository, this)
+            val pager = RepositoryCharacterPager(repository, this, logger())
 
             pager.setFilter(all)
             val fromStaleCache = pager.state.value.isStale

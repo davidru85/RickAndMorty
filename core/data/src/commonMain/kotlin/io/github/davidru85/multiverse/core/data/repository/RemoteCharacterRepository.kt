@@ -1,7 +1,13 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.logging.filterNames
 import io.github.davidru85.multiverse.core.data.remote.CharacterRemoteDataSource
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
+import io.github.davidru85.multiverse.core.domain.logging.AppLogger
+import io.github.davidru85.multiverse.core.domain.logging.LogEvent
+import io.github.davidru85.multiverse.core.domain.logging.LogLevel
+import io.github.davidru85.multiverse.core.domain.logging.LogOperation
+import io.github.davidru85.multiverse.core.domain.logging.log
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -27,7 +33,9 @@ import kotlin.random.Random
  * Concurrent identical requests share one execution, retries included (`REQ-REL-002`): the identity
  * is the protocol of [remote], the operation, the page or id, the normalized filter, the enrichment
  * mode and the page-load policy, so `Default` work never satisfies a `ForceNetwork` call (`DEC-086`).
- * The identity is never logged. [scope] owns the shared work; closing it cancels that work.
+ * The identity is never logged: a joined duplicate is reported to [logger] as `LOG-012` with the
+ * filter *names* only, and retries as `LOG-013`. [scope] owns the shared work; closing it cancels that
+ * work.
  *
  * There is no response cache yet (`TASK-020`), so `PageLoadPolicy.Default` and `ForceNetwork` both
  * reach the network here; the policy is already part of every request's identity.
@@ -36,11 +44,25 @@ public class RemoteCharacterRepository(
     private val remote: CharacterRemoteDataSource,
     scope: CoroutineScope,
     random: Random,
+    private val logger: AppLogger,
     private val protocol: RemoteProtocol = RemoteProtocol.Rest,
 ) : CharacterRepository {
-    private val retry = RetryPolicy(random)
-    private val pages = SingleFlight<PageIdentity, DataResult<CharacterPage>>(scope)
-    private val details = SingleFlight<DetailsIdentity, DataResult<CharacterDetails>>(scope)
+    private val retry = RetryPolicy(random, logger)
+    private val pages =
+        SingleFlight<PageIdentity, DataResult<CharacterPage>>(scope) { identity, correlationId ->
+            logger.log(LogLevel.DEBUG) {
+                LogEvent.RequestDeduplicated(
+                    LogOperation.CHARACTER_LIST,
+                    identity.page,
+                    filterNames(identity.query, identity.status),
+                    correlationId,
+                )
+            }
+        }
+    private val details =
+        SingleFlight<DetailsIdentity, DataResult<CharacterDetails>>(scope) { _, correlationId ->
+            logger.log(LogLevel.DEBUG) { LogEvent.RequestDeduplicated(LogOperation.CHARACTER_DETAIL, null, emptySet(), correlationId) }
+        }
 
     /** What makes two page loads the same request. */
     private data class PageIdentity(
@@ -65,7 +87,7 @@ public class RemoteCharacterRepository(
     ): DataResult<CharacterPage> {
         // The adapter trims the query and sends nothing for a blank one, so the identity does too.
         val identity = PageIdentity(protocol, page, filter.query.trim(), filter.status, policy)
-        return pages.run(identity) { retry.run { remote.characterPage(filter, page) } }
+        return pages.run(identity) { retry.run(LogOperation.CHARACTER_LIST) { remote.characterPage(filter, page) } }
     }
 
     override suspend fun details(
@@ -77,9 +99,9 @@ public class RemoteCharacterRepository(
         id: CharacterId,
         enrich: Boolean,
     ): DataResult<CharacterDetails> {
-        val detail = retry.run { remote.characterDetails(id) }
+        val detail = retry.run(LogOperation.CHARACTER_DETAIL) { remote.characterDetails(id) }
         if (!enrich || detail !is DataResult.Success) return detail
-        return when (val episodes = retry.run { remote.episodes(detail.value.episodeIds) }) {
+        return when (val episodes = retry.run(LogOperation.EPISODE_BATCH) { remote.episodes(detail.value.episodeIds) }) {
             is DataResult.Success ->
                 detail.copy(
                     value = detail.value.copy(episodeSummaries = episodes.value),

@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.remote
 
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
@@ -7,6 +8,7 @@ import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.testing.FixtureLoader
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
+import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -68,7 +70,13 @@ class HostAllowListTest {
                 )
             val client = raw.config { rickAndMortyDefaults() }
 
-            val result = RestCharacterRemoteDataSource(client, dispatcher, MutableFakeClock()).characterPage(CharacterFilter(), 1)
+            val result =
+                RestCharacterRemoteDataSource(
+                    client,
+                    dispatcher,
+                    MutableFakeClock(),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                ).characterPage(CharacterFilter(), 1)
 
             val failure = assertIs<DataResult.Failure>(result).failure
             assertIs<ApiFailure.InvalidRequest>(failure, "TEST-UNIT-025: a redirect is rejected (SECURITY.md 5.1)")

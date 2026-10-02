@@ -1,5 +1,11 @@
 package io.github.davidru85.multiverse.core.data.paging
 
+import io.github.davidru85.multiverse.core.data.logging.CorrelationId
+import io.github.davidru85.multiverse.core.domain.logging.AppLogger
+import io.github.davidru85.multiverse.core.domain.logging.LogEvent
+import io.github.davidru85.multiverse.core.domain.logging.LogLevel
+import io.github.davidru85.multiverse.core.domain.logging.LogOutcome
+import io.github.davidru85.multiverse.core.domain.logging.log
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterPage
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
@@ -20,6 +26,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.TimeSource
 
 /**
  * The shared pager (`IC-014`, ADR-0009) over the `IC-007` repository, whose coalescing and bounded
@@ -33,11 +40,17 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * A failed refresh is retried as a refresh; every other retry re-attempts the page that failed
  * (`DEC-092`). The repository gives each call a fresh attempt budget.
+ *
+ * Each load opens a correlation scope its request inherits, and a published load is logged through
+ * [logger]: `LOG-010` with its outcome, source and duration on [timeSource], and `LOG-011` when it
+ * ends pagination (`OBSERVABILITY.md` §3). A superseded load publishes nothing and logs nothing.
  */
 public class RepositoryCharacterPager(
     private val repository: CharacterRepository,
     private val scope: CoroutineScope,
+    private val logger: AppLogger,
     initialFilter: CharacterFilter = CharacterFilter(),
+    private val timeSource: TimeSource = TimeSource.Monotonic,
 ) : CharacterPager {
     private val mutableState =
         MutableStateFlow(
@@ -128,11 +141,14 @@ public class RepositoryCharacterPager(
         val loadGeneration = generation
         val filter = mutableState.value.filter
         if (!load.replaces) mutableState.update { it.copy(isAppending = it.items.isNotEmpty()) }
+        val correlation = CorrelationId.next()
         return scope
-            .launch {
+            .launch(correlation) {
+                val started = timeSource.markNow()
                 try {
                     val result = repository.page(filter, load.page, load.policy)
-                    lock.withLock { if (loadGeneration == generation) publish(load, result) }
+                    val durationMs = started.elapsedNow().inWholeMilliseconds
+                    lock.withLock { if (loadGeneration == generation) publish(load, result, durationMs, correlation.value) }
                 } catch (cancellation: CancellationException) {
                     withContext(NonCancellable) {
                         lock.withLock {
@@ -144,14 +160,19 @@ public class RepositoryCharacterPager(
             }.also { inFlight = it }
     }
 
-    /** Applies the outcome of a current-generation [load]. Called under [lock]. */
+    /** Applies and logs the outcome of a current-generation [load]. Called under [lock]. */
     private fun publish(
         load: Load,
         result: DataResult<CharacterPage>,
+        durationMs: Long,
+        correlationId: String,
     ) {
         when (result) {
             is DataResult.Success -> {
                 val page = result.value
+                val outcome = if (page.characters.isEmpty()) LogOutcome.EMPTY else LogOutcome.SUCCESS
+                logger.log(LogLevel.DEBUG) { LogEvent.PageLoaded(load.page, outcome, durationMs, result.source, correlationId) }
+                if (page.nextPage == null) logger.log(LogLevel.DEBUG) { LogEvent.PaginationExhausted(load.page) }
                 failedLoad = null
                 nextPage = page.nextPage
                 mutableState.update { current ->
@@ -167,11 +188,16 @@ public class RepositoryCharacterPager(
             }
             is DataResult.Failure ->
                 if (!load.replaces && result.failure is ApiFailure.NotFound) {
-                    // A paging 404 reached through a valid sequence is the end (`ERROR_FLOW.md` §5.2).
+                    // A paging 404 reached through a valid sequence is the end (`ERROR_FLOW.md` §5.2): the
+                    // last page is the one before it.
+                    logger.log(LogLevel.DEBUG) { LogEvent.PaginationExhausted(load.page - 1) }
                     failedLoad = null
                     nextPage = null
                     mutableState.update { it.copy(isAppending = false, isEndReached = true, failure = null) }
                 } else {
+                    logger.log(LogLevel.DEBUG) {
+                        LogEvent.PageLoaded(load.page, LogOutcome.FAILURE, durationMs, result.source, correlationId)
+                    }
                     failedLoad = load
                     mutableState.update { it.copy(isAppending = false, failure = result.failure) }
                 }

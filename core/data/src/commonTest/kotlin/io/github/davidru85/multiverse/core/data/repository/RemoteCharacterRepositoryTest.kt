@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
@@ -15,6 +16,7 @@ import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.FixtureLoader
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
+import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -111,11 +113,15 @@ class RemoteCharacterRepositoryTest {
     private fun TestScope.repository(
         client: HttpClient,
         random: Random = FixedRandom(0.5),
-    ) = RemoteCharacterRepository(
-        remote = RestCharacterRemoteDataSource(client, StandardTestDispatcher(testScheduler), MutableFakeClock()),
-        scope = backgroundScope,
-        random = random,
-    )
+    ): RemoteCharacterRepository {
+        val logger = ValidatingAppLogger.forDebug(RecordingLogSink())
+        return RemoteCharacterRepository(
+            remote = RestCharacterRemoteDataSource(client, StandardTestDispatcher(testScheduler), MutableFakeClock(), logger),
+            scope = backgroundScope,
+            random = random,
+            logger = logger,
+        )
+    }
 
     // ------------------------------------------------------------------ TEST-UNIT-022
 

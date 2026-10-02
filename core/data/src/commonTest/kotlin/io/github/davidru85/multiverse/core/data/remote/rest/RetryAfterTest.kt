@@ -1,11 +1,13 @@
 package io.github.davidru85.multiverse.core.data.remote.rest
 
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
+import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,6 +35,7 @@ class RetryAfterTest {
                     raw.config { rickAndMortyDefaults() },
                     dispatcher,
                     clock,
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
                 ).characterPage(CharacterFilter(), 1)
             failure = (result as DataResult.Failure).failure
         }

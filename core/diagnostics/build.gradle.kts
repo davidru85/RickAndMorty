@@ -11,15 +11,20 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            // The recorder implements `LogSink` and exposes domain types (`IC-024`, `DEC-093`).
+            // The recorder implements `LogSink` and exposes domain types (`IC-024`, `DEC-093`), and
+            // its snapshot is a `StateFlow`.
             api(project(":core:domain"))
+            api(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             // The API is proved on the real request and pager paths (`TASK-047`, R18): the
-            // production stack from `:core:data`, the fixtures and MockEngine from `:core:testing`.
+            // production stack from `:core:data`, the fixtures and MockEngine from `:core:testing`;
+            // the client and virtual-time types the tests touch are declared where used (DEC-077).
             implementation(project(":core:data"))
             implementation(project(":core:testing"))
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.core)
         }
         androidHostTest.dependencies {
             implementation(libs.kotlin.test.junit)
