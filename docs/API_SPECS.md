@@ -586,6 +586,7 @@ Cancellation is control flow, not a failure: rethrow `CancellationException` so 
 | `408` | `Timeout` | Yes, bounded |
 | `429` | `RateLimited` | Only after `Retry-After`, if present |
 | `500..599` | `Server` | Yes, bounded |
+| `300..399` (any redirect) | `InvalidRequest`: the client follows no redirect and never requests the `Location` (`REQ-SEC-001`) | No |
 | DNS/socket/connectivity failure | `Offline` or `Unknown` | Yes when connectivity returns |
 | Read/connect timeout | `Timeout` | Yes, bounded |
 | TLS failure | `Unknown` | No automatic retry |
@@ -611,8 +612,8 @@ Observed validation errors use HTTP `400` and an `errors` array with extension c
 ### 6.3 Retry policy
 
 - **At most three attempts in total** (`DEC-084`): attempt 1 is the original request, attempts 2 and 3 are the two automatic retries. A successful attempt ends the sequence, and the retries of one layer are the whole budget — an engine, client or repository retry layer `MUST NOT` multiply it.
-- Exponential backoff with jitter: approximately 500 ms before attempt 2, then 1,500 ms before attempt 3.
-- Retry only I/O failures, `408` and `5xx` within that budget. A `429` gets **at most one** automatic retry, and only after a valid `Retry-After` value; a missing or invalid `Retry-After` means no automatic retry.
+- Exponential backoff with jitter: approximately 500 ms before attempt 2, then 1,500 ms before attempt 3. Each delay is multiplied by a factor drawn uniformly from [0.8, 1.2] from an injected random source, so attempt 2 waits 400–600 ms and attempt 3 waits 1,200–1,800 ms (app policy, `TASK-038`).
+- Retry only I/O failures, `408` and `5xx` within that budget. A `429` gets **at most one** automatic retry, and only after a valid `Retry-After` value; a missing or invalid `Retry-After` means no automatic retry. A valid value is delta-seconds, or an HTTP-date in IMF-fixdate form evaluated against an injected clock (a date in the past means "now"). An advice longer than 60 seconds is not waited for automatically: the failure is surfaced with its countdown and the user-initiated retry stays available (app policy, `TASK-038`).
 - Never retry schema/validation errors, other `4xx`, decoding errors, or cancellations.
 - REST `GET` is safe to retry.
 - GraphQL operations in this schema are read-only queries, but generic clients do not automatically retry `POST`; any retry interceptor must verify the operation is a query.

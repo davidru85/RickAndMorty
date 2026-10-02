@@ -440,6 +440,7 @@ interface CharacterPager {
     suspend fun setFilter(filter: CharacterFilter)
     suspend fun next()
     suspend fun refresh()
+    suspend fun retry()
 }
 
 data class PagerState(
@@ -460,14 +461,18 @@ data class PagerState(
   - `setFilter` resets to page 1 and cancels any in-flight page load; the items of the previous filter are not carried into the new filter's accumulation (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-003-2`).
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
+  - `next()` while `failure != null` performs no request: a failed load suppresses further speculative loads, so repeated scroll triggers cannot become a request storm while the service is failing (`DEC-092`). `retry()`, `refresh()` and `setFilter` are the ways out.
+  - `retry()` re-attempts the load that failed — page 1 when no content is displayed, otherwise the failed append — with a fresh attempt budget, and never discards loaded pages (`ERROR_FLOW.md` §10 rule 4); it is a no-op when `failure == null` (`DEC-092`).
+  - A `NotFound` for a page after the first, reached through `next()`, is the end of pagination: `isEndReached` becomes `true` and no failure is reported (`ERROR_FLOW.md` §5.2). A `NotFound` for page 1 is a failure.
   - `isAppending` is `true` only while a page is being appended to existing content; it is always `false` outside an append (so a first page load and a `refresh()` do not set it).
   - `refresh()` loads page 1 through `IC-007` with `PageLoadPolicy.ForceNetwork` (`DEC-086`), so it performs a network request even when the served entry is fresh, and a failed `refresh()` leaves `items` untouched (`REQ-FUNC-012`, `AC-REQ-FUNC-012-1`, `AC-REQ-FUNC-012-2`). It `MUST NOT` rely on the absence of a cache to reach the network.
   - `items` is never emptied by `next()`, `refresh()` or a failure: `setFilter` is the only transition that empties it, and the following successful load replaces rather than appends. A consumer can therefore never observe an empty list that is merely a reload (`ERROR_FLOW.md` §3 invariant 2).
   - `items` preserves server order with no duplicates, and page *n* is appended only after pages `1..n-1` are present.
   - `totalCount` is `null` until the server establishes it and `MUST NOT` be replaced with `0` (`AC-REQ-FUNC-001-3`).
-  - `isStale` is `true` only while `items` come from a cache source (`IC-003`).
+  - `isStale` is `true` only while `items` come from a cache source (`IC-003`): it reports the provenance of the results the items came from, and a failed `refresh()` neither sets nor clears it (`CONF-71`).
   - `failure` is the `ApiFailure` from the last `DataResult.Failure` (`IC-003`) that did not clear content, and is reset to `null` by the next successful load; a failure carried in `failure` `MUST NOT` be rethrown to a collector of `state`.
   - Prefetch is bounded to the next page and `MUST NOT` fetch the whole catalogue up front (`API_SPECS.md` §8, `REQ-NFR-003`).
+  - The pager owns no scope of its own: its loads run in the scope its owner supplies (the state holder's), so closing the owner cancels every load (`GUIDELINES.md` §2.7).
   - `PagerState` carries no `LoadState`: the presentation layer derives it from `items`, `failure` and `isAppending` under the mapping fixed in `IC-018`. The pager therefore never decides which screen state is rendered.
 - **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-003`, `REQ-FUNC-004`, `REQ-FUNC-012`, `DEC-016`, `API_SPECS.md` §8.
 
@@ -520,7 +525,7 @@ interface AppSettingsLocalDataSource {
 
 ### IC-024 — `AppLogger`, `LogLevel`, `LogEvent`, `LogSink`
 
-- **Declarations** (`DEC-087`, [ADR-0013](adr/0013-observability-placement.md)). The contract half is in `:core:domain`, `commonMain`; the sink half is in `:core:data`, `commonMain`:
+- **Declarations** (`DEC-087`, [ADR-0013](adr/0013-observability-placement.md)), all in `:core:domain`, `commonMain`. The sink half moved there from `:core:data` by `DEC-093` before it was implemented, so the debug-only `:core:diagnostics` module can implement `LogSink` while depending on `:core:domain` only (`DEC-088`); the validating `AppLogger` implementation stays in `:core:data`:
 
 ```kotlin
 // :core:domain
@@ -544,12 +549,12 @@ sealed interface LogEvent {
     val level: LogLevel         // fixed per row by the catalogue
 }
 
-// :core:data
+// :core:domain as well, since `DEC-093`: the sink half is what platform sinks and `:core:diagnostics` implement
 fun interface LogSink {
     fun write(record: LogRecord)
 }
 
-class LogRecord(
+data class LogRecord(
     val level: LogLevel,
     val catalogueId: String,
     val fields: Map<LogField, String>,   // validated permitted fields only
@@ -931,6 +936,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.2 readiness: `IC-014` gains `retry()` and the rule that a failure suppresses `next()` until a retry, refresh or new filter (`DEC-092`), states the paging-`404` end and the owner-supplied scope, and pins `isStale` to result provenance (`CONF-71`); `IC-024`'s `LogSink`/`LogRecord` move to `:core:domain` (`DEC-093`). | `DEC-092`, `DEC-093` |
 | 2026-10-02 | `IC-014` (`CharacterPager`, `PagerState`) relocated from `:core:data` to `:core:domain` before implementation, and §7 states the narrowed `:core:ios` export list; the signatures and invariants are unchanged (`DEC-091`, ADR-0014). | `DEC-091` |
 | 2026-10-02 | B3 Phase 3.1: `IC-007` gains the defaulted `PageLoadPolicy` parameter and the policy-in-identity invariant (`DEC-086`, `CONF-66`); `IC-011` returns `DataResult` as its invariants already required, and states the foreign-host and list-`404` rules (`DEC-090`, `CONF-64`); `IC-014.refresh()` uses `ForceNetwork`; `IC-024` declares the single logging contract in `:core:domain` with its `:core:data` sink (`DEC-087`, ADR-0013); the fakes are mapped to `IC-007`/`IC-011` (`CONF-69`). | `DEC-086`, `DEC-087`, `DEC-088`, `DEC-090` |
 | 2026-10-01 | Accepted as the `IC-###` baseline by `TASK-019`: `IC-001`…`IC-023` audited for identifier uniqueness across the repository, module ownership, absence of platform and wire types in shared signatures, DTO containment, and agreement with `DESIGN.md` §3, `API_SPECS.md` §7, `ERROR_FLOW.md` §2 and the `DEC-066` `:core:domain` rule. §7.1 states the `:core:ios` `api`-export surface (`ADR-0012`); assumption A7 added; drift rows D3 and D4 resolved. No signature changed. | `TASK-019`, `DEC-066`, `DEC-058`, ADR-0012 |
