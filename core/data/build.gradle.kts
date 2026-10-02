@@ -12,6 +12,14 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":core:domain"))
         }
+        commonTest.dependencies {
+            // `DEC-089`: the data layer's tests consume the shared harness — fixtures, `MockHttp`
+            // and virtual time — from a test source set only.
+            implementation(project(":core:testing"))
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
+        }
     }
 }
 

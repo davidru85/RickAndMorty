@@ -52,7 +52,12 @@ public object MockHttp {
                 respond(
                     content = route.body,
                     status = HttpStatusCode.fromValue(route.status),
-                    headers = headersOf("content-type", route.contentType),
+                    headers =
+                        headersOf(
+                            *(route.headers + ("content-type" to route.contentType))
+                                .map { (name, value) -> name to listOf(value) }
+                                .toTypedArray(),
+                        ),
                 )
             }
         return HttpClient(engine) to served
@@ -64,6 +69,8 @@ public object MockHttp {
      * @param fixture the committed fixture file name, resolved through [FixtureLoader].
      * @param status the HTTP status the fixture was captured with; the sidecar records it, and a
      *   route that disagrees with its sidecar is a defect the caller should see.
+     * @param headers extra response headers, for the cases whose behaviour depends on one (a
+     *   `Retry-After` on a `429`, for example). The body still comes from the fixture.
      */
     public fun route(
         fixture: String,
@@ -71,6 +78,7 @@ public object MockHttp {
         urlContains: String = "",
         status: Int? = null,
         contentType: String = "application/json",
+        headers: Map<String, String> = emptyMap(),
     ): Route {
         val meta = FixtureCatalog.meta(fixture)
         return Route(
@@ -79,6 +87,7 @@ public object MockHttp {
             body = FixtureLoader.text(fixture),
             status = status ?: meta.status,
             contentType = contentType,
+            headers = headers,
         )
     }
 
@@ -88,7 +97,8 @@ public object MockHttp {
         status: Int,
         method: String = "GET",
         urlContains: String = "",
-    ): Route = route(fixture = fixture, method = method, urlContains = urlContains, status = status)
+        headers: Map<String, String> = emptyMap(),
+    ): Route = route(fixture = fixture, method = method, urlContains = urlContains, status = status, headers = headers)
 
     /** A predicate plus the response it serves. */
     public data class Route(
@@ -97,6 +107,7 @@ public object MockHttp {
         public val body: String,
         public val status: Int,
         public val contentType: String,
+        public val headers: Map<String, String> = emptyMap(),
     ) {
         public fun matches(request: HttpRequestData): Boolean =
             request.method.value.equals(method, ignoreCase = true) &&
