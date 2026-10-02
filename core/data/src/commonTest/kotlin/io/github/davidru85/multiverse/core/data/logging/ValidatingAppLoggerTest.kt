@@ -178,6 +178,18 @@ class ValidatingAppLoggerTest {
                 LogLevel.DEBUG,
                 setOf(LogField.OPERATION, LogField.PATH_TEMPLATE, LogField.OUTCOME),
             ),
+            Row(
+                LogEvent.FavoritesToggled(LogOutcome.SUCCESS),
+                "LOG-018",
+                LogLevel.INFO,
+                setOf(LogField.COMPONENT, LogField.OUTCOME),
+            ),
+            Row(
+                LogEvent.FavoritesStoreDegraded(screen = LogScreen.FAVORITES),
+                "LOG-019",
+                LogLevel.ERROR,
+                setOf(LogField.COMPONENT, LogField.ERROR_CLASS, LogField.SCREEN),
+            ),
         )
 
     @Test
@@ -204,6 +216,8 @@ class ValidatingAppLoggerTest {
             "TEST-UNIT-032: LOG-004 is errorClass=INVALID_REQUEST",
         )
         assertEquals("CANCELLED", sink.records[8].fields[LogField.OUTCOME], "TEST-UNIT-032: LOG-014 is outcome=CANCELLED")
+        assertEquals("FAVORITES_STORE", sink.records[10].fields[LogField.COMPONENT], "TEST-UNIT-032: LOG-018 is component=FAVORITES_STORE")
+        assertEquals("UNKNOWN", sink.records[11].fields[LogField.ERROR_CLASS], "TEST-UNIT-032: LOG-019 is errorClass=UNKNOWN")
     }
 
     @Test
@@ -293,7 +307,11 @@ class ValidatingAppLoggerTest {
         catalogue.forEach { logger.log(it.event) }
 
         assertEquals(listOf(false, false, false, true), LogLevel.entries.map(logger::isEnabled), "TEST-UNIT-033: ERROR only (DEC-039)")
-        assertEquals(listOf("LOG-003", "LOG-004"), sink.records.map { it.catalogueId }, "TEST-UNIT-033: the release-visible rows")
+        assertEquals(
+            listOf("LOG-003", "LOG-004", "LOG-019"),
+            sink.records.map { it.catalogueId },
+            "TEST-UNIT-033: the release-visible rows",
+        )
     }
 
     @Test
