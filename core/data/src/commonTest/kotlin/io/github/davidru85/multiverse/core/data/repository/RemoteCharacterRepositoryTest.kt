@@ -7,6 +7,7 @@ import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
+import io.github.davidru85.multiverse.core.domain.model.CharacterPage
 import io.github.davidru85.multiverse.core.domain.model.EpisodeId
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
@@ -17,11 +18,13 @@ import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -63,16 +66,23 @@ class RemoteCharacterRepositoryTest {
         ) : Step
     }
 
+    /**
+     * A scripted engine on the test's dispatcher, so every attempt runs in virtual time: by default
+     * `MockEngine` answers on a dispatcher of its own, and whether an attempt has happened by a given
+     * virtual instant would then depend on thread timing.
+     */
     private class Engine(
         steps: List<Step>,
+        dispatcher: CoroutineDispatcher,
     ) {
         private val script = ArrayDeque(steps)
         var calls = 0
             private set
 
-        val client: HttpClient =
-            HttpClient(
-                MockEngine {
+        private val config =
+            MockEngineConfig().apply {
+                this.dispatcher = dispatcher
+                addHandler {
                     calls++
                     when (val step = script.removeFirstOrNull() ?: error("the scripted engine is exhausted")) {
                         is Step.Throw -> throw step.failure
@@ -80,12 +90,23 @@ class RemoteCharacterRepositoryTest {
                             respond(
                                 content = FixtureLoader.text("character-page-01.json"),
                                 status = HttpStatusCode.fromValue(step.code),
-                                headers = headersOf(*(step.headers + ("content-type" to "application/json")).map { it.key to listOf(it.value) }.toTypedArray()),
+                                headers =
+                                    headersOf(
+                                        *(step.headers + ("content-type" to "application/json"))
+                                            .map {
+                                                it.key to
+                                                    listOf(it.value)
+                                            }.toTypedArray(),
+                                    ),
                             )
                     }
-                },
-            ) { rickAndMortyDefaults() }
+                }
+            }
+
+        val client: HttpClient = HttpClient(MockEngine(config)) { rickAndMortyDefaults() }
     }
+
+    private fun TestScope.engine(vararg steps: Step) = Engine(steps.toList(), StandardTestDispatcher(testScheduler))
 
     private fun TestScope.repository(
         client: HttpClient,
@@ -101,7 +122,7 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_a_failing_server_when_a_page_is_loaded_then_three_attempts_are_made_with_the_documented_backoff`() =
         TestTime.run {
-            val engine = Engine(List(3) { Step.Status(503) })
+            val engine = engine(*Array(3) { Step.Status(503) })
 
             val started = testScheduler.currentTime
             val result = repository(engine.client).page(CharacterFilter(), 1)
@@ -114,8 +135,8 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_the_jitter_bounds_when_backing_off_then_the_delays_stay_within_the_documented_window`() =
         TestTime.run {
-            val low = Engine(List(3) { Step.Throw(IOException("reset")) })
-            val high = Engine(List(3) { Step.Throw(IOException("reset")) })
+            val low = engine(*Array(3) { Step.Throw(IOException("reset")) })
+            val high = engine(*Array(3) { Step.Throw(IOException("reset")) })
 
             var started = testScheduler.currentTime
             repository(low.client, FixedRandom(0.0)).page(CharacterFilter(), 1)
@@ -128,7 +149,7 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_an_earlier_success_when_retrying_then_the_sequence_stops`() =
         TestTime.run {
-            val engine = Engine(listOf(Step.Throw(HttpRequestTimeoutException("request", 20_000)), Step.Status(200)))
+            val engine = engine(Step.Throw(HttpRequestTimeoutException("request", 20_000)), Step.Status(200))
 
             val result = repository(engine.client).page(CharacterFilter(), 1)
 
@@ -144,7 +165,7 @@ class RemoteCharacterRepositoryTest {
                 "redirect" to Step.Status(302),
                 "engine defect" to Step.Throw(IllegalStateException("defect")),
             ).forEach { (name, step) ->
-                val engine = Engine(listOf(step))
+                val engine = engine(step)
                 assertIs<DataResult.Failure>(repository(engine.client).page(CharacterFilter(), 1))
                 assertEquals(1, engine.calls, "TEST-UNIT-022: `$name` gets one attempt (AC-REQ-REL-003-1)")
             }
@@ -157,18 +178,18 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_rate_limiting_when_loaded_then_one_retry_follows_readable_advice_only`() =
         TestTime.run {
-            val advised = Engine(listOf(Step.Status(429, mapOf("Retry-After" to "2")), Step.Status(200)))
+            val advised = engine(Step.Status(429, mapOf("Retry-After" to "2")), Step.Status(200))
             val started = testScheduler.currentTime
             assertIs<DataResult.Success<*>>(repository(advised.client).page(CharacterFilter(), 1))
             assertEquals(2, advised.calls)
             assertEquals(2_000, testScheduler.currentTime - started, "TEST-UNIT-022: the advised wait, with no jitter")
 
-            val twice = Engine(List(2) { Step.Status(429, mapOf("Retry-After" to "1")) })
+            val twice = engine(*Array(2) { Step.Status(429, mapOf("Retry-After" to "1")) })
             assertIs<ApiFailure.RateLimited>((repository(twice.client).page(CharacterFilter(), 1) as DataResult.Failure).failure)
             assertEquals(2, twice.calls, "TEST-UNIT-022: at most one 429 retry")
 
             listOf(emptyMap(), mapOf("Retry-After" to "soon"), mapOf("Retry-After" to "120")).forEach { headers ->
-                val engine = Engine(listOf(Step.Status(429, headers)))
+                val engine = engine(Step.Status(429, headers))
                 repository(engine.client).page(CharacterFilter(), 1)
                 assertEquals(1, engine.calls, "TEST-UNIT-022: no automatic retry for $headers (60-second ceiling)")
             }
@@ -177,7 +198,7 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_an_exhausted_budget_when_the_user_retries_then_a_fresh_budget_starts`() =
         TestTime.run {
-            val engine = Engine(List(6) { Step.Throw(IOException("offline")) })
+            val engine = engine(*Array(6) { Step.Throw(IOException("offline")) })
             val subject = repository(engine.client)
 
             assertEquals(ApiFailure.Offline, (subject.page(CharacterFilter(), 1) as DataResult.Failure).failure)
@@ -188,7 +209,7 @@ class RemoteCharacterRepositoryTest {
     @Test
     fun `TEST-UNIT-022 given_a_cancelled_caller_when_backing_off_then_no_further_attempt_is_made`() =
         TestTime.run {
-            val engine = Engine(List(3) { Step.Status(500) })
+            val engine = engine(*Array(3) { Step.Status(500) })
             val load = async(start = CoroutineStart.UNDISPATCHED) { repository(engine.client).page(CharacterFilter(), 1) }
 
             advanceTimeBy(200)
@@ -208,7 +229,10 @@ class RemoteCharacterRepositoryTest {
 
             val result = repository(raw.config { rickAndMortyDefaults() }).page(CharacterFilter(query = "zzzznotreal"), 1)
 
-            assertTrue((result as DataResult.Success).value.characters.isEmpty(), "TEST-UNIT-055: IC-007 empty filtered result")
+            assertTrue(
+                (result as DataResult.Success<CharacterPage>).value.characters.isEmpty(),
+                "TEST-UNIT-055: IC-007 empty filtered result",
+            )
             assertEquals(1, served.size)
         }
 
@@ -222,11 +246,11 @@ class RemoteCharacterRepositoryTest {
                 )
             val subject = repository(raw.config { rickAndMortyDefaults() })
 
-            val plain = (subject.details(CharacterId("1"), enrich = false) as DataResult.Success).value
+            val plain = (subject.details(CharacterId("1"), enrich = false) as DataResult.Success<CharacterDetails>).value
             assertNull(plain.episodeSummaries, "TEST-UNIT-055: no enrichment unless requested")
             assertEquals(1, served.size, "TEST-UNIT-055: enrich = false issues no episode request")
 
-            val enriched = subject.details(CharacterId("1"), enrich = true) as DataResult.Success
+            val enriched = subject.details(CharacterId("1"), enrich = true) as DataResult.Success<CharacterDetails>
             val episodeRequests = served.drop(2).map { Url(it.url).encodedPath }
             assertEquals(3, episodeRequests.size, "TEST-UNIT-055: 51 episodes in chunks of 20, never one request each")
             assertEquals(listOf(EpisodeId("1"), EpisodeId("2"), EpisodeId("3")), enriched.value.episodeSummaries?.map { it.id })

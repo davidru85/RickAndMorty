@@ -47,4 +47,10 @@ public object RemoteResources {
 public object RemoteWarnings {
     /** A requested resource the response omitted; the warning's detail is the missing id. */
     public const val MISSING_RESOURCE: String = "missing-resource"
+
+    /**
+     * A detail whose requested enrichment failed: it renders without the dependent rows and is never
+     * written to a cache (`ERROR_FLOW.md` §7).
+     */
+    public const val ENRICHMENT_FAILED: String = "enrichment-failed"
 }
