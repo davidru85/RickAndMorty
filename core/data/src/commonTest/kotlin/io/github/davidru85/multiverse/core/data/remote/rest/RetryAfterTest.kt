@@ -28,7 +28,12 @@ class RetryAfterTest {
                     MockHttp.errorRoute("character-page-beyond-last-404.json", 429, headers = mapOf("Retry-After" to header)),
                 )
             val clock = MutableFakeClock(now.toEpochMilliseconds())
-            val result = RestCharacterRemoteDataSource(raw.config { rickAndMortyDefaults() }, dispatcher, clock).characterPage(CharacterFilter(), 1)
+            val result =
+                RestCharacterRemoteDataSource(
+                    raw.config { rickAndMortyDefaults() },
+                    dispatcher,
+                    clock,
+                ).characterPage(CharacterFilter(), 1)
             failure = (result as DataResult.Failure).failure
         }
         return failure!!

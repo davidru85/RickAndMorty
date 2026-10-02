@@ -34,6 +34,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Clock
 
 /**
  * The REST implementation of `IC-011` (`API_SPECS.md` §4, `TASK-037`), the default protocol.
@@ -41,7 +42,8 @@ import kotlin.coroutines.cancellation.CancellationException
  * Every request is a `GET` to the fixed HTTPS host, built from validated input; nothing in a response
  * changes where the app connects. Each outcome is a `DataResult` with a network source: transport,
  * status and decoding failures are mapped here (`API_SPECS.md` §6.1) and only a
- * `CancellationException` propagates. Decoding runs on [decodingDispatcher].
+ * `CancellationException` propagates. Decoding runs on [decodingDispatcher], and a `Retry-After`
+ * date is measured on [clock], never on the wall clock (`REQ-REL-004`).
  *
  * The adapter does not retry, coalesce or cache: those are the repository's (`TASK-038`, `TASK-020`).
  * It does not own [client] either — whoever built the client closes it.
@@ -49,6 +51,7 @@ import kotlin.coroutines.cancellation.CancellationException
 public class RestCharacterRemoteDataSource(
     private val client: HttpClient,
     private val decodingDispatcher: CoroutineDispatcher,
+    private val clock: Clock,
 ) : CharacterRemoteDataSource {
     override suspend fun characterPage(
         filter: CharacterFilter,
@@ -217,7 +220,7 @@ public class RestCharacterRemoteDataSource(
         when (status) {
             in 200..299 -> null
             REQUEST_TIMEOUT -> ApiFailure.Timeout
-            TOO_MANY_REQUESTS -> ApiFailure.RateLimited(retryAfter?.trim()?.toLongOrNull()?.takeIf { it >= 0 })
+            TOO_MANY_REQUESTS -> ApiFailure.RateLimited(retryAfterSeconds(retryAfter, clock.now()))
             in 400..499 -> ApiFailure.InvalidRequest("http-$status")
             in 500..599 -> ApiFailure.Server(status)
             // A redirect is never followed, so its `Location` is never requested (`REQ-SEC-001`).

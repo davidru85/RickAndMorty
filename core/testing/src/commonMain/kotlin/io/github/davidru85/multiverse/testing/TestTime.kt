@@ -4,6 +4,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Time and dispatcher control (`TESTING.md` §5, `REQ-REL-004`, `TASK-024`).
@@ -47,12 +49,16 @@ public fun interface FakeClock {
  * A [FakeClock] a test moves explicitly.
  *
  * The contract is `nowMillis()` plus an explicit advance; a system-clock change never alters an
- * assertion because nothing here reads the system clock.
+ * assertion because nothing here reads the system clock. It is also a `kotlin.time.Clock`, the type
+ * production code is injected with (`TASK-038`), so one fake serves both.
  */
 public class MutableFakeClock(
     private var currentMillis: Long = 0L,
-) : FakeClock {
+) : FakeClock,
+    Clock {
     override fun nowMillis(): Long = currentMillis
+
+    override fun now(): Instant = Instant.fromEpochMilliseconds(currentMillis)
 
     /** Moves the clock forward by [millis]. Negative values are rejected: time does not run back. */
     public fun advanceBy(millis: Long): MutableFakeClock {
