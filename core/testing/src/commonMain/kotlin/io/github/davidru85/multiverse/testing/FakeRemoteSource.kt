@@ -12,6 +12,7 @@ import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.domain.result.DataSource
 import kotlinx.coroutines.delay
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 
 /**
@@ -50,9 +51,22 @@ public class FakeRemoteSource(
     /** Every remote call so far, in order, including calls that were later cancelled. */
     public val calls: List<Call> get() = recorded.toList()
 
+    /** How many remote calls were cancelled while they waited out [latency]. */
+    public var cancellations: Int = 0
+        private set
+
     /** Makes the next remote call, of any kind, return [failure] as a value. Failures queue in order. */
     public fun failNext(failure: ApiFailure) {
         queuedFailures.addLast(failure)
+    }
+
+    private suspend fun respondAfterLatency() {
+        try {
+            delay(latency)
+        } catch (cancellation: CancellationException) {
+            cancellations++
+            throw cancellation
+        }
     }
 
     override suspend fun characterPage(
@@ -60,14 +74,14 @@ public class FakeRemoteSource(
         page: Int,
     ): DataResult<CharacterPage> {
         recorded += Call.Page(filter, page)
-        delay(latency)
+        respondAfterLatency()
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         return catalogue.page(filter, page)
     }
 
     override suspend fun characterDetails(id: CharacterId): DataResult<CharacterDetails> {
         recorded += Call.Details(id)
-        delay(latency)
+        respondAfterLatency()
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         return catalogue.details(id)?.let { DataResult.Success(it, DataSource.NETWORK, isStale = false) }
             ?: DataResult.Failure(ApiFailure.NotFound(RemoteResources.CHARACTER, id.value), DataSource.NETWORK)
@@ -76,7 +90,7 @@ public class FakeRemoteSource(
     override suspend fun episodes(ids: List<EpisodeId>): DataResult<List<EpisodeSummary>> {
         if (ids.isEmpty()) return DataResult.Success(emptyList(), DataSource.NETWORK, isStale = false)
         recorded += Call.Episodes(ids)
-        delay(latency)
+        respondAfterLatency()
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         val (summaries, warnings) = catalogue.episodes(ids)
         return DataResult.Success(summaries, DataSource.NETWORK, isStale = false, warnings = warnings)

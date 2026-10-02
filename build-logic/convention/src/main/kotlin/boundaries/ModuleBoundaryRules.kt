@@ -17,7 +17,9 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  * - `R9` a feature's Android UI source set may additionally depend on `:core:designsystem`.
  * - `R10` a feature's test source sets may additionally depend on `:core:testing`.
  * - `R11` `:androidApp` composes the features and `:core:designsystem`, and as the composition root
- *   may depend on `:core:data` (`DEC-091`).
+ *   may depend on `:core:data` (`DEC-091`). It may link `:core:diagnostics` from a `debug*`
+ *   configuration only, and the release closure of the shell never reaches that module
+ *   (`TEST-UNIT-033`, `DEC-088`).
  * - `R12` `:core:ios` has only the ADR-0012 edges, never exposes `:core:data` through `api`
  *   (`DEC-091`), and no Android source set consumes it.
  * - `R13` an unrecognised project or edge fails closed.
@@ -26,6 +28,8 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  *
  * - `R16` the build contains the required leaf modules of ADR-0001 (`GAP-014`, `TASK-091`); a
  *   missing module fails closed, and a `:feature:*` path outside the accepted five is unknown.
+ * - `R18` `:core:diagnostics` depends only on `:core:domain`; its test source sets may also reach
+ *   the real request path through `:core:testing` and `:core:data` (`DEC-088`, ADR-0013).
  *
  * Staged structure rules (`TEST-UNIT-043`, `DEC-068`):
  * - `S1` every accepted feature declares its own navigation destination.
@@ -51,6 +55,12 @@ internal object ModuleBoundaryRules {
     /** The implementation module (`DEC-091`). */
     private const val IMPLEMENTATION_MODULE = ":core:data"
 
+    /** The debug-only diagnostic API (`DEC-088`): never part of a release graph. */
+    private const val DIAGNOSTICS_MODULE = ":core:diagnostics"
+
+    /** What a test source set of `:core:diagnostics` may reach, to exercise the real path (R18). */
+    private val DIAGNOSTICS_TEST_CORE = setOf(":core:domain", ":core:testing", ":core:data")
+
     /**
      * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
      * production core modules and the five accepted feature modules, never `:core:designsystem`
@@ -75,8 +85,10 @@ internal object ModuleBoundaryRules {
         coreDesignSystem(snapshot, log)
         coreTesting(snapshot, log)
         coreIos(snapshot, log)
+        coreDiagnostics(snapshot, log)
         features(snapshot, log)
         androidApp(snapshot, log)
+        releaseClosure(snapshot, log)
         domainExternalPurity(snapshot, log)
         designSystemComposeOnly(snapshot, log)
         targetSets(snapshot, log)
@@ -510,12 +522,33 @@ internal object ModuleBoundaryRules {
 
     /**
      * R11 — `:androidApp` composes the features and `:core:designsystem` and, as the composition root,
-     * may depend on the implementation module (`DEC-091`); never `:core:ios`.
+     * may depend on the implementation module (`DEC-091`); never `:core:ios`. It may link the
+     * diagnostic API from a `debug*` configuration only (`DEC-088`): the configuration named here is
+     * the **effective** one, so an edge inherited into a release configuration is rejected there and
+     * its origin is reported (`GAP-012`).
      */
     private fun androidApp(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         val allowed = snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() + ":core:designsystem" + IMPLEMENTATION_MODULE
         snapshot.byKind(ModuleKind.ANDROID_APP).forEach { project ->
             project.edges.filterNot { it.producer in allowed }.forEach { edge ->
+                if (edge.producer == DIAGNOSTICS_MODULE) {
+                    if (!edge.isDebugOnly()) {
+                        log.add(
+                            violation(
+                                rule = "R11",
+                                consumer = project.path,
+                                configuration = edge.configuration,
+                                sourceSet = edge.sourceSet,
+                                producer = edge.producer,
+                                origin = edge.originConfiguration,
+                                reason = "`:core:diagnostics` is linked from a `debug*` configuration only; " +
+                                    "`${edge.configuration}` puts the diagnostic API in the release artifact " +
+                                    "(DEC-088, ADR-0013, AC-REQ-OBS-002-1, TEST-UNIT-033)",
+                            ),
+                        )
+                    }
+                    return@forEach
+                }
                 log.add(
                     violation(
                         rule = "R11",
@@ -526,6 +559,84 @@ internal object ModuleBoundaryRules {
                         reason = "`:androidApp` composes the `:feature:*` modules and `:core:designsystem`, and as the " +
                             "composition root may depend on `:core:data`; it must not depend on `:core:ios` or another " +
                             "core module (ADR-0001, ADR-0012, ADR-0014, REQ-PLAT-004)",
+                    ),
+                )
+            }
+        }
+    }
+
+    /**
+     * R11, release closure (`TEST-UNIT-033`, `DEC-088`) — the diagnostic API is absent from every
+     * release graph of the shell, however it would arrive.
+     *
+     * The per-edge rules reject each forbidden declaration on its own; this one decides on the graph
+     * the release artifact actually resolves. It walks the effective production edges from the
+     * shell's release-relevant configurations — everything but `debug*` and test configurations —
+     * and through every module they reach, and reports the first path that ends at
+     * `:core:diagnostics`. A direct edge is the per-edge rule's to report, so only a path through
+     * another module is reported here, naming that path.
+     */
+    private fun releaseClosure(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        snapshot.byKind(ModuleKind.ANDROID_APP).forEach { app ->
+            val roots = app.edges.filter { it.kind != SourceSetKind.TEST && !it.isDebugOnly() && it.producer != DIAGNOSTICS_MODULE }
+            val via = linkedMapOf<String, String>()
+            val queue = ArrayDeque<String>()
+            roots.forEach { root ->
+                if (via.putIfAbsent(root.producer, app.path) == null) queue.add(root.producer)
+            }
+            while (queue.isNotEmpty()) {
+                val module = queue.removeFirst()
+                if (module == DIAGNOSTICS_MODULE) {
+                    val path = generateSequence(module) { via[it]?.takeIf { parent -> parent != it } }.toList().reversed()
+                    // `path` is the shell, the root producer, …, the diagnostic module: never a direct edge.
+                    val root = roots.first { it.producer == path[1] }
+                    log.add(
+                        violation(
+                            rule = "R11",
+                            consumer = app.path,
+                            configuration = root.configuration,
+                            sourceSet = root.sourceSet,
+                            producer = DIAGNOSTICS_MODULE,
+                            origin = root.originConfiguration,
+                            reason = "the release graph of `${app.path}` reaches `$DIAGNOSTICS_MODULE` through " +
+                                path.joinToString(" -> ") { "`$it`" } + "; the diagnostic API is never part of a " +
+                                "release artifact (DEC-088, ADR-0013, AC-REQ-OBS-002-1, TEST-UNIT-033)",
+                        ),
+                    )
+                    return@forEach
+                }
+                snapshot.project(module)?.edges
+                    ?.filter { it.kind != SourceSetKind.TEST }
+                    ?.forEach { edge -> if (via.putIfAbsent(edge.producer, module) == null) queue.add(edge.producer) }
+            }
+        }
+    }
+
+    /** A shell edge whose effective configuration belongs to the debug variant only. */
+    private fun DeclaredEdge.isDebugOnly(): Boolean = configuration.startsWith("debug")
+
+    /**
+     * R18 — `:core:diagnostics` folds validated log records over the domain contract, so its
+     * production source sets depend on `:core:domain` only (`DEC-088`, ADR-0013). Its test source sets
+     * may also reach `:core:testing` and `:core:data`, because the diagnostic API is proved on the real
+     * request and pager paths (`TASK-047`).
+     */
+    private fun coreDiagnostics(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        snapshot.byKind(ModuleKind.CORE_DIAGNOSTICS).forEach { project ->
+            project.edges.filterNot { edge ->
+                edge.producer == ":core:domain" ||
+                    (edge.kind == SourceSetKind.TEST && edge.producer in DIAGNOSTICS_TEST_CORE)
+            }.forEach { edge ->
+                log.add(
+                    violation(
+                        rule = "R18",
+                        consumer = project.path,
+                        configuration = edge.configuration,
+                        sourceSet = edge.sourceSet,
+                        producer = edge.producer,
+                        origin = edge.originConfiguration,
+                        reason = "`:core:diagnostics` may depend only on `:core:domain`; its tests may also use " +
+                            "`:core:testing` and `:core:data` (DEC-088, ADR-0013)",
                     ),
                 )
             }

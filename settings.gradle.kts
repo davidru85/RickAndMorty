@@ -43,6 +43,7 @@ include(
     ":core:presentation",
     ":core:designsystem",
     ":core:testing",
+    ":core:diagnostics",
     ":feature:discovery",
     ":feature:character-detail",
     ":feature:favorites",

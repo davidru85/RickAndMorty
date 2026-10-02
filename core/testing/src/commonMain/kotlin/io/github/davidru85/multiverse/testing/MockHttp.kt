@@ -2,11 +2,17 @@ package io.github.davidru85.multiverse.testing
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
+import kotlin.time.Duration
 
 /**
  * The fixture-driven network seam (`TESTING.md` §4.1, §4.2; `TASK-024`).
@@ -32,36 +38,87 @@ public object MockHttp {
      * @param routes a predicate per request; the first match wins. A request that matches nothing
      *   fails the test loudly rather than returning an empty body, because a silently unmocked
      *   call would make the subject under test look correct.
+     * @param dispatcher where the engine answers; a test's dispatcher keeps every answer in virtual
+     *   time, while the default lets `MockEngine` answer on a dispatcher of its own.
+     * @param latency spent before each answer, in the engine dispatcher's time, so a test can cancel
+     *   a request that is in flight.
      */
-    public fun client(vararg routes: Route): Pair<HttpClient, MutableList<Served>> {
+    public fun client(
+        vararg routes: Route,
+        dispatcher: CoroutineDispatcher? = null,
+        latency: Duration = Duration.ZERO,
+    ): Pair<HttpClient, MutableList<Served>> {
         val served = mutableListOf<Served>()
         val engine =
-            MockEngine { request ->
-                served +=
-                    Served(
-                        method = request.method.value,
-                        url = request.url.toString(),
-                        body = request.body.toByteArray().decodeToString(),
-                    )
+            engine(dispatcher, latency) { request ->
+                served += request.served()
                 val route =
                     routes.firstOrNull { it.matches(request) }
                         ?: error(
                             "No fixture route matched ${request.method.value} ${request.url}. " +
                                 "Add a route that serves a committed fixture rather than inlining a body.",
                         )
-                respond(
-                    content = route.body,
-                    status = HttpStatusCode.fromValue(route.status),
-                    headers =
-                        headersOf(
-                            *(route.headers + ("content-type" to route.contentType))
-                                .map { (name, value) -> name to listOf(value) }
-                                .toTypedArray(),
-                        ),
-                )
+                respond(route)
             }
         return HttpClient(engine) to served
     }
+
+    /**
+     * A client that answers successive requests with [routes] **in order**, each once, for a test that
+     * scripts a sequence — a `500` and then a `200`, say. A request that does not match the next route,
+     * or one past the end of the script, fails the test loudly rather than receiving an invented body.
+     * [dispatcher] and [latency] are [client]'s.
+     */
+    public fun sequence(
+        vararg routes: Route,
+        dispatcher: CoroutineDispatcher? = null,
+        latency: Duration = Duration.ZERO,
+    ): Pair<HttpClient, MutableList<Served>> {
+        val served = mutableListOf<Served>()
+        val script = ArrayDeque(routes.toList())
+        val engine =
+            engine(dispatcher, latency) { request ->
+                served += request.served()
+                val route =
+                    script.removeFirstOrNull()
+                        ?: error("The scripted sequence is exhausted at ${request.method.value} ${request.url}.")
+                check(route.matches(request)) {
+                    "Request ${served.size} (${request.method.value} ${request.url}) does not match its scripted route."
+                }
+                respond(route)
+            }
+        return HttpClient(engine) to served
+    }
+
+    private fun engine(
+        dispatcher: CoroutineDispatcher?,
+        latency: Duration,
+        handler: MockRequestHandler,
+    ): MockEngine =
+        MockEngine(
+            MockEngineConfig().apply {
+                if (dispatcher != null) this.dispatcher = dispatcher
+                addHandler { request ->
+                    if (latency > Duration.ZERO) delay(latency)
+                    handler(request)
+                }
+            },
+        )
+
+    private suspend fun HttpRequestData.served() =
+        Served(method = method.value, url = url.toString(), body = body.toByteArray().decodeToString())
+
+    private fun MockRequestHandleScope.respond(route: Route) =
+        respond(
+            content = route.body,
+            status = HttpStatusCode.fromValue(route.status),
+            headers =
+                headersOf(
+                    *(route.headers + ("content-type" to route.contentType))
+                        .map { (name, value) -> name to listOf(value) }
+                        .toTypedArray(),
+                ),
+        )
 
     /**
      * One fixture-backed response.

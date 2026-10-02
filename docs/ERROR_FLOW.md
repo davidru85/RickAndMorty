@@ -154,7 +154,7 @@ Rules for this register:
 
 ### 5.2 Paging `404` is end of pagination
 
-`API-ERR-015`: a `404` returned for a request issued through a valid paging sequence, after a page that returned results, `MUST` be treated as the end of pagination: stop requesting, keep the loaded items, clear `isAppending`, and surface no error ([`API_SPECS.md`](API_SPECS.md) §4.3, §6.1).
+`API-ERR-015`: a `404` returned for a request issued through a valid paging sequence, after a page that returned results, `MUST` be treated as the end of pagination — the remote adapter reports it as `NotFound` and the pager (`IC-014`), which knows the sequence, turns it into the end: stop requesting, keep the loaded items, clear `isAppending`, and surface no error ([`API_SPECS.md`](API_SPECS.md) §4.3, §6.1).
 
 A `404` on the first page of an *unfiltered* list is not a valid outcome and maps to `NotFound` → the full-surface error state.
 
@@ -193,7 +193,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 
 - A refresh always performs a network request, even when the cache is fresh (`AC-REQ-FUNC-012-1`).
 - A failed refresh keeps the previously displayed items and does not replace them with an error surface (`AC-REQ-FUNC-012-2`).
-- If the retained items come from the cache and the network attempt failed, `isStale` `MUST` become `true` so the stale banner appears; the failure itself is surfaced through the non-blocking error for its class in §4.
+- `isStale` reports where the retained items came from, as the results reported it (`IC-003`, `IC-014`): items served stale from a cache keep `isStale = true`, and a failed refresh neither sets nor clears it. Content that came from the network, or from a cache entry inside its fresh window, is not marked stale merely because a refresh failed; the failure itself is surfaced through the non-blocking error for its class in §4 (`CONF-71`).
 - A successful refresh replaces the content, sets `isStale = false`, clears the transient failure, and starts pagination from the refreshed first page.
 
 ## 9. Stale and offline rendering with cache

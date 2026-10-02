@@ -12,13 +12,14 @@ import java.io.File
  * `multiverse.dependency.policy` — the repository's dependency policy as build checks
  * (DEC-061, TASK-015).
  *
- * Applied by the **root** build script only. It registers three verification tasks and
+ * Applied by the **root** build script only. It registers the dependency verification tasks and
  * one aggregate:
  *
  * - `verifyDependencyPins` — `TEST-UNIT-014` (`AC-REQ-NFR-006-1`);
  * - `verifyDependencyRationale` — `TEST-UNIT-013` (`AC-REQ-NFR-002-2`);
  * - `verifyDependencyInventory` — `TEST-UNIT-051` (`AC-REQ-NFR-002-1`);
- * - `verifyDependencyPolicy` — the three above, wired into the root `check`.
+ * - `verifyNoAnalytics` — `TEST-UNIT-034` (`AC-REQ-OBS-003-1`);
+ * - `verifyDependencyPolicy` — those and the repository guards, wired into the root `check`.
  *
  * The scanned file set comes from the **build model**, not from a directory walk
  * (`D-01`): the main build's scripts are the existing settings files plus every
@@ -339,11 +340,36 @@ class DependencyPolicyPlugin : Plugin<Project> {
             )
         }
 
+        // TASK-047 (`TEST-UNIT-034`, AC-REQ-OBS-003-1): no analytics artifact in the catalog or in the
+        // resolved release graph of the shipped Android app. A configuration is resolved only by a
+        // task of the project that owns it, so the graph is read by an instance registered in
+        // `:androidApp`, whose variant configurations exist once every project is evaluated; the root
+        // instance reads the catalog and depends on it.
+        val noAnalytics = target.tasks.register<VerifyNoAnalyticsTask>("verifyNoAnalytics") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-034: no analytics, tracking, crash-reporting or telemetry artifact in the catalog " +
+                "or the release graph of the shipped Android app (AC-REQ-OBS-003-1; DEC-038)."
+            this.catalog.set(catalog)
+            requiresShippedGraph.set(false)
+        }
+        target.gradle.projectsEvaluated {
+            val app = target.rootProject.allprojects.firstOrNull { it.path == SHIPPED_APP } ?: return@projectsEvaluated
+            val release = app.configurations.findByName(SHIPPED_RELEASE_GRAPH)
+            val shipped = app.tasks.register<VerifyNoAnalyticsTask>("verifyNoAnalytics") {
+                group = VERIFICATION_GROUP
+                description = "TEST-UNIT-034: no analytics artifact in this app's resolved $SHIPPED_RELEASE_GRAPH " +
+                    "(AC-REQ-OBS-003-1; DEC-038)."
+                requiresShippedGraph.set(true)
+                if (release != null) shippedGraph.set(release.incoming.resolutionResult.rootComponent)
+            }
+            noAnalytics.configure { dependsOn(shipped) }
+        }
+
         val aggregate = target.tasks.register("verifyDependencyPolicy") {
             group = VERIFICATION_GROUP
-            description = "Verifies the dependency policy: exact pins, per-entry rationale and README inventory " +
-                "(TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051; DEC-061)."
-            dependsOn(pins, rationale, inventory, liveHosts, workflowGate, documentedGate, adviceRegister)
+            description = "Verifies the dependency policy: exact pins, per-entry rationale, README inventory and no " +
+                "analytics artifact (TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051, TEST-UNIT-034; DEC-061)."
+            dependsOn(pins, rationale, inventory, liveHosts, workflowGate, documentedGate, adviceRegister, noAnalytics)
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
@@ -366,6 +392,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
 
     private companion object {
         const val VERIFICATION_GROUP = "verification"
+        const val SHIPPED_APP = ":androidApp"
+        const val SHIPPED_RELEASE_GRAPH = "releaseRuntimeClasspath"
 
         /**
          * The artifact-producing task families of the Android application plugin: assemble,

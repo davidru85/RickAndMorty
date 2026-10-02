@@ -164,7 +164,7 @@ If anything sensitive is committed or published, the following order applies. Ea
 ### 5.2 Verification
 
 - `TEST-UNIT-025` asserts HTTPS-only enforcement plus the host allow-list and foreign-host rejection (`AC-REQ-SEC-001-1`).
-- The REST adapter of `TASK-037` builds every request against the fixed HTTPS host and rejects a pagination or relation URL on another host or scheme before anything is taken from it, so nothing in a response can redirect a request; `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` prove it on fixtures. Its client follows no redirect, and the OkHttp and Darwin engines keep no response cache (`TEST-UNIT-054`). The transport-wide half — every request and redirect through one policy — is `TASK-038`'s.
+- The REST adapter of `TASK-037` builds every request against the fixed HTTPS host and rejects a pagination or relation URL on another host or scheme before anything is taken from it, so nothing in a response can redirect a request; `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` prove it on fixtures. Its client follows no redirect, and the OkHttp and Darwin engines keep no response cache (`TEST-UNIT-054`). Since `TASK-038` the transport-wide half holds as well: the shared client's `HostAllowList` plugin rejects cleartext, another host, a sub-domain and a non-default port on **every** request before transport, a `3xx` is rejected as an invalid request rather than followed, and the OkHttp engine is built with redirects, TLS redirects and connection retries off (`TEST-UNIT-025`, `TEST-UNIT-054`). A rejection is logged as `LOG-004` with the operation and the failure class only, never the host or the URL (`TEST-UNIT-032`).
 
 ### 5.3 Transport assets
 
@@ -229,8 +229,8 @@ If any future change stores data that is secret, credential-bearing or personal:
 
 ### 7.1 Enforcement
 
-- `TEST-UNIT-029` asserts that a query string never reaches a log sink (`AC-REQ-SEC-005-1`).
-- `TEST-UNIT-032` asserts that both platforms log through the single shared contract with permitted fields only (`AC-REQ-OBS-001-1`).
+- `TEST-UNIT-029` asserts that a query string never reaches a log sink (`AC-REQ-SEC-005-1`). Implemented by `TASK-047`: a search with a distinctive query and a status filter runs through every event the request, retry, coalescing and pager paths emit at `DEBUG`, and no record carries the value, the status value, a query string or the host.
+- `TEST-UNIT-032` asserts that both platforms log through the single shared contract with permitted fields only (`AC-REQ-OBS-001-1`). The shared logger validates each field and drops a value that fails its form; the platform sinks join the assertion when the shells exist (`TASK-044`, `TASK-051`).
 - Any new log field is a change to `OBSERVABILITY.md` first; adding a field in code without changing that document is a defect.
 
 ### 7.2 Prohibited content
@@ -239,11 +239,13 @@ The prohibited list is owned by `OBSERVABILITY.md` §2. This document adds the s
 
 ### 7.3 Correlation ids
 
-A correlation id is a client-side counter or random value allocated at the request boundary. It `MUST NOT` be derived from, hashed from or correlated with the user's search text or filter values, because a derived identifier is a weak but real confirmation oracle for guessed input.
+A correlation id is a client-side counter or random value allocated at the request boundary. The implementation (`IC-024`, `TASK-047`) draws 16 hex characters from a random source per request scope and carries them in the coroutine context; the validator drops any other form. It `MUST NOT` be derived from, hashed from or correlated with the user's search text or filter values, because a derived identifier is a weak but real confirmation oracle for guessed input.
 
 ### 7.4 Debug diagnostics surface
 
 The debug-only diagnostics surface (`REQ-OBS-002`) exposes the last failure, the current data source, the last request timing and cache state. It is gated out of release builds entirely: it is compiled from a debug-only source set / platform build configuration, not merely hidden at runtime, and it `MUST NOT` be reachable in a release artifact. It follows §7 redaction in full: it `MAY` show filter *names* and the failure class, and `MUST NOT` show filter values, search text or response content.
+
+Since `TASK-047` the read-only API exists in `:core:diagnostics` and the exclusion is a property of the module graph rather than of a flag: `R11` admits the `:androidApp` edge only from a `debug*` configuration and walks the release closure of the shell, and `R18` keeps the module's production code on `:core:domain` (`DEC-088`, `DEC-094`, `TEST-UNIT-033`). It reads only records the validator already accepted. The rendered panels (`TASK-044`, `TASK-051`) are target state.
 
 ## 8. Permissions
 
@@ -422,6 +424,7 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.2: §5.2 records the transport-wide host enforcement of `TASK-038` and the `LOG-004` redaction; §7.1, §7.3 and §7.4 record what `TASK-047` implements — the redaction proof on the real search path, the validated correlation id and the graph-level release exclusion of the diagnostic API. | `TASK-038`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-01 | §9.3 states the observed position: the two policy checks that run locally in `check` are named, `GAP-010` is indexed as `TASK-084`, and the CI prerequisite for artifact verification is recorded (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-046`, `TASK-084` |
 | 2026-09-30 | App preferences (row 4a) added to the data inventory and stores; GraphQL variables noted as a transmission path; "Delete favorites" added to row 4 retention. | DEC-055, DEC-056 |
 | 2026-09-29 | Created: app-level threat model, trust boundaries, data classification, secret/permission policy, transport and storage policy, redaction obligations, dependency-security policy, vulnerability-reporting route and the empty `SEC-###` register. | DEC-035, DEC-036, DEC-037, DEC-039, DEC-052 |

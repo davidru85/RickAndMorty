@@ -21,7 +21,7 @@ La prueba ([`assessment.md`](assessment.md)) pide:
 | Requisito | Cómo lo responde este proyecto |
 | --- | --- |
 | Listar todos los personajes y ver el seleccionado | Listado paginado, con búsqueda y filtro, y pantalla de detalle |
-| Revisar cómo está estructurado el proyecto y si se aplica SOLID | Los 11 módulos de ADR-0001 con dependencias hacia dentro, capas de Clean Architecture, contratos documentados y ADRs |
+| Revisar cómo está estructurado el proyecto y si se aplica SOLID | Los 12 módulos de ADR-0001 con sus enmiendas (incluido `:core:diagnostics`, solo de depuración) con dependencias hacia dentro, capas de Clean Architecture, contratos documentados y ADRs |
 | "Somos una empresa muy visual, la UX es importante" | Sistema de diseño centrado en la imagen, color derivado del retrato, transiciones compartidas y UI verificada con capturas |
 | Hablar de rendimiento | Presupuestos numéricos y método de medición en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | Extras: caché de imágenes, gestión de errores, caché de respuestas, tests, filtro/búsqueda | Todos comprometidos — ver la tabla de funcionalidades en el `README.md` en inglés (§3) |
@@ -98,11 +98,13 @@ flowchart LR
     subgraph Core
         CORE[":core:domain"] 
         CP[":core:presentation<br/>LoadState, formateadores, claves de textos"]
-        CDA[":core:data<br/>DTOs, mappers, Ktor, caché, paginación, favoritos"]
+        CDA[":core:data<br/>DTOs, mappers, Ktor, caché, paginación, favoritos, logger"]
         CDS[":core:designsystem<br/>tokens + componentes Compose"]
+        CDG[":core:diagnostics<br/>API de diagnóstico solo de depuración"]
     end
     CDA --> CORE
     CP --> CORE
+    CDG --> CORE
     FEAT --> CDS
     CDA --> API[("rickandmortyapi.com")]
 ```
@@ -152,7 +154,7 @@ El wrapper de Gradle está incluido (Gradle 9.7.0, con la suma de comprobación 
 
 | Tarea | Comando | Estado |
 | --- | --- | --- |
-| Listar el conjunto de módulos | `./gradlew projects` | Ejecutado 2026-10-01 — los 11 módulos de ADR-0001, agrupados por los proyectos contenedores `:core` y `:feature` (13 proyectos Gradle) |
+| Listar el conjunto de módulos | `./gradlew projects` | Ejecutado 2026-10-02 — los 12 módulos de ADR-0001 con la enmienda de ADR-0013, agrupados por los proyectos contenedores `:core` y `:feature` (15 proyectos Gradle) |
 | Compilar todos los módulos, Android y los klib de iOS | `./gradlew assemble` · `./gradlew build` | Ejecutado 2026-10-01 — correcto, sin errores de Android Lint |
 | Compilar la app Android de debug | `./gradlew :androidApp:assembleDebug` | Ejecutado 2026-10-01 — correcto sin `iosApp/` y desde un clon limpio |
 | Instalar en un dispositivo o emulador | `./gradlew :androidApp:installDebug` | No ejecutado — el APK del esqueleto aún no tiene activity (TASK-044) |
@@ -169,8 +171,8 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 <!-- local-gate:begin -->
 | Todos los tests compartidos y unitarios, más la suite de regresión del build-logic | `./gradlew allTests :build-logic:convention:test` | Ejecutado 2026-10-02: las suites compartidas corren en el target host-test de la JVM y en ambos targets Apple (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) y la suite de regresión del build-logic corre en el build incluido. La fila anterior documentaba `./gradlew test`, que solo selecciona las tareas de test Android y no alcanza ni las suites KMP compartidas ni la suite del build-logic (`GAP-020`; `TASK-103`) |
 | Formato, análisis estático y dependencias | `./gradlew ktlintCheck lintDebug buildHealth` | Ejecutado 2026-10-02 — ktlint, Android Lint y `buildHealth` pasan (TASK-029, `DEC-075`, `DEC-077`); detekt sigue siendo estado objetivo (`DEC-075`) |
-| Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R16`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
-| Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+| Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Ejecutado 2026-10-02: todos pasan — 15 proyectos (`R1`–`R18`, `S1`–`S3`, aristas heredadas efectivas, Compose-only para `:core:designsystem` y `:core:diagnostics` enlazado solo desde configuraciones de depuración, con su cierre de release comprobado), `VERSION` validado con todas las tareas de artefacto Android dependiendo de él, y ningún artefacto de analítica en el catálogo ni en el grafo de release resuelto de `:androidApp` (`verifyNoAnalytics`, `TEST-UNIT-034`) |
+| Verificar la política de dependencias (pines exactos, justificación, inventario, ningún artefacto de analítica) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-02: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Suite de contrato en modo fixture/replay en el target host de Android (el paso de contrato del job `android`) | `./gradlew :core:data:contractTestReplayAndroidHost` | Ejecutado 2026-10-02: ejecuta exactamente los casos `TEST-CONTRACT-*` de `testAndroidHostTest` — 18 casos, 0 fallos — y falla cuando su target no ejecuta ninguno (`TASK-037`, `DEC-073`, `DEC-090`) |
 | Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 <!-- local-gate:end -->
@@ -241,7 +243,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Especificación visual | Completa, pendiente de dos pantallas de Figma (estados de error) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Documentación de proceso | Completa — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
 | Esqueleto de build | Hecho — TASK-014, fusionado en el PR #6 el 2026-09-30: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
-| Implementación | En curso — la fase 3.1 de B3 (`TASK-036`, `TASK-037`) está en revisión: el modelo y las interfaces de `:core:domain`, el adaptador REST con sus tests de contrato sobre fixtures y los dobles de comportamiento. Aún no existe ninguna feature ni pantalla — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.3 y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
+| Implementación | En curso — la fase 3.1 de B3 (`TASK-036`, `TASK-037`) está fusionada en el PR #110: el modelo y las interfaces de `:core:domain`, el adaptador REST con sus tests de contrato sobre fixtures y los dobles de comportamiento. La fase 3.2 (`TASK-038`, `TASK-039`, `TASK-047`) está en revisión: el repositorio con agrupación de peticiones concurrentes, la política de reintentos acotada y la lista de hosts permitidos, el paginador compartido, el contrato de logging con su redacción y la API de diagnóstico solo de depuración. Aún no existe ninguna feature ni pantalla — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.4 y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Catálogo de versiones | Hecho — TASK-015, fusionado en el PR #10 el 2026-09-30: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario, y `verifyDependencyPolicy` hace cumplir ambos |
 | `VERSION` | Hecho — TASK-018, fusionado en el PR #34 el 2026-10-01: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal y `verifyDependencyPins` rechaza un segundo literal. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
 | CI | Activo — TASK-025, PR #52: `.github/workflows/pull-request.yml` controla cada pull request y cada push a `main`. El job `ios` está suspendido por `DEC-083` hasta que `TASK-051` introduzca la app iOS; mientras tanto el job `android` sostiene el gate |
@@ -274,11 +276,11 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.snakeyaml.engine` | `org.snakeyaml:snakeyaml-engine` | `2.10` | Declared | `:build-logic:convention` | TASK-098 |
 | `libs.kotlinx.serialization.core` | `org.jetbrains.kotlinx:kotlinx-serialization-core` | `1.11.0` | Declared | `:core:data`, `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
 | `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Declared | `:core:data` | TASK-027, TASK-037 |
-| `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Declared | `:core:data`, `:core:domain`, `:core:testing` | TASK-036 (CONF-47) |
-| `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Declared | `:core:data`, `:core:testing` | TASK-024 |
-| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention`, `:core:data`, `:core:domain`, `:core:testing` | TASK-024, TASK-091 |
-| `libs.kotlin.test.junit` | `org.jetbrains.kotlin:kotlin-test-junit` | `2.4.20` | Declared | `:core:data`, `:core:domain`, `:core:testing` | TASK-027, TASK-029 |
-| `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Declared | `:core:data`, `:core:testing` | TASK-024, TASK-037 |
+| `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Declared | `:core:data`, `:core:diagnostics`, `:core:domain`, `:core:testing` | TASK-036 (CONF-47) |
+| `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Declared | `:core:data`, `:core:diagnostics`, `:core:testing` | TASK-024 |
+| `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention`, `:core:data`, `:core:diagnostics`, `:core:domain`, `:core:testing` | TASK-024, TASK-091 |
+| `libs.kotlin.test.junit` | `org.jetbrains.kotlin:kotlin-test-junit` | `2.4.20` | Declared | `:core:data`, `:core:diagnostics`, `:core:domain`, `:core:testing` | TASK-027, TASK-029 |
+| `libs.ktor.client.core` | `io.ktor:ktor-client-core` | `3.6.0` | Declared | `:core:data`, `:core:diagnostics`, `:core:testing` | TASK-024, TASK-037 |
 | `libs.ktor.client.okhttp` | `io.ktor:ktor-client-okhttp` | `3.6.0` | Declared | `:core:data` | TASK-037 |
 | `libs.ktor.client.darwin` | `io.ktor:ktor-client-darwin` | `3.6.0` | Declared | `:core:data` | TASK-037 |
 | `libs.ktor.client.mock` | `io.ktor:ktor-client-mock` | `3.6.0` | Declared | `:core:data`, `:core:testing` | TASK-024, TASK-026 |

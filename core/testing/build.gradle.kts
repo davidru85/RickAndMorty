@@ -105,6 +105,9 @@ kotlin {
                 api(libs.kotlinx.coroutines.test)
                 api(libs.ktor.client.mock)
                 api(libs.ktor.client.core)
+                // `MockHttp` takes the engine's `CoroutineDispatcher` (`TASK-047`), so the type is part
+                // of the harness's surface rather than reached through the test library.
+                api(libs.kotlinx.coroutines.core)
             }
         }
         commonTest.dependencies {
@@ -122,7 +125,6 @@ kotlin {
         androidHostTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)
-            implementation(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {
             // `MockHttp` binds `io.ktor.http` types directly, so the artifact is declared where
