@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -73,4 +74,20 @@ public class MutableFakeClock(
         currentMillis = millis
         return this
     }
+}
+
+/**
+ * A `Random` whose every `nextDouble()` is [value], so randomised policy — the retry jitter of
+ * `API_SPECS.md` §6.3 — is deterministic in a test (`TESTING.md` §5).
+ */
+public class FixedRandom(
+    private val value: Double,
+) : Random() {
+    init {
+        require(value >= 0.0 && value < 1.0) { "nextDouble() must stay in [0, 1)" }
+    }
+
+    override fun nextBits(bitCount: Int): Int = (value * (1L shl bitCount)).toInt()
+
+    override fun nextDouble(): Double = value
 }
