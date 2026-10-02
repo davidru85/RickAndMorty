@@ -182,6 +182,36 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | `GAP-022` | S2 | The `buildHealth` exclusion register's staleness rule diverges from `DEC-077` and from `TASK-029`'s acceptance: it waits for a textual package reference rather than production source, derives source ownership from Gradle path spelling (so `:feature:character-detail` yields the wrong prefix `…feature.character-detail` against the real `…feature.characterdetail`), ignores test consumption, and treats missing package information as unused. `:core:testing` has real production source while its `:core:data|TASK-024` exclusion stays live although `TASK-024` is `Done` | An exclusion can outlive the placeholders it exists for, which is what `DEC-077` forbids | Implementation Engineer | **Remediated in `TASK-105` (`B2-R08`): the guard decides per edge on the edge's own consumer — production or test according to the excluded configuration — using the build's canonical namespace (`libraryNamespace()`, which strips the hyphen) rather than path spelling, treats a source-less module or dependency as a fact rather than an unused edge, and reports malformed input, duplicates, a vanished declaration and a removal task that is already `Done`; `DependencyAdviceRegisterFunctionalTest` covers the six rules** |
 | `GAP-023` | S2 | The Swift quality scripts fail open: `tools/swift-lint.sh` exits **0** with only warnings when neither tool resolves on nonempty input (reproduced), provisioning accepts any nonempty `xcrun` result without establishing the locked Xcode version (reproduced: a mocked formatter under Xcode 26 exits 0 against the Xcode 27.0 lock), override resolution can bypass the pins, and unquoted `$FILES` expansion breaks paths containing whitespace | The iOS half of the quality gate can report success while inspecting nothing, and the documented pins are not enforced | Implementation Engineer | **Remediated in `TASK-099` (`B2-R02`): the gate fails closed (an unresolvable tool exits 1 where it exited 0), the selected Xcode must equal the locked 27.0, an override is validated against the same pin, the archive SHA-256 is verified before extraction, and Bash 3.2 arrays keep paths with whitespace intact; `tools/swift-tools-test.sh` (`TEST-UNIT-046`) drives both scripts with controlled fakes, 9 seeds, 2 of them red against the shipped scripts** |
 
+### 6.2.1 B2 remediation traceability (`TASK-107`, `B2-R10`)
+
+Every finding the B2 audit raised maps to one corrective task, the test family that proves it, the
+evidence of the fix and its state. The state is `In review` while the pull request that carries it
+is open; a finding is not `Remediated` until its change is merged.
+
+| Finding | Corrective task | Requirement / test family | Evidence | Owner | Status (2026-10-02) |
+| --- | --- | --- | --- | --- | --- |
+| `GAP-016` | `TASK-098` (`B2-R01`) | `REQ-NFR-011`; `TEST-UNIT-044` | `WorkflowGateReproductionTest` reproduces the four bypasses; 19 red → 0 red of 36; `LOG-0066` | Implementation Engineer | In review (PR #88) |
+| `GAP-023` | `TASK-099` (`B2-R02`) | `REQ-NFR-007`; `TEST-UNIT-046` | `tools/swift-tools-test.sh` (9 seeds, 2 red against the shipped scripts); the fail-open case exited 0 before and exits 1 now; `LOG-0068` | Implementation Engineer | In review (PR #90) |
+| `GAP-017` | `TASK-100` (`B2-R03`) | `AC-REQ-NFR-011-2`; `TEST-CONTRACT-*` | Three new fixtures; 2 of 5 red against the shipped verifier; `LOG-0069` | QA & Validation Engineer | In review (PR #91) |
+| `GAP-020` | `TASK-103` (`B2-R06`) | `REQ-NFR-007`; `TEST-UNIT-015` | `DocumentedGatePluginFunctionalTest` (5 red → 0) plus four seeds on the real repository; `LOG-0067` | Documentation Maintainer | In review (PR #89) |
+| `GAP-022` / `CONF-62` | `TASK-105` (`B2-R08`) | `REQ-NFR-002`; `TEST-UNIT-013`/`014` | `DependencyAdviceRegisterFunctionalTest` (6 rules) plus two real seeds; `LOG-0070` | Implementation Engineer | In review (PR #92) |
+| `GAP-018` | `TASK-101` (`B2-R04`) | `REQ-NFR-001`; `TEST-UNIT-017` | Seven `R17` fixtures (5 red without the rule); the `:feature:settings` bypass fails; bytecode 69 → 61; `LOG-0071` | Implementation Engineer | In review (PR #93) |
+| `GAP-019` | `TASK-102` (`B2-R05`) | `REQ-NFR-005`; `TEST-UNIT-044` | The `ios` job went from 0 `:feature:*` references to 5 modules covered; a seeded break fails the new compile step; `LOG-0072` | Implementation Engineer | In review (PR #94) |
+| `GAP-021` | `TASK-104` (`B2-R07`) | `REQ-REL-004`; `TEST-CONTRACT-006` | `ObservationRecordOfflineTest` (2 of 11 red against the shipped classifier); `LOG-0073` | QA & Validation Engineer | In review (PR #95) |
+| Repository-settings row | `TASK-106` (`B2-R09`) | `REQ-NFR-007`, `REQ-FUNC-014`; `AC-REQ-NFR-007-2` | The observed ruleset and enforcement state in `CONTRIBUTING.md` §5.3; `LOG-0074` | Security Reviewer | In review (PR #96); **application is human-only and pending** |
+| This reconciliation | `TASK-107` (`B2-R10`) | `DEC-046` | This table, the recomputed counts and the current-state corrections | Documentation Maintainer | In review (this change) |
+
+Two rows are not code: the settings row records a human action, and this row records the
+reconciliation itself. Both stay `In review` until their change merges, and the settings row stays
+incomplete until a maintainer applies the packet.
+
+**Sequential-merge evidence (`TASK-107`).** The remediation lands as eleven changes in a strict
+ancestor chain, so `main` receives them one at a time. Each intermediate state was verified with the
+full local gate (`./gradlew check`), not only the tip: every one of the ten commits from the first
+remediation commit to the tip reports `BUILD SUCCESSFUL`. The chain was confirmed linear with
+`git merge-base --is-ancestor` on every adjacent pair (9 of 9), so no step depends on a later one and
+no merge can conflict. Observed 2026-10-02 in the working clone.
+
 ### 6.3 Open conflicts
 
 | ID | Sev | Conflict | Blocked artifact | Owner | Recommendation | Status |
@@ -219,7 +249,7 @@ Severity: **S1** blocks planning · **S2** blocks a document · **S3** consisten
 | Documents amended | 9 |
 | Documents renamed | 2 (design briefs) |
 | Documents rejected | 6 (listed in §4) |
-| Open gaps | 16 (§6.2: `GAP-003`, `GAP-004`, `GAP-005`, `GAP-006`, `GAP-007`, `GAP-008`, `GAP-011`, `GAP-010`, `GAP-016`, `GAP-017`, `GAP-018`, `GAP-019`, `GAP-020`, `GAP-021`, `GAP-022`, `GAP-023`) |
+| Open gaps | 8 (§6.2: `GAP-001`, `GAP-003`, `GAP-004`, `GAP-005`, `GAP-006`, `GAP-007`, `GAP-008`, `GAP-010`, `GAP-011`) — recomputed after the remediation: the ten `B2-R01`…`B2-R10` findings were registered as `GAP-016`…`GAP-023` plus the settings row, and all eight gap rows now carry their remediation (`TASK-098`…`TASK-105`); the earlier total of 16 counted them as open |
 | Open conflicts | 2 (§6.3: `CONF-50`, `CONF-54`) |
 | Blocking gaps for the next milestone | `GAP-001` |
 
