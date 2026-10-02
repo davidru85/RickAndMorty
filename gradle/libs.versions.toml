@@ -37,12 +37,18 @@ roborazzi = "1.76.0"
 # Quality tooling
 ktlint-gradle = "14.2.0"
 dependency-analysis = "3.19.2"
+# Build tooling — the YAML parser the workflow gate reads workflows with. It reaches the build
+# transitively through the ktlint plugin's own classpath, which is not a declared dependency of
+# this project; TASK-098 (`B2-R01`) pins it explicitly so workflow parsing never relies on an
+# undeclared transitive artifact (DESIGN.md 3.5, REQ-NFR-002).
+snakeyaml-engine = "2.10"
 
 [libraries]
 # Toolchain — the Gradle plugin APIs the convention plugins compile against.
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }
+snakeyaml-engine = { module = "org.snakeyaml:snakeyaml-engine", version.ref = "snakeyaml-engine" }
 # Kotlin libraries
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
