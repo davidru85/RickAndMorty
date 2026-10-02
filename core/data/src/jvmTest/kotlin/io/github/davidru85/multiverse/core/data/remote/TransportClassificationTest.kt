@@ -4,6 +4,7 @@ import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteD
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
+import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -24,7 +25,7 @@ class TransportClassificationTest {
     private fun failureOf(thrown: Throwable): ApiFailure {
         TestTime.run { dispatcher ->
             val client = HttpClient(MockEngine { throw thrown }) { rickAndMortyDefaults() }
-            val result = RestCharacterRemoteDataSource(client, dispatcher).characterPage(CharacterFilter(), 1)
+            val result = RestCharacterRemoteDataSource(client, dispatcher, MutableFakeClock()).characterPage(CharacterFilter(), 1)
             captured = (result as DataResult.Failure).failure
         }
         return captured!!
