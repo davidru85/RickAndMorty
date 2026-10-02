@@ -50,94 +50,18 @@ kotlin {
 }
 
 /**
- * `TEST-CONTRACT-*` fixture/replay entry point (`TASK-026`, `DEC-073`).
+ * `TEST-CONTRACT-*` fixture/replay entry points (`TASK-026`, `DEC-073`; one per target since
+ * `TASK-037`, `DEC-090`).
  *
- * The suite is selected by the naming convention of `TESTING.md` §13.2 — every case begins with its
- * id — and runs on both targets of the module. The entry point fails when it executes **zero**
- * contract cases, which is what `DEC-071` requires from a newly activated check: a filtered task
- * that never starts is green, so the aggregate carries its own verification over the reports.
+ * `contractTestReplayAndroidHost` and `contractTestReplayIosSimulator` each run exactly the
+ * `TEST-CONTRACT-*` cases of their own target and verify that target's reports only, so a green JVM
+ * run cannot stand in for a native one; `contractTestReplay` keeps requiring both. Every entry point
+ * fails when its target executes zero contract cases (`DEC-071`). The `android` job runs the host
+ * entry point; the native one runs locally on macOS while `DEC-083` suspends the `ios` job.
  */
-val contractTestTargets = listOf("testAndroidHostTest", "iosSimulatorArm64Test")
-
-val contractTestReplay =
-    tasks.register("contractTestReplay") {
-        group = "verification"
-        description = "TEST-CONTRACT-* fixture/replay cases on both targets; fails when none executes " +
-            "(TASK-026, DEC-073)."
-        dependsOn(tasks.matching { it.name in contractTestTargets })
-        dependsOn(tasks.named("verifyContractCases"))
-    }
-
-tasks.matching { it.name in contractTestTargets }.configureEach {
-    val invokedForContracts =
-        gradle.startParameter.taskNames.any { requested ->
-            requested.substringAfterLast(':').let {
-                it == "contractTestReplay" || it == "verifyContractCases"
-            }
-        }
-    // A selection that matches nothing makes Gradle fail the task with its own message, which would
-    // mask the `DEC-071` diagnostic `verifyContractCases` produces. The filter is therefore applied
-    // only when a `TEST-CONTRACT-*` case exists in the sources.
-    val hasContractCase =
-        fileTree("src") {
-            include("**/*Test*/**/*.kt")
-        }.files.any { file ->
-            file.readText().contains("TEST-CONTRACT-")
-        }
-    if (invokedForContracts && hasContractCase) {
-        // `includeTestsMatching` treats the pattern as a class name; a case id lives in the test
-        // *name*, so the class-method form is required (`TESTING.md` §13.2 puts the id first).
-        //
-        // TASK-100 (`B2-R03`, `GAP-017`): the Kotlin/Native simulator task is a
-        // `KotlinTest`-shaped task that also implements `TestFilter`, but it is NOT a JVM
-        // `org.gradle.api.tasks.testing.Test`, so the previous cast silently left it unfiltered and
-        // the native target executed the whole module's tests. The filter is applied through the
-        // interface both task types implement.
-        when (this) {
-            is org.gradle.api.tasks.testing.Test -> filter.setIncludePatterns("*.*TEST-CONTRACT-*")
-            else -> {
-                // The Kotlin/Native simulator task is not a JVM `Test`, but it does expose the
-                // Kotlin test filter. `setIncludePatterns` there takes an array, not a `Set`, so the
-                // argument is adapted to the declared parameter type; a task without the setter is a
-                // configuration error, not a silent no-op (`GAP-017`).
-                val filter =
-                    javaClass.methods
-                        .firstOrNull { it.name == "getFilter" && it.parameterCount == 0 }
-                        ?.invoke(this)
-                val setPatterns =
-                    filter
-                        ?.javaClass
-                        ?.methods
-                        ?.firstOrNull { it.name == "setIncludePatterns" && it.parameterCount == 1 }
-                requireNotNull(setPatterns) {
-                    "the native test task exposes no setIncludePatterns; the contract filter cannot be applied"
-                }
-                val pattern = "*.*TEST-CONTRACT-*"
-                val argument = if (setPatterns.parameterTypes[0].isArray) arrayOf(pattern) else listOf(pattern)
-                setPatterns.invoke(filter, argument)
-            }
-        }
-    }
-}
-
-tasks.named<io.github.davidru85.multiverse.buildlogic.testing.VerifyContractCasesTask>("verifyContractCases") {
-    // The verification reads the reports, so it must not run before the tasks that write them.
-    mustRunAfter(tasks.matching { it.name in contractTestTargets })
-    outputs.upToDateWhen { false }
-    reports.from(
-        layout.buildDirectory.dir("test-results/testAndroidHostTest").map { dir -> fileTree(dir) { include("*.xml") } },
-        layout.buildDirectory.dir("test-results/iosSimulatorArm64Test").map { dir -> fileTree(dir) { include("*.xml") } },
-    )
-    // TASK-100 (`B2-R03`, `GAP-017`): the decision is per target, so a green JVM run cannot stand in
-    // for a native run that produced no report (`DEC-054`, `DEC-071`).
-    val androidHostReports = layout.buildDirectory.dir("test-results/testAndroidHostTest")
-    val iosSimulatorReports = layout.buildDirectory.dir("test-results/iosSimulatorArm64Test")
-    targetReportDirectories.set(
-        mapOf(
-            "testAndroidHostTest" to androidHostReports.get().asFile.absolutePath,
-            "iosSimulatorArm64Test" to iosSimulatorReports.get().asFile.absolutePath,
-        ),
-    )
+contractTests {
+    replay("AndroidHost", "testAndroidHostTest")
+    replay("IosSimulator", "iosSimulatorArm64Test")
 }
 
 kotlin.targets.named("jvm") {
