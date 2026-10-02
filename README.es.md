@@ -173,8 +173,8 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 | Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
 | Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No definido: no existe módulo de benchmark y `PERF-Q1` sigue abierto, así que el comando es estado objetivo, no una tarea real |
-| Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | No ejecutado — no existe el test de contrato (TASK-026) |
-| Suite de contrato contra la API real (señal programada, no bloqueante) | `./gradlew :core:data:contractTestLive` | No ejecutado — no existe el job live (TASK-027) |
+| Suite de contrato en modo fixture/replay (dentro del gate del PR) | `./gradlew :core:data:contractTestReplay` | Ejecutado 2026-10-02: el punto de entrada funciona y falla con cero casos por diseño (`TASK-026`, `DEC-073`); los casos `TEST-CONTRACT-*` y el enganche de este comando en CI llegan con `TASK-037` |
+| Sondas de observación contra la API real (señal programada, no bloqueante) | `./gradlew :core:data:contractLiveProbe` | Ejecutado 2026-10-02: registró los totales y el número de páginas publicados (`TASK-027`, `DEC-074`); `.github/workflows/contract-live.yml` lo ejecuta semanalmente y sube las capturas, y ningún workflow disparado por pull request o push puede alcanzarlo |
 
 El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): escribir el test que falla y commitearlo (`test:`), hacerlo pasar y commitear (`feat:`/`fix:`), refactorizar y commitear (`refactor:`), y después hacer push.
 

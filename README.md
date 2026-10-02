@@ -198,8 +198,8 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Record new screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run — no baselines exist (TASK-029) |
 | iOS snapshots and state-holder tests | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run — `iosApp/` does not exist (TASK-051) |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not defined: no benchmark module exists and `PERF-Q1` is unresolved, so the command is target state rather than a real task |
-| Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Not run — no contract test exists (TASK-026) |
-| Contract suite against the live API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractTestLive` | Not run — no live job exists (TASK-027) |
+| Contract suite in fixture/replay mode (part of the PR gate) | `./gradlew :core:data:contractTestReplay` | Executed 2026-10-02: the entry point runs and fails on zero cases by design (`TASK-026`, `DEC-073`); the `TEST-CONTRACT-*` cases and this command's CI wiring land with `TASK-037` |
+| Live observation probes against the API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractLiveProbe` | Executed 2026-10-02: recorded the published totals and page count (`TASK-027`, `DEC-074`); `.github/workflows/contract-live.yml` runs it weekly and uploads the captures, and no pull-request- or push-triggered workflow may reach it |
 
 Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): write the failing test and commit it (`test:`), make it pass and commit (`feat:`/`fix:`), refactor and commit (`refactor:`), then push.
 

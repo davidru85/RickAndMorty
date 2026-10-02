@@ -549,7 +549,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 | Check | Runs | Why it is required |
 | --- | --- | --- |
 | Shared test suites | All `commonTest` suites of the `:core:*` modules and every `:feature:*` module, across the KMP targets | `TEST-UNIT-###`; the bulk of the pyramid (§2) |
-| Contract suite in fixture/replay mode | `TEST-CONTRACT-001`…`005` against the committed fixtures, no network | The contract is exercised on every change without depending on a live service (§11.1) |
+| Contract suite in fixture/replay mode | `./gradlew :core:data:contractTestReplay` runs exactly the `TEST-CONTRACT-*` cases on both targets and **fails when it executes zero of them** (`TASK-026`, `DEC-073`). The `TEST-CONTRACT-001`…`005` cases themselves land with `TASK-037`, which also adds this entry point to both CI jobs and to `WorkflowGateGuard.REQUIRED_COMMANDS` in the change that commits the first case | The contract is exercised on every change without depending on a live service (§11.1) |
 | Android unit and integration tests | `TEST-INT-###`, `TEST-INT-003`/`004`, state-holder tests, `TEST-PERF-003` | Repository and storage behaviour, plus the zero-network assertion |
 | Android semantics and accessibility tests | `TEST-UI-###` semantics, `TEST-A11Y-001`…`006` automated parts | Merged card node, status label, favourite state, mic absent, state rendering |
 | Android snapshot verification | Roborazzi on Robolectric, committed baselines (`DEC-034`) | Visual regressions and `REQ-UX-001` |
@@ -720,6 +720,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | **Block 2 closed:** the fixture/replay entry point is merged (PR #67) and the scheduled live signal is merged (PR #70), so the required-check table's contract row names its entry point and the live row names its workflow. `TASK-037` still activates the CI wiring with the first `TEST-CONTRACT-*` case. | `TASK-026`, `TASK-027`, `DEC-071`, `DEC-073`, `DEC-074` |
 | 2026-10-02 | `TASK-027` (`DEC-074`, `DEC-079`): the live source set compiles on an opt-in JVM target, `:core:data:contractLiveProbe` records `TEST-CONTRACT-006` observations weekly from a schedule-only workflow, and the guard proves no merge-gate trigger can reach it. | `TASK-027`, `DEC-079`, `AC-REQ-NFR-011-2` |
 | 2026-10-02 | `TASK-026` (`DEC-073`): the fixture/replay entry point `:core:data:contractTestReplay` exists and fails on zero executed `TEST-CONTRACT-*` cases; `TEST-UNIT-044` gained the clause that no pull-request- or push-triggered workflow may reference the live mode; `TEST-UNIT-024` now sees the `contractLive` source set, so its exemption is a decision rather than an omission. | `TASK-026`, `DEC-073`, `AC-REQ-NFR-011-2` |
 | 2026-10-01 | `TEST-UNIT-045` implemented by `TASK-093`: observed red without the rule (3 failures) and green with it (10 tests). The guard reads comment lines as absent, closing a false negative in its own command-reachability rule. | `TASK-093`, `DEC-078`, `AC-REQ-FUNC-014-2` |
