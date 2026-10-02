@@ -1,5 +1,7 @@
 package io.github.davidru85.multiverse.testing
 
+import io.github.davidru85.multiverse.core.data.remote.RemoteResources
+import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterGender
@@ -57,7 +59,7 @@ public class FakeCatalogue(
             return DataResult.Success(empty, DataSource.NETWORK, isStale = false)
         }
         val pageCount = (matching.size + pageSize - 1) / pageSize
-        if (page > pageCount) return failure(ApiFailure.NotFound(PAGE_RESOURCE, page.toString()))
+        if (page > pageCount) return failure(ApiFailure.NotFound(RemoteResources.CHARACTER_PAGE, page.toString()))
         val items = matching.drop((page - 1) * pageSize).take(pageSize).map { it.toSummary() }
         val result =
             CharacterPage(
@@ -84,7 +86,7 @@ public class FakeCatalogue(
         val warnings =
             requested
                 .filterNot { it in episodesById }
-                .map { ApiWarning(code = MISSING_RESOURCE, detail = it.value) }
+                .map { ApiWarning(code = RemoteWarnings.MISSING_RESOURCE, detail = it.value) }
         return found to warnings
     }
 
@@ -113,15 +115,6 @@ public class FakeCatalogue(
     public companion object {
         /** The server's observed page size (`API_SPECS.md` §4.3); a test may pass its own. */
         public const val DEFAULT_PAGE_SIZE: Int = 20
-
-        /** The resource name an unknown character carries in `ApiFailure.NotFound`. */
-        public const val CHARACTER_RESOURCE: String = "character"
-
-        /** The resource name a list `404` beyond the last page carries in `ApiFailure.NotFound`. */
-        public const val PAGE_RESOURCE: String = "character-page"
-
-        /** The warning code for a requested resource a response omitted. */
-        public const val MISSING_RESOURCE: String = "missing-resource"
 
         /** A deterministic character whose every field derives from its [id]. */
         public fun character(

@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.testing
 
 import io.github.davidru85.multiverse.core.data.remote.CharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -69,7 +70,7 @@ public class FakeRemoteSource(
         delay(latency)
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         return catalogue.details(id)?.let { DataResult.Success(it, DataSource.NETWORK, isStale = false) }
-            ?: DataResult.Failure(ApiFailure.NotFound(FakeCatalogue.CHARACTER_RESOURCE, id.value), DataSource.NETWORK)
+            ?: DataResult.Failure(ApiFailure.NotFound(RemoteResources.CHARACTER, id.value), DataSource.NETWORK)
     }
 
     override suspend fun episodes(ids: List<EpisodeId>): DataResult<List<EpisodeSummary>> {

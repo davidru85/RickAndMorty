@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.testing
 
+import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -74,7 +75,7 @@ public class FakeCharacterRepository(
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         val character =
             catalogue.details(id)
-                ?: return DataResult.Failure(ApiFailure.NotFound(FakeCatalogue.CHARACTER_RESOURCE, id.value), DataSource.NETWORK)
+                ?: return DataResult.Failure(ApiFailure.NotFound(RemoteResources.CHARACTER, id.value), DataSource.NETWORK)
         if (!enrich) return DataResult.Success(character, DataSource.NETWORK, isStale = false)
         val (summaries, warnings) = catalogue.episodes(character.episodeIds)
         return DataResult.Success(

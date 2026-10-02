@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.testing
 
+import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
@@ -83,7 +84,7 @@ class FakeCharacterRepositoryTest {
             val repository = FakeCharacterRepository(catalogue)
 
             val missing = assertIs<DataResult.Failure>(repository.details(CharacterId("999"), enrich = false))
-            assertEquals(ApiFailure.NotFound("character", "999"), missing.failure, "TEST-UNIT-053")
+            assertEquals(ApiFailure.NotFound(RemoteResources.CHARACTER, "999"), missing.failure, "TEST-UNIT-053")
 
             val plain = repository.details(CharacterId("9"), enrich = false).success()
             val enriched = repository.details(CharacterId("9"), enrich = true)
