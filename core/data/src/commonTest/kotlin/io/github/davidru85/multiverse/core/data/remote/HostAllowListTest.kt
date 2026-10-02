@@ -31,7 +31,11 @@ class HostAllowListTest {
                 HttpClient(
                     MockEngine {
                         engineCalls++
-                        respond(FixtureLoader.text("character-page-01.json"), HttpStatusCode.OK, headersOf("content-type", "application/json"))
+                        respond(
+                            FixtureLoader.text("character-page-01.json"),
+                            HttpStatusCode.OK,
+                            headersOf("content-type", "application/json"),
+                        )
                     },
                 ) { rickAndMortyDefaults() }
 

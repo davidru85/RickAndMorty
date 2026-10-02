@@ -10,19 +10,30 @@ import okhttp3.OkHttpClient
  */
 public fun androidRickAndMortyHttpClient(timeouts: RemoteTimeouts = RemoteTimeouts()): HttpClient =
     HttpClient(OkHttp) {
-        engine { preconfigured = apiOkHttpClient() }
+        engine {
+            preconfigured = apiOkHttpClient()
+            // Ktor's own OkHttp defaults run after `preconfigured` and switch the connection retry back
+            // on, so the API policy is applied once more on top of them.
+            config { applyApiPolicy() }
+        }
         rickAndMortyDefaults(timeouts)
     }
 
 /**
  * The OkHttp client under the engine. It has no disk cache: the app owns freshness, and the
  * server's 90-day `immutable` directive would otherwise pin a JSON page (`API-CACHE-003`). It never
- * follows a redirect by itself, so a redirect cannot reach another host behind Ktor's back.
+ * follows a redirect by itself, so a redirect cannot reach another host behind Ktor's back, and it
+ * never retries a failed connection, so the repository's policy stays the only retry layer
+ * (`DEC-084`).
  */
 internal fun apiOkHttpClient(): OkHttpClient =
     OkHttpClient
         .Builder()
-        .cache(null)
+        .applyApiPolicy()
+        .build()
+
+private fun OkHttpClient.Builder.applyApiPolicy(): OkHttpClient.Builder =
+    cache(null)
         .followRedirects(false)
         .followSslRedirects(false)
-        .build()
+        .retryOnConnectionFailure(false)

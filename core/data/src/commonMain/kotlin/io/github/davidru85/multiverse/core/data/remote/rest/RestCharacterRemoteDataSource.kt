@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.core.data.remote.rest
 
 import io.github.davidru85.multiverse.core.data.remote.CharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.RejectedRequestException
 import io.github.davidru85.multiverse.core.data.remote.RemoteJson
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
@@ -162,6 +163,8 @@ public class RestCharacterRemoteDataSource(
             Exchange.Answered(response.status.value, response.bodyAsText(), response.headers[HttpHeaders.RetryAfter])
         } catch (cancellation: CancellationException) {
             throw cancellation
+        } catch (_: RejectedRequestException) {
+            Exchange.Failed(ApiFailure.InvalidRequest(FOREIGN_HOST))
         } catch (_: HttpRequestTimeoutException) {
             Exchange.Failed(ApiFailure.Timeout)
         } catch (_: ConnectTimeoutException) {
@@ -217,6 +220,8 @@ public class RestCharacterRemoteDataSource(
             TOO_MANY_REQUESTS -> ApiFailure.RateLimited(retryAfter?.trim()?.toLongOrNull()?.takeIf { it >= 0 })
             in 400..499 -> ApiFailure.InvalidRequest("http-$status")
             in 500..599 -> ApiFailure.Server(status)
+            // A redirect is never followed, so its `Location` is never requested (`REQ-SEC-001`).
+            in 300..399 -> ApiFailure.InvalidRequest(DETAIL_REDIRECT)
             else -> ApiFailure.Unknown(null)
         }
 
@@ -239,5 +244,6 @@ public class RestCharacterRemoteDataSource(
         const val BATCH_CHUNK = 20
         const val DETAIL_PAGE = "page"
         const val DETAIL_ID = "id"
+        const val DETAIL_REDIRECT = "redirect"
     }
 }
