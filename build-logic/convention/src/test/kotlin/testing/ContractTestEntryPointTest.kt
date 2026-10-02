@@ -226,4 +226,137 @@ class ContractTestEntryPointTest {
             dir.deleteRecursively()
         }
     }
+
+    // --- TASK-037 (DEC-090): one entry point per target, registered by the plugin -------------
+
+    /**
+     * A JVM fixture whose replay entry point is registered through the plugin's `contractTests`
+     * extension, the way `:core:data` registers its Android-host and Apple-simulator entry points.
+     * [cases] are test functions written verbatim into one class.
+     */
+    private fun replayFixture(vararg cases: String): File {
+        val dir = kotlin.io.path.createTempDirectory("contract-replay").toFile()
+        File(dir, "settings.gradle.kts").writeText(
+            """
+            pluginManagement {
+                includeBuild("${repositoryRoot.resolve("build-logic").invariantSeparatorsPath}")
+                repositories { mavenCentral() }
+            }
+            dependencyResolutionManagement { repositories { mavenCentral() } }
+            rootProject.name = "contract-replay"
+            """.trimIndent() + "\n",
+        )
+        File(dir, "gradle").mkdirs()
+        File(dir, "gradle/libs.versions.toml").writeText("[versions]\nfixture = \"1.0.0\"\n")
+        File(dir, "src/test/kotlin/cases").mkdirs()
+        File(dir, "src/test/kotlin/cases/Case.kt").writeText(
+            "package cases\n\nclass Case {\n" + cases.joinToString("\n") + "\n}\n",
+        )
+        File(dir, "build.gradle.kts").writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.4.20"
+                id("multiverse.contract.tests")
+            }
+            kotlin { jvmToolchain(17) }
+
+            repositories { mavenCentral() }
+            dependencies { testImplementation("junit:junit:4.13.2") }
+
+            contractTests {
+                replay("Jvm", "test")
+            }
+            """.trimIndent() + "\n",
+        )
+        return dir
+    }
+
+    private fun passing(name: String) = "    @org.junit.Test\n    fun `$name`() { }"
+
+    private fun failing(name: String) = "    @org.junit.Test\n    fun `$name`() { throw AssertionError(\"ran\") }"
+
+    @Test
+    fun `a per-target entry point runs exactly the contract cases of its target`() {
+        val dir =
+            replayFixture(
+                passing("TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes"),
+                failing("TEST-UNIT-001 given_a_unit_case_when_replayed_then_it_must_not_run"),
+            )
+        try {
+            val result = gradle(dir, "contractTestReplayJvm", "--no-configuration-cache").build()
+            assertTrue(
+                result.output.contains("executed 1 contract case(s) across 1 target(s): test=1"),
+                "TEST-CONTRACT-007: the entry point selects the contract case and nothing else:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `the same suite outside an entry point is not narrowed`() {
+        val dir =
+            replayFixture(
+                passing("TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes"),
+                failing("TEST-UNIT-001 given_a_unit_case_when_run_then_it_runs"),
+            )
+        try {
+            val result = gradle(dir, "test", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                result.output.contains("TEST-UNIT-001"),
+                "TEST-CONTRACT-007: an ordinary test run keeps every case; the filter belongs to the entry point:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a per-target entry point whose target ran no contract case fails with the verifier's diagnostic`() {
+        val dir = replayFixture(passing("TEST-UNIT-001 given_a_unit_case_when_replayed_then_it_is_not_contract"))
+        try {
+            val result = gradle(dir, "contractTestReplayJvm", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                result.output.contains("TEST-CONTRACT:") && result.output.contains("`test`"),
+                "TEST-CONTRACT-007: zero contract cases on the target is the verifier's finding, not Gradle's:\n${result.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a native entry point never accepts a host report`() {
+        val dir = reportFixture("testAndroidHostTest", "TEST-CONTRACT-001 given_a_fixture_when_replayed_then_it_decodes", "")
+        try {
+            // Replace the hand-wired verifier with the two entry points `:core:data` registers.
+            File(dir, "build.gradle.kts").writeText(
+                """
+                plugins { id("multiverse.contract.tests") }
+
+                contractTests {
+                    replay("AndroidHost", "testAndroidHostTest")
+                    replay("IosSimulator", "iosSimulatorArm64Test")
+                }
+                """.trimIndent() + "\n",
+            )
+            val host = gradle(dir, "contractTestReplayAndroidHost", "--no-configuration-cache").build()
+            assertTrue(
+                host.output.contains("testAndroidHostTest=1"),
+                "TEST-CONTRACT-007: the host entry point reads the host report:\n${host.output}",
+            )
+            val native = gradle(dir, "contractTestReplayIosSimulator", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                native.output.contains("`iosSimulatorArm64Test` produced no JUnit report"),
+                "TEST-CONTRACT-007: a host report cannot satisfy the native entry point:\n${native.output}",
+            )
+            val aggregate = gradle(dir, "contractTestReplay", "--no-configuration-cache").buildAndFail()
+            assertTrue(
+                aggregate.output.contains("iosSimulatorArm64Test"),
+                "TEST-CONTRACT-007: the two-target aggregate still requires both targets:\n${aggregate.output}",
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
