@@ -93,7 +93,9 @@ kotlin {
         commonMain {
             kotlin.srcDir(generateFixtureSources)
             dependencies {
-                implementation(project(":core:domain"))
+                // The doubles implement and return `:core:domain` types, so the edge is part of the
+                // harness's surface (`TASK-036`).
+                api(project(":core:domain"))
                 implementation(project(":core:data"))
 
                 // The harness surface: virtual time and the MockEngine seam are the two

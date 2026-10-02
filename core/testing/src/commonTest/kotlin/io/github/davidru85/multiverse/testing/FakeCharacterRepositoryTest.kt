@@ -9,6 +9,7 @@ import io.github.davidru85.multiverse.core.domain.repository.PageLoadPolicy
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlin.coroutines.cancellation.CancellationException
@@ -106,6 +107,8 @@ class FakeCharacterRepositoryTest {
             repository.page(CharacterFilter(), 1).success()
         }
 
+    // `advanceTimeBy` is the virtual-time control `TESTING.md` §5 prescribes; it is marked experimental.
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `TEST-UNIT-053 given_latency_when_the_caller_is_cancelled_then_cancellation_propagates_and_no_result_is_produced`() =
         TestTime.run {

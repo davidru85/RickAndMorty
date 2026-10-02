@@ -11,7 +11,6 @@
 :core:data|:core:domain|TASK-037
 :core:presentation|:core:domain|TASK-041
 :core:testing|:core:data|TASK-024
-:core:testing|:core:domain|TASK-036
 :feature:character-detail|:core:data|TASK-037
 :feature:character-detail|:core:domain|TASK-036
 :feature:character-detail|:core:presentation|TASK-041
