@@ -295,6 +295,8 @@ interface FavoritesRepository {
   - Stored state survives process restart, because persistence is owned by `IC-013` — the repository holds no authoritative in-memory copy (`REQ-FUNC-006`).
   - The set is local to the device: the repository `MUST NOT` perform any network request (`NG-003`, `REQ-SEC-003`).
   - No call on this interface blocks the caller's thread: `observe()` performs no I/O on the subscribing thread and `toggle()` suspends rather than blocking the UI thread.
+  - A write the store cannot complete is not thrown: it is logged as `LOG-019` and the last consistent set stays, while a `CancellationException` propagates unchanged (ADR-0007, `SECURITY.md` §6.3). A written toggle is logged as `LOG-018`, which carries no id (`IC-024`).
+- **Implementation (`TASK-040`):** `LocalFavoritesRepository` in `:core:data` (package `…core.data.favorites`) over `IC-013`. A toggle reads the persisted set and writes the one flip it implies; toggles and clears share one lock. It holds no copy of the set.
 - **Traceability:** `REQ-FUNC-006`, `REQ-FUNC-035`, `DEC-004`, `DEC-017`, `DEC-055`, [`adr/0007-favorites-storage.md`](adr/0007-favorites-storage.md), [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md).
 
 ### IC-009 — Use cases
@@ -311,7 +313,7 @@ interface FavoritesRepository {
 | `ObserveAppSettings` | `:feature:settings`, `domain` package | `operator fun invoke(): Flow<AppSettings>` | `IC-023` state holder |
 | `UpdateAppSettings` | `:feature:settings`, `domain` package | `suspend operator fun invoke(change: (AppSettings) -> AppSettings)` | `IC-023` state holder |
 
-- **Placement rule:** a use case lives in the `domain` package of the feature that uses it, except a use case consumed by more than one feature, which lives in `:core:domain` (`adr/0001-module-boundaries.md`). `ObserveFavoriteIds` is cross-feature for exactly that reason; `GetCharacterPage`, `GetCharacterDetails`, `ToggleFavorite`, `ClearFavorites`, `ObserveAppSettings` and `UpdateAppSettings` are feature-local. `:core:data` reads the protocol preference through `IC-021` directly, not through a use case, because it is infrastructure, not a feature.
+- **Placement rule:** a use case lives in the `domain` package of the feature that uses it, except a use case consumed by more than one feature, which lives in `:core:domain` (`adr/0001-module-boundaries.md`). `ObserveFavoriteIds` is cross-feature for exactly that reason, and is implemented in `:core:domain`'s `usecase` package by `TASK-040` (`DEC-090`); `GetCharacterPage`, `GetCharacterDetails`, `ToggleFavorite`, `ClearFavorites`, `ObserveAppSettings` and `UpdateAppSettings` are feature-local. `:core:data` reads the protocol preference through `IC-021` directly, not through a use case, because it is infrastructure, not a feature.
 - **Invariants**
   - A use case is stateless and holds no cache of its own: two invocations with the same arguments are independent.
   - A use case `MUST NOT` catch `CancellationException`, and `MUST NOT` convert a `CancellationException` into a `DataResult.Failure`. Failure handling and state decisions belong to the state holder (`IC-018`, `IC-019`); a use case returns the `DataResult` it received unchanged.
@@ -410,7 +412,7 @@ interface CacheStorage {
 
 ### IC-013 — `FavoritesLocalDataSource`
 
-- **Declaration** (`:core:data`, `commonMain`, implemented per target by `expect/actual`):
+- **Declaration** (`:core:data`, `commonMain`, package `…core.data.favorites`; one implementation per platform, the `expect/actual` split of `DEC-017` realised as one class per platform source set behind this interface):
 
 ```kotlin
 interface FavoritesLocalDataSource {
@@ -570,6 +572,8 @@ sealed interface LogEvent {
         statusFamily: StatusFamily?, retryAfterSeconds: Long?, correlationId: String?)           // LOG-013 WARN
     data class RequestCancelled(operation: LogOperation, correlationId: String?)                 // LOG-014 DEBUG, outcome=CANCELLED
     data class UnknownValuePreserved(operation: LogOperation, pathTemplate: PathTemplate)        // LOG-022 DEBUG, outcome=SUCCESS
+    data class FavoritesToggled(outcome: LogOutcome)                                             // LOG-018 INFO, component=FAVORITES_STORE
+    data class FavoritesStoreDegraded(screen: LogScreen?)                                        // LOG-019 ERROR, FAVORITES_STORE, errorClass=UNKNOWN
 }
 
 // The closed value sets of OBSERVABILITY.md §2.2 that these events carry; the protocol and the cache
@@ -581,6 +585,7 @@ enum class StatusFamily(val wireName: String) { SUCCESSFUL("2XX"), CLIENT_ERROR(
 enum class LogOutcome { SUCCESS, EMPTY, FAILURE, CANCELLED }
 enum class ErrorClass { OFFLINE, TIMEOUT, NOT_FOUND, INVALID_REQUEST, RATE_LIMITED, SERVER, MALFORMED_RESPONSE, EMPTY_BODY, UNKNOWN }
 enum class LogScreen { SPLASH, DISCOVERY, CHARACTER_DETAIL, FAVORITES, EPISODES, SETTINGS }
+enum class LogComponent { RESPONSE_CACHE, IMAGE_CACHE, FAVORITES_STORE, PAGER }
 
 // :core:domain as well, since `DEC-093`: the sink half is what platform sinks and `:core:diagnostics` implement
 fun interface LogSink {
@@ -607,9 +612,9 @@ class ValidatingAppLogger private constructor(…) : AppLogger {
 }
 ```
 
-- **Semantics:** one contract for both platforms (`REQ-OBS-001`). Each `LogEvent` implementation is a `data class` whose properties are exactly the fields its catalogue row lists, typed by closed enums, never by a free-form `String` a feature fills in; the correlation id is the one string-typed field, and it is validated. A row whose emitter does not exist in the build yet — the cache events `LOG-005`…`LOG-009`, the image events `LOG-015`…`LOG-017`, the favourites events `LOG-018`/`LOG-019`, app start `LOG-020` and the screen event `LOG-021` — gains its implementation, and the value set it needs (`component`, for example), with that emitter. The `:core:data` implementation renders each event as its row's fields in the `OBSERVABILITY.md` §2.2 form (a path as its template, filter *names* sorted and comma-separated, a status family as `2XX`/`4XX`/`5XX`/`NO_RESPONSE`, a constant the row fixes from the row), omits a field the event leaves `null`, validates every value, drops a value that fails and counts it, and writes a `LogRecord` to the injected `LogSink`; a field with no emitter in the build has no valid value yet. The app shells supply the platform sinks. The debug-only diagnostic API reads the same validated records from `:core:diagnostics` (`DEC-088`).
+- **Semantics:** one contract for both platforms (`REQ-OBS-001`). Each `LogEvent` implementation is a `data class` whose properties are exactly the fields its catalogue row lists, typed by closed enums, never by a free-form `String` a feature fills in; the correlation id is the one string-typed field, and it is validated. A row whose emitter does not exist in the build yet — the cache events `LOG-005`…`LOG-009`, the image events `LOG-015`…`LOG-017`, app start `LOG-020` and the screen event `LOG-021` — gains its implementation, and the value set it needs, with that emitter. The `:core:data` implementation renders each event as its row's fields in the `OBSERVABILITY.md` §2.2 form (a path as its template, filter *names* sorted and comma-separated, a status family as `2XX`/`4XX`/`5XX`/`NO_RESPONSE`, a constant the row fixes from the row), omits a field the event leaves `null`, validates every value, drops a value that fails and counts it, and writes a `LogRecord` to the injected `LogSink`; a field with no emitter in the build has no valid value yet. The app shells supply the platform sinks. The debug-only diagnostic API reads the same validated records from `:core:diagnostics` (`DEC-088`).
 - **Correlation id:** 16 lowercase hex characters from a random source, generated on the client per request scope and carried in the coroutine context: a pager load opens one, a repository call outside a scope opens one, the single flight's shared work runs in the scope of the call that started it, and the adapter's events and the retry policy's read it. It is never persisted and never derived from input (`OBSERVABILITY.md` §4.1 rule 5).
-- **Emitters (B3 Phase 3.2):** the REST adapter logs `LOG-001` for every request it sends and exactly one of `LOG-002`, `LOG-003`, `LOG-004` or `LOG-014` when it ends, plus `LOG-022` when a mapped response preserved an unknown enum value; input rejected before a request exists is not logged. The retry policy logs `LOG-013`, the single flight logs `LOG-012` with the id of the request the duplicate joined, and the pager logs `LOG-010` (and `LOG-011` when pagination ends) for a load it publishes — never for a superseded one.
+- **Emitters (B3 Phase 3.2):** the REST adapter logs `LOG-001` for every request it sends and exactly one of `LOG-002`, `LOG-003`, `LOG-004` or `LOG-014` when it ends, plus `LOG-022` when a mapped response preserved an unknown enum value; input rejected before a request exists is not logged. The retry policy logs `LOG-013`, the single flight logs `LOG-012` with the id of the request the duplicate joined, and the pager logs `LOG-010` (and `LOG-011` when pagination ends) for a load it publishes — never for a superseded one. Since B3 Phase 3.3 the favourites repository logs `LOG-018` for a written toggle and `LOG-019` for a write the store could not complete (`TASK-040`).
 - **Invariants**
   - There is exactly one logging interface. No other module declares a second one, and platform code calls no platform logging API for app diagnostics (`OBSERVABILITY.md` §2.1).
   - `log` never throws into its caller and never blocks it; a failing sink loses the record rather than queueing it (`OBSERVABILITY.md` §7).
@@ -984,6 +989,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.3 (`TASK-040`): `IC-008` states its implementation and its failure semantics (a write the store cannot complete is logged, not thrown); `IC-009`'s `ObserveFavoriteIds` is implemented; `IC-013` names its package and how the `expect/actual` split is realised; `IC-024` gains `LOG-018`/`LOG-019` and the `LogComponent` set with their emitter. | `TASK-040`, `DEC-017`, `DEC-090` |
 | 2026-10-02 | B3 Phase 3.2: `IC-024` states its implemented members — the ten `LogEvent` classes with emitters, their value sets, `LogField`, the `ValidatingAppLogger` factories, the correlation id and the emitters — and its status; `IC-007` and `IC-014` record their implementations (`TASK-038`, `TASK-039`) and `IC-014.retry()` re-attempts a failed refresh as a refresh; §2's map places `LogSink`/`LogRecord` in `:core:domain`, as `DEC-093` decided, and the diagnostic API as implemented. | `TASK-038`, `TASK-039`, `TASK-047`, `DEC-092`, `DEC-093` |
 | 2026-10-02 | B3 Phase 3.2 readiness: `IC-014` gains `retry()` and the rule that a failure suppresses `next()` until a retry, refresh or new filter (`DEC-092`), states the paging-`404` end and the owner-supplied scope, and pins `isStale` to result provenance (`CONF-71`); `IC-024`'s `LogSink`/`LogRecord` move to `:core:domain` (`DEC-093`). | `DEC-092`, `DEC-093` |
 | 2026-10-02 | `IC-014` (`CharacterPager`, `PagerState`) relocated from `:core:data` to `:core:domain` before implementation, and §7 states the narrowed `:core:ios` export list; the signatures and invariants are unchanged (`DEC-091`, ADR-0014). | `DEC-091` |

@@ -6,8 +6,8 @@ import io.github.davidru85.multiverse.core.domain.result.DataSource
 /**
  * The closed event catalogue of `OBSERVABILITY.md` §3 (`IC-024`): one implementation per row that has
  * an emitter in this build, whose properties are exactly the fields its row lists and whose id and
- * level are fixed by the row. A row whose emitter does not exist yet — the cache, image, favourites,
- * app-start and screen events — gains its implementation with that emitter.
+ * level are fixed by the row. A row whose emitter does not exist yet — the cache, image, app-start and
+ * screen events — gains its implementation with that emitter.
  */
 public sealed interface LogEvent {
     public val catalogueId: String
@@ -114,6 +114,22 @@ public sealed interface LogEvent {
     ) : LogEvent {
         override val catalogueId: String get() = "LOG-014"
         override val level: LogLevel get() = LogLevel.DEBUG
+    }
+
+    /** `LOG-018`: a favourite toggle was written; the component is `FAVORITES_STORE`, and no id is carried. */
+    public data class FavoritesToggled(
+        public val outcome: LogOutcome,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-018"
+        override val level: LogLevel get() = LogLevel.INFO
+    }
+
+    /** `LOG-019`: the favourites store could not be read or written; the error class is `UNKNOWN`. */
+    public data class FavoritesStoreDegraded(
+        public val screen: LogScreen?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-019"
+        override val level: LogLevel get() = LogLevel.ERROR
     }
 
     /** `LOG-022`: a response carried an unknown enum value, preserved rather than failed (`AC-REQ-NFR-004-2`). */
