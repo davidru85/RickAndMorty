@@ -295,14 +295,18 @@ class RestCharacterRemoteDataSourceContractTest {
             val reset = HttpClient(MockEngine { throw broken }) { rickAndMortyDefaults() }
 
             assertEquals(ApiFailure.Timeout, source(timeout, dispatcher).characterPage(CharacterFilter(), 1).failure())
-            // Coroutines may recover the stack trace into a copy, so the cause is compared by type and message.
-            val unknown =
-                assertIs<ApiFailure.Unknown>(
-                    source(reset, dispatcher).characterPage(CharacterFilter(), 1).failure(),
-                    "TEST-CONTRACT-001: an unclassified transport failure is Unknown, never an escaping exception",
-                )
-            assertIs<IOException>(unknown.cause, "TEST-CONTRACT-001: the transport cause is kept")
-            assertEquals(broken.message, unknown.cause?.message)
+            // `TASK-038`: a connectivity failure is `Offline` (retryable, `API_SPECS.md` §6.1); the TLS
+            // half of the classification is proved per platform, because only a platform knows TLS.
+            assertEquals(
+                ApiFailure.Offline,
+                source(reset, dispatcher).characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-001: a connectivity failure is Offline, never an escaping exception (${broken.message})",
+            )
+            val unexpected = HttpClient(MockEngine { throw IllegalStateException("engine defect") }) { rickAndMortyDefaults() }
+            assertIs<ApiFailure.Unknown>(
+                source(unexpected, dispatcher).characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-001: a failure that is not a transport failure stays Unknown",
+            )
         }
 
     // ------------------------------------------------------------------ TEST-CONTRACT-003
