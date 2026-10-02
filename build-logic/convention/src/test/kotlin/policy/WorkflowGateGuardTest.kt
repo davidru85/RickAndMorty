@@ -71,6 +71,8 @@ class WorkflowGateGuardTest {
                     appendLine("          ./gradlew verifyRepositoryHygiene verifyNoLiveHosts")
                     appendLine("          ./gradlew buildHealth")
                     appendLine("          ./gradlew verifyDocumentedGate")
+                    appendLine("          ./gradlew :core:data:contractTestReplayAndroidHost")
+                    appendLine("          ./gradlew :core:data:contractTestReplayIosSimulator")
                 }
             },
         )
@@ -121,6 +123,8 @@ class WorkflowGateGuardTest {
                 appendLine("      - run: ./gradlew verifyDocumentedGate")
             },
         )
+        // DEC-083: the `ios` job is required again once an iosApp application target exists.
+        withIosApp(root)
         assertTrue(
             findings(root).any { it.reason.contains("`ios` job is missing") },
             "TEST-UNIT-044: a missing platform job must be reported",
@@ -589,5 +593,129 @@ class WorkflowGateGuardTest {
             findings(root).map { it.reason },
             "TEST-UNIT-044: a comment explaining the rule is not a violation of it",
         )
+    }
+
+    // --- DEC-083: the temporary iOS suspension and its restoration tripwire ------------------
+
+    /** The commands the `android` job carries on its own while the `ios` job is suspended. */
+    private val androidGateCommands =
+        listOf(
+            "./gradlew check",
+            "./gradlew :androidApp:assembleDebug",
+            "./gradlew buildHealth",
+            "./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene",
+            "./gradlew verifyNoLiveHosts verifyDocumentedGate verifyWorkflowGate",
+            "./gradlew :core:data:contractTestReplayAndroidHost",
+        )
+
+    /** A gate with the `android` job only, running [commands]. */
+    private fun androidOnly(commands: List<String> = androidGateCommands): File {
+        val root = kotlin.io.path.createTempDirectory("workflow-guard-android-only").toFile()
+        val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+        dir.mkdirs()
+        File(dir, "pull-request.yml").writeText(
+            buildString {
+                appendLine("name: pull-request")
+                appendLine("on:")
+                appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
+                appendLine("jobs:")
+                appendLine("  android:")
+                appendLine("    runs-on: ubuntu-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                commands.forEach { appendLine("      - run: $it") }
+            },
+        )
+        return root
+    }
+
+    /** Adds an Xcode project under `iosApp/` whose one native target has [productType]. */
+    private fun withIosApp(
+        root: File,
+        productType: String = "com.apple.product-type.application",
+    ): File {
+        val project = File(root, "iosApp/MultiverseExplorer.xcodeproj")
+        project.mkdirs()
+        File(project, "project.pbxproj").writeText(
+            """
+            // !${'$'}*UTF8*${'$'}!
+            {
+                objects = {
+                    0A1B2C3D /* MultiverseExplorer */ = {
+                        isa = PBXNativeTarget;
+                        name = MultiverseExplorer;
+                        productType = "$productType";
+                    };
+                };
+            }
+            """.trimIndent() + "\n",
+        )
+        return root
+    }
+
+    @Test
+    fun `an android-only gate passes while no iOS application target exists`() {
+        assertEquals(
+            emptyList(),
+            findings(androidOnly()).map { it.reason },
+            "TEST-UNIT-044: DEC-083 suspends the ios job until an iosApp application target exists",
+        )
+    }
+
+    @Test
+    fun `the android job must run the host contract replay`() {
+        val root = androidOnly(androidGateCommands - "./gradlew :core:data:contractTestReplayAndroidHost")
+        assertTrue(
+            findings(root).any { it.reason.contains("contractTestReplayAndroidHost") },
+            "TEST-UNIT-044: the contract-fixture row is active on the android job (TASK-037, DEC-073)",
+        )
+    }
+
+    @Test
+    fun `the suspension relaxes no android rule`() {
+        val swallowed = androidOnly(androidGateCommands.map { if (it == "./gradlew check") "./gradlew check || true" else it })
+        val skipped = androidOnly(androidGateCommands - "./gradlew :androidApp:assembleDebug")
+        assertTrue(
+            findings(swallowed).any { it.reason.contains("./gradlew check") },
+            "TEST-UNIT-044: a swallowed failure is still a missing check under DEC-083",
+        )
+        assertTrue(
+            findings(skipped).any { it.reason.contains(":androidApp:assembleDebug") },
+            "TEST-UNIT-044: an Android check cannot be dropped under DEC-083",
+        )
+    }
+
+    @Test
+    fun `an iOS application target restores the ios job, its native suites and the native replay`() {
+        val reasons = findings(withIosApp(androidOnly())).map { it.reason }
+        assertTrue(reasons.any { it.contains("`ios` job is missing") }, "TEST-UNIT-044: the tripwire restores the job; got $reasons")
+        assertTrue(reasons.any { it.contains("iosSimulatorArm64Test") }, "TEST-UNIT-044: and the native suites; got $reasons")
+        assertTrue(
+            reasons.any { it.contains("contractTestReplayIosSimulator") },
+            "TEST-UNIT-044: and the native contract replay (TASK-051); got $reasons",
+        )
+    }
+
+    @Test
+    fun `a project with no application target does not trip the restoration`() {
+        val root = withIosApp(androidOnly(), productType = "com.apple.product-type.framework")
+        assertEquals(
+            emptyList(),
+            findings(root).map { it.reason },
+            "TEST-UNIT-044: only an application target ends the suspension; a framework is not the app (TASK-051)",
+        )
+    }
+
+    @Test
+    fun `an ios job present during the suspension is still held to its runner and its conditions`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(file.readText().replace("    runs-on: macos-latest", "    if: false\n    runs-on: ubuntu-latest"))
+        val reasons = findings(root).map { it.reason }
+        assertTrue(reasons.any { it.contains("must run on `macos-latest`") }, "TEST-UNIT-044: got $reasons")
+        assertTrue(reasons.any { it.contains("`ios` job carries `if: false`") }, "TEST-UNIT-044: got $reasons")
     }
 }
