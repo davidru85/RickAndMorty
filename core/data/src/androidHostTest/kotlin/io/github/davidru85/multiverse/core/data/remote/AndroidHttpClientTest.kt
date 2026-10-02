@@ -20,6 +20,9 @@ class AndroidHttpClientTest {
             val okHttp = config.preconfigured
             assertNull(okHttp?.cache, "TEST-UNIT-054: no OkHttp disk cache (API-CACHE-003)")
             assertEquals(false, okHttp?.followRedirects, "TEST-UNIT-054: OkHttp never follows a redirect on its own")
+            // `DEC-084`: the repository's policy is the only retry layer; OkHttp retrying a failed connection
+            // underneath it would multiply the three-attempt budget.
+            assertEquals(false, okHttp?.retryOnConnectionFailure, "TEST-UNIT-054: OkHttp never retries on its own")
         } finally {
             client.close()
         }
