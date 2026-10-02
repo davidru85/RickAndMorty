@@ -489,11 +489,22 @@ internal object ModuleBoundaryRules {
         }
     }
 
-    /** R14 — the external-library half of the `:core:domain` purity assertion (`DEC-066`). */
+    /**
+     * R14 — the external-library half of the `:core:domain` purity assertion (`DEC-066`).
+     *
+     * A domain **test** source set may also declare the approved test libraries (`DEC-089`); the
+     * production allow-list is unchanged, and the test allow-list is closed.
+     */
     private fun domainExternalPurity(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         snapshot.byKind(ModuleKind.CORE_DOMAIN).forEach { project ->
             project.externalDependencies
-                .filterNot { it.coordinates in ModuleDependencyAllowLists.DOMAIN }
+                .filterNot { dependency ->
+                    dependency.coordinates in ModuleDependencyAllowLists.DOMAIN ||
+                        (
+                            dependency.kind == SourceSetKind.TEST &&
+                                dependency.coordinates in ModuleDependencyAllowLists.DOMAIN_TEST
+                        )
+                }
                 .forEach { dependency ->
                     log.add(
                         ModuleBoundaryViolation(

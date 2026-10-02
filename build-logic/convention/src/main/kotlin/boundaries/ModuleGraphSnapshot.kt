@@ -44,6 +44,12 @@ data class DeclaredExternalDependency(
     val consumer: String,
     val configuration: String,
     val sourceSet: String,
+    /**
+     * The kind of the source set that carries the dependency, from the same classifier the edges
+     * use. `R14` admits the approved test libraries only where this is [SourceSetKind.TEST]
+     * (`DEC-089`).
+     */
+    val kind: SourceSetKind,
     val group: String,
     val name: String,
     /** The configuration that declares the module; see [DeclaredEdge.originConfiguration]. */

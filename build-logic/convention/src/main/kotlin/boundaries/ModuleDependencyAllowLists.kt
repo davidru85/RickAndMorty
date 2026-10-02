@@ -23,6 +23,17 @@ internal object ModuleDependencyAllowLists {
     )
 
     /**
+     * The test libraries a `:core:domain` **test** source set may additionally declare (`DEC-089`).
+     * None of them carries HTTP, platform, UI or persistence code, which is why a domain test uses
+     * them instead of the `:core:testing` harness (`R1` keeps that edge closed).
+     */
+    val DOMAIN_TEST: Set<String> = setOf(
+        "$KOTLIN:kotlin-test",
+        "$KOTLIN:kotlin-test-junit",
+        "$KOTLINX:kotlinx-coroutines-test",
+    )
+
+    /**
      * The Compose families `:core:designsystem` may declare. `androidx.compose.*` is Compose by
      * definition; the Kotlin Compose compiler plugin is a Plugin Marker, not a library, so it never
      * reaches this list. `androidx.activity:activity-compose`, `androidx.lifecycle` and
