@@ -7,3 +7,22 @@
 plugins {
     id("multiverse.kmp.library")
 }
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // The recorder implements `LogSink` and exposes domain types (`IC-024`, `DEC-093`).
+            api(project(":core:domain"))
+        }
+        commonTest.dependencies {
+            // The API is proved on the real request and pager paths (`TASK-047`, R18): the
+            // production stack from `:core:data`, the fixtures and MockEngine from `:core:testing`.
+            implementation(project(":core:data"))
+            implementation(project(":core:testing"))
+            implementation(libs.kotlin.test)
+        }
+        androidHostTest.dependencies {
+            implementation(libs.kotlin.test.junit)
+        }
+    }
+}

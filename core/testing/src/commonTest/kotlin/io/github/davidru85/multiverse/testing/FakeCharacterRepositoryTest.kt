@@ -163,7 +163,11 @@ class FakeCharacterRepositoryTest {
             )
             assertEquals(
                 "Morty 41",
-                beyondCache.success().characters.first().name,
+                beyondCache
+                    .success()
+                    .characters
+                    .first()
+                    .name,
                 "TEST-UNIT-053: a cache miss goes to the network",
             )
         }
