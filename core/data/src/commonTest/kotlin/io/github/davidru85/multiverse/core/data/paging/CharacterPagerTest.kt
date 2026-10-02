@@ -284,12 +284,16 @@ class CharacterPagerTest {
             val repository = FakeCharacterRepository(catalogue(45))
             val pager = RepositoryCharacterPager(repository, this)
             pager.setFilter(all)
-            // A character inserted ahead of the loaded page shifts page 2 back by one.
+            // A character inserted ahead of the loaded page shifts page 2 back by one: it now starts at 20.
             repository.serve(FakeCatalogue((0..45).map { FakeCatalogue.character("$it", name = "Rick $it") }))
 
             pager.next()
 
-            assertEquals(ids(1..38), pager.state.value.ids, "TEST-UNIT-016: duplicates are dropped before publication (ADR-0009 rule 9)")
+            assertEquals(
+                ids(1..39),
+                pager.state.value.ids,
+                "TEST-UNIT-016: the repeated 20 is dropped before publication (ADR-0009 rule 9)",
+            )
         }
 
     @Test
