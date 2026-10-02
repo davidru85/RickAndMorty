@@ -256,7 +256,7 @@ Every pull request requires the full suite on **both platforms**; the checks bel
 
 Notes that keep the list honest:
 
-- **Activation is staged (`DEC-071`).** The list above is the complete set and does not shrink. Each row becomes blocking when its harness exists — the shared suites and the policy tasks from `TASK-024`/`TASK-025` onward, the snapshot, contract and accessibility suites with the M1/M2 tasks that create them. Until CI exists, a pull request is *integrated and locally verified* and `DEFINITION.md` D2 is not satisfied; that is recorded, not waived.
+- **Activation is staged (`DEC-071`).** The list above is the complete set and does not shrink. Each row becomes blocking when its harness exists — the shared suites and the policy tasks from `TASK-024`/`TASK-025` onward, the snapshot, contract and accessibility suites with the M1/M2 tasks that create them. A pull request whose head ran before the workflow existed is *integrated and locally verified* and `DEFINITION.md` D2 is not satisfied; that is recorded, not waived, and it applies only to history since the workflow merged (`TASK-025`, PR #52).
 
 **Configured check names.** The workflow lands with `TASK-025`; the checks it contributes to the required set today are `android` and `ios` (its two jobs). The per-suite rows of §14.2 are added to the required list by the same change that introduces their harness (`DEC-071`).
 
