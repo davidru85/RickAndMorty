@@ -284,10 +284,23 @@ class ModuleBoundaryRulesTest {
     fun `R8 R9 and R10 bound a feature's source sets by kind`() {
         val feature = ":feature:discovery"
         val sharedAllowed = ModuleBoundaryRules.evaluate(
-            complete(project(feature, edges = listOf(edge(feature, ":core:data")))),
+            complete(project(feature, edges = listOf(edge(feature, ":core:domain"), edge(feature, ":core:presentation")))),
             emptyMap(),
         )
         assertEquals(emptyList(), only(sharedAllowed, "R8").map { it.render() })
+
+        // DEC-091 (ADR-0014): the implementation module is never a feature's production dependency.
+        val implementationRejected = ModuleBoundaryRules.evaluate(
+            complete(project(feature, edges = listOf(edge(feature, ":core:data")))),
+            emptyMap(),
+        )
+        assertEquals(1, only(implementationRejected, "R8").size, "DEC-091: a feature depends on the API, not on :core:data")
+
+        val implementationInTests = ModuleBoundaryRules.evaluate(
+            complete(project(feature, edges = listOf(edge(feature, ":core:data", "commonTestImplementation", "commonTest", SourceSetKind.TEST)))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(implementationInTests, "R10").map { it.render() }, "a feature test may reach the shared cores")
 
         val sharedRejected = ModuleBoundaryRules.evaluate(
             complete(project(feature, edges = listOf(edge(feature, ":core:designsystem")))),
@@ -344,11 +357,34 @@ class ModuleBoundaryRulesTest {
         )
         assertEquals(emptyList(), only(allowed, "R11").map { it.render() })
 
+        // DEC-091 (ADR-0014): the shell is the composition root, so it may wire the implementations.
+        val compositionRoot = ModuleBoundaryRules.evaluate(
+            complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:data")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(compositionRoot, "R11").map { it.render() }, "DEC-091: the composition root")
+
         val rejected = ModuleBoundaryRules.evaluate(
             complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:domain")))),
             emptyMap(),
         )
         assertEquals(1, only(rejected, "R11").size)
+    }
+
+    @Test
+    fun `R12 rejects core ios exposing the implementation module through api`() {
+        val ios = ":core:ios"
+        val exported = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:data", "commonMainApi", "commonMain")))),
+            emptyMap(),
+        )
+        assertEquals(1, only(exported, "R12").size, "DEC-091: :core:data is linked, never exported, so no implementation type reaches Swift")
+
+        val api = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:domain", "commonMainApi", "commonMain")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(api, "R12").map { it.render() }, "the API module is exported")
     }
 
     @Test
