@@ -13,10 +13,12 @@
 #     repository hygiene and the live-host guard;
 #   - the Android assemble, and the shared iOS compile/link.
 #
-# Rows whose harness does not exist yet (Roborazzi snapshots, the fixture-mode contract
-# suite, the accessibility suites, static analysis and dependency analysis) are recorded
-# against their activation tasks in docs/TESTING.md §14.2 and MUST NOT be faked here by
-# an empty or always-green job: an absent check is a missing check, not a pass.
+# Rows whose harness does not exist yet (Roborazzi snapshots, the product contract suite,
+# the accessibility suites, the iOS app suites) are recorded against their activation tasks
+# in docs/TESTING.md §14.2 and MUST NOT be faked here by an empty or always-green job: an
+# absent check is a missing check, not a pass. Static analysis, Android Lint, dependency
+# health, the documented-gate check, the repository hygiene scan, the module-boundary check
+# and the build-logic regression suite are all **active** (`TASK-029`, PR #65) and run below.
 #
 # Security: every action is pinned by full commit SHA, never by a moving tag (SECURITY.md
 # §9, DEC-037). A floating tag could change the code that executes with this repository's

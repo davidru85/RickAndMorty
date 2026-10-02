@@ -24,7 +24,7 @@
 | Base | `main` |
 | Task | `TASK-<###>` |
 | Closes | `<GitHub Issue link, or None>` |
-| Platform impact | `<Android \| iOS \| shared \| all platforms>` (determines which required checks apply, [`CONTRIBUTING.md`](../CONTRIBUTING.md) §5.2) |
+| Platform impact | `<Android \| iOS \| shared \| all platforms>` (the surfaces the change touches; it does **not** select the check set — every active required check applies on both runners, [`CONTRIBUTING.md`](../CONTRIBUTING.md) §5.2, `DEC-054`) |
 
 ## Summary
 
