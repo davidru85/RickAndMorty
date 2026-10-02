@@ -165,8 +165,8 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 | Tarea | Comando | Estado |
 | --- | --- | --- |
 | Todos los tests compartidos y unitarios | `./gradlew test` | Ejecutado 2026-10-01: las suites compartidas corren en el target host-test de la JVM y en ambos targets Apple — 7 tests del harness en `:core:testing`; `TASK-024` añadió el harness y `TASK-025` lo ejecuta en CI |
-| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado (TASK-029) |
-| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (TASK-029) |
+| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado; llega con las capturas Android (`TASK-045`) |
+| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (`TASK-045`) |
 | Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` pasa limpio (ejecutado 2026-10-01); ktlint, detekt y `buildHealth` aún no están configurados (TASK-029), así que esa mitad es estado objetivo |
 | Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R16`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
 | Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |

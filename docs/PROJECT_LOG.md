@@ -607,7 +607,16 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Affected artifacts:** `build-logic/convention/src/{main,test}/kotlin/policy/**`; `.github/workflows/contract-live.yml`; `docs/TESTING.md` §11.1/§14.3; `HANDOFF.md`; `BACKLOG.md`; this entry.
 - **Decision / ADR:** none — a defect fix inside `DEC-073`/`DEC-074`'s accepted scope.
 - **Validation:** red → green observed on 2026-10-02. Red: the two guard tests fail against the shipped marker list (`every registered live task name is recognised as a live-mode marker`; the existing seed, which had used the non-existent `contractTestLive`). Green: 13 guard tests pass; the seed that runs `:core:data:contractLiveTest` from `pull-request.yml` is rejected with `TEST-UNIT-044: ... references 'contractLiveTest'`; the same seed against the unfixed set passed. `./gradlew check` green on the branch.
-- **Not verified:** the cron trigger has still to fire (first Monday 06:00 UTC); the scheduled job's first run carrying the new step is observed by dispatch on the branch and recorded in the pull request.
+- **Not verified:** the cron trigger has still to fire (first Monday 06:00 UTC). The scheduled job carrying the new step was observed twice by `workflow_dispatch`: on the branch (`75e1708`, run `36983307708`) and on merged `main` (`72332a5`, run `36983953859`), both `success` with `Record the live API's shape` and `Run the live observation case` green and the captures uploaded.
+
+### LOG-0065 · 2026-10-02 · Block 2 closes for good: the last residue is reconciled (`TASK-097`)
+
+- **Event:** the closure audit of `TASK-095`/`TASK-096` found the residue that kept the block from satisfying its own §11.2: six current-state claims that described a pre-gate repository (`HANDOFF.md` §6's "no workflow exists", §1.1/§7's unrun formatter list, §8's Roborazzi attribution, `TECHNICAL_PLAN.md` §2.1's "empty-but-executing test set", `DEFINITION.md`/`CONTRIBUTING.md`'s "until CI exists", `DOCUMENTATION_AUDIT.md` §5's "no CI"), §14.2's rows not naming their activation task, six blank lines breaking the `BACKLOG.md` tables, `CONF-51` still listed as open although `DEC-075` resolved it, and an orphan `TASK-###` in the audit change log.
+- **Rationale:** `DEC-046` makes a document that contradicts the repository a defect, and `DEC-071`'s staged activation is only honest if each row says which task activates it. A block cannot be called closed while its own documents describe a different repository.
+- **Affected artifacts:** `AGENTS.md`; both READMEs; `docs/{HANDOFF,TECHNICAL_PLAN,DEFINITION,CONTRIBUTING,TESTING,DOCUMENTATION_AUDIT,BACKLOG,PROJECT_LOG}.md`.
+- **Decision / ADR:** none — reconciliation inside `DEC-046`/`DEC-071`.
+- **Validation:** `./gradlew check` green on the branch; 97 `TASK-###` rows, all unique, no blank line inside a table; 0 broken relative links; no document now claims a formatter or the gate is absent.
+- **Not verified:** the cron trigger of the live workflow (first Monday 06:00 UTC); branch protection still names no required check (`DEC-049`).
 
 ## 3. Verification performed on this repository
 
