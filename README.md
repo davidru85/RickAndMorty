@@ -188,7 +188,7 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Task | Command | State |
 | --- | --- | --- |
 <!-- local-gate:begin -->
-| All shared and unit tests | `./gradlew test` | Executed 2026-10-01: the shared suites run on the JVM host-test target and on both Apple targets — 7 harness tests in `:core:testing`; `TASK-024` added the harness and `TASK-025` runs it in CI |
+| All shared and unit tests, plus the build-logic regression suite | `./gradlew allTests :build-logic:convention:test` | Executed 2026-10-02: the shared suites run on the JVM host-test target and on both Apple targets (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) and the build-logic regression suite runs in the included build. The earlier row documented `./gradlew test`, which selects only the Android unit-test tasks and reaches neither the shared KMP suites nor the build-logic suite (`GAP-020`; `TASK-103`) |
 | Formatting, static analysis and dependency checks | `./gradlew ktlintCheck lintDebug buildHealth` | Executed 2026-10-01 — ktlint, Android Lint and `buildHealth` pass (TASK-029, `DEC-075`, `DEC-077`) |
 | Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-01: all pass — 14 projects checked (`R1`–`R16`, `S1`–`S3`, effective inherited edges and Compose-only for `:core:designsystem`), and `VERSION` validated with every Android artifact task depending on it |
 | Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-01: passes; also runs as part of `./gradlew check` and `./gradlew build` |
