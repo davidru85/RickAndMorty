@@ -13,7 +13,8 @@ import kotlin.test.assertTrue
  * the remediation — under the previous guard every case here returned an empty finding list.
  *
  * The reproductions stay in the test tree and are never written to the real checkout: a negative
- * fixture that outlives its test is a defect (`B2_AUTHORIZATION` condition 2).
+ * fixture that outlives its test is a defect, because the next reader finds evidence of a state the
+ * repository is no longer in.
  */
 class WorkflowGateReproductionTest {
     private val workflowDirectory = File(System.getProperty("user.dir")).let { run ->
