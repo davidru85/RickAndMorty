@@ -5,6 +5,7 @@ import io.github.davidru85.multiverse.core.data.remote.RemoteJson
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
+import io.github.davidru85.multiverse.core.data.remote.isTlsFailure
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -28,6 +29,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlinx.io.IOException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.coroutines.cancellation.CancellationException
@@ -169,8 +171,19 @@ public class RestCharacterRemoteDataSource(
         } catch (transport: Exception) {
             // A transport failure observed while the caller is being cancelled is the cancellation.
             currentCoroutineContext().ensureActive()
-            // `API-ERR-001`/`API-ERR-003`: the cause is kept; telling offline from TLS is `TASK-038`'s.
-            Exchange.Failed(ApiFailure.Unknown(transport))
+            Exchange.Failed(classifyTransport(transport))
+        }
+
+    /**
+     * `API_SPECS.md` §6.1: a TLS failure is `Unknown` and never retried (`API-ERR-003`); any other I/O
+     * failure is a connectivity failure, `Offline`, retried within the budget (`API-ERR-001`); anything
+     * else is not a transport failure at all and stays `Unknown` with its cause.
+     */
+    private fun classifyTransport(failure: Exception): ApiFailure =
+        when {
+            failure.isTlsFailure() -> ApiFailure.Unknown(failure)
+            failure is IOException -> ApiFailure.Offline
+            else -> ApiFailure.Unknown(failure)
         }
 
     /** Maps a non-`404` response: its status family, then its body, then the domain mapping. */

@@ -19,14 +19,16 @@ import kotlin.test.assertIs
  * failures reach the real adapter through `MockEngine`; no socket is opened.
  */
 class TransportClassificationTest {
-    private fun failureOf(thrown: Throwable): ApiFailure =
+    private var captured: ApiFailure? = null
+
+    private fun failureOf(thrown: Throwable): ApiFailure {
         TestTime.run { dispatcher ->
             val client = HttpClient(MockEngine { throw thrown }) { rickAndMortyDefaults() }
             val result = RestCharacterRemoteDataSource(client, dispatcher).characterPage(CharacterFilter(), 1)
             captured = (result as DataResult.Failure).failure
-        }.let { captured!! }
-
-    private var captured: ApiFailure? = null
+        }
+        return captured!!
+    }
 
     @Test
     fun `TEST-UNIT-022 given_a_tls_handshake_failure_when_requested_then_it_is_unknown_and_not_offline`() {
