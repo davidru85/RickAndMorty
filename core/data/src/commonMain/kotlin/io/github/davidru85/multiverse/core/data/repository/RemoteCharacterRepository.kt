@@ -6,6 +6,8 @@ import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterPage
+import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
+import io.github.davidru85.multiverse.core.domain.model.StatusFilter
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.repository.PageLoadPolicy
 import io.github.davidru85.multiverse.core.domain.result.ApiWarning
@@ -22,24 +24,56 @@ import kotlin.random.Random
  * with `episodeSummaries == null` and an `enrichment-failed` warning so no cache ever stores the
  * partial value (`ERROR_FLOW.md` §7).
  *
+ * Concurrent identical requests share one execution, retries included (`REQ-REL-002`): the identity
+ * is the protocol of [remote], the operation, the page or id, the normalized filter, the enrichment
+ * mode and the page-load policy, so `Default` work never satisfies a `ForceNetwork` call (`DEC-086`).
+ * The identity is never logged. [scope] owns the shared work; closing it cancels that work.
+ *
  * There is no response cache yet (`TASK-020`), so `PageLoadPolicy.Default` and `ForceNetwork` both
- * reach the network here; the policy is nevertheless part of every request's identity (`DEC-086`).
- * [scope] owns the shared work of coalesced requests; closing it cancels that work.
+ * reach the network here; the policy is already part of every request's identity.
  */
 public class RemoteCharacterRepository(
     private val remote: CharacterRemoteDataSource,
     scope: CoroutineScope,
     random: Random,
+    private val protocol: RemoteProtocol = RemoteProtocol.Rest,
 ) : CharacterRepository {
     private val retry = RetryPolicy(random)
+    private val pages = SingleFlight<PageIdentity, DataResult<CharacterPage>>(scope)
+    private val details = SingleFlight<DetailsIdentity, DataResult<CharacterDetails>>(scope)
+
+    /** What makes two page loads the same request. */
+    private data class PageIdentity(
+        val protocol: RemoteProtocol,
+        val page: Int,
+        val query: String,
+        val status: StatusFilter,
+        val policy: PageLoadPolicy,
+    )
+
+    /** What makes two detail loads the same request. */
+    private data class DetailsIdentity(
+        val protocol: RemoteProtocol,
+        val id: CharacterId,
+        val enrich: Boolean,
+    )
 
     override suspend fun page(
         filter: CharacterFilter,
         page: Int,
         policy: PageLoadPolicy,
-    ): DataResult<CharacterPage> = retry.run { remote.characterPage(filter, page) }
+    ): DataResult<CharacterPage> {
+        // The adapter trims the query and sends nothing for a blank one, so the identity does too.
+        val identity = PageIdentity(protocol, page, filter.query.trim(), filter.status, policy)
+        return pages.run(identity) { retry.run { remote.characterPage(filter, page) } }
+    }
 
     override suspend fun details(
+        id: CharacterId,
+        enrich: Boolean,
+    ): DataResult<CharacterDetails> = details.run(DetailsIdentity(protocol, id, enrich)) { load(id, enrich) }
+
+    private suspend fun load(
         id: CharacterId,
         enrich: Boolean,
     ): DataResult<CharacterDetails> {

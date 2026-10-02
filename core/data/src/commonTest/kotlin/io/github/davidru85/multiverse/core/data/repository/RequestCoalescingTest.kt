@@ -17,6 +17,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -104,7 +105,9 @@ class RequestCoalescingTest {
             advanceTimeBy(100)
             first.cancel()
             second.cancel()
-            advanceUntilIdle()
+            // `advanceUntilIdle` stops once only `backgroundScope` work is left; the cancelled shared
+            // call resumes at this instant, so running the current instant is what reaches it.
+            runCurrent()
 
             assertEquals(1, remote.cancellations, "TEST-UNIT-021: work nobody waits for is cancelled, not left running")
         }
