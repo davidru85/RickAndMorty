@@ -48,6 +48,10 @@ jobs:
       - name: Record the live API's shape
         run: ./gradlew :core:data:contractLiveProbe --stacktrace
 
+      - name: Run the live observation case
+        # TEST-CONTRACT-006 pins the record shape the probes write (TASK-027, TASK-096).
+        run: ./gradlew :core:data:contractLiveTest --stacktrace
+
       - name: Upload the observations
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

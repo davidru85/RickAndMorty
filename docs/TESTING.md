@@ -435,6 +435,7 @@ Completed once per milestone (M1, M2) on a real device and recorded as evidence 
 | Fixture mode (gate) | `TEST-CONTRACT-001`…`TEST-CONTRACT-005` | Committed fixtures only (§4.3) | Yes |
 | Live mode (scheduled) | The same IDs, executed with a live engine (`TASK-027`, re-scoped by `DEC-074`: the probes and the schedule land now, each case's live replay activates with the task that creates it) | The real service: page decoding, `info.next` termination, single-object vs batch-array shape, filtered `404` → empty result, detail `404` → `NotFound`, combined-filter URL encoding across pages, empty `type`, `unknown` values and empty reference URLs, malformed/empty bodies, `429` and `5xx` mapping, GraphQL envelope cases and REST/GraphQL domain parity | **No** |
 | Observation probes (scheduled) | `TEST-CONTRACT-006` | Dated observations that feed fixture refresh: published totals and page count, `Cache-Control`/`ETag` presence, cacheability of filtered `404` responses, batch behaviour with mixed validity, `info.next` type, validation-error shape | **No** |
+| Live observation case (scheduled) | `TEST-CONTRACT-006`, executed by `./gradlew :core:data:contractLiveTest` | The observation record carries its date and the request it made, and its status is a real one (or `0` for a transport failure) rather than an invented guarantee (`TASK-027`, `TASK-096`) | **No** |
 
 `TEST-CONTRACT-006` records observations; it `MUST NOT` assert API guarantees that the official documentation does not publish (`API_SPECS.md` §1.1).
 
@@ -573,7 +574,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 
 | Trigger | Test work | Blocking |
 | --- | --- | --- |
-| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11) — `.github/workflows/contract-live.yml` runs `./gradlew :core:data:contractLiveProbe` weekly and uploads the captures (`TASK-027`, `DEC-074`); Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
+| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11) — `.github/workflows/contract-live.yml` runs `./gradlew :core:data:contractLiveProbe` and `:core:data:contractLiveTest` weekly and uploads the captures (`TASK-027`, `TASK-096`, `DEC-074`); Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
 | On demand | The performance job, for milestone evidence | No |
 | Release | The release-readiness checklist in `DEFINITION.md`, over a green required set | Yes, at release time — a suite may not be waived |
 | Quarantine job | Quarantined cases only, with their tracking metadata (§15) | No — quarantined tests are excluded from the required set, with a recorded justification |

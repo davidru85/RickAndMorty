@@ -66,12 +66,14 @@ internal object WorkflowGateGuard {
     )
 
     /**
-     * `TEST-UNIT-044` (`TASK-026`, `DEC-073`): markers that identify the live contract mode. A
-     * workflow triggered by a pull request or a push may never reference one: the fixture/replay
-     * suite is the gate's contract check, and live mode is a scheduled signal
-     * (`AC-REQ-NFR-011-2`).
+     * `TEST-UNIT-044` (`TASK-026`, `DEC-073`; completed by `TASK-096`): markers that identify the
+     * live contract mode. A workflow triggered by a pull request or a push may never reference one:
+     * the fixture/replay suite is the gate's contract check, and live mode is a scheduled signal
+     * (`AC-REQ-NFR-011-2`). Every registered live entry point belongs here — the probe (what the
+     * scheduled run executes), the source set it compiles into, and the case that pins the record
+     * it writes.
      */
-    private val LIVE_MODE_MARKERS = listOf("contract-live", "contractTestLive", "contractLiveProbe")
+    private val LIVE_MODE_MARKERS = listOf("contract-live", "contractLiveProbe", "contractLiveTest")
 
     /** The triggers that make a workflow part of the merge gate. */
     private val MERGE_GATE_TRIGGERS = listOf("pull_request", "push")

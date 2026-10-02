@@ -58,11 +58,11 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 Two repository settings remain human-only (`DEC-049`): naming `android` and `ios` as required status checks, and reviewing the ruleset's standing bypass
 actor (`LOG-0058`). The exact configuration is in `CONTRIBUTING.md` §5.3.
 
-One follow-up is open from the closure audit: `TASK-096` closes two gaps in `TASK-027` — `contractLiveTest` (which holds
-`TEST-CONTRACT-006`) is executed by no workflow, and `WorkflowGateGuard` does not recognise that task name, so a
-pull-request workflow could reach the live case with the guard green. The scheduled workflow was dispatched on
-2026-10-02 (`workflow_dispatch` run `36981902862`, success): it recorded the observations and uploaded the
-captures, so the job is exercised; the cron trigger first fires Monday 06:00 UTC.
+`TASK-096` is in review (PR from `fix/live-contract-gap`, #73): it wires `contractLiveTest` (which holds
+`TEST-CONTRACT-006`) into the scheduled job and makes `WorkflowGateGuard` recognise every registered live entry
+point, proved red → green with a seed that runs the real task name from a pull-request workflow. The scheduled
+workflow was dispatched on 2026-10-02 (`workflow_dispatch` run `36981902862`, success): it recorded the
+observations and uploaded the captures, so the job is exercised; the cron trigger first fires Monday 06:00 UTC.
 
 ## 2. Completed work
 
