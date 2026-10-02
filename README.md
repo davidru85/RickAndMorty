@@ -108,6 +108,7 @@ flowchart LR
 ```
 
 - Dependencies point inward: features → core → domain. The `:core:domain` module has no framework, HTTP or UI dependency, and no feature module depends on another feature module.
+- API/IMPL boundary ([`ADR-0014`](docs/adr/0014-api-impl-boundary.md)): `:core:domain` is the API and `:core:data` the implementation. Features depend on the API only and never on `:core:data`; the app shell (and, on iOS, the `:core:ios` export module) is the composition root that wires the implementations, so no HTTP or storage type reaches feature code.
 - UI is native on each platform; domain, data, UI-state contracts, formatters and copy keys are shared.
 - Full detail, module table, dependency rules and class diagram: [`docs/DESIGN.md`](docs/DESIGN.md). Rationale: [`docs/adr/0001-module-boundaries.md`](docs/adr/0001-module-boundaries.md).
 

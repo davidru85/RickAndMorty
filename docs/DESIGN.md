@@ -101,6 +101,8 @@ The split between shared and native code:
 
 **Strategy: feature-per-module with Clean Architecture inside each module (DEC-052, [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md); the Settings module replaces Locations per DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)).** Each user-facing capability is its own Gradle/Swift module that contains its own domain, presentation and UI layers as packages. Shared infrastructure lives in `:core:*`. A feature module never depends on another feature module.
 
+**API/IMPL boundary (`DEC-091`, [`adr/0014-api-impl-boundary.md`](adr/0014-api-impl-boundary.md)).** `:core:domain` is the API module and `:core:data` the implementation module. A feature's production code depends on the API (`:core:domain`) and on `:core:presentation`, never on `:core:data`; the composition roots — `:androidApp` and `:core:ios` — are the only production consumers of `:core:data`, and they wire its implementations behind the domain interfaces (§5). A feature's tests reach implementations only through `:core:testing`. `:core:presentation`, `:core:designsystem`, `:core:testing` and the feature modules are not split further: each has nothing to hide behind an interface or no consumer for one (ADR-0014).
+
 ```mermaid
 flowchart TB
     subgraph Core
@@ -123,15 +125,12 @@ flowchart TB
     CDA --> CD
     CP --> CD
     FD --> CD
-    FD --> CDA
     FD --> CP
     FD --> CDS
     FC --> CD
-    FC --> CDA
     FC --> CP
     FC --> CDS
     FF --> CD
-    FF --> CDA
     FF --> CP
     FF --> CDS
     FE --> CDS
@@ -145,13 +144,14 @@ flowchart TB
     APP --> FE
     APP --> FS
     APP --> CDS
+    APP -. composition root .-> CDA
     CIOS --> FD
     CIOS --> FC
     CIOS --> FF
     CIOS --> FE
     CIOS --> FS
     CIOS --> CD
-    CIOS --> CDA
+    CIOS -. implementation, not exported .-> CDA
     CIOS --> CP
     IOS --> CIOS
     IOS --> FD
@@ -159,6 +159,7 @@ flowchart TB
     IOS --> FF
     IOS --> FE
     IOS --> FS
+    CT --> CDA
     FD -. test only .-> CT
     FC -. test only .-> CT
     FF -. test only .-> CT
@@ -168,11 +169,11 @@ flowchart TB
 
 | Module | Target | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). | Kotlin stdlib + `kotlinx-coroutines-core` only (`DEC-066`) |
-| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, shared pager, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy. | `:core:domain` |
+| `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, the pager contract `CharacterPager`/`PagerState` (`IC-014`, `DEC-091`), the logging contract (`IC-024`), and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). **The API module** every feature consumes (ADR-0014). | Kotlin stdlib + `kotlinx-coroutines-core` only (`DEC-066`) |
+| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, the shared pager's implementation, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy. **The implementation module**: only the composition roots (`:androidApp`, `:core:ios`) and the test harness consume it (`DEC-091`). | `:core:domain` |
 | `:core:presentation` | `commonMain` | Cross-feature presentation primitives only: `LoadState`, display formatters ("Unknown" casing, status labels, dimension derivation), canonical copy keys. No screen-specific state. | `:core:domain` |
 | `:core:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme, no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors`, components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons, empty-state component. | Compose only |
-| `:core:ios` | Apple targets only | **Build wiring, no behaviour.** Its only purpose is to produce the single Kotlin framework the iOS app links: it declares the two Apple targets of ADR-0002 and one `binaries.framework` that exports the five `:feature:*` modules and the other `:core:*` modules through `api` (ADR-0012, `DEC-058`). It has no source file, no `androidTarget` and no consumer on the Android side. | every `:feature:*`, `:core:domain`, `:core:data`, `:core:presentation` — declared `api`, because `export` admits only `api` dependencies |
+| `:core:ios` | Apple targets only | **Build wiring, no behaviour.** Its only purpose is to produce the single Kotlin framework the iOS app links: it declares the two Apple targets of ADR-0002 and one `binaries.framework` that exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api` (ADR-0012, `DEC-058`, as amended by `DEC-091`). It has no source file, no `androidTarget` and no consumer on the Android side. | every `:feature:*`, `:core:domain`, `:core:presentation` — declared `api`, because `export` admits only `api` dependencies; `:core:data` as an unexported `implementation` (`DEC-091`) |
 | `:core:testing` | KMP | Shared fakes (fake repositories, fake `CacheStorage`, fake favorites store, fake clock, fake image loader), JSON fixtures, `TestDispatcher` helpers. Test source sets only — never shipped. | `:core:domain`, `:core:data` |
 
 ### 3.2 Feature modules (one per user-facing capability)
@@ -212,16 +213,17 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 **The module set itself is a rule:** `R16` of `verifyModuleBoundaries` asserts that every leaf module of ADR-0001 is present, so a build that has silently lost one fails instead of passing with less to check (`TASK-091`, `GAP-014`). Containers (`:`, `:core`, `:feature`) are not leaves; a `:feature:*` path outside the accepted five is unknown and fails `R13`; `:core:ios` is legal but optional until `TASK-078` promotes it.
 
 1. `:core:domain` depends on no project module and on no platform, HTTP, UI or persistence library; the Kotlin standard library and `kotlinx-coroutines-core` are the only permitted dependencies (the `DEC-066` amendment to [ADR-0001](adr/0001-module-boundaries.md) resolving `CONF-47`).
-2. `:core:data` depends only on `:core:domain`.
+2. `:core:data` depends only on `:core:domain`, and only the composition roots and `:core:testing` depend on it (`DEC-091`).
 3. `:core:presentation` depends only on `:core:domain`.
 4. `:core:designsystem` depends on Compose only — never on domain types, and never on a non-Compose external dependency (rule `R15` of `verifyModuleBoundaries`; the Compose families are enumerated in `ModuleDependencyAllowLists.kt`, and the toolchain's implicit `kotlin-stdlib` is not evaluated).
-5. `:feature:*` may depend on `:core:domain`, `:core:data`, `:core:presentation` and — from Android UI code only — `:core:designsystem`.
+5. `:feature:*` production source sets may depend on `:core:domain`, `:core:presentation` and — from Android UI code only — `:core:designsystem`; never on `:core:data`, the implementation module (`R8`, `DEC-091`). A feature's test source sets may additionally reach `:core:testing` and the shared cores.
 6. **No `:feature:*` module may depend on another `:feature:*` module.** Anything a feature needs from another feature moves to `:core:*`.
 7. Navigation: each feature declares its own destination; the application shell composes the graph. No feature owns the app-wide `NavHost`.
 8. Use-case placement: feature-specific use cases live in the feature's `domain` package; only genuinely cross-feature use cases live in `:core:domain`.
 9. Test source sets may depend on `:core:testing`; production source sets may not. This holds for `:core:data` and `:core:presentation` as for every feature (`R2`/`R3`, `DEC-089`). `:core:domain`'s test source sets are the one exception: they may declare the approved test libraries `kotlin-test`, `kotlin-test-junit` and `kotlinx-coroutines-test` (`R14`) but no project module (`R1`), so a domain test never reaches the HTTP-bearing harness.
-10. `:core:ios` is the only module that declares a native framework binary, and the only module that depends on all five `:feature:*` modules and on the three shared production `:core:*` modules (`:core:domain`, `:core:data`, `:core:presentation`). It never depends on `:core:designsystem` (Android-only) or `:core:testing` (test-only); the accepted export set is recorded in `CONF-54` and the rule `R12` enforces it. `iosApp` depends on `:core:ios` and on nothing else from the shared core. No Android source set may depend on `:core:ios`, and no other module may depend on it (ADR-0012).
+10. `:core:ios` is the only module that declares a native framework binary, and the only module that depends on all five `:feature:*` modules and on the three shared production `:core:*` modules (`:core:domain`, `:core:data`, `:core:presentation`). It exports the features, `:core:domain` and `:core:presentation`, and links `:core:data` as an unexported `implementation` (`DEC-091`, resolving `CONF-54`); `R12` rejects an `api` edge to `:core:data`. It never depends on `:core:designsystem` (Android-only) or `:core:testing` (test-only). `iosApp` depends on `:core:ios` and on nothing else from the shared core. No Android source set may depend on `:core:ios`, and no other module may depend on it (ADR-0012).
 11. `:core:diagnostics` (`DEC-088`, [ADR-0013](adr/0013-observability-placement.md), created by `TASK-047`; target state until then) depends on `:core:domain` only and is declared by debug configurations only: `debugImplementation` in `:androidApp` and the iOS app's Debug configuration. No release configuration and no `:core:*`/`:feature:*` production source set depends on it.
+12. `:androidApp` is the Android composition root (§5): it composes the five features and `:core:designsystem`, and it is the one Android module that may depend on `:core:data` to wire the implementations behind the domain interfaces (`R11`, `DEC-091`). It declares that edge when `TASK-044` builds the graph.
 
 **Target set.** ADR-0002 as amended by `DEC-079` permits one more target than the
 decision first stated: a `:core:*` module MAY declare a JVM target through its own
@@ -416,7 +418,7 @@ The two remote sources return equal domain values for the same logical request; 
 ## 5. Dependency injection
 
 - **Framework:** Koin 4.2.2, runtime DSL (DEC-014, [`adr/0006-presentation-state.md`](adr/0006-presentation-state.md)). Koin is multiplatform, so one graph serves Android and iOS; Hilt is Android-only and cannot provide the shared graph (rejected), and the Koin compiler plugin is not used.
-- **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`, `settingsModule`) and the app shell starts the graph by loading every feature module plus `coreModule`. This keeps a feature's wiring inside the feature.
+- **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`, `settingsModule`), binding its use cases and state holders against `:core:domain` interfaces only. `:core:data` provides `coreModule`, which binds the implementations (`DEC-091`, ADR-0014). The composition root starts the graph by loading every feature module plus `coreModule` — `:androidApp` on Android, the `:core:ios` bootstrap on iOS — so no feature names an implementation. This keeps a feature's wiring inside the feature.
 - **Singletons:** Ktor `HttpClient`, response cache, favorites store, app-settings store, both remote data sources, repositories, Coil `ImageLoader` (Android), `CharacterAccentResolver`.
 - **Factories:** feature use cases.
 - **State-holder scope:** `DiscoveryViewModel` (in `:feature:discovery`, Android) and `CharacterDetailViewModel` (in `:feature:character-detail`, Android) are resolved with `koinViewModel()`. On iOS the shared graph is started from the app target and each feature package resolves its own dependencies into its `ObservableObject`; there is no `StateFlow`-to-Swift bridge (DEC-013).

@@ -108,6 +108,7 @@ flowchart LR
 ```
 
 - Las dependencias apuntan hacia dentro: features → core → domain. El módulo `:core:domain` no depende de frameworks, HTTP ni UI, y ningún módulo de feature depende de otro módulo de feature.
+- Frontera API/IMPL ([`ADR-0014`](docs/adr/0014-api-impl-boundary.md)): `:core:domain` es la API y `:core:data` la implementación. Las features dependen solo de la API y nunca de `:core:data`; la app (y, en iOS, el módulo de exportación `:core:ios`) es la raíz de composición que conecta las implementaciones, de modo que ningún tipo HTTP ni de almacenamiento llega al código de una feature.
 - La UI es nativa en cada plataforma; el dominio, los datos, los contratos de estado de UI, los formateadores y las claves de textos son compartidos.
 - Detalle completo, tabla de módulos, reglas de dependencia y diagrama de clases: [`docs/DESIGN.md`](docs/DESIGN.md). Justificación: [`docs/adr/0001-module-boundaries.md`](docs/adr/0001-module-boundaries.md).
 

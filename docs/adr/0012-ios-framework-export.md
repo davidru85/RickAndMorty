@@ -28,6 +28,8 @@ The iOS app links **exactly one** Kotlin framework. It is produced by a new modu
 
 - **Board entry:** `DEC-058` — Accepted, in [`DECISION_BOARD.md`](../DECISION_BOARD.md). It amends the module set of `DEC-052` (ADR-0001) by adding one module, and resolves `CONF-40`.
 
+> **Amended 2026-10-02 by owner decision (`DEC-091`, [ADR-0014](0014-api-impl-boundary.md)), resolving `CONF-54`:** the export list above is narrowed. `:core:ios` exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api`, and declares `:core:data` as an `implementation` dependency that it does **not** export, so the Swift-visible surface carries no implementation type. `:core:designsystem` (Android-only) and `:core:testing` (test-only) are never dependencies. Every other clause of this decision is unchanged.
+
 ## Context
 
 `CONF-40` recorded an unresolved contradiction: `README.md` §8 and `HANDOFF.md` §8 built the iOS framework from `:core:presentation`, but the iOS app consumes feature-owned state types (`IC-018`…`IC-023`), which `:core:presentation` may not depend on because a core module never depends on a feature (ADR-0001). No module existed that could reach both the state classes and the feature-owned route declarations, and ADR-0001 forbids adding one without amending itself.
