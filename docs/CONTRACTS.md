@@ -140,8 +140,9 @@ SettingsUiState, SettingsIntent           CONTRACTS.md IC-023      :feature:sett
 CharacterAccentResolver                   DESIGN.md §4.4            :feature:discovery  androidMain UI
 AppLogger, LogLevel, LogEvent (+ field   CONTRACTS.md IC-024       :core:domain  commonMain
   enums)
-LogSink, LogRecord                       CONTRACTS.md IC-024       :core:data    commonMain
-Debug diagnostic API (TASK-047)          ADR-0013, DEC-088         :core:diagnostics  commonMain (target state)
+LogSink, LogRecord, LogField             CONTRACTS.md IC-024       :core:domain  commonMain (DEC-093)
+ValidatingAppLogger (IC-024 impl.)       CONTRACTS.md IC-024       :core:data    commonMain
+Debug diagnostic API (DiagnosticsRecorder) ADR-0013, DEC-088       :core:diagnostics  commonMain
 ```
 
 ### 3.1 The boundary rule between this file and `API_SPECS.md`
@@ -271,6 +272,7 @@ enum class PageLoadPolicy { Default, ForceNetwork }
   - Only successfully decoded, domain-valid payloads are promoted to a cache; errors, empty bodies and partial responses are never written (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`).
   - A `CancellationException` from an underlying suspending call propagates unchanged and is never converted into a `Failure` (`IC-003`).
   - The repository `MUST NOT` expose, accept or depend on a DTO type or a platform type.
+- **Implementation (`TASK-038`):** `RemoteCharacterRepository` in `:core:data`, over `IC-011`, with one bounded retry policy (`DEC-084`) and request coalescing whose scope ownership is fixed: the shared work runs in a supervisor child of the injected owner scope, so closing the owner cancels it; a cancelled waiter stops waiting while any other waiter keeps the work alive; the work is cancelled when its last waiter leaves; and an entry is removed then and never joined once finished, so a later identical call runs again — coalescing is not caching. There is no response cache yet (`TASK-020`), so `Default` and `ForceNetwork` both reach the network today; the policy is already part of the identity.
 - **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-010`, `REQ-FUNC-012`, `REQ-FUNC-020`, `REQ-FUNC-023`, `REQ-REL-002`, `DEC-012`, `DEC-018`, `DEC-086`.
 
 ### IC-008 — `FavoritesRepository`
@@ -462,7 +464,7 @@ data class PagerState(
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
   - `next()` while `failure != null` performs no request: a failed load suppresses further speculative loads, so repeated scroll triggers cannot become a request storm while the service is failing (`DEC-092`). `retry()`, `refresh()` and `setFilter` are the ways out.
-  - `retry()` re-attempts the load that failed — page 1 when no content is displayed, otherwise the failed append — with a fresh attempt budget, and never discards loaded pages (`ERROR_FLOW.md` §10 rule 4); it is a no-op when `failure == null` (`DEC-092`).
+  - `retry()` re-attempts the load that failed — page 1 when no content is displayed, otherwise the failed append; a failed `refresh()` is re-attempted as a refresh, with `ForceNetwork` — with a fresh attempt budget, and never discards loaded pages (`ERROR_FLOW.md` §10 rule 4); it is a no-op when `failure == null` (`DEC-092`).
   - A `NotFound` for a page after the first, reached through `next()`, is the end of pagination: `isEndReached` becomes `true` and no failure is reported (`ERROR_FLOW.md` §5.2). A `NotFound` for page 1 is a failure.
   - `isAppending` is `true` only while a page is being appended to existing content; it is always `false` outside an append (so a first page load and a `refresh()` do not set it).
   - `refresh()` loads page 1 through `IC-007` with `PageLoadPolicy.ForceNetwork` (`DEC-086`), so it performs a network request even when the served entry is fresh, and a failed `refresh()` leaves `items` untouched (`REQ-FUNC-012`, `AC-REQ-FUNC-012-1`, `AC-REQ-FUNC-012-2`). It `MUST NOT` rely on the absence of a cache to reach the network.
@@ -474,6 +476,7 @@ data class PagerState(
   - Prefetch is bounded to the next page and `MUST NOT` fetch the whole catalogue up front (`API_SPECS.md` §8, `REQ-NFR-003`).
   - The pager owns no scope of its own: its loads run in the scope its owner supplies (the state holder's), so closing the owner cancels every load (`GUIDELINES.md` §2.7).
   - `PagerState` carries no `LoadState`: the presentation layer derives it from `items`, `failure` and `isAppending` under the mapping fixed in `IC-018`. The pager therefore never decides which screen state is rendered.
+- **Implementation (`TASK-039`):** `RepositoryCharacterPager` in `:core:data`, over `IC-007`, whose coalescing and retry it reuses (ADR-0009 rule 7). Its suspending methods return when the load they started or joined ends. State transitions happen under one lock, and every load carries the generation it started in: `setFilter` and `refresh()` start a new generation, so a superseded load that still returns cannot publish. The next page comes from the server's metadata only; a known total is kept when a later result states none (`ERROR_FLOW.md` §5.3). `next()` before any load loads page 1 of the initial filter. Each load opens a correlation scope and a published load is logged (`IC-024`).
 - **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-003`, `REQ-FUNC-004`, `REQ-FUNC-012`, `DEC-016`, `API_SPECS.md` §8.
 
 ### IC-021 — `AppSettingsRepository`, `AppSettings` and `RemoteProtocol`
@@ -525,7 +528,7 @@ interface AppSettingsLocalDataSource {
 
 ### IC-024 — `AppLogger`, `LogLevel`, `LogEvent`, `LogSink`
 
-- **Declarations** (`DEC-087`, [ADR-0013](adr/0013-observability-placement.md)), all in `:core:domain`, `commonMain`. The sink half moved there from `:core:data` by `DEC-093` before it was implemented, so the debug-only `:core:diagnostics` module can implement `LogSink` while depending on `:core:domain` only (`DEC-088`); the validating `AppLogger` implementation stays in `:core:data`:
+- **Declarations** (`DEC-087`, [ADR-0013](adr/0013-observability-placement.md)), all in `:core:domain`, `commonMain`, package `…core.domain.logging`. The sink half moved there from `:core:data` by `DEC-093` before it was implemented, so the debug-only `:core:diagnostics` module can implement `LogSink` while depending on `:core:domain` only (`DEC-088`); the validating `AppLogger` implementation stays in `:core:data`:
 
 ```kotlin
 // :core:domain
@@ -545,9 +548,39 @@ inline fun AppLogger.log(level: LogLevel, event: () -> LogEvent) {
 
 /** The closed catalogue: one implementation per `OBSERVABILITY.md` §3 row that has an emitter in the build. */
 sealed interface LogEvent {
-    val catalogueId: String     // "LOG-001" … "LOG-022"
+    val catalogueId: String     // "LOG-001" … "LOG-022", fixed per implementation
     val level: LogLevel         // fixed per row by the catalogue
+
+    // Shown compactly: each is `data class X(val …) : LogEvent`, with its row's id and level.
+    data class RequestStarted(operation: LogOperation, pathTemplate: PathTemplate, page: Int?,
+        filterNames: Set<FilterName>, protocol: RemoteProtocol, correlationId: String?)          // LOG-001 DEBUG
+    data class RequestCompleted(operation: LogOperation, pathTemplate: PathTemplate, page: Int?,
+        statusFamily: StatusFamily, durationMs: Long, correlationId: String?, outcome: LogOutcome) // LOG-002 INFO
+    data class RequestFailed(operation: LogOperation, pathTemplate: PathTemplate, page: Int?,
+        statusFamily: StatusFamily?, errorClass: ErrorClass, durationMs: Long,
+        correlationId: String?)                                                                  // LOG-003 ERROR, outcome=FAILURE
+    data class ForeignHostRejected(operation: LogOperation, screen: LogScreen?,
+        correlationId: String?)                                                                  // LOG-004 ERROR, errorClass=INVALID_REQUEST
+    data class PageLoaded(page: Int, outcome: LogOutcome, durationMs: Long,
+        cacheSource: DataSource, correlationId: String?)                                         // LOG-010 DEBUG, operation=CHARACTER_LIST
+    data class PaginationExhausted(page: Int)                                                    // LOG-011 DEBUG, CHARACTER_LIST, SUCCESS
+    data class RequestDeduplicated(operation: LogOperation, page: Int?,
+        filterNames: Set<FilterName>, correlationId: String?)                                    // LOG-012 DEBUG
+    data class RetryScheduled(operation: LogOperation, errorClass: ErrorClass,
+        statusFamily: StatusFamily?, retryAfterSeconds: Long?, correlationId: String?)           // LOG-013 WARN
+    data class RequestCancelled(operation: LogOperation, correlationId: String?)                 // LOG-014 DEBUG, outcome=CANCELLED
+    data class UnknownValuePreserved(operation: LogOperation, pathTemplate: PathTemplate)        // LOG-022 DEBUG, outcome=SUCCESS
 }
+
+// The closed value sets of OBSERVABILITY.md §2.2 that these events carry; the protocol and the cache
+// source reuse RemoteProtocol (IC-021) and DataSource (IC-003), which already are those sets.
+enum class LogOperation { CHARACTER_LIST, CHARACTER_DETAIL, EPISODE_BATCH }
+enum class PathTemplate(val template: String) { CHARACTER("/character"), CHARACTER_BY_ID("/character/{id}"), EPISODES_BY_IDS("/episode/{ids}") }
+enum class FilterName(val wireName: String) { NAME("name"), STATUS("status") }
+enum class StatusFamily(val wireName: String) { SUCCESSFUL("2XX"), CLIENT_ERROR("4XX"), SERVER_ERROR("5XX"), NO_RESPONSE("NO_RESPONSE") }
+enum class LogOutcome { SUCCESS, EMPTY, FAILURE, CANCELLED }
+enum class ErrorClass { OFFLINE, TIMEOUT, NOT_FOUND, INVALID_REQUEST, RATE_LIMITED, SERVER, MALFORMED_RESPONSE, EMPTY_BODY, UNKNOWN }
+enum class LogScreen { SPLASH, DISCOVERY, CHARACTER_DETAIL, FAVORITES, EPISODES, SETTINGS }
 
 // :core:domain as well, since `DEC-093`: the sink half is what platform sinks and `:core:diagnostics` implement
 fun interface LogSink {
@@ -557,20 +590,35 @@ fun interface LogSink {
 data class LogRecord(
     val level: LogLevel,
     val catalogueId: String,
-    val fields: Map<LogField, String>,   // validated permitted fields only
+    val fields: Map<LogField, String>,   // validated permitted fields only, in their §2.2 form
 )
+
+// Every §2.2 field, by its wire name: PROTOCOL("protocol"), OPERATION("operation"), PATH_TEMPLATE("pathTemplate"),
+// PAGE, FILTER_NAMES, STATUS_FAMILY, CACHE_SOURCE, IS_STALE, DURATION_MS, CORRELATION_ID, OUTCOME, ERROR_CLASS,
+// SCREEN, COMPONENT, RETRY_AFTER_SECONDS, APP_VERSION, PLATFORM, BUILD_TYPE, CAUSE — each with its camelCase name.
+enum class LogField(val wireName: String) { /* … */ }
+
+// :core:data — the implementation; the factories are the only way to build one
+class ValidatingAppLogger private constructor(…) : AppLogger {
+    companion object {
+        fun forRelease(sink: LogSink): ValidatingAppLogger   // ERROR only, fixed
+        fun forDebug(sink: LogSink): ValidatingAppLogger     // every level
+    }
+}
 ```
 
-- **Semantics:** one contract for both platforms (`REQ-OBS-001`). Each `LogEvent` implementation is a `data class` whose properties are exactly the fields its catalogue row lists, typed by closed enums (`LogField`, the operation, path-template, status-family, cache-source, outcome, error-class, screen and component sets of `OBSERVABILITY.md` §2.2), never by a free-form `String` that a feature fills in. The `:core:data` implementation validates every field against `OBSERVABILITY.md` §2.2, drops a field that fails validation, and writes a `LogRecord` to the injected `LogSink`; the app shells supply the platform sinks. The debug-only diagnostic API reads the same validated records from `:core:diagnostics` (`DEC-088`).
+- **Semantics:** one contract for both platforms (`REQ-OBS-001`). Each `LogEvent` implementation is a `data class` whose properties are exactly the fields its catalogue row lists, typed by closed enums, never by a free-form `String` a feature fills in; the correlation id is the one string-typed field, and it is validated. A row whose emitter does not exist in the build yet — the cache events `LOG-005`…`LOG-009`, the image events `LOG-015`…`LOG-017`, the favourites events `LOG-018`/`LOG-019`, app start `LOG-020` and the screen event `LOG-021` — gains its implementation, and the value set it needs (`component`, for example), with that emitter. The `:core:data` implementation renders each event as its row's fields in the `OBSERVABILITY.md` §2.2 form (a path as its template, filter *names* sorted and comma-separated, a status family as `2XX`/`4XX`/`5XX`/`NO_RESPONSE`, a constant the row fixes from the row), omits a field the event leaves `null`, validates every value, drops a value that fails and counts it, and writes a `LogRecord` to the injected `LogSink`; a field with no emitter in the build has no valid value yet. The app shells supply the platform sinks. The debug-only diagnostic API reads the same validated records from `:core:diagnostics` (`DEC-088`).
+- **Correlation id:** 16 lowercase hex characters from a random source, generated on the client per request scope and carried in the coroutine context: a pager load opens one, a repository call outside a scope opens one, the single flight's shared work runs in the scope of the call that started it, and the adapter's events and the retry policy's read it. It is never persisted and never derived from input (`OBSERVABILITY.md` §4.1 rule 5).
+- **Emitters (B3 Phase 3.2):** the REST adapter logs `LOG-001` for every request it sends and exactly one of `LOG-002`, `LOG-003`, `LOG-004` or `LOG-014` when it ends, plus `LOG-022` when a mapped response preserved an unknown enum value; input rejected before a request exists is not logged. The retry policy logs `LOG-013`, the single flight logs `LOG-012` with the id of the request the duplicate joined, and the pager logs `LOG-010` (and `LOG-011` when pagination ends) for a load it publishes — never for a superseded one.
 - **Invariants**
   - There is exactly one logging interface. No other module declares a second one, and platform code calls no platform logging API for app diagnostics (`OBSERVABILITY.md` §2.1).
   - `log` never throws into its caller and never blocks it; a failing sink loses the record rather than queueing it (`OBSERVABILITY.md` §7).
-  - A disabled level builds no event: callers use the inline `log(level) { … }` form for `DEBUG`/`INFO`/`WARN` events.
-  - Release builds emit `ERROR` events only, with no runtime override (`DEC-039`, `OBSERVABILITY.md` §4.1 rule 7).
+  - A disabled level builds no event: callers use the inline `log(level) { … }` form.
+  - Release builds emit `ERROR` events only, with no runtime override: the threshold is fixed when the logger is built, and the build variant's source set picks the factory (`DEC-039`, `OBSERVABILITY.md` §4.1 rule 7).
   - No event carries search text, a filter value, a URL with parameters, an id-bearing path, a cache key, a response body or a stack trace (`REQ-SEC-005`, `OBSERVABILITY.md` §2.3). `TEST-UNIT-029` proves it on the real request path.
   - The contract adds no dependency to `:core:domain` beyond those `DEC-066` permits.
-- **Status:** declared here before implementation; `TASK-047` implements it in B3 Phase 3.2 and refines the per-event members in this row in the same change.
-- **Traceability:** `REQ-OBS-001`, `REQ-OBS-002`, `REQ-SEC-005`, `DEC-038`, `DEC-039`, `DEC-087`, `DEC-088`, `OBSERVABILITY.md` §2–§5.
+- **Status:** implemented by `TASK-047` in B3 Phase 3.2 (`TEST-UNIT-029`, `TEST-UNIT-032`, `TEST-UNIT-033`); the platform sinks and the variant wiring are target state until the shells exist (`TASK-044`, `TASK-051`).
+- **Traceability:** `REQ-OBS-001`, `REQ-OBS-002`, `REQ-SEC-005`, `DEC-038`, `DEC-039`, `DEC-087`, `DEC-088`, `DEC-093`, `OBSERVABILITY.md` §2–§5.
 
 ## 6. Presentation contracts (owned here)
 
@@ -936,6 +984,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.2: `IC-024` states its implemented members — the ten `LogEvent` classes with emitters, their value sets, `LogField`, the `ValidatingAppLogger` factories, the correlation id and the emitters — and its status; `IC-007` and `IC-014` record their implementations (`TASK-038`, `TASK-039`) and `IC-014.retry()` re-attempts a failed refresh as a refresh; §2's map places `LogSink`/`LogRecord` in `:core:domain`, as `DEC-093` decided, and the diagnostic API as implemented. | `TASK-038`, `TASK-039`, `TASK-047`, `DEC-092`, `DEC-093` |
 | 2026-10-02 | B3 Phase 3.2 readiness: `IC-014` gains `retry()` and the rule that a failure suppresses `next()` until a retry, refresh or new filter (`DEC-092`), states the paging-`404` end and the owner-supplied scope, and pins `isStale` to result provenance (`CONF-71`); `IC-024`'s `LogSink`/`LogRecord` move to `:core:domain` (`DEC-093`). | `DEC-092`, `DEC-093` |
 | 2026-10-02 | `IC-014` (`CharacterPager`, `PagerState`) relocated from `:core:data` to `:core:domain` before implementation, and §7 states the narrowed `:core:ios` export list; the signatures and invariants are unchanged (`DEC-091`, ADR-0014). | `DEC-091` |
 | 2026-10-02 | B3 Phase 3.1: `IC-007` gains the defaulted `PageLoadPolicy` parameter and the policy-in-identity invariant (`DEC-086`, `CONF-66`); `IC-011` returns `DataResult` as its invariants already required, and states the foreign-host and list-`404` rules (`DEC-090`, `CONF-64`); `IC-014.refresh()` uses `ForceNetwork`; `IC-024` declares the single logging contract in `:core:domain` with its `:core:data` sink (`DEC-087`, ADR-0013); the fakes are mapped to `IC-007`/`IC-011` (`CONF-69`). | `DEC-086`, `DEC-087`, `DEC-088`, `DEC-090` |

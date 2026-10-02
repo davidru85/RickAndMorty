@@ -1,6 +1,6 @@
 # OBSERVABILITY.md — Logging Contract, Redaction and Debug Diagnostics
 
-- **Status:** Active — target state; no code exists yet (see `DOCUMENTATION_AUDIT.md` §5)
+- **Status:** Active — the contract, its validating implementation, the request, retry, coalescing and pager events and the debug-only diagnostic API exist (B3 Phase 3.2, `TASK-047`); the platform sinks, the visible panels and the cache, image, favourites, app-start and screen events are target state (see `DOCUMENTATION_AUDIT.md` §5)
 - **Last verified:** 2026-10-02
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7) — this document decides *what may be recorded*
 - **Authoritative for:** the shared logging contract (levels, permitted fields, prohibited fields), the `LOG-###` structured event catalogue, redaction rules and their enforcement, the debug-only diagnostics surface, and the metrics vocabulary produced by the logging contract.
@@ -33,21 +33,21 @@ The identifiers in this document therefore describe **local diagnostics only**. 
 Both platforms `MUST` log through a single shared abstraction — one interface with a level set and a fixed field envelope. Platform code `MUST NOT` call `android.util.Log`, `os.Logger`/`print`, or a platform crash reporter directly for app diagnostics; the app shells provide an implementation of the shared interface that writes to the platform sink (`Logcat` on Android, `os.Logger` on iOS). `TEST-UNIT-032` asserts that both platforms use the contract with permitted fields only (`AC-REQ-OBS-001-1`).
 
 ```kotlin
-// :core:domain — shape only; the canonical signatures are CONTRACTS.md IC-024 (DEC-087)
+// :core:domain — shape only; the canonical signatures are CONTRACTS.md IC-024 (DEC-087, DEC-093)
 enum class LogLevel { DEBUG, INFO, WARN, ERROR }
 
 interface AppLogger {
-    fun log(level: LogLevel, event: LogEvent)
+    fun isEnabled(level: LogLevel): Boolean
+    fun log(event: LogEvent)              // at the event's catalogue level
 }
 
-/** Sealed set of permitted envelopes; see §3 for the catalogue. */
+/** One data class per §3 row that has an emitter, carrying exactly that row's fields as closed types. */
 sealed interface LogEvent {
-    val correlationId: String?          // request-scoped, never user-derived
-    val durationMs: Long?               // monotonic elapsed time, never wall clock
-    val cacheSource: CacheSource?       // NONE | NETWORK | MEMORY_CACHE | DISK_CACHE
-    val isStale: Boolean
-    val errorClass: ApiFailureKind?     // the failure *type*, never its message
+    val catalogueId: String               // "LOG-001" … "LOG-022"
+    val level: LogLevel
 }
+
+fun interface LogSink { fun write(record: LogRecord) }   // records carry validated §2.2 fields only
 ```
 
 Rules for the interface itself:
@@ -116,8 +116,8 @@ Legend for the **Visibility** column: `D` = debug builds only, `R` = present in 
 | `LOG-007` | Stale fallback served | `WARN` | `cacheSource=DISK_CACHE`, `isStale=true`, `operation`, `page`, `errorClass`, `correlationId` | `:core:data`, cache read when a fetch fails with data available | D |
 | `LOG-008` | Cache write skipped | `DEBUG` | `component=RESPONSE_CACHE`, `outcome`, `errorClass`, `correlationId` | `:core:data`, cache write guard (`AC-REQ-FUNC-020-3`) | D |
 | `LOG-009` | Cache entry discarded | `WARN` | `component=RESPONSE_CACHE`, `errorClass=MALFORMED_RESPONSE`, `correlationId` | `:core:data`, cache decode guard | D |
-| `LOG-010` | Page loaded | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome`, `durationMs`, `cacheSource`, `correlationId` | feature `:feature:discovery` pager | D |
-| `LOG-011` | Pagination exhausted | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome=SUCCESS` | feature pager when `info.next == null` | D |
+| `LOG-010` | Page loaded | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome`, `durationMs`, `cacheSource`, `correlationId` | `:core:data` shared pager (`IC-014`, `DEC-091`), for a load it publishes | D |
+| `LOG-011` | Pagination exhausted | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome=SUCCESS` | `:core:data` shared pager, when `info.next == null` or a paging `404` ends the list | D |
 | `LOG-012` | Duplicate request deduplicated | `DEBUG` | `operation`, `page`, `filterNames`, `correlationId` | `:core:data`, single-flight/dedupe guard (`REQ-REL-002`) | D |
 | `LOG-013` | Retry scheduled | `WARN` | `operation`, `errorClass`, `statusFamily`, `retryAfterSeconds`, `correlationId` | `:core:data`, retry policy (`REQ-REL-003`) | D |
 | `LOG-014` | Request cancelled | `DEBUG` | `operation`, `outcome=CANCELLED`, `correlationId` | `:core:data`, cancellation path | D |
@@ -153,10 +153,10 @@ Rules:
 
 | Rule | Enforced by |
 | --- | --- |
-| A query string never reaches a log sink (`AC-REQ-SEC-005-1`) | `TEST-UNIT-029` |
-| Both platforms use the one contract with permitted fields only (`AC-REQ-OBS-001-1`) | `TEST-UNIT-032` |
-| Release builds emit errors only and contain no debug surface (`AC-REQ-OBS-002-1`) | `TEST-UNIT-033` |
-| No analytics artifact in the dependency graph (`AC-REQ-OBS-003-1`) | `TEST-UNIT-034` |
+| A query string never reaches a log sink (`AC-REQ-SEC-005-1`) | `TEST-UNIT-029` — `LogRedactionTest` in `:core:data`, on the real search path at `DEBUG`, on the Android host and Apple targets |
+| Both platforms use the one contract with permitted fields only (`AC-REQ-OBS-001-1`) | `TEST-UNIT-032` — `ValidatingAppLoggerTest` and `RequestPathLoggingTest` in `:core:data`, run on both platform targets; the platform sinks join when the shells exist (`TASK-044`, `TASK-051`) |
+| Release builds emit errors only and contain no debug surface (`AC-REQ-OBS-002-1`) | `TEST-UNIT-033` — the release logger in `:core:data`, `DiagnosticsBoundaryTest` (`R11` debug-only edge and release closure, `R18`) in `build-logic`, and the diagnostic API's own cases in `:core:diagnostics` |
+| No analytics artifact in the dependency graph (`AC-REQ-OBS-003-1`) | `TEST-UNIT-034` — `verifyNoAnalytics` in `verifyDependencyPolicy`: the catalog's libraries and plugins, and the resolved `releaseRuntimeClasspath` of `:androidApp`. The iOS framework's graph joins it when `:core:ios` exists (`TASK-078`) |
 | A new field or event exists in this document | Review; `SECURITY.md` §7.1 |
 
 `TEST-UNIT-029` `MUST` exercise the real path — a search request carrying a distinctive query value — and assert that the value appears in no captured sink record, including `DEBUG`-level records. A test that only inspects the contract type is not sufficient evidence.
@@ -168,6 +168,8 @@ Because `TEST-UNIT-029` and `TEST-UNIT-032` guard a behaviour change, they are w
 `REQ-OBS-002` requires a diagnostics surface in debug builds that exposes the last failure and the current data source. This section defines its content and its gating.
 
 **Staging and hosting (`DEC-085`, `DEC-088`).** The surface is delivered in three steps. B3 (`TASK-047`, Phase 3.2) delivers the read-only diagnostic **API** in `:core:diagnostics`, proved on real request and pager paths; values that later integrations own (cache counts, the favourites count, the screen) are reported as unavailable, never as an invented zero or a fabricated screen. B4 (`TASK-044`) renders the visible Android panel from a debug-only source set of `:androidApp`, which is the only Android configuration that declares `:core:diagnostics`. B7 (`TASK-051`) supplies the iOS host and links the module in the app's Debug configuration only. Until each step lands, its part of the surface is target state.
+
+**What the API reports (B3 Phase 3.2).** `DiagnosticsRecorder` is a `LogSink`, so it folds only records that passed the validator. From the events this build emits it reports the last failure's `errorClass` (`LOG-003`/`LOG-004`), the current data source of the last published page (`LOG-010`), the last request's `durationMs` and `statusFamily` (`LOG-002`/`LOG-003`), and the pager's page and whether a next page exists (`LOG-010`/`LOG-011`). Every other item is `Unavailable`, naming what delivers it: the failure's screen and the stale indicator (the screen state holders, `LOG-021`), cache state (`TASK-020`), the favourites count (`TASK-040` with the panel host of `TASK-044`) and the build envelope (the shells, `LOG-020`). Whether an append is in flight is carried by no event; the panel host reads it from the pager state it already observes (`TASK-044`), or the catalogue gains a field first.
 
 | Item | Shown | Format |
 | --- | --- | --- |
@@ -236,4 +238,5 @@ Observability `MUST NOT` become a failure source.
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.2 (`TASK-047`): the contract, its validating implementation and the emitters of `LOG-001`…`LOG-004`, `LOG-010`…`LOG-014` and `LOG-022` exist; §2.1's sketch follows `IC-024`; `LOG-010`/`LOG-011` are emitted by the `:core:data` pager, where `DEC-091` placed it; §4.2 names the implementing tests and records that the iOS framework graph joins `TEST-UNIT-034` with `:core:ios`; §5 states what the diagnostic API reports and what is unavailable. | `TASK-047`, `DEC-087`, `DEC-088`, `DEC-091` |
 | 2026-09-29 | Created as the replacement for the never-created `ANALYTICS.md`: shared logging contract with permitted and prohibited fields, `LOG-001`…`LOG-022` catalogue, redaction enforcement, debug diagnostics surface and the metrics mapping for `API_SPECS.md` §9. No analytics SDK and no `EVT-###` namespace. | DEC-038, DEC-039, DEC-052, DEC-053, DEC-054 |

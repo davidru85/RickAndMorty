@@ -21,7 +21,7 @@ The assignment ([`assessment.md`](assessment.md)) asks for:
 | Requirement | How this project answers it |
 | --- | --- |
 | List all characters and inspect the selected one | Character list (paginated, searchable, filterable) and character detail |
-| Review how the project is structured, whether SOLID is applied | The 11 modules of ADR-0001 with inward-only dependencies, Clean Architecture layers inside each feature, documented contracts and ADRs |
+| Review how the project is structured, whether SOLID is applied | The 12 modules of ADR-0001 as amended (the debug-only `:core:diagnostics` included) with inward-only dependencies, Clean Architecture layers inside each feature, documented contracts and ADRs |
 | "Very image oriented company, UX is important" | Image-first design system, dynamic portrait accents, shared-element transitions, screenshot-tested UI |
 | Performance discussion | Numeric budgets with a measurement method in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
 | Extras: image caching, error handling, response caching, tests, filter/search | All committed — see the feature table in §3 |
@@ -98,11 +98,13 @@ flowchart LR
     subgraph Core
         CORE[":core:domain"] 
         CP[":core:presentation<br/>LoadState, formatters, copy keys"]
-        CDA[":core:data<br/>DTOs, mappers, Ktor, cache, pager, favorites"]
+        CDA[":core:data<br/>DTOs, mappers, Ktor, cache, pager, favorites, logger"]
         CDS[":core:designsystem<br/>tokens + Compose components"]
+        CDG[":core:diagnostics<br/>debug-only diagnostic API"]
     end
     CDA --> CORE
     CP --> CORE
+    CDG --> CORE
     FEAT --> CDS
     CDA --> API[("rickandmortyapi.com")]
 ```
@@ -175,7 +177,7 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 
 | Task | Command | State |
 | --- | --- | --- |
-| List the module set | `./gradlew projects` | Executed 2026-10-01 — the 11 modules of ADR-0001, grouped by the `:core` and `:feature` container projects (13 Gradle projects) |
+| List the module set | `./gradlew projects` | Executed 2026-10-02 — the 12 modules of ADR-0001 as amended by ADR-0013, grouped by the `:core` and `:feature` container projects (15 Gradle projects) |
 | Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-10-01 — succeeded, no Android Lint error |
 | Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-10-01 — succeeded with no `iosApp/` present and from a clean clone |
 | Install on a connected device/emulator | `./gradlew :androidApp:installDebug` | Not run — the skeleton's APK has no activity yet (TASK-044) |
@@ -191,8 +193,8 @@ Every pull request must pass the full suite on both platforms before it can be a
 <!-- local-gate:begin -->
 | All shared and unit tests, plus the build-logic regression suite | `./gradlew allTests :build-logic:convention:test` | Executed 2026-10-02: the shared suites run on the JVM host-test target and on both Apple targets (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) and the build-logic regression suite runs in the included build. The earlier row documented `./gradlew test`, which selects only the Android unit-test tasks and reaches neither the shared KMP suites nor the build-logic suite (`GAP-020`; `TASK-103`) |
 | Formatting, static analysis and dependency checks | `./gradlew ktlintCheck lintDebug buildHealth` | Executed 2026-10-01 — ktlint, Android Lint and `buildHealth` pass (TASK-029, `DEC-075`, `DEC-077`) |
-| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-01: all pass — 14 projects checked (`R1`–`R16`, `S1`–`S3`, effective inherited edges and Compose-only for `:core:designsystem`), and `VERSION` validated with every Android artifact task depending on it |
-| Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-01: passes; also runs as part of `./gradlew check` and `./gradlew build` |
+| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-02: all pass — 15 projects checked (`R1`–`R18`, `S1`–`S3`, effective inherited edges, Compose-only for `:core:designsystem`, and `:core:diagnostics` linked from debug configurations only with its release closure checked), `VERSION` validated with every Android artifact task depending on it, and no analytics artifact in the catalog or in `:androidApp`'s resolved release graph (`verifyNoAnalytics`, `TEST-UNIT-034`) |
+| Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`, no analytics artifact) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-02: passes; also runs as part of `./gradlew check` and `./gradlew build` |
 | Contract suite in fixture/replay mode on the Android host target (the `android` job's contract step) | `./gradlew :core:data:contractTestReplayAndroidHost` | Executed 2026-10-02: runs exactly the `TEST-CONTRACT-*` cases of `testAndroidHostTest` — 18 cases, 0 failures — and fails when its target executes none (`TASK-037`, `DEC-073`, `DEC-090`) |
 | Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-01: passes (0 findings over the working set, every reachable blob and every unique historical path); also runs as part of `./gradlew check` and `./gradlew build` |
 <!-- local-gate:end -->
@@ -272,7 +274,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Visual specification | Complete, pending two Figma screens (error states) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Process documentation | Complete — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
 | Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules of ADR-0001 build, with the Android app assembling while no `iosApp/` exists yet |
-| Implementation | In progress — B3 Phase 3.1 (`TASK-036`, `TASK-037`) in review: the `:core:domain` model and seams, the REST adapter with its fixture contract tests, and the behavioural fakes. No feature or screen exists yet — see [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.3 and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
+| Implementation | In progress — B3 Phase 3.1 (`TASK-036`, `TASK-037`) merged in PR #110: the `:core:domain` model and seams, the REST adapter with its fixture contract tests, and the behavioural fakes. B3 Phase 3.2 (`TASK-038`, `TASK-039`, `TASK-047`) in review: the repository with request coalescing, the bounded retry policy and the host allow-list, the shared pager, the logging contract with its redaction, and the debug-only diagnostic API. No feature or screen exists yet — see [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.4 and [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
 | `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim, `verifyDependencyPins` rejects every malformed value, and every Android artifact task depends on its validation (TASK-089). The iOS `CFBundleShortVersionString` derivation arrives with `TASK-051` |
 | CI | Active — TASK-025, PR #52: `.github/workflows/pull-request.yml` gates every pull request and every push to `main`. The `ios` job is suspended by `DEC-083` until `TASK-051` introduces the iOS app; the `android` job carries the gate meanwhile |

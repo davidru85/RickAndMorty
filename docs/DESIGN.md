@@ -1,6 +1,6 @@
 # DESIGN.md - System Architecture Design
 
-- **Status:** Active — the architecture below is target state; the Gradle/KMP build skeleton (TASK-014) exists, no feature behaviour does (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
+- **Status:** Active — the architecture below is target state; the Gradle/KMP build skeleton (TASK-014) and the shared core of B3 — domain, REST adapter, repository with coalescing and retry, pager, logging and the diagnostic API — exist, no feature behaviour does (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
 - **Last verified:** 2026-10-02
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
@@ -112,6 +112,7 @@ flowchart TB
         CP[":core:presentation"]
         CDS[":core:designsystem"]
         CT[":core:testing"]
+        CDG[":core:diagnostics (debug only)"]
     end
     subgraph Features
         FD[":feature:discovery"]
@@ -145,6 +146,8 @@ flowchart TB
     APP --> FS
     APP --> CDS
     APP -. composition root .-> CDA
+    APP -. debugImplementation only .-> CDG
+    CDG --> CD
     CIOS --> FD
     CIOS --> FC
     CIOS --> FF
@@ -170,11 +173,12 @@ flowchart TB
 | Module | Target | Responsibility | Depends on |
 | --- | --- | --- | --- |
 | `:core:domain` | `commonMain` | Domain models (`CharacterSummary`, `CharacterDetails`, `CharacterStatus`, `CharacterGender`, `LocationSummary`, `EpisodeSummary`, `CharacterId`, `CharacterFilter`), repository interfaces (`CharacterRepository`, `FavoritesRepository`, `AppSettingsRepository`), `AppSettings` and `RemoteProtocol`, `DataResult`, `DataSource`, `ApiFailure`, the pager contract `CharacterPager`/`PagerState` (`IC-014`, `DEC-091`), the logging contract (`IC-024`), and the use cases that are genuinely shared across features (`ObserveFavoriteIds`). **The API module** every feature consumes (ADR-0014). | Kotlin stdlib + `kotlinx-coroutines-core` only (`DEC-066`) |
-| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, the shared pager's implementation, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy. **The implementation module**: only the composition roots (`:androidApp`, `:core:ios`) and the test harness consume it (`DEC-091`). | `:core:domain` |
+| `:core:data` | `commonMain` + platform source sets | Ktor client and engines, the REST and GraphQL remote data sources with their DTOs, envelopes and mappers, the per-request protocol selector (ADR-0011), app-level response cache, the shared pager's implementation, favorites and app-settings stores, repository implementations, failure mapping, retry/timeout policy, and the validating logger of `IC-024` (`DEC-087`). **The implementation module**: only the composition roots (`:androidApp`, `:core:ios`) and the test harness consume it (`DEC-091`). | `:core:domain` |
 | `:core:presentation` | `commonMain` | Cross-feature presentation primitives only: `LoadState`, display formatters ("Unknown" casing, status labels, dimension derivation), canonical copy keys. No screen-specific state. | `:core:domain` |
 | `:core:designsystem` | Android | `MultiverseTheme` (single M3 colour scheme, no light/dark or dynamic-colour variants, Roboto Flex type scale, shapes), `MultiverseColors`, components: `CharacterCard`, `StatusBadge`, `StatTile`, `InfoListItem`, `PortalLogo`, skeletons, empty-state component. | Compose only |
 | `:core:ios` | Apple targets only | **Build wiring, no behaviour.** Its only purpose is to produce the single Kotlin framework the iOS app links: it declares the two Apple targets of ADR-0002 and one `binaries.framework` that exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api` (ADR-0012, `DEC-058`, as amended by `DEC-091`). It has no source file, no `androidTarget` and no consumer on the Android side. | every `:feature:*`, `:core:domain`, `:core:presentation` — declared `api`, because `export` admits only `api` dependencies; `:core:data` as an unexported `implementation` (`DEC-091`) |
 | `:core:testing` | KMP | Shared fakes (fake repositories, fake `CacheStorage`, fake favorites store, fake clock, fake image loader), JSON fixtures, `TestDispatcher` helpers. Test source sets only — never shipped. | `:core:domain`, `:core:data` |
+| `:core:diagnostics` | KMP | The debug-only, read-only diagnostic API (`OBSERVABILITY.md` §5): `DiagnosticsRecorder`, a `LogSink` that folds the validated records into one snapshot — last failure class, current data source, last request timing, pager position — and reports every value nothing in the build produces yet as unavailable, naming its deliverer. No request trigger, no export (`DEC-085`, `DEC-088`, [ADR-0013](adr/0013-observability-placement.md); created by `TASK-047`). Linked by debug configurations only. | `:core:domain` (+ `kotlinx-coroutines-core` for its `StateFlow`) |
 
 ### 3.2 Feature modules (one per user-facing capability)
 
@@ -222,7 +226,7 @@ iOS mirrors the feature split with Swift packages under `iosApp/`: `Features/Dis
 8. Use-case placement: feature-specific use cases live in the feature's `domain` package; only genuinely cross-feature use cases live in `:core:domain`.
 9. Test source sets may depend on `:core:testing`; production source sets may not. This holds for `:core:data` and `:core:presentation` as for every feature (`R2`/`R3`, `DEC-089`). `:core:domain`'s test source sets are the one exception: they may declare the approved test libraries `kotlin-test`, `kotlin-test-junit` and `kotlinx-coroutines-test` (`R14`) but no project module (`R1`), so a domain test never reaches the HTTP-bearing harness.
 10. `:core:ios` is the only module that declares a native framework binary, and the only module that depends on all five `:feature:*` modules and on the three shared production `:core:*` modules (`:core:domain`, `:core:data`, `:core:presentation`). It exports the features, `:core:domain` and `:core:presentation`, and links `:core:data` as an unexported `implementation` (`DEC-091`, resolving `CONF-54`); `R12` rejects an `api` edge to `:core:data`. It never depends on `:core:designsystem` (Android-only) or `:core:testing` (test-only). `iosApp` depends on `:core:ios` and on nothing else from the shared core. No Android source set may depend on `:core:ios`, and no other module may depend on it (ADR-0012).
-11. `:core:diagnostics` (`DEC-088`, [ADR-0013](adr/0013-observability-placement.md), created by `TASK-047`; target state until then) depends on `:core:domain` only and is declared by debug configurations only: `debugImplementation` in `:androidApp` and the iOS app's Debug configuration. No release configuration and no `:core:*`/`:feature:*` production source set depends on it.
+11. `:core:diagnostics` (`DEC-088`, [ADR-0013](adr/0013-observability-placement.md), created by `TASK-047`) depends on `:core:domain` only (`R18`); its test source sets may also reach `:core:testing` and `:core:data`, because the diagnostic API is proved on the real request and pager paths (`DEC-094`). It is declared by debug configurations only: `debugImplementation` in `:androidApp` (`TASK-044`) and the iOS app's Debug configuration (`TASK-051`). `R11` rejects a shell edge from any other configuration, judged on the effective configuration so an inherited edge is caught where it lands, and walks the release closure of `:androidApp` so the module cannot enter a release graph through another module either (`TEST-UNIT-033`). No `:core:*`/`:feature:*` production source set depends on it (`R2`, `R3`, `R8`, `R12`).
 12. `:androidApp` is the Android composition root (§5): it composes the five features and `:core:designsystem`, and it is the one Android module that may depend on `:core:data` to wire the implementations behind the domain interfaces (`R11`, `DEC-091`). It declares that edge when `TASK-044` builds the graph.
 
 **Target set.** ADR-0002 as amended by `DEC-079` permits one more target than the
@@ -421,6 +425,8 @@ The two remote sources return equal domain values for the same logical request; 
 - **Graph ownership:** each feature module declares its own Koin module (`discoveryModule`, `characterDetailModule`, `favoritesModule`, `settingsModule`), binding its use cases and state holders against `:core:domain` interfaces only. `:core:data` provides `coreModule`, which binds the implementations (`DEC-091`, ADR-0014). The composition root starts the graph by loading every feature module plus `coreModule` — `:androidApp` on Android, the `:core:ios` bootstrap on iOS — so no feature names an implementation. This keeps a feature's wiring inside the feature.
 - **Singletons:** Ktor `HttpClient`, response cache, favorites store, app-settings store, both remote data sources, repositories, Coil `ImageLoader` (Android), `CharacterAccentResolver`.
 - **Factories:** feature use cases.
+- **Logging and diagnostics (`IC-024`, ADR-0013):** the composition root builds one `ValidatingAppLogger` over the platform sink — `forRelease` from the release source set and `forDebug` from the debug one, so the threshold is chosen by the build variant, never by a runtime flag — and passes it to the remote adapter, the repository and every pager it creates. In a debug build the sink also writes to `:core:diagnostics`' `DiagnosticsRecorder`, which the debug panel reads (`TASK-044` on Android, `TASK-051` on iOS). Neither shell exists yet, so this wiring is target state.
+- **Pager scope:** a `RepositoryCharacterPager` is created per state holder with that holder's scope, which owns its loads (`IC-014`).
 - **State-holder scope:** `DiscoveryViewModel` (in `:feature:discovery`, Android) and `CharacterDetailViewModel` (in `:feature:character-detail`, Android) are resolved with `koinViewModel()`. On iOS the shared graph is started from the app target and each feature package resolves its own dependencies into its `ObservableObject`; there is no `StateFlow`-to-Swift bridge (DEC-013).
 
 ## 6. Class diagram
@@ -549,6 +555,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.2: §3.1 lists `:core:diagnostics` and the validating logger in `:core:data`; §3 draws the debug-only edge; §3.4 rule 11 states `R18` and the release closure of `R11` that make the module's exclusion executable (`DEC-094`); §5 states how a composition root picks the logger by build variant and creates a pager per state holder. | `TASK-039`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-02 | §3.5 states the exclusion register's lifecycle as the owner decided it (`DEC-081`): per-edge consumption, read from the build model, with a missing package fact a diagnostic rather than an assumption. The JVM bytecode rule now covers every eligible opt-in compilation, so none inherits the daemon level (`DEC-080`). | `TASK-101`, `TASK-105`, `DEC-080`, `DEC-081` |
 | 2026-10-01 | §3.4 rule 4 gains the Compose-only enforcement (`R15`) and the enforcement statement now describes effective (inherited) edges and the toolchain-implicit exclusion, after `TASK-088` closed `GAP-012`. | `TASK-088`, `DEC-066`, `DEC-068` |
 | 2026-10-01 | §3.4's enforcement statement names the executable check: `verifyModuleBoundaries` from `multiverse.module.boundaries` in the root `check`, its rule set (project edges, source-set kinds, the `:core:domain` allow-list, the staged `DEC-068` rules) and its fail-closed behaviour (`TASK-017`). | `TASK-017`, `DEC-066`, `DEC-068`, `REQ-NFR-009` |
