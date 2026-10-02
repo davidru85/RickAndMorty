@@ -22,6 +22,14 @@ abstract class VerifyWorkflowGateTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val workflows: ConfigurableFileCollection
 
+    /**
+     * The Xcode projects under `iosApp/` the restoration tripwire reads (`DEC-083`): declared so a new
+     * application target is part of what the task inspects, never an untracked file it happens to see.
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val iosProjectFiles: ConfigurableFileCollection
+
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
 

@@ -147,6 +147,11 @@ class DependencyPolicyPlugin : Plugin<Project> {
             description = "TEST-UNIT-044: the required-check set is present and blocking in the workflow " +
                 "configuration, and every action is pinned by full commit SHA (AC-REQ-NFR-011-1; DEC-037, DEC-054)."
             this.workflows.from(workflowFiles)
+            iosProjectFiles.from(
+                target.fileTree(target.layout.projectDirectory.dir(IosAppTripwire.IOS_APP_DIRECTORY)) {
+                    include("**/project.pbxproj")
+                },
+            )
             rootDirectory.set(target.layout.projectDirectory)
         }
 

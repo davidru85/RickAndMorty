@@ -35,6 +35,11 @@ import java.io.File
  * activates those with their own tasks, and an always-green placeholder job would be worse than an
  * absent one because it would be cited as evidence.
  *
+ * **Temporary iOS suspension (`DEC-083`).** The `ios` job and its native checks are required only
+ * once [IosAppTripwire] finds an `iosApp` application target; until then the gate is the `android`
+ * job, which must carry every Android check and the host contract replay. Every rule above applies
+ * to an `ios` job that is present anyway, and nothing about the `android` job is relaxed.
+ *
  * Diagnostics carry the file and the line of the YAML node they concern, so a reviewer can act on
  * them without re-parsing by hand. Line numbers come from the file's own text; nothing here
  * re-implements YAML.
@@ -59,7 +64,8 @@ internal object WorkflowGateGuard {
         listOf(
             RequiredCommand("./gradlew check", setOf("android", "ios")),
             RequiredCommand(":androidApp:assembleDebug", setOf("android")),
-            RequiredCommand("iosSimulatorArm64Test", setOf("ios")),
+            // `TASK-037` (`DEC-073`): the contract-fixture row is active on the Android host target.
+            RequiredCommand(":core:data:contractTestReplayAndroidHost", setOf("android")),
             RequiredCommand("verifyModuleBoundaries", setOf("android", "ios")),
             RequiredCommand("verifyDependencyPolicy", setOf("android", "ios")),
             RequiredCommand("verifyRepositoryHygiene", setOf("android", "ios")),
@@ -68,11 +74,24 @@ internal object WorkflowGateGuard {
             RequiredCommand("verifyDocumentedGate", setOf("android", "ios")),
         )
 
+    /**
+     * The native checks the `ios` job carries, required again once an `iosApp` application target
+     * exists (`DEC-083`; restored by `TASK-051`).
+     */
+    private val IOS_RESTORED_COMMANDS =
+        listOf(
+            RequiredCommand("iosSimulatorArm64Test", setOf("ios")),
+            RequiredCommand(":core:data:contractTestReplayIosSimulator", setOf("ios")),
+        )
+
     /** A command that must run somewhere, and the job kinds allowed to carry it. */
     private data class RequiredCommand(val command: String, val allowedJobs: Set<String>)
 
-    /** The jobs that must exist, because each carries part of the required set. */
+    /** The jobs the gate knows: each carries part of the required set when it is required. */
     private val REQUIRED_JOBS = listOf("android", "ios")
+
+    /** The jobs required at this stage: `ios` only once the tripwire has fired (`DEC-083`). */
+    private fun requiredJobs(iosRestored: Boolean): List<String> = if (iosRestored) REQUIRED_JOBS else listOf("android")
 
     /** The runner each required job must use: one Linux, one macOS (`DEC-054`, `DEC-071`). */
     private val REQUIRED_RUNNERS = mapOf("android" to "ubuntu-latest", "ios" to "macos-latest")
@@ -145,8 +164,9 @@ internal object WorkflowGateGuard {
                 parse(file, root, findings)?.let { WorkflowDocument(file, it) }
             }
 
-        scanTriggers(documents, root, findings)
-        scanJobs(documents, root, findings)
+        val iosApplications = IosAppTripwire.applicationProjects(root)
+        scanTriggers(documents, root, findings, iosApplications)
+        scanJobs(documents, root, findings, iosApplications.isNotEmpty())
 
         // TEST-UNIT-044: live mode must be unreachable from the merge gate, under any trigger
         // spelling. The trigger set is decided from the parsed `on:` node, not from a regex.
@@ -291,6 +311,7 @@ internal object WorkflowGateGuard {
         documents: List<WorkflowDocument>,
         root: File,
         findings: MutableList<Finding>,
+        iosApplications: List<String>,
     ) {
         val gateDocuments = documents.filter { document -> document.jobNames().any { it in REQUIRED_JOBS } }
         if (gateDocuments.isEmpty()) {
@@ -300,13 +321,20 @@ internal object WorkflowGateGuard {
         }
         gateDocuments.forEach { document ->
             val mergeEvents = document.mergeGateEvents()
-            REQUIRED_JOBS.forEach { job ->
+            requiredJobs(iosApplications.isNotEmpty()).forEach { job ->
                 if (job !in document.jobNames()) {
+                    val restoration =
+                        if (job == "ios") {
+                            "; `${iosApplications.first()}` declares an iOS application target, so the DEC-083 " +
+                                "suspension has ended and the job is restored in the same change (TASK-051)"
+                        } else {
+                            ""
+                        }
                     findings +=
                         Finding(
                             document.relative(root),
                             document.lineOfKey("jobs") ?: 1,
-                            "the `$job` job is missing; its part of the required set is not run",
+                            "the `$job` job is missing; its part of the required set is not run$restoration",
                         )
                 }
             }
@@ -353,6 +381,7 @@ internal object WorkflowGateGuard {
         documents: List<WorkflowDocument>,
         root: File,
         findings: MutableList<Finding>,
+        iosRestored: Boolean,
     ) {
         documents.forEach { document ->
             val relative = document.relative(root)
@@ -424,7 +453,8 @@ internal object WorkflowGateGuard {
                         .mapNotNull { text -> text.takeIf { it.actuallyExecutes() } }
                 }
         val anchor = gateDocuments.first()
-        REQUIRED_COMMANDS.forEach { required ->
+        val requiredCommands = if (iosRestored) REQUIRED_COMMANDS + IOS_RESTORED_COMMANDS else REQUIRED_COMMANDS
+        requiredCommands.forEach { required ->
             val carriers: List<String> =
                 executableByJob.filter { (_, texts) -> texts.any { it.contains(required.command) } }.keys.toList()
             if (carriers.isEmpty()) {
