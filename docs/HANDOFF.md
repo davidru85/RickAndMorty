@@ -103,7 +103,7 @@ JSON
 gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
 ```
 
-**Applied and observed on 2026-10-02.** The second command prints exactly one context, `android`, bound to `integration_id 15368`; every other rule, the empty bypass list and merge-only delivery are unchanged. Pull request #110 therefore awaits `android` only — the `ios` context is no longer reported as an outstanding requirement. Its run on the phase head (`13e66a45`) concluded green, and is being re-run on the same head at the owner's request. `TASK-051` restores `ios` with the same request and `{ "context": "ios", "integration_id": 15368 }` added back, in the change that introduces the app target.
+**Applied and observed on 2026-10-02.** The second command prints exactly one context, `android`, bound to `integration_id 15368`; every other rule, the empty bypass list and merge-only delivery are unchanged. Pull request #110 therefore awaits `android` only — the `ios` context is no longer reported as an outstanding requirement. Its run on the phase head (`13e66a45`) concluded green, and is being re-run on the same head at the owner's request. `TASK-051` restores `ios` with the same request and `{ "context": "ios", "integration_id": 15368 }` added back, in the change that introduces the app target; `TASK-108` owns that settings half and its read-back.
 
 ## 2. Completed work
 
