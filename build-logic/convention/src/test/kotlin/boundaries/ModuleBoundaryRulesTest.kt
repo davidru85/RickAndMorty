@@ -51,10 +51,12 @@ class ModuleBoundaryRulesTest {
         coordinates: String,
         configuration: String = "commonMainImplementation",
         sourceSet: String = "commonMain",
+        kind: SourceSetKind = SourceSetKind.PRODUCTION,
     ) = DeclaredExternalDependency(
         consumer = consumer,
         configuration = configuration,
         sourceSet = sourceSet,
+        kind = kind,
         group = coordinates.substringBefore(':'),
         name = coordinates.substringAfter(':'),
     )
@@ -364,6 +366,62 @@ class ModuleBoundaryRulesTest {
             emptyMap(),
         )
         assertEquals(emptyList(), only(allowed, "R14").map { it.render() })
+    }
+
+    @Test
+    fun `R14 admits the approved test libraries in a domain test source set only`() {
+        val approved = listOf(
+            "org.jetbrains.kotlin:kotlin-test",
+            "org.jetbrains.kotlin:kotlin-test-junit",
+            "org.jetbrains.kotlinx:kotlinx-coroutines-test",
+        )
+        val inTests = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":core:domain",
+                    externals = approved.map {
+                        external(
+                            ":core:domain",
+                            it,
+                            configuration = "commonTestImplementation",
+                            sourceSet = "commonTest",
+                            kind = SourceSetKind.TEST,
+                        )
+                    },
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(
+            emptyList(),
+            only(inTests, "R14").map { it.render() },
+            "DEC-089: a domain test may declare the approved test libraries",
+        )
+
+        val inProduction = ModuleBoundaryRules.evaluate(
+            complete(project(":core:domain", externals = approved.map { external(":core:domain", it) })),
+            emptyMap(),
+        )
+        assertEquals(3, only(inProduction, "R14").size, "DEC-066: a test library is never a production dependency")
+
+        val otherInTests = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":core:domain",
+                    externals = listOf(
+                        external(
+                            ":core:domain",
+                            "io.ktor:ktor-client-mock",
+                            configuration = "commonTestImplementation",
+                            sourceSet = "commonTest",
+                            kind = SourceSetKind.TEST,
+                        ),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(otherInTests, "R14").size, "DEC-089: the test allow-list is closed")
     }
 
     @Test
