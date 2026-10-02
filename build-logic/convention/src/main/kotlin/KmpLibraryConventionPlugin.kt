@@ -48,7 +48,14 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                 iosArm64()
                 iosSimulatorArm64()
                 if (wantsJvmTarget) {
-                    jvm()
+                    // TASK-101 (`B2-R04`, `GAP-018`): the opt-in JVM compilation is configured for
+                    // the documented bytecode level. Without this it inherits the daemon's target
+                    // and produced class-file major version 69 where the contract documents 61.
+                    jvm {
+                        compilerOptions {
+                            jvmTarget.set(JvmTarget.JVM_17)
+                        }
+                    }
                 }
 
                 explicitApi()

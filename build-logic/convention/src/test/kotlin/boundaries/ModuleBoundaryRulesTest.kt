@@ -20,13 +20,22 @@ class ModuleBoundaryRulesTest {
         path: String,
         edges: List<DeclaredEdge> = emptyList(),
         externals: List<DeclaredExternalDependency> = emptyList(),
+        targets: List<String> = ACCEPTED,
+        moduleLocalProperties: List<String> = emptyList(),
     ) = ProjectSnapshot(
         path = path,
         directory = path.trimStart(':').replace(':', '/'),
         moduleKind = moduleKindOf(path),
         edges = edges,
         externalDependencies = externals,
+        targets = targets,
+        moduleLocalProperties = moduleLocalProperties,
     )
+
+    /** The accepted target set of every current KMP library (`DEC-080`). */
+    private companion object {
+        val ACCEPTED = listOf("android", "iosArm64", "iosSimulatorArm64")
+    }
 
     private fun edge(
         consumer: String,
@@ -396,5 +405,115 @@ class ModuleBoundaryRulesTest {
         assertTrue(rendered.contains("TEST-UNIT-017 R1 consumer=:core:domain"))
         assertFalse(rendered.contains("/Users/"), "no machine path is ever rendered")
         assertEquals(rendered, log.render(), "two renders of one log are identical")
+    }
+
+    // --- R17 (TASK-101, B2-R04, GAP-018): the target set and the opt-in JVM target ---
+
+    @Test
+    fun `a KMP library that lost a required target is reported by its own rule`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(project(":feature:settings", targets = listOf("android", "iosSimulatorArm64"))),
+                emptyMap(),
+            )
+        assertEquals(
+            listOf("R17"),
+            only(log, "R17").map { it.ruleId },
+            "GAP-018: a module missing the iosArm64 target must be reported",
+        )
+        assertTrue(
+            only(log, "R17").single().reason.contains("iosArm64"),
+            "the diagnostic must name the missing target",
+        )
+    }
+
+    @Test
+    fun `an unapproved target on a feature module is reported`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(project(":feature:settings", targets = ACCEPTED + "wasmJs")),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").any { it.reason.contains("wasmJs") },
+            "GAP-018: an unapproved platform must be reported, not silently accepted",
+        )
+    }
+
+    @Test
+    fun `the opt-in JVM target on a feature module is reported even when the property is module-local`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        ":feature:settings",
+                        targets = ACCEPTED + "jvm",
+                        moduleLocalProperties = listOf("multiverse.jvmTarget"),
+                    ),
+                ),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").any { it.reason.contains("only a `:core:*` KMP library may declare") },
+            "GAP-018 reproduced: :feature:settings opting in must fail, which the shipped check passed",
+        )
+    }
+
+    @Test
+    fun `a core module with the module-local opt-in and a JVM target is accepted`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        ":core:data",
+                        targets = ACCEPTED + "jvm",
+                        moduleLocalProperties = listOf("multiverse.jvmTarget"),
+                    ),
+                ),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").isEmpty(),
+            "DEC-080: a `:core:*` module with a module-local opt-in is the permitted case",
+        )
+    }
+
+    @Test
+    fun `a JVM target without the module-local opt-in is reported`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(project(":core:data", targets = ACCEPTED + "jvm", moduleLocalProperties = emptyList())),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").any { it.reason.contains("module-local") },
+            "DEC-080: a JVM target must be selected by the module's own property",
+        )
+    }
+
+    @Test
+    fun `a module-local opt-in that selects nothing is reported`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(project(":core:data", moduleLocalProperties = listOf("multiverse.jvmTarget"))),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").any { it.reason.contains("stale declaration") },
+            "DEC-080: a property that selects nothing is a stale declaration",
+        )
+    }
+
+    @Test
+    fun `the implicit metadata target is neither required nor rejected`() {
+        val log =
+            ModuleBoundaryRules.evaluate(
+                complete(project(":core:data", targets = ACCEPTED + "metadata")),
+                emptyMap(),
+            )
+        assertTrue(
+            only(log, "R17").isEmpty(),
+            "metadata is the common-source-set target KMP always creates; reporting it is a false positive",
+        )
     }
 }

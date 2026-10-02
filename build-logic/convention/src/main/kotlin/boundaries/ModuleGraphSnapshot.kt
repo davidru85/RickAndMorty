@@ -81,6 +81,23 @@ data class ProjectSnapshot(
     val moduleKind: ModuleKind,
     val edges: List<DeclaredEdge>,
     val externalDependencies: List<DeclaredExternalDependency>,
+    /**
+     * The Kotlin Multiplatform targets the module declares, by name.
+     *
+     * A target set is architecture: `DEC-080` permits a JVM target on a `:core:*` module only, and
+     * `DEC-054` requires the Android and both Apple targets everywhere. The snapshot carries the
+     * actual set so a rule can decide on it, instead of the check inferring it from the presence of
+     * tasks (`TASK-101`, `GAP-018`).
+     */
+    val targets: List<String> = emptyList(),
+    /**
+     * The module-local opt-in properties this module declares, by name.
+     *
+     * `DEC-080` requires the opt-in to be **module-local**: a global, inherited or root-level
+     * declaration is rejected, and the only way to tell them apart is to read the module's own
+     * `gradle.properties`.
+     */
+    val moduleLocalProperties: List<String> = emptyList(),
 ) : Serializable
 
 /**

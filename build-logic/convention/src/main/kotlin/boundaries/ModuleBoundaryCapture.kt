@@ -100,7 +100,44 @@ internal object ModuleBoundaryCapture {
             externalDependencies = externals
                 .distinctBy { listOf(it.configuration, it.coordinates, it.originConfiguration) }
                 .sortedWith(compareBy({ it.configuration }, { it.coordinates }, { it.originConfiguration })),
+            targets = kotlinTargetsOf(project),
+            moduleLocalProperties = moduleLocalPropertiesOf(project),
         )
+    }
+
+    /**
+     * The KMP targets the project declares, read from the Kotlin extension through reflection.
+     *
+     * `build-logic` compiles against the Gradle API, not against the Kotlin plugin, so the
+     * extension is reached reflectively; a project without the extension (an Android-only or plain
+     * module) reports an empty set, which is as much a fact as any other (`TASK-101`, `GAP-018`).
+     */
+    private fun kotlinTargetsOf(project: Project): List<String> {
+        val extension = project.extensions.findByName("kotlin") ?: return emptyList()
+        val targets = runCatching { extension.javaClass.getMethod("getTargets").invoke(extension) }.getOrNull() ?: return emptyList()
+        val names = (targets as? Iterable<*>)?.mapNotNull { target ->
+            runCatching { target?.javaClass?.getMethod("getName")?.invoke(target) as? String }.getOrNull()
+        } ?: emptyList()
+        return names.sorted()
+    }
+
+    /**
+     * The opt-in properties this module declares **in its own** `gradle.properties`.
+     *
+     * `DEC-080` requires the declaration to be module-local. Reading the file, rather than the
+     * merged project properties, is what tells a module-local opt-in from an inherited or
+     * root-level one.
+     */
+    private fun moduleLocalPropertiesOf(project: Project): List<String> {
+        val file = project.file("gradle.properties")
+        if (!file.isFile) return emptyList()
+        return file
+            .readLines()
+            .mapNotNull { line ->
+                val trimmed = line.trim()
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) null else trimmed.substringBefore('=').trim()
+            }.filter { it.isNotEmpty() }
+            .sorted()
     }
 
     /**

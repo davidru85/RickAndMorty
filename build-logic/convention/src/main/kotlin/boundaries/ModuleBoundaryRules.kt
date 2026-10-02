@@ -63,10 +63,129 @@ internal object ModuleBoundaryRules {
         androidApp(snapshot, log)
         domainExternalPurity(snapshot, log)
         designSystemComposeOnly(snapshot, log)
+        targetSets(snapshot, log)
         structure(snapshot, featureSources, log)
 
         return log
     }
+
+
+    /**
+     * `R17` — the target set of every KMP module is the accepted one, and the opt-in JVM target is
+     * eligible (`DEC-080`, `TASK-101`, `GAP-018`).
+     *
+     * A target set is architecture: the Android and both Apple targets are what `DEC-054` gates,
+     * and `DEC-079`/`DEC-080` permit one extra JVM target on a `:core:*` library — for the scheduled
+     * live compilation — and nowhere else. The reproduced bypass was adding
+     * `multiverse.jvmTarget=true` to `:feature:settings`, which created a JVM target while this
+     * check passed: the rule could not see targets at all.
+     *
+     * What it enforces:
+     *
+     * - a `:core:*` or `:feature:*` KMP module declares the accepted Android and both Apple targets,
+     *   so a module that has quietly lost one is reported (the positive half, like `R16`);
+     * - a target outside the accepted set is reported, so an unapproved platform cannot be added
+     *   silently;
+     * - the opt-in JVM target is permitted only on a `:core:*` KMP library, and only when the
+     *   `multiverse.jvmTarget` property is declared **in that module's own** `gradle.properties`.
+     *
+     * `:core:designsystem` is Android-only by `DEC-069` and is exempt from the KMP target rule;
+     * `:androidApp` is not a KMP module at all.
+     */
+    private fun targetSets(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
+        snapshot.projects.forEach { project ->
+            // The KMP libraries are the shared cores and the features; `:androidApp` is not KMP and
+            // `:core:designsystem` is Android-only by `DEC-069`.
+            val kind = project.moduleKind
+            val isKmpLibrary =
+                kind == ModuleKind.FEATURE ||
+                    (kind != ModuleKind.ANDROID_APP && kind != ModuleKind.CONTAINER && kind != ModuleKind.UNKNOWN &&
+                        project.path.startsWith(":core:"))
+            if (!isKmpLibrary) return@forEach
+            if (kind == ModuleKind.CORE_DESIGN_SYSTEM) return@forEach
+
+            val targets = project.targets.toSet()
+            // A snapshot with no targets is a module the capture could not read a Kotlin extension
+            // from (an Android-only module, or a plain evaluation fixture). The rule decides on a
+            // declared set; the real convention plugin always declares one, and asserting the
+            // absence would turn every synthetic fixture into a violation (TASK-101).
+            if (targets.isEmpty()) return@forEach
+            (ACCEPTED_TARGETS - targets).sorted().forEach { missing ->
+                log.add(
+                    violation(
+                        rule = RULE_TARGETS,
+                        consumer = project.path,
+                        reason = "the module does not declare the `$missing` target; every current KMP " +
+                            "library declares the accepted target set (DEC-054, DEC-080, TEST-UNIT-017)",
+                    ),
+                )
+            }
+            val declaredLocally = OPT_IN_PROPERTY in project.moduleLocalProperties
+            val allowed = ACCEPTED_TARGETS + (if (declaredLocally) setOf("jvm") else emptySet())
+            (targets - allowed - IMPLICIT_TARGETS).sorted().forEach { extra ->
+                log.add(
+                    violation(
+                        rule = RULE_TARGETS,
+                        consumer = project.path,
+                        reason = "the module declares the `$extra` target, which is not part of the accepted " +
+                            "set; an unapproved platform is a decision, not a detail (DEC-080, TEST-UNIT-017)",
+                    ),
+                )
+            }
+
+            // The opt-in JVM target: eligible only on a `:core:*` KMP library, and only when the
+            // property is module-local.
+            val enabled = targets.any { it == "jvm" }
+            if (declaredLocally && kind == ModuleKind.FEATURE) {
+                log.add(
+                    violation(
+                        rule = RULE_TARGETS,
+                        consumer = project.path,
+                        reason = "the module declares `$OPT_IN_PROPERTY`, which only a `:core:*` KMP library may " +
+                            "declare; a feature module has no JVM target to enable (DEC-080, TEST-UNIT-017)",
+                    ),
+                )
+            }
+            if (enabled && !declaredLocally) {
+                log.add(
+                    violation(
+                        rule = RULE_TARGETS,
+                        consumer = project.path,
+                        reason = "the module declares a JVM target without declaring `$OPT_IN_PROPERTY` in its " +
+                            "own gradle.properties; the opt-in is module-local, and a global or inherited " +
+                            "declaration is rejected (DEC-080, TEST-UNIT-017)",
+                    ),
+                )
+            }
+            if (declaredLocally && !enabled) {
+                log.add(
+                    violation(
+                        rule = RULE_TARGETS,
+                        consumer = project.path,
+                        reason = "the module declares `$OPT_IN_PROPERTY` but no JVM target; a property that " +
+                            "selects nothing is a stale declaration (DEC-080, TEST-UNIT-017)",
+                    ),
+                )
+            }
+        }
+    }
+
+    /** The targets every current KMP library declares (`DEC-054`, `DEC-080`). */
+    private val ACCEPTED_TARGETS = setOf("android", "iosArm64", "iosSimulatorArm64")
+
+    /**
+     * Targets KMP creates itself and no one deploys to.
+     *
+     * `metadata` is the common-source-set target every multiplatform module has; reporting it as an
+     * unapproved platform would be a false positive on a correct build.
+     */
+    private val IMPLICIT_TARGETS = setOf("metadata")
+
+    /** The module-local property that selects the opt-in JVM target (`DEC-079`, `DEC-080`). */
+    private const val OPT_IN_PROPERTY = "multiverse.jvmTarget"
+
+    /** The rule id the target-set violations carry. */
+    private const val RULE_TARGETS = "R17"
 
     /**
      * `R16` — the build contains exactly the leaf modules ADR-0001 requires today (`GAP-014`,
