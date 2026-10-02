@@ -74,7 +74,7 @@ public class FakeCharacterRepository(
         queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         val character =
             catalogue.details(id)
-                ?: return DataResult.Failure(ApiFailure.NotFound(CHARACTER_RESOURCE, id.value), DataSource.NETWORK)
+                ?: return DataResult.Failure(ApiFailure.NotFound(FakeCatalogue.CHARACTER_RESOURCE, id.value), DataSource.NETWORK)
         if (!enrich) return DataResult.Success(character, DataSource.NETWORK, isStale = false)
         val (summaries, warnings) = catalogue.episodes(character.episodeIds)
         return DataResult.Success(
@@ -83,9 +83,5 @@ public class FakeCharacterRepository(
             isStale = false,
             warnings = warnings,
         )
-    }
-
-    private companion object {
-        const val CHARACTER_RESOURCE = "character"
     }
 }

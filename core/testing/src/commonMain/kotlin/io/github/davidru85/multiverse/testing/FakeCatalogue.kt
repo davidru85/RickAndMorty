@@ -114,6 +114,9 @@ public class FakeCatalogue(
         /** The server's observed page size (`API_SPECS.md` §4.3); a test may pass its own. */
         public const val DEFAULT_PAGE_SIZE: Int = 20
 
+        /** The resource name an unknown character carries in `ApiFailure.NotFound`. */
+        public const val CHARACTER_RESOURCE: String = "character"
+
         /** The resource name a list `404` beyond the last page carries in `ApiFailure.NotFound`. */
         public const val PAGE_RESOURCE: String = "character-page"
 

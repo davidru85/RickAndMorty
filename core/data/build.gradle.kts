@@ -31,6 +31,13 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
+        jvmTest.dependencies {
+            // Dependency analysis reads the opt-in JVM target's tests (`DEC-079`) as using this module's
+            // classes through the harness's `api` edge to `:core:data`, not through the associated main
+            // compilation, and asks for the edge to be declared. It is the module's own output, and the
+            // boundary check ignores a self-edge.
+            implementation(project(":core:data"))
+        }
         commonTest.dependencies {
             // `DEC-089`: the data layer's tests consume the shared harness — fixtures, `MockHttp`
             // and virtual time — from a test source set only.
