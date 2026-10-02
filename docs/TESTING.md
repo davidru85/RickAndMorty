@@ -436,13 +436,17 @@ Completed once per milestone (M1, M2) on a real device and recorded as evidence 
 | Live mode (scheduled) | The same IDs, executed with a live engine (`TASK-027`, re-scoped by `DEC-074`: the probes and the schedule land now, each case's live replay activates with the task that creates it) | The real service: page decoding, `info.next` termination, single-object vs batch-array shape, filtered `404` → empty result, detail `404` → `NotFound`, combined-filter URL encoding across pages, empty `type`, `unknown` values and empty reference URLs, malformed/empty bodies, `429` and `5xx` mapping, GraphQL envelope cases and REST/GraphQL domain parity | **No** |
 | Observation probes (scheduled) | `TEST-CONTRACT-006` | Dated observations that feed fixture refresh: published totals and page count, `Cache-Control`/`ETag` presence, cacheability of filtered `404` responses, batch behaviour with mixed validity, `info.next` type, validation-error shape | **No** |
 
-`TEST-CONTRACT-006` records observations; it `MUST NOT` assert API guarantees that the official documentation does not publish (`API_SPECS.md` §1.1). A change it detects is a signal to refresh fixtures and the owning document, not a merge blocker.
+`TEST-CONTRACT-006` records observations; it `MUST NOT` assert API guarantees that the official documentation does not publish (`API_SPECS.md` §1.1).
+
+The fixture/replay entry point is `./gradlew :core:data:contractTestReplay`: it runs exactly the `TEST-CONTRACT-*` cases on `testAndroidHostTest` and `iosSimulatorArm64Test` and **fails when it executes zero of them** (`TASK-026`, `DEC-073`). A filtered task that never starts is green, so the aggregate reads the JUnit reports and decides on the executed cases rather than on the invocation. A change it detects is a signal to refresh fixtures and the owning document, not a merge blocker.
 
 ### 11.2 Why only the live mode is non-blocking
 
 The API is unversioned and unauthenticated, its availability is outside the repository's control, and its rate limits are undocumented (`API_SPECS.md` §9). A blocking live job would fail unrelated pull requests and would train the team to ignore red runs. Nothing about the change under review is proven by the live service being reachable.
 
 Fixture mode is therefore the gate's contract check and live mode is a signal, and "all tests required" (in `DEC-054`) refers to the required set of §14.2, of which fixture mode is a member and live mode is not.
+
+The same split is **machine-enforced** by `TEST-UNIT-044` (`TASK-026`, `DEC-073`): `verifyWorkflowGate` rejects any workflow triggered by a pull request or a push that references the live mode (`contract-live`, the live source set, or the live entry point). A live run can therefore never become a merge blocker by accident, and the check is proved in both directions.
 
 ### 11.3 Triaging a failure
 
@@ -716,6 +720,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | `TASK-026` (`DEC-073`): the fixture/replay entry point `:core:data:contractTestReplay` exists and fails on zero executed `TEST-CONTRACT-*` cases; `TEST-UNIT-044` gained the clause that no pull-request- or push-triggered workflow may reference the live mode; `TEST-UNIT-024` now sees the `contractLive` source set, so its exemption is a decision rather than an omission. | `TASK-026`, `DEC-073`, `AC-REQ-NFR-011-2` |
 | 2026-10-01 | `TEST-UNIT-045` implemented by `TASK-093`: observed red without the rule (3 failures) and green with it (10 tests). The guard reads comment lines as absent, closing a false negative in its own command-reachability rule. | `TASK-093`, `DEC-078`, `AC-REQ-FUNC-014-2` |
 | 2026-10-01 | B2 readiness packet recorded (`DEC-073`…`DEC-078`): the `contract-fixture` row's activation moves to `TASK-037` while `TASK-026` delivers the non-empty entry point; the live workflow, `contract-live` and `TEST-CONTRACT-006` are `TASK-027`'s now; the `static-analysis` row activates for ktlint, Android Lint and `buildHealth` (`TASK-029`), with detekt recorded against a stable 2.x (`DEC-075`) and SwiftLint/swift-format against `TASK-051` (`DEC-076`); `TEST-UNIT-015` is owned by `TASK-029` and `TEST-UNIT-045` by `TASK-093`. | `DEC-073`…`DEC-078`, `CONF-51`, `CONF-56`…`CONF-60` |
 | 2026-10-01 | §15.1 quarantine register created by `TASK-028`: the mechanics stay owned by §15, and the state lives in the register the milestone gate (RR7) and the release checklist read. The register is empty, which is the current state rather than a pending entry. | `TASK-028`, `DEC-054` |

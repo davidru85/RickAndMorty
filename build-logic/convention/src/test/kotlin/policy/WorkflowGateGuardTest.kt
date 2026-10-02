@@ -71,6 +71,15 @@ class WorkflowGateGuardTest {
         return root
     }
 
+    /** Every workflow of the fixture root, which is how the real build scans them. */
+    private fun allFindings(root: File) =
+        WorkflowGateGuard.scan(
+            File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+                .listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
+                ?.toList() ?: emptyList(),
+            root,
+        )
+
     private fun findings(root: File) =
         WorkflowGateGuard.scan(listOf(File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")), root)
 
@@ -221,6 +230,52 @@ class WorkflowGateGuardTest {
             emptyList(),
             findings(root).map { it.reason },
             "TEST-UNIT-045: the repository's own workflows must satisfy every rule",
+        )
+    }
+
+    // --- TEST-UNIT-044 / DEC-073: no merge-gate workflow may reach live mode ---
+
+    @Test
+    fun `a pull-request workflow that references the live entry point is rejected`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(
+            file.readText().replace(
+                "./gradlew verifyDocumentedGate",
+                "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:contractTestLive",
+            ),
+        )
+        assertTrue(
+            allFindings(root).any { it.reason.contains("fixture/replay mode only") },
+            "the merge gate must never reach live mode (AC-REQ-NFR-011-2)",
+        )
+    }
+
+    @Test
+    fun `a scheduled workflow that references live mode passes`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/contract-live.yml")
+        file.writeText(
+            """
+            name: contract-live
+            on:
+              schedule:
+                - cron: "0 6 * * 1"
+              workflow_dispatch:
+            permissions:
+              contents: read
+            jobs:
+              live:
+                runs-on: ubuntu-latest
+                steps:
+                  - uses: $pinned
+                  - run: ./gradlew :core:data:contractLiveProbe
+            """.trimIndent() + "\n",
+        )
+        assertEquals(
+            emptyList(),
+            allFindings(root).map { it.reason },
+            "a schedule-only live workflow satisfies every rule",
         )
     }
 }

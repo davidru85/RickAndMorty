@@ -27,13 +27,17 @@ class LiveHostGuardTest {
 
     private val host = listOf("rickandmortyapi", "com").joinToString(".")
 
+    /** Every Kotlin file under a fixture root, which is what the task passes to the guard. */
+    private fun File.allKotlinFiles(): List<File> =
+        walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+
     @Test
     fun `a test source set naming the live host is reported with its line`() {
         val root = tree(
             "core/data/src/commonTest/kotlin/Leak.kt" to
                 "package leak\n\nval url = \"https://$host/api/character\"\n",
         )
-        val findings = LiveHostGuard.scan(listOf(root))
+        val findings = LiveHostGuard.scan(root.allKotlinFiles(), root)
         assertEquals(1, findings.size, "TEST-UNIT-024: the offender must be reported exactly once: $findings")
         assertEquals("Leak.kt", findings.single().path.substringAfterLast('/'))
         assertEquals(3, findings.single().line, "TEST-UNIT-024: the finding must name the offending line")
@@ -46,7 +50,7 @@ class LiveHostGuardTest {
                 "package clean\n\nimport io.github.davidru85.multiverse.testing.FixtureLoader\n" +
                 "val body = FixtureLoader.text(\"character-page-01.json\")\n",
         )
-        assertEquals(emptyList(), LiveHostGuard.scan(listOf(root)).map { it.render() })
+        assertEquals(emptyList(), LiveHostGuard.scan(root.allKotlinFiles(), root).map { it.render() })
     }
 
     @Test
@@ -60,14 +64,29 @@ class LiveHostGuardTest {
             "core/testing/src/commonTest/kotlin/contract-live-not-a-source-set.kt" to
                 "package decoy\nval url = \"https://$host/api\"\n",
         )
-        assertEquals(emptyList(), LiveHostGuard.scan(listOf(root)).map { it.render() }, "contract-live is exempt")
-        assertEquals(1, LiveHostGuard.scan(listOf(decoy)).size, "TEST-UNIT-024: the exemption is a source set, not a name")
+        assertEquals(emptyList(), LiveHostGuard.scan(root.allKotlinFiles(), root).map { it.render() }, "contract-live is exempt")
+        assertEquals(1, LiveHostGuard.scan(decoy.allKotlinFiles(), decoy).size, "TEST-UNIT-024: the exemption is a source set, not a name")
+    }
+
+    @Test
+    fun `the camel-case source-set directory Kotlin creates is exempt too`() {
+        // A Kotlin source set's directory is its identifier, so the scheduled set appears on disk
+        // as `contractLive`. Both spellings are the scheduled job; neither licenses another.
+        val root = tree(
+            "core/data/src/contractLive/kotlin/ObservationProbes.kt" to
+                "package live\nval url = \"https://$host/api/character\"\n",
+        )
+        assertEquals(
+            emptyList(),
+            LiveHostGuard.scan(root.allKotlinFiles(), root).map { it.render() },
+            "the source-set directory the plugin creates is the exemption (TASK-027, DEC-074)",
+        )
     }
 
     @Test
     fun `a non-Kotlin file is not scanned`() {
         val root = tree("docs/notes.md" to "see https://$host/api/character\n")
-        assertTrue(LiveHostGuard.scan(listOf(root)).isEmpty(), "TEST-UNIT-024: only Kotlin test sources are scanned")
+        assertTrue(LiveHostGuard.scan(root.allKotlinFiles(), root).isEmpty(), "TEST-UNIT-024: only Kotlin test sources are scanned")
     }
 
     private fun LiveHostGuard.Finding.render() = "$path:$line:$host"

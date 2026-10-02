@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.buildlogic.policy
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -31,8 +32,10 @@ abstract class VerifyNoLiveHostsTask : DefaultTask() {
     @TaskAction
     fun verify() {
         val root = rootDirectory.get().asFile
-        val roots = testSources.files.map { it.parentFile ?: it }.distinct()
-        val findings = LiveHostGuard.scan(roots).sortedWith(compareBy({ it.path }, { it.line }))
+        // The guard decides exemption on the repository-relative path, so it receives the files
+        // and the repository root, not a set of directories (TASK-027, DEC-074).
+        val findings = LiveHostGuard.scan(testSources.files, root)
+            .sortedWith(compareBy({ it.path }, { it.line }))
         if (findings.isEmpty()) return
 
         val rendered = findings.joinToString("\n") { finding ->
