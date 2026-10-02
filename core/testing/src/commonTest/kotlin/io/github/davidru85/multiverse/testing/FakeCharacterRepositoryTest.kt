@@ -9,6 +9,7 @@ import io.github.davidru85.multiverse.core.domain.model.StatusFilter
 import io.github.davidru85.multiverse.core.domain.repository.PageLoadPolicy
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
+import io.github.davidru85.multiverse.core.domain.result.DataSource
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -121,6 +122,50 @@ class FakeCharacterRepositoryTest {
 
             assertFailsWith<CancellationException>("TEST-UNIT-053: cancellation is never mapped to a failure") { load.await() }
             assertEquals(1, repository.calls.size, "TEST-UNIT-053: the cancelled call was still recorded")
+            assertEquals(1, repository.cancellations, "TEST-UNIT-053: the cancellation is observable")
+        }
+
+    @Test
+    fun `TEST-UNIT-053 given_the_served_catalogue_replaced_when_the_next_call_runs_then_it_answers_from_the_new_data`() =
+        TestTime.run {
+            val repository = FakeCharacterRepository(catalogue)
+
+            repository.page(CharacterFilter(), 3)
+            repository.serve(FakeCatalogue((1..15).map { FakeCatalogue.character(it.toString()) }))
+
+            assertEquals(
+                DataResult.Failure(ApiFailure.NotFound(RemoteResources.CHARACTER_PAGE, "3"), DataSource.NETWORK),
+                repository.page(CharacterFilter(), 3),
+                "TEST-UNIT-053: a catalogue that shrank no longer has the page",
+            )
+        }
+
+    @Test
+    fun `TEST-UNIT-053 given_a_cached_catalogue_when_pages_load_then_only_force_network_bypasses_a_servable_entry`() =
+        TestTime.run {
+            val cachedCatalogue = FakeCatalogue((1..25).map { FakeCatalogue.character(it.toString(), name = "Cached $it") })
+            val repository = FakeCharacterRepository(catalogue, cached = cachedCatalogue, cachedIsStale = true)
+            repository.failNext(ApiFailure.Offline)
+
+            val fromCache = repository.page(CharacterFilter(), 1)
+            val fromNetwork = repository.page(CharacterFilter(), 1, PageLoadPolicy.ForceNetwork)
+            val beyondCache = repository.page(CharacterFilter(), 3)
+
+            assertEquals(
+                DataResult.Success(cachedCatalogue.page(CharacterFilter(), 1).success(), DataSource.MEMORY_CACHE, isStale = true),
+                fromCache,
+                "TEST-UNIT-053: Default is served by a servable cached entry, with its provenance",
+            )
+            assertEquals(
+                DataResult.Failure(ApiFailure.Offline, DataSource.NETWORK),
+                fromNetwork,
+                "TEST-UNIT-053: ForceNetwork reaches the network even though the cache could serve it",
+            )
+            assertEquals(
+                "Morty 41",
+                beyondCache.success().characters.first().name,
+                "TEST-UNIT-053: a cache miss goes to the network",
+            )
         }
 
     @Test
