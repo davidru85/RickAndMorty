@@ -51,12 +51,14 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 
 ## 1.2 Block state (2026-10-02)
 
-**Block 2 is complete.** All nine of its rows are `Done` under D2 against the checks active at their stage: `TASK-024`, `TASK-025` and `TASK-028` in PR #52;
-`TASK-031` in #62; `TASK-030` in #63; `TASK-093` in #64; `TASK-029` in #65; `TASK-073` in #66; `TASK-026` in #67 (merged as `8e58d77`); `TASK-027` in #70
-(merged as `4059e1d`). `TASK-094` recorded the closure reconciliation in #69, and `TASK-082` closed with the detekt outcome (`DEC-075`).
+**Block 2 is complete, its own remediation included.** All nine of its original rows are `Done` under D2 against the checks active at their stage: `TASK-024`,
+`TASK-025` and `TASK-028` in PR #52; `TASK-031` in #62; `TASK-030` in #63; `TASK-093` in #64; `TASK-029` in #65; `TASK-073` in #66; `TASK-026` in #67
+(merged as `8e58d77`); `TASK-027` in #70 (merged as `4059e1d`). `TASK-094` recorded the closure reconciliation in #69, and `TASK-082` closed with the
+detekt outcome (`DEC-075`). An audit of the merged block then reproduced ten defects; all ten (`TASK-098`…`TASK-107`, `B2-R01`…`B2-R10`) are merged
+between `4953bde` (#88) and `c57ae85` (#104).
 
-Two repository settings remain human-only (`DEC-049`): naming `android` and `ios` as required status checks, and reviewing the ruleset's standing bypass
-actor (`LOG-0058`). The exact configuration is in `CONTRIBUTING.md` §5.3.
+The two repository settings that were human-only (`DEC-049`) are **applied**: the `main protection` ruleset requires the `android` and `ios` checks and
+carries no bypass actor, so a head without them reads `BLOCKED`. The configuration and the observed enforcement are in `CONTRIBUTING.md` §5.3 (`LOG-0076`).
 
 `TASK-096` is `Done` (PR #74, merged as `72332a5`): it wires `contractLiveTest` (which holds `TEST-CONTRACT-006`)
 into the scheduled job and makes `WorkflowGateGuard` recognise every registered live entry point, proved red →
@@ -147,7 +149,7 @@ One further operational note: `main` is the only integrated branch and it now ca
 
 The interface as it stands today. The build skeleton exists (TASK-014), so the wrapper and the module names below are real; the feature, test and release commands are the intended interface and are unexercised. Module names follow DEC-052.
 
-Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-skeleton` and are recorded with their observed results in `PROJECT_LOG.md` LOG-0026.
+Commands marked **executed** were run on the branch named with the date and are recorded with their observed results in `PROJECT_LOG.md` (`LOG-0026`, `LOG-0066`…`LOG-0076`).
 
 | Purpose | Command | State |
 | --- | --- | --- |
@@ -159,7 +161,7 @@ Commands marked **executed 2026-09-30** were run on branch `build/gradle-kmp-ske
 | Install on a connected device or emulator | `./gradlew :androidApp:installDebug` | Not run: the APK has no activity to launch (TASK-044) |
 | Build the shared framework for the iOS simulator | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Not run — `:core:ios` does not exist yet (`TASK-078`). `CONF-40` is resolved: one framework from `:core:ios` exports the five features plus the other core modules (`DEC-058`, [ADR-0012](adr/0012-ios-framework-export.md)) |
 | Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run: `iosApp/` does not exist (TASK-051) |
-| Shared and unit tests | `./gradlew test` | **Executed 2026-10-01** — the shared suites run on the JVM host-test target and both Apple targets (`TEST-UNIT-015`; `TASK-024`) |
+| Shared and unit tests, plus the build-logic regression suite | `./gradlew allTests :build-logic:convention:test` | Executed 2026-10-02: the shared suites run on the JVM host-test target and both Apple targets (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) and the build-logic regression suite runs in the included build. The earlier row documented `./gradlew test`, which selects only the Android unit-test tasks and reaches neither the shared KMP suites nor the build-logic suite (`TEST-UNIT-015`; `TASK-024`, `TASK-103`) |
 | Android screenshot verification | `./gradlew :feature:discovery:verifyRoborazziDebug` | Not run: Roborazzi is not configured; it lands with the Android screenshots (`TASK-045`) |
 | Record new Android screenshot baselines (review the diff before committing) | `./gradlew :feature:discovery:recordRoborazziDebug` | Not run: no baselines exist (`TASK-045`) |
 | Formatting, static analysis, dependency checks | `./gradlew ktlintCheck lintDebug buildHealth` (detekt is **not** registered: `DEC-075` keeps it target state, so it is not part of any executed command) | Executed 2026-10-01: ktlint, Android Lint and `buildHealth` run and pass (`TASK-029`, PR #65) |
