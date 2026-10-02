@@ -164,13 +164,16 @@ Todo pull request debe pasar la suite completa en ambas plataformas antes de pod
 
 | Tarea | Comando | Estado |
 | --- | --- | --- |
-| Todos los tests compartidos y unitarios | `./gradlew test` | Ejecutado 2026-10-01: las suites compartidas corren en el target host-test de la JVM y en ambos targets Apple — 7 tests del harness en `:core:testing`; `TASK-024` añadió el harness y `TASK-025` lo ejecuta en CI |
-| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado; llega con las capturas Android (`TASK-045`) |
-| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (`TASK-045`) |
-| Formato, análisis estático y dependencias | `./gradlew ktlintCheck detekt lintDebug buildHealth` | Parcial — `lintDebug` pasa limpio (ejecutado 2026-10-01); ktlint, detekt y `buildHealth` aún no están configurados (TASK-029), así que esa mitad es estado objetivo |
+<!-- local-gate:begin -->
+<!-- local-gate:begin -->
+| Todos los tests compartidos y unitarios, más la suite de regresión del build-logic | `./gradlew allTests :build-logic:convention:test` | Ejecutado 2026-10-02: las suites compartidas corren en el target host-test de la JVM y en ambos targets Apple (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) y la suite de regresión del build-logic corre en el build incluido. La fila anterior documentaba `./gradlew test`, que solo selecciona las tareas de test Android y no alcanza ni las suites KMP compartidas ni la suite del build-logic (`GAP-020`; `TASK-103`) |
+| Formato, análisis estático y dependencias | `./gradlew ktlintCheck lintDebug buildHealth` | Ejecutado 2026-10-02 — ktlint, Android Lint y `buildHealth` pasan (TASK-029, `DEC-075`, `DEC-077`); detekt sigue siendo estado objetivo (`DEC-075`) |
 | Fronteras de módulos y política de versión | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Ejecutado 2026-10-01: ambos pasan — 14 proyectos (`R1`–`R16`, `S1`–`S3`, aristas heredadas efectivas y Compose-only para `:core:designsystem`) y `VERSION` validado con todas las tareas de artefacto Android dependiendo de él |
 | Verificar la política de dependencias (pines exactos, justificación, inventario) | `./gradlew verifyDependencyPolicy` | Ejecutado 2026-10-01: pasa; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
 | Verificar la higiene del repositorio y de secretos | `./gradlew verifyRepositoryHygiene` | Ejecutado 2026-10-01: pasa (0 hallazgos sobre el working set, todos los blobs alcanzables y todas las rutas históricas únicas); corregido en revisión; también se ejecuta dentro de `./gradlew check` y `./gradlew build` |
+<!-- local-gate:end -->
+| Verificación de capturas Android | `./gradlew :feature:discovery:verifyRoborazziDebug` | No ejecutado — Roborazzi no está configurado; llega con las capturas Android (`TASK-045`) |
+| Regrabar capturas de referencia (revisar el diff antes de commitear) | `./gradlew :feature:discovery:recordRoborazziDebug` | No ejecutado — no hay capturas de referencia (`TASK-045`) |
 | Capturas iOS y tests de los state holders | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | No ejecutado — `iosApp/` no existe (TASK-051) |
 | Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No definido: no existe módulo de benchmark y `PERF-Q1` sigue abierto, así que el comando es estado objetivo, no una tarea real |
 | Suite de contrato en modo fixture/replay (dentro del gate del PR, activada por `TASK-037`) | `./gradlew :core:data:contractTestReplay` | Ejecutado 2026-10-02: el punto de entrada funciona y **falla con cero casos por diseño** (`TASK-026`, `DEC-073`); el repositorio real aún no tiene ningún caso de contrato de producto, así que este comando falla aquí y queda deliberadamente **fuera** del gate actual hasta que `TASK-037` añada su primer caso y enganche el comando en ambos jobs de CI |

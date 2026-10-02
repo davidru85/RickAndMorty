@@ -165,6 +165,7 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 exclude(*BUILD_STATE_EXCLUDES)
             },
         )
+
         val liveHosts = target.tasks.register<VerifyNoLiveHostsTask>("verifyNoLiveHosts") {
             group = VERIFICATION_GROUP
             description = "TEST-UNIT-024: no test source set outside `contract-live` names a live API host " +
@@ -186,6 +187,12 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 target.layout.projectDirectory.file("README.md"),
                 target.layout.projectDirectory.file("docs/CONTRIBUTING.md"),
             )
+            // DEC-047: the translated README is the only translation, and its command table must
+            // stay aligned with the English one. Both files are inputs so neither can pass alone.
+            this.translatedPair.from(
+                target.layout.projectDirectory.file("README.md"),
+                target.layout.projectDirectory.file("README.es.md"),
+            )
         }
         target.gradle.projectsEvaluated {
             val paths = mutableListOf<String>()
@@ -199,13 +206,43 @@ class DependencyPolicyPlugin : Plugin<Project> {
             documentedGate.configure {
                 registeredTaskPaths.set(paths.sorted())
                 registeredTaskNames.set(names.sorted())
-                claimedAggregateDependencies.set(mapOf(":check" to listOf(":verifyDependencyPolicy")))
-                // `dependsOn` may hold `TaskProvider`s, so the resolved dependency set is read
-                // through `taskDependencies`, not by filtering the raw list (G-03).
-                val aggregateTask = target.rootProject.tasks.findByName("check")
-                val direct = aggregateTask?.taskDependencies?.getDependencies(aggregateTask)
-                    ?.map { it.path }?.sorted() ?: emptyList()
-                directDependencies.set(mapOf(":check" to direct))
+                // TASK-103 (`B2-R06`): coverage is decided on the EFFECTIVE graph of the invocation
+                // the row documents, not on a direct edge. The graph is read from the task's own
+                // `taskDependencies`, which resolves both `dependsOn` TaskProviders and the
+                // transitive closure, so a required suite reachable only through an intermediate
+                // aggregate is still proved to run.
+                selectedGraph.set(
+                    mapOf(
+                        "allTests" to selectedTaskPaths(target.rootProject, "allTests"),
+                        ":check" to selectedTaskPaths(target.rootProject, "check"),
+                        "check" to selectedTaskPaths(target.rootProject, "check"),
+                        // Every module's own aggregate, so the guard can name the suites a
+                        // "shared and unit tests" row must reach.
+                        ":core:testing:allTests" to selectedTaskPaths(target.rootProject, ":core:testing:allTests"),
+                        ":build-logic:convention:test" to selectedTaskPaths(target.rootProject, ":build-logic:convention:test"),
+                    ),
+                )
+                // The claims the documentation rows make, as data. A row that documents
+                // `./gradlew allTests` claims the shared and unit suites; the guard decides whether
+                // the invocation honours that claim.
+                // `TASK-103` (`B2-R06`): the root `check` depends on the build-logic suite through a
+                // lazy `TaskReference` to an INCLUDED build, which `taskDependencies` cannot
+                // materialise (it yields no `Task`). The reference is captured by name so the
+                // documented row can still be proved to reach it.
+                // The build holds at most one such reference today (the build-logic regression
+                // suite in the root `check`), and it names the task inside the included build. The
+                // name is what a documented token must match, so a renamed task is not accepted.
+                includedBuildTaskNames.set(includedBuildReferences(target.rootProject))
+                documentedClaims.set(
+                    mapOf(
+                        ":check" to listOf(":verifyDependencyPolicy"),
+                        // The shared suites belong to the module aggregate; the build-logic suite is
+                        // reached by its own token in the same invocation, which the union rule
+                        // above decides.
+                        ":core:testing:allTests" to
+                            listOf(":core:testing:testAndroidHostTest", ":core:testing:iosSimulatorArm64Test"),
+                    ),
+                )
             }
         }
 
@@ -296,4 +333,57 @@ class DependencyPolicyPlugin : Plugin<Project> {
         val SETTINGS_NAMES = listOf("settings.gradle.kts", "settings.gradle")
         val BUILD_STATE_EXCLUDES = arrayOf("**/build/**", "**/.gradle/**", "**/.kotlin/**")
     }
+
+    /**
+     * Every task path an invocation reaches, transitively.
+     *
+     * `taskDependencies` is asked for the dependency set of a task **provider**, which resolves
+     * `dependsOn` lazily and returns the closure Gradle will execute; filtering a raw `dependsOn`
+     * list (the previous approach) sees neither providers nor transitive edges (`TASK-103`).
+     */
+    private fun selectedTaskPaths(root: Project, name: String): List<String> {
+        // A task PATH is one task; a bare NAME selects every registered task of that name in every
+        // project — which is why bare `allTests` runs each module's aggregate and `:allTests` does
+        // not exist. The graph is the union of those tasks' transitive closures.
+        val selected =
+            if (name.startsWith(":")) {
+                // A task path names one task: `:core:testing:allTests` is the task `allTests` in the
+                // project `:core:testing`, found by project path, not by name search.
+                val separator = name.lastIndexOf(':')
+                val projectPath = if (separator <= 0) ":" else name.substring(0, separator)
+                val taskName = name.substring(separator + 1)
+                listOfNotNull(root.allprojects.firstOrNull { it.path == projectPath }?.tasks?.findByName(taskName))
+            } else {
+                // A bare name selects every registered task of that name in every project, which is
+                // why bare `allTests` runs each module's aggregate.
+                root.allprojects.mapNotNull { it.tasks.findByName(name) }
+            }
+        return selected
+            .flatMap { task -> task.taskDependencies.getDependencies(task).map { it.path } + task.path }
+            .distinct()
+            .sorted()
+    }
+
+
+
+    /**
+     * The included-build task references a project's tasks carry in their raw `dependsOn`.
+     *
+     * Gradle keeps `gradle.includedBuild("x").task(":convention:test")` as a lazy
+     * `TaskReference`, not as a `Task`, so the resolved closure omits it. The documented gate has
+     * to see it: the build-logic suite is one of the shared suites a row claims to run
+     * (`TASK-103`, `GAP-020`).
+     */
+    private fun includedBuildReferences(root: Project): List<String> =
+        root.tasks.flatMap { task ->
+            task.dependsOn.filterIsInstance<org.gradle.api.tasks.TaskReference>().map { it.name }
+        }.distinct()
+
+    /** The suites a row documenting "all shared and unit tests" must actually execute. */
+    private val SHARED_SUITE_TASKS =
+        listOf(
+            ":core:testing:testAndroidHostTest",
+            ":core:testing:iosSimulatorArm64Test",
+            ":build-logic:convention:test",
+        )
 }
