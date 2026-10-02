@@ -212,6 +212,30 @@ remediation commit to the tip reports `BUILD SUCCESSFUL`. The chain was confirme
 `git merge-base --is-ancestor` on every adjacent pair (9 of 9), so no step depends on a later one and
 no merge can conflict. Observed 2026-10-02 in the working clone.
 
+### 6.2.2 Closure of the B2 remediation (`TASK-107`)
+
+The ten findings of §6.2.1 are `Done`, merged between `4953bde` (#88) and `c57ae85` (#104). Closing
+them was not the same as closing the block: the closure check re-measured every `TASK-107`
+acceptance criterion against the repository and found **three defects in the remediation's own
+documentation**, recorded as `LOG-0077` and corrected in PR #105:
+
+| Defect | Why the rows did not catch it | Corrected to |
+| --- | --- | --- |
+| `HANDOFF.md` §8 documented `./gradlew test` as running the shared suites | The row was authored before `TASK-103` measured the command; the same false claim was corrected in `README.md` §9 and not in `HANDOFF.md` | `./gradlew allTests :build-logic:convention:test` (observed: 329 tasks) |
+| `HANDOFF.md` §1.2 said two repository settings "remain human-only" | Written when the packet was prepared, not updated when the maintainer applied it | The settings are applied (`LOG-0076`, `CONTRIBUTING.md` §5.3) |
+| `WorkflowGateReproductionTest` cited `B2_AUTHORIZATION` condition 2 | The citation pointed at a working artifact the repository never contained, so no link check could fail on it | The sentence states its reason directly |
+
+**What the closure rests on.** Each corrective task ships a red → green pair; the merged content is
+byte-identical to the reviewed stack (`git diff` empty between each replacement pull request and the
+original it replaced); every intermediate commit of the chain passes the full gate; the platform now
+enforces the required checks with no bypass actor; and the mechanical documentation guards hold —
+every command documented in `README.md` §8–§9 and `HANDOFF.md` §8 resolves, no identifier definition
+is duplicated, every relative link resolves, and the English and Spanish command tables agree.
+
+**What it does not rest on.** Prose that no check covers. Two of the three defects above were one
+error replicated in two files, found by asking rather than by reviewing; the audit does not claim a
+third instance is impossible, only that the guards now cover the mechanical part.
+
 ### 6.3 Open conflicts
 
 | ID | Sev | Conflict | Blocked artifact | Owner | Recommendation | Status |
