@@ -57,7 +57,7 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 detekt outcome (`DEC-075`). An audit of the merged block then reproduced ten defects; all ten (`TASK-098`…`TASK-107`, `B2-R01`…`B2-R10`) are merged
 between `4953bde` (#88) and `c57ae85` (#104).
 
-The repository settings that were human-only (`DEC-049`) are **applied**: the `main protection` ruleset carries no bypass actor, and its required contexts are managed with the iOS suspension — after its first B2 packet it required the `android` and `ios` checks, and from B3 Phase 3.1 it requires `android` only, so a head without that check reads `BLOCKED`. The configuration, the observed enforcement and the applied B3 change are in `CONTRIBUTING.md` §5.3 (`LOG-0076`, `LOG-0081`).
+The repository settings that were human-only (`DEC-049`) are **applied**: the `main protection` ruleset carries no bypass actor, and its required contexts are managed with the iOS suspension — after its first B2 packet it required the `android` and `ios` checks, and from B3 Phase 3.1 it requires `android` only, so a head without that check reads `BLOCKED`. The configuration, the observed enforcement and the applied B3 change are in `CONTRIBUTING.md` §5.3 (`LOG-0076`, `LOG-0080`).
 
 `TASK-096` is `Done` (PR #74, merged as `72332a5`): it wires `contractLiveTest` (which holds `TEST-CONTRACT-006`)
 into the scheduled job and makes `WorkflowGateGuard` recognise every registered live entry point, proved red →
@@ -103,7 +103,7 @@ JSON
 gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
 ```
 
-**Applied and observed on 2026-10-02.** The second command prints exactly one context, `android`, bound to `integration_id 15368`; every other rule, the empty bypass list and merge-only delivery are unchanged. Pull request #110 therefore awaits `android` only — the `ios` context is no longer reported as an outstanding requirement. Its run on the phase head (`13e66a45`) concluded green, and is being re-run on the same head at the owner's request. `TASK-051` restores `ios` with the same request and `{ "context": "ios", "integration_id": 15368 }` added back, in the change that introduces the app target; `TASK-108` owns that settings half and its read-back.
+**Applied and observed on 2026-10-02.** The second command prints exactly one context, `android`, bound to `integration_id 15368`; every other rule, the empty bypass list and merge-only delivery are unchanged. Pull request #110 therefore awaits `android` only — the `ios` context is no longer reported as an outstanding requirement. Its run on `13e66a45` (run `37050825465`) concluded green, and so did the re-run of that head the owner requested (attempt 2); each later documentation-only head is gated by its own `android` run, so the pull request's check rollup is the current evidence. `TASK-051` restores `ios` with the same request and `{ "context": "ios", "integration_id": 15368 }` added back, in the change that introduces the app target; `TASK-108` owns that settings half and its read-back.
 
 ## 2. Completed work
 

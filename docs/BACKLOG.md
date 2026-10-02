@@ -83,7 +83,7 @@ A block is a working set, not a single merge. The members share a working set an
 | B4 | Design System and Android Shell | M1 | Materialise the visual identity, the UI components and the Android app shell. | `TASK-042`, `TASK-043`, `TASK-044`, `TASK-005`, `TASK-021`, `TASK-007`, `TASK-008`, `TASK-013`, `TASK-035` |
 | B5 | Android Feature Implementation | M1 | Full implementation of the Android MVP screens and flows. | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-006`, `TASK-009`, `TASK-010`, `TASK-011`, `TASK-020`, `TASK-012`, `TASK-022`, `TASK-023`, `TASK-074`, `TASK-075`, `TASK-076` |
 | B6 | Android Validation and Release | M1 | Security audit, accessibility, performance verification and the M1 release. | `TASK-045`, `TASK-046`, `TASK-048`, `TASK-049`, `TASK-050` |
-| B7 | iOS Infrastructure and Shell | M2 | Kotlin framework export, Swift package setup and the iOS app shell. | `TASK-078`, `TASK-051`, `TASK-052`, `TASK-053`, `TASK-054`, `TASK-060` |
+| B7 | iOS Infrastructure and Shell | M2 | Kotlin framework export, Swift package setup and the iOS app shell. | `TASK-078`, `TASK-051`, `TASK-108`, `TASK-052`, `TASK-053`, `TASK-054`, `TASK-060` |
 | B8 | iOS Functional Parity and Closure | M2 | Implement the iOS views and verify parity with Android. | `TASK-055`, `TASK-056`, `TASK-057`, `TASK-058`, `TASK-059`, `TASK-061`, `TASK-062`, `TASK-063`, `TASK-077` |
 | B9 | Stabilisation and Final Delivery | M3 | Cross-platform hardening, final performance budgets and the handoff documents. | `TASK-064`, `TASK-065`, `TASK-066`, `TASK-067`, `TASK-068`, `TASK-069`, `TASK-070`, `TASK-071` |
 
