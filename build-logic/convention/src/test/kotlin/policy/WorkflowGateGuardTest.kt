@@ -242,13 +242,35 @@ class WorkflowGateGuardTest {
         file.writeText(
             file.readText().replace(
                 "./gradlew verifyDocumentedGate",
-                "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:contractTestLive",
+                "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:contractLiveTest",
             ),
         )
         assertTrue(
             allFindings(root).any { it.reason.contains("fixture/replay mode only") },
             "the merge gate must never reach live mode (AC-REQ-NFR-011-2)",
         )
+    }
+
+    // TASK-096: the shipped marker set and the registered task names must agree, or a live case
+    // can be reached from a merge-gate workflow with the guard green. The previous version listed
+    // `contractTestLive`, a name no build registers, while the real task is `contractLiveTest`.
+    @Test
+    fun `every registered live task name is recognised as a live-mode marker`() {
+        val registeredLiveNames = listOf("contractLiveProbe", "contractLiveTest")
+        registeredLiveNames.forEach { task ->
+            val root = complete()
+            val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+            file.writeText(
+                file.readText().replace(
+                    "./gradlew verifyDocumentedGate",
+                    "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:$task",
+                ),
+            )
+            assertTrue(
+                allFindings(root).any { it.reason.contains("fixture/replay mode only") },
+                "`$task` must be recognised as live mode; a merge-gate workflow must not reach it",
+            )
+        }
     }
 
     @Test
