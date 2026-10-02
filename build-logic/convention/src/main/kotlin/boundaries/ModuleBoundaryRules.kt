@@ -273,7 +273,14 @@ internal object ModuleBoundaryRules {
         }
     }
 
-    /** R2 / R3 — a core module that may depend only on `:core:domain`. */
+    /**
+     * R2 / R3 — a core module that may depend only on `:core:domain`.
+     *
+     * Its test source sets may additionally consume `:core:testing`, which is the consumption rule
+     * ADR-0001 states for every consumer of the harness (`DEC-069`, `DEC-089`). The allowance is
+     * read from the edge's source-set kind, so an edge inherited into `commonMain` stays production
+     * and stays rejected.
+     */
     private fun coreData(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) =
         onlyCoreDomain(snapshot, log, ModuleKind.CORE_DATA, "R2", ":core:data")
 
@@ -288,7 +295,10 @@ internal object ModuleBoundaryRules {
         module: String,
     ) {
         snapshot.byKind(kind).forEach { project ->
-            project.edges.filterNot { it.producer == ":core:domain" }.forEach { edge ->
+            project.edges.filterNot { edge ->
+                edge.producer == ":core:domain" ||
+                    (edge.producer == ":core:testing" && edge.kind == SourceSetKind.TEST)
+            }.forEach { edge ->
                 log.add(
                     violation(
                         rule = rule,
