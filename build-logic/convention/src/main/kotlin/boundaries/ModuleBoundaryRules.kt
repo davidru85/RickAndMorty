@@ -12,11 +12,14 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  * - `R5` `:core:testing` may depend on `:core:domain` and `:core:data`.
  * - `R6` no production source set consumes `:core:testing`.
  * - `R7` no `:feature:*` depends on another `:feature:*`.
- * - `R8` a feature's shared production source sets depend only on the accepted core modules.
+ * - `R8` a feature's shared production source sets depend only on the API cores (`:core:domain`,
+ *   `:core:presentation`); never on the implementation module `:core:data` (`DEC-091`).
  * - `R9` a feature's Android UI source set may additionally depend on `:core:designsystem`.
  * - `R10` a feature's test source sets may additionally depend on `:core:testing`.
- * - `R11` `:androidApp` composes the features and `:core:designsystem` only.
- * - `R12` `:core:ios` has only the ADR-0012 edges, and no Android source set consumes it.
+ * - `R11` `:androidApp` composes the features and `:core:designsystem`, and as the composition root
+ *   may depend on `:core:data` (`DEC-091`).
+ * - `R12` `:core:ios` has only the ADR-0012 edges, never exposes `:core:data` through `api`
+ *   (`DEC-091`), and no Android source set consumes it.
  * - `R13` an unrecognised project or edge fails closed.
  * - `R14` (`TEST-UNIT-012`) `:core:domain` declares no external dependency beyond the Kotlin
  *   standard library and `kotlinx-coroutines-core` (`DEC-066`).
@@ -32,8 +35,21 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  */
 internal object ModuleBoundaryRules {
 
-    /** Modules a shared production source set of a feature may depend on (R8). */
-    private val FEATURE_SHARED_CORE = setOf(":core:domain", ":core:data", ":core:presentation")
+    /**
+     * Modules a shared production source set of a feature may depend on (R8): the API cores only.
+     * `:core:data` is the implementation module, consumed by the composition roots (`DEC-091`,
+     * ADR-0014).
+     */
+    private val FEATURE_PRODUCTION_CORE = setOf(":core:domain", ":core:presentation")
+
+    /** Modules a feature's test source sets may depend on besides `:core:testing` (R10). */
+    private val FEATURE_TEST_CORE = setOf(":core:domain", ":core:data", ":core:presentation")
+
+    /** The shared production cores `:core:ios` links; only the API ones may be exported (R12). */
+    private val CORE_IOS_CORE = setOf(":core:domain", ":core:data", ":core:presentation")
+
+    /** The implementation module (`DEC-091`). */
+    private const val IMPLEMENTATION_MODULE = ":core:data"
 
     /**
      * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
@@ -43,7 +59,7 @@ internal object ModuleBoundaryRules {
      * (`GAP-014`).
      */
     private fun isCoreIosAllowed(producer: String): Boolean =
-        producer in FEATURE_SHARED_CORE || ModuleSet.isAcceptedFeature(producer)
+        producer in CORE_IOS_CORE || ModuleSet.isAcceptedFeature(producer)
 
     fun evaluate(
         snapshot: ModuleGraphSnapshot,
@@ -273,7 +289,14 @@ internal object ModuleBoundaryRules {
         }
     }
 
-    /** R2 / R3 — a core module that may depend only on `:core:domain`. */
+    /**
+     * R2 / R3 — a core module that may depend only on `:core:domain`.
+     *
+     * Its test source sets may additionally consume `:core:testing`, which is the consumption rule
+     * ADR-0001 states for every consumer of the harness (`DEC-069`, `DEC-089`). The allowance is
+     * read from the edge's source-set kind, so an edge inherited into `commonMain` stays production
+     * and stays rejected.
+     */
     private fun coreData(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) =
         onlyCoreDomain(snapshot, log, ModuleKind.CORE_DATA, "R2", ":core:data")
 
@@ -288,7 +311,10 @@ internal object ModuleBoundaryRules {
         module: String,
     ) {
         snapshot.byKind(kind).forEach { project ->
-            project.edges.filterNot { it.producer == ":core:domain" }.forEach { edge ->
+            project.edges.filterNot { edge ->
+                edge.producer == ":core:domain" ||
+                    (edge.producer == ":core:testing" && edge.kind == SourceSetKind.TEST)
+            }.forEach { edge ->
                 log.add(
                     violation(
                         rule = rule,
@@ -367,12 +393,33 @@ internal object ModuleBoundaryRules {
                         configuration = edge.configuration,
                         sourceSet = edge.sourceSet,
                         producer = edge.producer,
-                        reason = "`:core:ios` exports the five accepted features and the three shared " +
+                        reason = "`:core:ios` depends on the five accepted features and the three shared " +
                             "production core modules only (`:core:designsystem` is Android-only and " +
-                            "`:core:testing` is test-only; ADR-0012, `CONF-54`)",
+                            "`:core:testing` is test-only; ADR-0012, `DEC-091`)",
                     ),
                 )
             }
+            // `DEC-091`: the implementation module is linked, never exported, so no implementation
+            // type reaches Swift. An `api` declaration — direct or inherited — is what `export` admits.
+            project.edges
+                .filter { edge ->
+                    edge.producer == IMPLEMENTATION_MODULE &&
+                        (edge.configuration.endsWith("Api") || edge.originConfiguration.endsWith("Api"))
+                }.forEach { edge ->
+                    log.add(
+                        violation(
+                            rule = "R12",
+                            consumer = project.path,
+                            configuration = edge.configuration,
+                            sourceSet = edge.sourceSet,
+                            producer = edge.producer,
+                            origin = edge.originConfiguration,
+                            reason = "`:core:ios` links `:core:data` as `implementation` and never exports it; the " +
+                                "Swift-visible surface is the features, `:core:domain` and `:core:presentation` " +
+                                "(DEC-091, ADR-0014)",
+                        ),
+                    )
+                }
         }
         snapshot.projects
             .filterNot { it.moduleKind == ModuleKind.CORE_IOS }
@@ -427,7 +474,7 @@ internal object ModuleBoundaryRules {
 
                     edge.producer == ":core:testing" && edge.kind == SourceSetKind.TEST -> Unit
 
-                    edge.kind == SourceSetKind.TEST && edge.producer in FEATURE_SHARED_CORE -> Unit
+                    edge.kind == SourceSetKind.TEST && edge.producer in FEATURE_TEST_CORE -> Unit
 
                     edge.kind == SourceSetKind.TEST && edge.producer != ":core:testing" -> log.add(
                         violation(
@@ -443,15 +490,17 @@ internal object ModuleBoundaryRules {
 
                     edge.kind == SourceSetKind.ANDROID_UI && edge.producer == ":core:designsystem" -> Unit
 
-                    edge.kind != SourceSetKind.TEST && edge.producer !in FEATURE_SHARED_CORE -> log.add(
+                    edge.kind != SourceSetKind.TEST && edge.producer !in FEATURE_PRODUCTION_CORE -> log.add(
                         violation(
                             rule = "R8",
                             consumer = project.path,
                             configuration = edge.configuration,
                             sourceSet = edge.sourceSet,
                             producer = edge.producer,
-                            reason = "a feature's shared production source sets may depend only on `:core:domain`, " +
-                                "`:core:data` and `:core:presentation` (ADR-0001, DESIGN.md §3.4 rule 5)",
+                            origin = edge.originConfiguration,
+                            reason = "a feature's shared production source sets may depend only on the API cores " +
+                                "`:core:domain` and `:core:presentation`; `:core:data` is the implementation module " +
+                                "the composition roots wire (ADR-0001, ADR-0014, DEC-091, DESIGN.md §3.4 rule 5)",
                         ),
                     )
                 }
@@ -459,9 +508,12 @@ internal object ModuleBoundaryRules {
         }
     }
 
-    /** R11 — `:androidApp` composes the features and `:core:designsystem`; never `:core:ios`. */
+    /**
+     * R11 — `:androidApp` composes the features and `:core:designsystem` and, as the composition root,
+     * may depend on the implementation module (`DEC-091`); never `:core:ios`.
+     */
     private fun androidApp(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
-        val allowed = snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() + ":core:designsystem"
+        val allowed = snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() + ":core:designsystem" + IMPLEMENTATION_MODULE
         snapshot.byKind(ModuleKind.ANDROID_APP).forEach { project ->
             project.edges.filterNot { it.producer in allowed }.forEach { edge ->
                 log.add(
@@ -471,19 +523,31 @@ internal object ModuleBoundaryRules {
                         configuration = edge.configuration,
                         sourceSet = edge.sourceSet,
                         producer = edge.producer,
-                        reason = "`:androidApp` composes the `:feature:*` modules and `:core:designsystem` only; it " +
-                            "must not depend on `:core:ios` or another core module (ADR-0001, ADR-0012, REQ-PLAT-004)",
+                        reason = "`:androidApp` composes the `:feature:*` modules and `:core:designsystem`, and as the " +
+                            "composition root may depend on `:core:data`; it must not depend on `:core:ios` or another " +
+                            "core module (ADR-0001, ADR-0012, ADR-0014, REQ-PLAT-004)",
                     ),
                 )
             }
         }
     }
 
-    /** R14 — the external-library half of the `:core:domain` purity assertion (`DEC-066`). */
+    /**
+     * R14 — the external-library half of the `:core:domain` purity assertion (`DEC-066`).
+     *
+     * A domain **test** source set may also declare the approved test libraries (`DEC-089`); the
+     * production allow-list is unchanged, and the test allow-list is closed.
+     */
     private fun domainExternalPurity(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         snapshot.byKind(ModuleKind.CORE_DOMAIN).forEach { project ->
             project.externalDependencies
-                .filterNot { it.coordinates in ModuleDependencyAllowLists.DOMAIN }
+                .filterNot { dependency ->
+                    dependency.coordinates in ModuleDependencyAllowLists.DOMAIN ||
+                        (
+                            dependency.kind == SourceSetKind.TEST &&
+                                dependency.coordinates in ModuleDependencyAllowLists.DOMAIN_TEST
+                        )
+                }
                 .forEach { dependency ->
                     log.add(
                         ModuleBoundaryViolation(

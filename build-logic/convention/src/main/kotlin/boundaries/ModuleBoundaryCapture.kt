@@ -79,6 +79,7 @@ internal object ModuleBoundaryCapture {
                             consumer = project.path,
                             configuration = configuration.name,
                             sourceSet = sourceSet,
+                            kind = kind,
                             group = dependency.group.orEmpty(),
                             name = dependency.name,
                             originConfiguration = origin,

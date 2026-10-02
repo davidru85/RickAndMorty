@@ -1,0 +1,15 @@
+{
+  "bytes": 19489,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "character-page-01.json with info.next moved to a foreign host",
+  "fixture": "character-page-01-foreign-next.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Derived on 2026-10-02 for TASK-037 from a committed capture; the changed field is named in pins. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character",
+  "pins": "A pagination URL naming another host is rejected, not followed (REQ-SEC-001, API-CHAR-002)",
+  "query": "page=1",
+  "sha256": "97163454d7b639370eb6c67be5a4e56a8743484bd3db4ce61db52c63aad7f566",
+  "status": 200
+}

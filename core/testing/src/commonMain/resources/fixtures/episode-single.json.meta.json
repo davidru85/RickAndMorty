@@ -1,0 +1,14 @@
+{
+  "bytes": 1078,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "episode-batch.json (first element, as the single-resource route returns it)",
+  "fixture": "episode-single.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Derived on 2026-10-02 for TASK-037 from a committed capture; the changed field is named in pins. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/episode/1",
+  "pins": "One id uses the single-resource route, which returns an object rather than an array",
+  "sha256": "8f62f5c998b9b249941954f5c267cc8c969533aafd352735b188388b6fd3ccc8",
+  "status": 200
+}

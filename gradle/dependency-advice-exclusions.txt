@@ -8,27 +8,21 @@
 # Format: <module path>|<excluded dependency>|<task that consumes it>
 # The guard `verifyDependencyAdviceRegister` fails when the module gains production Kotlin
 # source outside its route declaration, so an exclusion cannot outlive its placeholder state.
-:core:data|:core:domain|TASK-037
 :core:presentation|:core:domain|TASK-041
-:core:testing|:core:data|TASK-024
-:core:testing|:core:domain|TASK-036
-:feature:character-detail|:core:data|TASK-037
-:feature:character-detail|:core:domain|TASK-036
+:feature:character-detail|:core:domain|TASK-002
 :feature:character-detail|:core:presentation|TASK-041
 :feature:character-detail|:core:designsystem|TASK-043
 :feature:character-detail|:core:testing|TASK-039
-:feature:discovery|:core:data|TASK-037
-:feature:discovery|:core:domain|TASK-036
+:feature:discovery|:core:domain|TASK-001
 :feature:discovery|:core:presentation|TASK-041
 :feature:discovery|:core:designsystem|TASK-043
 :feature:discovery|:core:testing|TASK-039
 :feature:episodes|:core:designsystem|TASK-043
 :feature:episodes|:core:presentation|TASK-041
-:feature:favorites|:core:data|TASK-037
-:feature:favorites|:core:domain|TASK-036
+:feature:favorites|:core:domain|TASK-006
 :feature:favorites|:core:presentation|TASK-041
 :feature:favorites|:core:designsystem|TASK-043
 :feature:favorites|:core:testing|TASK-039
-:feature:settings|:core:domain|TASK-036
+:feature:settings|:core:domain|TASK-074
 :feature:settings|:core:presentation|TASK-041
 :feature:settings|:core:designsystem|TASK-043

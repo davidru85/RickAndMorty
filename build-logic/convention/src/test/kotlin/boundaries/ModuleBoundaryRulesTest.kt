@@ -51,10 +51,12 @@ class ModuleBoundaryRulesTest {
         coordinates: String,
         configuration: String = "commonMainImplementation",
         sourceSet: String = "commonMain",
+        kind: SourceSetKind = SourceSetKind.PRODUCTION,
     ) = DeclaredExternalDependency(
         consumer = consumer,
         configuration = configuration,
         sourceSet = sourceSet,
+        kind = kind,
         group = coordinates.substringBefore(':'),
         name = coordinates.substringAfter(':'),
     )
@@ -97,6 +99,94 @@ class ModuleBoundaryRulesTest {
             )
             assertEquals(1, only(rejected, rule).size, "$module may not depend on :core:testing")
         }
+    }
+
+    @Test
+    fun `R2 and R3 accept core testing from a test source set and keep production closed`() {
+        listOf(":core:data" to "R2", ":core:presentation" to "R3").forEach { (module, rule) ->
+            val testEdge = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(
+                            edge(
+                                module,
+                                ":core:testing",
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(
+                emptyList(),
+                only(testEdge, rule).map { it.render() },
+                "DEC-089: $module's test source sets may consume the shared harness",
+            )
+            assertEquals(emptyList(), only(testEdge, "R6").map { it.render() })
+
+            // The same edge inherited into `commonMain` is a production edge, so both rules still fire.
+            val inherited = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(edge(module, ":core:testing", origin = "testHarness")),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(1, only(inherited, rule).size, "DEC-089: production stays closed for $module")
+            assertEquals(1, only(inherited, "R6").size, "DEC-089: production never consumes :core:testing")
+
+            // A test source set gains the harness only: any other core module stays rejected.
+            val sibling = if (module == ":core:data") ":core:presentation" else ":core:data"
+            val otherTestEdge = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(
+                            edge(
+                                module,
+                                sibling,
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(1, only(otherTestEdge, rule).size, "DEC-089: $module's tests may not reach $sibling")
+        }
+    }
+
+    @Test
+    fun `R1 rejects core testing even from a domain test source set`() {
+        val violation = only(
+            ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        ":core:domain",
+                        edges = listOf(
+                            edge(
+                                ":core:domain",
+                                ":core:testing",
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            ),
+            "R1",
+        )
+        assertEquals(1, violation.size, "DEC-089: a domain test never reaches the HTTP-bearing harness")
     }
 
     @Test
@@ -194,10 +284,23 @@ class ModuleBoundaryRulesTest {
     fun `R8 R9 and R10 bound a feature's source sets by kind`() {
         val feature = ":feature:discovery"
         val sharedAllowed = ModuleBoundaryRules.evaluate(
-            complete(project(feature, edges = listOf(edge(feature, ":core:data")))),
+            complete(project(feature, edges = listOf(edge(feature, ":core:domain"), edge(feature, ":core:presentation")))),
             emptyMap(),
         )
         assertEquals(emptyList(), only(sharedAllowed, "R8").map { it.render() })
+
+        // DEC-091 (ADR-0014): the implementation module is never a feature's production dependency.
+        val implementationRejected = ModuleBoundaryRules.evaluate(
+            complete(project(feature, edges = listOf(edge(feature, ":core:data")))),
+            emptyMap(),
+        )
+        assertEquals(1, only(implementationRejected, "R8").size, "DEC-091: a feature depends on the API, not on :core:data")
+
+        val implementationInTests = ModuleBoundaryRules.evaluate(
+            complete(project(feature, edges = listOf(edge(feature, ":core:data", "commonTestImplementation", "commonTest", SourceSetKind.TEST)))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(implementationInTests, "R10").map { it.render() }, "a feature test may reach the shared cores")
 
         val sharedRejected = ModuleBoundaryRules.evaluate(
             complete(project(feature, edges = listOf(edge(feature, ":core:designsystem")))),
@@ -254,11 +357,34 @@ class ModuleBoundaryRulesTest {
         )
         assertEquals(emptyList(), only(allowed, "R11").map { it.render() })
 
+        // DEC-091 (ADR-0014): the shell is the composition root, so it may wire the implementations.
+        val compositionRoot = ModuleBoundaryRules.evaluate(
+            complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:data")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(compositionRoot, "R11").map { it.render() }, "DEC-091: the composition root")
+
         val rejected = ModuleBoundaryRules.evaluate(
             complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:domain")))),
             emptyMap(),
         )
         assertEquals(1, only(rejected, "R11").size)
+    }
+
+    @Test
+    fun `R12 rejects core ios exposing the implementation module through api`() {
+        val ios = ":core:ios"
+        val exported = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:data", "commonMainApi", "commonMain")))),
+            emptyMap(),
+        )
+        assertEquals(1, only(exported, "R12").size, "DEC-091: :core:data is linked, never exported, so no implementation type reaches Swift")
+
+        val api = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:domain", "commonMainApi", "commonMain")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(api, "R12").map { it.render() }, "the API module is exported")
     }
 
     @Test
@@ -276,6 +402,62 @@ class ModuleBoundaryRulesTest {
             emptyMap(),
         )
         assertEquals(emptyList(), only(allowed, "R14").map { it.render() })
+    }
+
+    @Test
+    fun `R14 admits the approved test libraries in a domain test source set only`() {
+        val approved = listOf(
+            "org.jetbrains.kotlin:kotlin-test",
+            "org.jetbrains.kotlin:kotlin-test-junit",
+            "org.jetbrains.kotlinx:kotlinx-coroutines-test",
+        )
+        val inTests = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":core:domain",
+                    externals = approved.map {
+                        external(
+                            ":core:domain",
+                            it,
+                            configuration = "commonTestImplementation",
+                            sourceSet = "commonTest",
+                            kind = SourceSetKind.TEST,
+                        )
+                    },
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(
+            emptyList(),
+            only(inTests, "R14").map { it.render() },
+            "DEC-089: a domain test may declare the approved test libraries",
+        )
+
+        val inProduction = ModuleBoundaryRules.evaluate(
+            complete(project(":core:domain", externals = approved.map { external(":core:domain", it) })),
+            emptyMap(),
+        )
+        assertEquals(3, only(inProduction, "R14").size, "DEC-066: a test library is never a production dependency")
+
+        val otherInTests = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":core:domain",
+                    externals = listOf(
+                        external(
+                            ":core:domain",
+                            "io.ktor:ktor-client-mock",
+                            configuration = "commonTestImplementation",
+                            sourceSet = "commonTest",
+                            kind = SourceSetKind.TEST,
+                        ),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(otherInTests, "R14").size, "DEC-089: the test allow-list is closed")
     }
 
     @Test

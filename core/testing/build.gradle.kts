@@ -93,8 +93,11 @@ kotlin {
         commonMain {
             kotlin.srcDir(generateFixtureSources)
             dependencies {
-                implementation(project(":core:domain"))
-                implementation(project(":core:data"))
+                // The doubles implement and return `:core:domain` types, so the edge is part of the
+                // harness's surface (`TASK-036`).
+                api(project(":core:domain"))
+                // `FakeRemoteSource` implements `IC-011`, a `:core:data` seam (`TASK-037`).
+                api(project(":core:data"))
 
                 // The harness surface: virtual time and the MockEngine seam are the two
                 // mechanisms TESTING.md §5 and §4.1 permit, and both are already pinned in
@@ -109,6 +112,12 @@ kotlin {
             // The harness exercises `:core:testing`'s own helpers, so the transitive test runtime
             // is declared where it is used (`onUsedTransitiveDependencies`, DEC-077).
             implementation(libs.kotlinx.coroutines.test)
+        }
+        jvmMain.dependencies {
+            // The opt-in JVM target (`DEC-079`, `DEC-089`) is analysed on its own, and dependency
+            // analysis asks for the core edges to be stated for it as well.
+            api(project(":core:domain"))
+            api(project(":core:data"))
         }
         androidHostTest.dependencies {
             implementation(libs.kotlin.test)

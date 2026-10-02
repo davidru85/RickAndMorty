@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-30
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementers Implementation Engineer (iOS) for the export module and the Xcode linkage, Implementation Engineer (Android) as consulted for the `api` promotions the export forces on the shared modules; consulted UI/UX Designer for the Swift-visible surface the hand-written binding consumes.
 - **Authoritative for:** which Gradle module produces the Kotlin framework the iOS app links, what that module exports, and how the Swift side reaches feature-owned types. Not the sharing boundary or the interop mechanism, which belong to [ADR-0003](0003-ui-sharing-strategy.md) and [`CONTRACTS.md`](../CONTRACTS.md) §7; not the target list and OS floors, which belong to [ADR-0002](0002-platform-targets.md); not the module set as a whole, which belongs to [ADR-0001](0001-module-boundaries.md); not the Swift-package split under `iosApp/Features/*`, which belongs to [`DESIGN.md`](../DESIGN.md) §3.2.
@@ -27,6 +27,8 @@ The iOS app links **exactly one** Kotlin framework. It is produced by a new modu
 - No module other than `:core:ios` MUST declare a framework binary, and `:core:ios` MUST NOT be a dependency of `:androidApp`, `:core:designsystem` or any Android source set: the Android deliverable stays buildable without it (`REQ-PLAT-004`).
 
 - **Board entry:** `DEC-058` — Accepted, in [`DECISION_BOARD.md`](../DECISION_BOARD.md). It amends the module set of `DEC-052` (ADR-0001) by adding one module, and resolves `CONF-40`.
+
+> **Amended 2026-10-02 by owner decision (`DEC-091`, [ADR-0014](0014-api-impl-boundary.md)), resolving `CONF-54`:** the export list above is narrowed. `:core:ios` exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api`, and declares `:core:data` as an `implementation` dependency that it does **not** export, so the Swift-visible surface carries no implementation type. `:core:designsystem` (Android-only) and `:core:testing` (test-only) are never dependencies. Every other clause of this decision is unchanged.
 
 ## Context
 

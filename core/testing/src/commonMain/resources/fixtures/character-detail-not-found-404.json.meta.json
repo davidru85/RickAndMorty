@@ -1,0 +1,14 @@
+{
+  "bytes": 31,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "character-page-beyond-last-404.json (envelope) with the detail message observed on 2026-09-29 (API_SPECS.md 4.4)",
+  "fixture": "character-detail-not-found-404.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Derived on 2026-10-02 for TASK-037 from a committed capture; the changed field is named in pins. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/99999",
+  "pins": "Detail 404 maps to NotFound(character, id), never to an empty shell",
+  "sha256": "f29693a55386f00a5464b4376316d482f25a8ac693469f58d559b71e7f02c0b2",
+  "status": 404
+}

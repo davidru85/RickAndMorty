@@ -1,0 +1,14 @@
+{
+  "bytes": 2697,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "character-detail.json without the required name field",
+  "fixture": "character-detail-missing-name.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Derived on 2026-10-02 for TASK-037 from a committed capture; the changed field is named in pins. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/1",
+  "pins": "A missing required field maps to MalformedResponse rather than a defaulted value",
+  "sha256": "a59d67745c08d0bc56c82dd4683f03e951d34b153d48427438b59c567813944c",
+  "status": 200
+}

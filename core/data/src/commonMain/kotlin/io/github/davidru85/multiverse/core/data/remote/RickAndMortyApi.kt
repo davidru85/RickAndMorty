@@ -1,0 +1,50 @@
+package io.github.davidru85.multiverse.core.data.remote
+
+import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
+import io.ktor.http.Url
+
+/**
+ * The remote host as a build constant (`REQ-SEC-001`, `SECURITY.md` §5.1): every request is HTTPS
+ * to [HOST], and nothing in a response may change where the app connects.
+ */
+public object RickAndMortyApi {
+    /** The one host the app talks to; never discovered from a response. */
+    public const val HOST: String = "rickandmortyapi.com"
+
+    internal const val API: String = "api"
+    internal const val CHARACTER: String = "character"
+    internal const val LOCATION: String = "location"
+    internal const val EPISODE: String = "episode"
+
+    /**
+     * An HTTPS URL on [HOST] for `/api/<segments>`. The segments are already encoded: callers pass
+     * fixed resource names and validated decimal ids, which need no escaping.
+     */
+    internal fun url(
+        vararg segments: String,
+        parameters: List<Pair<String, String>> = emptyList(),
+    ): Url =
+        URLBuilder(protocol = URLProtocol.HTTPS, host = HOST)
+            .apply {
+                encodedPathSegments = listOf(API) + segments
+                parameters.forEach { (name, value) -> this.parameters.append(name, value) }
+            }.build()
+
+    /** Whether [url] may be trusted as a relation or pagination link: HTTPS on [HOST], default port. */
+    internal fun isAllowListed(url: Url): Boolean =
+        url.protocol == URLProtocol.HTTPS && url.host == HOST && url.port == URLProtocol.HTTPS.defaultPort
+}
+
+/** The resource names an `ApiFailure.NotFound` carries for this API. */
+public object RemoteResources {
+    public const val CHARACTER: String = "character"
+    public const val CHARACTER_PAGE: String = "character-page"
+    public const val EPISODE: String = "episode"
+}
+
+/** The codes of the `ApiWarning`s a remote adapter produces. */
+public object RemoteWarnings {
+    /** A requested resource the response omitted; the warning's detail is the missing id. */
+    public const val MISSING_RESOURCE: String = "missing-resource"
+}

@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — Contribution Process
 
 - **Status:** Active — target state. The Gradle/KMP build skeleton exists (TASK-014); no feature code, tests or CI exist yet (`README.md` §14), so the feature and test commands below are the documented interface to work that has not landed.
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** Documentation Maintainer (see `../AGENTS.md` §3.9)
 - **Authoritative for:** the contribution process — prerequisites, branching, the TDD phase-and-commit protocol and the merge policy (DEC-053, amending DEC-041), Conventional Commits and how release notes are derived, the issue workflow, pull-request expectations including the required-check list, review, agent permissions, and the contribution completion checklist.
 - **Not authoritative for:** code conventions and tool-enforced rules (`GUIDELINES.md`); gates, Ready/Done and waivers (`DEFINITION.md`); test strategy, layers, ids and tooling (`TESTING.md`); the vulnerability-reporting route (`SECURITY.md` §10); module boundaries and dependency direction (`DESIGN.md`, `adr/0001-module-boundaries.md`, DEC-052); operating rules for agents (`../AGENTS.md`).
@@ -211,7 +211,7 @@ Every change reaches `main` through a pull request. The template is [`docs/templ
 
 ### 5.1 One logical change
 
-A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
+A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. **B3 is the one recorded exception (`DEC-082`):** its seven tasks land in three phase pull requests, each listing every member task with its own evidence row; see `BACKLOG.md` §2.6. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
 
 ### 5.2 Description requirements
 
@@ -258,7 +258,7 @@ Notes that keep the list honest:
 
 - **Activation is staged (`DEC-071`).** The list above is the complete set and does not shrink. Each row becomes blocking when its harness exists — the shared suites and the policy tasks from `TASK-024`/`TASK-025` onward, the snapshot, contract and accessibility suites with the M1/M2 tasks that create them. A pull request whose head ran before the workflow existed is *integrated and locally verified* and `DEFINITION.md` D2 is not satisfied; that is recorded, not waived, and it applies only to history since the workflow merged (`TASK-025`, PR #52).
 
-**Configured check names.** The workflow lands with `TASK-025`; the checks it contributes to the required set today are `android` and `ios` (its two jobs). The per-suite rows of §14.2 are added to the required list by the same change that introduces their harness (`DEC-071`).
+**Configured check names.** The workflow lands with `TASK-025`; its two jobs are `android` and `ios`. **From B3 Phase 3.1 the `ios` job is temporarily suspended (`DEC-083`)** until the pull request that introduces the buildable `iosApp` application target (`TASK-051`) restores it: during the suspension the workflow contributes `android` only, and the required set the ruleset names is `android` only (see the suspension packet below). The per-suite rows of §14.2 are added to the required list by the same change that introduces their harness (`DEC-071`).
 
 **The check names are provisional until the workflow files land.** The authoritative definitions are `DEFINITION.md` §3/§7 and `TESTING.md` §14; where a workflow job name diverges from this table, `TESTING.md` and the workflow are the truth and this table is corrected in the same change.
 - **Branch protection is a repository setting and therefore a human action** (DEC-049). The agent prepares the list; a maintainer applies it. As of 2026-10-01 the workflows of `TASK-025` exist (`.github/workflows/pull-request.yml`, jobs `android` and `ios`).
@@ -283,6 +283,16 @@ Notes that keep the list honest:
 **Applying the packet is a repository setting and therefore a human action** (`DEC-049`, `AGENTS.md` §4.2). The agent records the observed state, prepares the exact values and verifies the result; it does not change settings and does not merge.
 
 The settings are applied and the enforcement is observed; the rows above are the evidence.
+**Temporary iOS suspension (`DEC-083`, owner directive 2026-10-02).** This is a dated amendment of the `DEC-054`/`DEC-071`/`DEC-073` obligations, not a waiver: no suite is waived (`DEFINITION.md` §8.3 stays empty), the Kotlin/Native targets stay configured, and native validation of a B3 phase runs locally on macOS and is reported as local evidence. The intended and observed settings are recorded separately:
+
+| Setting | Observed 2026-10-02 before the change | Applied during the suspension (owner, 2026-10-02) | Restored by |
+| --- | --- | --- | --- |
+| Pull-request workflow jobs | `android`, `ios` | `android` only, carrying every Android check plus the policy checks the `ios` job used to run | `TASK-051` (same pull request as the app target) |
+| `main protection` required contexts | `android` and `ios`, both bound to `integration_id 15368` | `android` only, still bound to `integration_id 15368` — **applied and observed 2026-10-02**; every other rule, the empty bypass list and merge-only delivery unchanged | `TASK-108` (the human settings step, read back in the same change as `TASK-051`) |
+| Restoration tripwire | — | `verifyWorkflowGate` requires the `ios` job, `iosSimulatorArm64Test` and `contractTestReplayIosSimulator` again as soon as `iosApp/` contains an Xcode project with an application target | Automatic |
+
+The required-context change is a repository setting and therefore human-only (`DEC-049`): it had to be applied **before** the owner merges the first pull request whose workflow no longer reports `ios`, or GitHub waits for a check that never runs. **The owner applied it on 2026-10-02, outside the repository tree:** observed before the change, the ruleset required `android` and `ios`, and observed after it, the same `gh api repos/davidru85/RickAndMorty/rulesets/24241444` read prints exactly one context, `android`, still bound to `integration_id 15368`, with every other rule, the empty bypass list and merge-only delivery unchanged. Pull request #110 awaits `android` only, and `ios` is no longer reported as an outstanding requirement; the packet is in `HANDOFF.md` §1.3 (`LOG-0080`).
+
 - **No retry-to-green.** Automatic retries are forbidden on the blocking gate, and re-running a failing check until it passes is not an acceptable response (`TESTING.md` §15). A test that fails intermittently is quarantined with an owner and a deadline, with the justification recorded, and is excluded from the required set only on that basis.
 - **Both platform runners are mandatory.** The Android suites and the macOS runner that executes the iOS suites are required on every pull request; the cost of the macOS runner is accepted (DEC-054). A job that is skipped for cost, or absent, is a missing required check, not a pass.
 - **The live-network contract job is not in this list.** It stays a separate scheduled job that is a signal, not a merge blocker; the gate's contract run uses fixture/replay mode, so the required set never depends on an unversioned live service (`TESTING.md` §11, DEC-054).

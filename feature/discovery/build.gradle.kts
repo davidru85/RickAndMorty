@@ -11,7 +11,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core:domain"))
-            implementation(project(":core:data"))
             implementation(project(":core:presentation"))
             api(libs.kotlinx.serialization.core)
         }

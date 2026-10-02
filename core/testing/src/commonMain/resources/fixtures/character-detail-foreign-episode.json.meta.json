@@ -1,0 +1,14 @@
+{
+  "bytes": 2712,
+  "capturedAt": "2026-10-01T14:57:43Z",
+  "contentType": "application/json",
+  "derivedFrom": "character-detail.json with its first episode URL moved to a foreign host",
+  "fixture": "character-detail-foreign-episode.json",
+  "kind": "derived",
+  "method": "GET",
+  "note": "Derived on 2026-10-02 for TASK-037 from a committed capture; the changed field is named in pins. Published totals and headers are recorded observations, never constants in application or test code (TESTING.md 4.4, RISK-006).",
+  "path": "/api/character/1",
+  "pins": "A relation URL naming another host is rejected, not followed (REQ-SEC-001)",
+  "sha256": "7f44bc7384bddcb3e25e4883fcf87547b98e292ffc607ef3fc5f9c19e16d0e5b",
+  "status": 200
+}

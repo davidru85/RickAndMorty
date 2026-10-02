@@ -57,8 +57,7 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 detekt outcome (`DEC-075`). An audit of the merged block then reproduced ten defects; all ten (`TASK-098`…`TASK-107`, `B2-R01`…`B2-R10`) are merged
 between `4953bde` (#88) and `c57ae85` (#104).
 
-The two repository settings that were human-only (`DEC-049`) are **applied**: the `main protection` ruleset requires the `android` and `ios` checks and
-carries no bypass actor, so a head without them reads `BLOCKED`. The configuration and the observed enforcement are in `CONTRIBUTING.md` §5.3 (`LOG-0076`).
+The repository settings that were human-only (`DEC-049`) are **applied**: the `main protection` ruleset carries no bypass actor, and its required contexts are managed with the iOS suspension — after its first B2 packet it required the `android` and `ios` checks, and from B3 Phase 3.1 it requires `android` only, so a head without that check reads `BLOCKED`. The configuration, the observed enforcement and the applied B3 change are in `CONTRIBUTING.md` §5.3 (`LOG-0076`, `LOG-0080`).
 
 `TASK-096` is `Done` (PR #74, merged as `72332a5`): it wires `contractLiveTest` (which holds `TEST-CONTRACT-006`)
 into the scheduled job and makes `WorkflowGateGuard` recognise every registered live entry point, proved red →
@@ -66,6 +65,45 @@ green with a seed that runs the real task name from a pull-request workflow. `TA
 (`docs/b2-final-reconciliation`) closes the residue the block audit found: six stale current-state claims and
 `TESTING.md` §14.2's per-row activation owners. The scheduled job was observed by `workflow_dispatch` on merged
 `main` (run `36983953859`, success, both steps green); the cron trigger first fires Monday 06:00 UTC.
+
+## 1.3 B3 Phase 3.1 and the temporary iOS settings packet (2026-10-02)
+
+**Phase 3.1 (`TASK-036`, issue #108; `TASK-037`, issue #109) is implemented on `feat/b3-phase-3-1` and in review; it is not `Done` until the owner merges it** (`DEC-082`). What it delivers, with its evidence in `PROJECT_LOG.md` `LOG-0078`/`LOG-0079` and the phase pull request:
+
+- `:core:domain`: the `IC-001`…`IC-004`, `IC-010` declarations, the `IC-007` repository with its defaulted `PageLoadPolicy` (`DEC-086`), the `IC-008`/`IC-021` interfaces, and `TEST-UNIT-052`.
+- `:core:data`: the REST adapter of `IC-011` (now returning `DataResult`, `DEC-090`), the shared client defaults, the OkHttp and Darwin factories with no engine response cache, `TEST-CONTRACT-001`/`003`, `TEST-UNIT-001` and `TEST-UNIT-054`.
+- `:core:testing`: `FakeCatalogue`, `FakeCharacterRepository` (`IC-007`) and `FakeRemoteSource` (`IC-011`), with `TEST-UNIT-053`.
+- Build and CI: the test-source-set reading of the boundary rules (`DEC-089`), the API/IMPL boundary (`DEC-091`, ADR-0014: no feature depends on `:core:data`), one contract replay entry point per target (`DEC-090`), and the temporary iOS suspension with its restoration tripwire (`DEC-083`).
+- Decisions `DEC-082`…`DEC-091`, ADR-0013 and ADR-0014; `CONF-54` and `CONF-63`…`CONF-70` resolved; `GAP-024`/`GAP-025` registered.
+
+**The settings step that preceded the merge is applied (owner action on 2026-10-02, outside the repository tree).** The pull request's workflow no longer reports `ios`, and the `main protection` ruleset required it, so GitHub would have waited for a check that never runs. The owner applied the packet below; observed before the change (`gh api repos/davidru85/RickAndMorty/rulesets/24241444`): rules `deletion`, `non_fast_forward`, `pull_request` (merge only, 0 approvals, thread resolution required) and `required_status_checks` with `android` and `ios`, both on `integration_id 15368`; no bypass actor. The applied change removes **only** the `ios` context:
+
+```bash
+gh api -X PUT repos/davidru85/RickAndMorty/rulesets/24241444 --input - <<'JSON'
+{
+  "name": "main protection",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "pull_request", "parameters": {
+        "allowed_merge_methods": ["merge"], "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false, "require_extra_approval_for_unattributed_changes": true,
+        "require_last_push_approval": false, "required_approving_review_count": 0,
+        "required_review_thread_resolution": true, "required_reviewers": [] } },
+    { "type": "required_status_checks", "parameters": {
+        "do_not_enforce_on_create": false, "strict_required_status_checks_policy": false,
+        "required_status_checks": [ { "context": "android", "integration_id": 15368 } ] } }
+  ]
+}
+JSON
+gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
+```
+
+**Applied and observed on 2026-10-02.** The second command prints exactly one context, `android`, bound to `integration_id 15368`; every other rule, the empty bypass list and merge-only delivery are unchanged. Pull request #110 therefore awaits `android` only — the `ios` context is no longer reported as an outstanding requirement. Its run on `13e66a45` (run `37050825465`) concluded green, and so did the re-run of that head the owner requested (attempt 2); each later documentation-only head is gated by its own `android` run, so the pull request's check rollup is the current evidence. `TASK-051` restores `ios` with the same request and `{ "context": "ios", "integration_id": 15368 }` added back, in the change that introduces the app target; `TASK-108` owns that settings half and its read-back.
 
 ## 2. Completed work
 
@@ -105,7 +143,7 @@ From 2026-10-02 the actions map onto the execution blocks of `BACKLOG.md` §2.6 
 1. **B1 closed.** All seven tasks and their corrections merged (PRs #25, #31–#36, #42–#45); the audit's open items are now `CONF-50`, `CONF-54` and the open `GAP-*` rows. Owner: `docs/DOCUMENTATION_AUDIT.md`.
 2. **B2 is closed, remediation included.** Its nine original rows merged in PRs #52, #62–#70; its own audit then reproduced ten defects and registered them as `TASK-098`…`TASK-107` (`B2-R01`…`B2-R10`). All ten are now `Done` under D2, merged between `4953bde` (#88) and `a1de389` (#102): the workflow gate (`#88`), the documented gate (`#89`), the Swift toolchain (`#90`), the contract replay (`#91`), the exclusion register (`#92`), the target model (`#98`), the macOS coverage (`#99`), the live observations (`#100`), the repository settings (`#101`) and the document reconciliation (`#102`). The audit's open-gap count fell from 16 to 8, none of them a remediation finding. Owner: `docs/DOCUMENTATION_AUDIT.md` §6.2.1.
 3. **B2 is closed, formally.** Its ten corrective rows are `Done` (PRs #88–#92, #98–#102) and the closure check that followed found and fixed three defects in the remediation's own documentation (PR #105, `LOG-0077`). The block's state, the traceability and the mechanical documentation guards are in `docs/DOCUMENTATION_AUDIT.md` §6.2.1–§6.2.2.
-4. **B3 opens next** (`TASK-036`, `TASK-037`, `TASK-038`, `TASK-039`, `TASK-040`, `TASK-041`, `TASK-047`): the shared core and the data layer, which also carry the activation obligations `DEC-073`/`DEC-074` wrote into `TASK-037` and the interface-bound fakes `DEC-072` moved. Owner: `docs/BACKLOG.md` §4.
+4. **B3 is in progress in three phase pull requests** (`DEC-082`, `BACKLOG.md` §2.6). **Phase 3.1** (`TASK-036`, `TASK-037`) is in review (§1.3); the owner applied the §1.3 settings packet on 2026-10-02, so the phase head now awaits `android` only. **Phase 3.2** (`TASK-038`, `TASK-039`, `TASK-047`) starts from merged `main` after that merge and inherits these recorded obligations: the transport-wide host and redirect policy and a TLS/offline classifier (the adapter maps unclassified transport failures to `Unknown` today); `Retry-After` in HTTP-date form with an injected clock (the adapter parses delta-seconds only); OkHttp's own `retryOnConnectionFailure` neutralised so the three-attempt budget of `DEC-084` is not multiplied; the REST repository composition and `coreModule` behind the domain interfaces (`DEC-091`); `IC-014` implemented in `:core:data` against its new `:core:domain` declaration, deciding the paging-`404` end of `ERROR_FLOW.md` §5.2; and `:core:diagnostics` (`DEC-088`). **Phase 3.3** (`TASK-040`, `TASK-041`) adds `ObserveFavoriteIds` (`DEC-090`) and the parity verifier (`CONF-70`). The register rows naming `TASK-039`/`TASK-041`/`TASK-043` for feature edges are re-pointed at the tasks that consume them when those phases land. Owner: `docs/BACKLOG.md` §4.
 6. **Then the delivery blocks** in order: B4 (design system and Android shell), B5/B6 (Android features and validation), B7–B9 (iOS and closure). Each block's members and its intra-block order are in `docs/BACKLOG.md` §2.6.
 
 ## 5. Unresolved decisions and deferred items
@@ -130,7 +168,7 @@ Two **operational** risks are specific to taking this repository over and are no
 | The Figma source file requires project access and returned HTTP 403 to an anonymous client on 2026-09-29. | `docs/UI_SPEC.md` cites Figma pages and node identifiers that a new contributor cannot open; the design becomes uncorroborable. | Obtain read access before design-dependent work; commit the rendered PNG exports under `docs/figma/` (DEC-045) so the specification stays checkable without access. |
 | One toolchain artifact is pinned pre-release (Material 3 Expressive `1.5.0-alpha29`, `DESIGN.md` §3.5; the alpha-only `androidx.lifecycle` KMP and DataStore KMP of `CON-004` are **not** adopted). | An upgrade can break the build or change rendering, and the pinned versions age quickly. | Keep versions pinned and centralised in the version catalog, record the accepted alpha risk per `docs/adr/0008-alpha-dependencies.md`, and let the mandatory gate (DEC-054) catch breakage at upgrade time rather than at review time. |
 
-One further operational note: `main` is the only integrated branch and it now carries a **branch ruleset** (`main protection`, active), configured by the owner on 2026-09-30: no deletion, no force-push, and a pull request required. Integration uses a **merge commit** and no other method, so the branch record survives (DEC-059); linear history is deliberately **not** required, because it would refuse merge commits. One deliberate omission remains: **no required status checks named in the ruleset**, although the workflow has existed since `TASK-025` (PR #52) — so a red run does not yet block a merge through GitHub; the exact list is in `CONTRIBUTING.md` §5.3. **No required approvals** are configured, because the repository has a single collaborator who cannot approve their own pull request.
+One further operational note: `main` is the only integrated branch and it now carries a **branch ruleset** (`main protection`, active), configured by the owner on 2026-09-30: no deletion, no force-push, and a pull request required. Integration uses a **merge commit** and no other method, so the branch record survives (DEC-059); linear history is deliberately **not** required, because it would refuse merge commits. The ruleset names the required checks and they bind: the B2 packet (2026-10-02) put `android` and `ios` in it with no bypass actor, and from B3 Phase 3.1 it requires `android` only while the `ios` job is suspended (`DEC-083`) — a red, skipped or absent required check blocks the merge through GitHub; the exact list and the applied packets are in `CONTRIBUTING.md` §5.3. **No required approvals** are configured, because the repository has a single collaborator who cannot approve their own pull request.
 
 **Reading the history, and recovering branch names.** Merges #1–#4 are real merge commits, so `git log --graph --all` shows those branches and their commits even though the refs are gone. Merges #6 and #7 were rebase merges and left **no** branch structure: `main`'s history is linear across them and their branch tips are unrecoverable from the graph, which is precisely what DEC-059 prevents from recurring. Every historical branch name is nevertheless recoverable, because a pull request keeps its head ref name permanently: `gh pr list --state all --json number,state,headRefName,baseRefName` lists all seven PRs with their branches (`docs/figma-designs`, `docs/module-and-ci-decisions`, `docs/settings-destination`, `docs/data-sources`, `build/gradle-kmp-skeleton`, `docs/ios-framework-export`, `docs/merge-commit-integration`). Repository settings and branch protection are human actions (DEC-049).
 
@@ -169,7 +207,7 @@ Commands marked **executed** were run on the branch named with the date and are 
 | Dependency-policy checks (exact pins, rationale, inventory) | `./gradlew verifyDependencyPolicy` | **Executed 2026-09-30** — passes; also runs inside `./gradlew check` and `./gradlew build` (TASK-015, LOG-0032) |
 | Repository and secret hygiene check | `./gradlew verifyRepositoryHygiene` | **Executed 2026-10-01 on merged `main`** — passes with 0 findings over the working set, every reachable blob and every unique historical path; runs inside `./gradlew check` and `./gradlew build` (TASK-016, LOG-0036…LOG-0039) |
 | iOS tests and snapshots | `xcodebuild test -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` | Not run: `iosApp/` does not exist (TASK-051) |
-| Contract suite — fixture/replay mode, inside the pull-request gate | Expected shape `./gradlew :core:data:contractTest`; the exact task names for the fixture/replay and live modes are owned by `docs/TESTING.md` | Not run: no contract test exists (TASK-026) |
+| Contract suite — fixture/replay mode, per target | `./gradlew :core:data:contractTestReplayAndroidHost` (the `android` job) · `./gradlew :core:data:contractTestReplayIosSimulator` (local macOS while `DEC-083` suspends `ios`) · `./gradlew :core:data:contractTestReplay` (both) | **Executed 2026-10-02** on `feat/b3-phase-3-1`: 18 contract cases per target, 36 for the aggregate (`TASK-037`) |
 | Performance benchmarks (requires a device) | Task and module are defined in `docs/TECHNICAL_PLAN.md`; the budget and measurement method are in `docs/PERFORMANCE.md` | Not run: the harness module needs a decision first (CONF-41) |
 
 Every row above that is not marked executed, and every row added since this table was written, remains unexercised and is marked accordingly; the skeleton's own verification is LOG-0026.

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (module set amended by [ADR-0010](0010-settings-destination.md))
 - **Date:** 2026-09-29
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementers Implementation Engineer (Android) and Implementation Engineer (iOS); consulted UI/UX Designer (design-system boundary)
 - **Authoritative for:** the module set, the source-set layout inside a feature module, and the permitted dependency edges between modules. Not the layer responsibilities themselves (`DESIGN.md` §1) and not the class-level contracts (`CONTRACTS.md`).
@@ -17,6 +17,12 @@
 > **Amended 2026-10-01 by owner decision (`DEC-066`), resolving `CONF-47`:** the `:core:domain` rule is widened by exactly two permitted libraries. `:core:domain` MUST depend on no project module and on no platform, HTTP, UI or persistence library; the **Kotlin standard library and `kotlinx-coroutines-core`** are permitted, because `IC-008` (`FavoritesRepository.observe(): Flow<Set<CharacterId>>`) and `IC-009` (`ObserveFavoriteIds`) expose `Flow` and the contract baseline cannot be implemented or consumed without them. Nothing else in the module set, its edges or its rationale changes. Every document that stated "`:core:domain` depends on nothing" cites this amendment: `DESIGN.md` §3.1/§3.4, `REQUIREMENTS.md` `AC-REQ-NFR-009-3`, `TESTING.md` §3.2, `DEFINITION.md` §3 D7 and the `CONTRACTS.md` overview diagram. The version catalog already pins `libs.kotlinx.coroutines.core` `1.11.0` for this purpose (`DESIGN.md` §3.5).
 
 > **Wording aligned 2026-10-01 by owner decision (`DEC-069`), resolving `CONF-39`:** the `:core:testing` row below reads “test classpath only”, which the build cannot express as a module property. The module declares `:core:domain` and `:core:data`; the test-only rule is a **consumption** rule — no production source set may reference `:core:testing` — and is owned by `DESIGN.md` §3.4 rule 9 and enforced by `TEST-UNIT-017` in the `TASK-017` boundary check. No module edge changes.
+
+> **Amended 2026-10-02 by owner decision (`DEC-088`, [ADR-0013](0013-observability-placement.md)):** one module is planned for the set — `:core:diagnostics`, a Kotlin Multiplatform module that depends on `:core:domain` only and carries the debug-only diagnostic API. Release artifacts never link it: `:androidApp` may declare it from a debug configuration only, and the iOS app links it in its Debug configuration only. `TASK-047` creates it, adds it to the required leaf set and admits its edges in the boundary check in the same change; until then it is target state. Every other module, edge and rationale is unchanged.
+
+> **Amended 2026-10-02 by owner decision (`DEC-091`, [ADR-0014](0014-api-impl-boundary.md)):** the API/IMPL boundary is applied with the existing modules. A `:feature:*` production source set no longer depends on `:core:data` — the rule below that lets a feature module depend on `:core:data` now applies to its test source sets only, through `:core:testing` — and the application shell, as composition root, may depend on `:core:data`. Every seam a feature consumes is declared in `:core:domain`. Every other module, edge and rationale is unchanged.
+
+> **Enforcement aligned 2026-10-02 (`DEC-089`), resolving `CONF-63`:** the consumption rule of the `DEC-069` note above is applied to `:core:data` and `:core:presentation` too — their test source sets may depend on `:core:testing`, as every feature's may — and `:core:domain`'s test source sets may declare the approved test libraries (`kotlin-test`, `kotlin-test-junit`, `kotlinx-coroutines-test`) but still no project module, so a domain test never reaches the HTTP-bearing harness. The production rules are unchanged.
 
 ## Owners
 
@@ -245,5 +251,5 @@ A feature-per-module split has one known failure mode: each feature re-implement
 
 - **Supersedes:** none. This ADR supersedes decision `DEC-019` (keep the eight-module structure), which is marked `Superseded` on the board; `DEC-019` never had a separate ADR file.
 - **Superseded by:** none as of 2026-09-30.
-- **Amended by:** ADR-0010 (Settings replaces Locations in the module set), 2026-09-30; the `:core:domain` dependency rule (Kotlin stdlib + `kotlinx-coroutines-core`), 2026-10-01 by owner decision `DEC-066` resolving `CONF-47` — an amendment pointer, no new ADR.
+- **Amended by:** ADR-0010 (Settings replaces Locations in the module set), 2026-09-30; the `:core:domain` dependency rule (Kotlin stdlib + `kotlinx-coroutines-core`), 2026-10-01 by owner decision `DEC-066` resolving `CONF-47` — an amendment pointer, no new ADR. ADR-0013 (`DEC-088`, the planned `:core:diagnostics` module), 2026-10-02; ADR-0014 (`DEC-091`, the API/IMPL boundary: no feature → `:core:data` edge, `:androidApp` → `:core:data` admitted), 2026-10-02; the test-source-set enforcement (`DEC-089`), 2026-10-02 — an amendment pointer, no new ADR.
 - **Related:** ADR-0002 (platform targets and the shells), ADR-0003 (where sharing stops), ADR-0005 (response cache in `:core:data`), ADR-0006 (presentation-state ownership and DI), ADR-0007 (favorites store placement), ADR-0009 (shared pager in `:core:data`).

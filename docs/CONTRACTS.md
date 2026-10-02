@@ -1,7 +1,7 @@
 # CONTRACTS.md — Internal Kotlin Contract Baseline
 
-- **Status:** Active — target state, **accepted as the internal interface baseline** (`TASK-019`, `TECHNICAL_PLAN.md` §5 S1): the Gradle/KMP build skeleton exists as of TASK-014, no contract is implemented yet, and the `Flow`-based seams are coherent with the `DEC-066` amendment of ADR-0001. See `DOCUMENTATION_AUDIT.md` §5 for the drift rule
-- **Last verified:** 2026-10-01
+- **Status:** Active — mixed, **accepted as the internal interface baseline** (`TASK-019`, `TECHNICAL_PLAN.md` §5 S1). B3 Phase 3.1 implements the `:core:domain` declarations (`IC-001`…`IC-004`, `IC-007`, `IC-008` and `IC-021` as interfaces, `IC-010`) and `IC-011`'s REST adapter; every other row is target state. The `Flow`-based seams are coherent with the `DEC-066` amendment of ADR-0001. See `DOCUMENTATION_AUDIT.md` §5 for the drift rule
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see `AGENTS.md` §3)
 - **Authoritative for:** the internal Kotlin contracts `IC-###` — the source-level declarations that cross a module boundary (repository, data-source, cache, storage and pager seams), the shared UI-state types both platforms consume, and the invariants, ownership, reference and compatibility rules attached to each of them.
 - **Not authoritative for:** the remote-facing and domain model declarations (`API_SPECS.md` §3, §4.7, §5, §6), the failure → state → copy chain (`ERROR_FLOW.md`), module composition and dependency direction (`DESIGN.md` §3, `adr/0001-module-boundaries.md`), requirement ids and acceptance criteria (`REQUIREMENTS.md`), visual specification (`UI_SPEC.md`), test ids, layers and tooling (`TESTING.md`), user-visible copy strings (`UI_SPEC.md` §6.4, §8).
@@ -30,13 +30,13 @@ Module names, source-set layout and dependency direction follow `adr/0001-module
 flowchart LR
     subgraph Domain[":core:domain — stdlib + kotlinx-coroutines-core only (DEC-066)"]
         ID[IC-001..005<br/>API_SPECS declarations]
-        REPO[IC-007 CharacterRepository<br/>IC-008 FavoritesRepository<br/>IC-009 use cases<br/>IC-010 filters<br/>IC-021 AppSettingsRepository<br/>failure = IC-003 Failure]
+        REPO[IC-007 CharacterRepository<br/>IC-008 FavoritesRepository<br/>IC-009 use cases<br/>IC-010 filters<br/>IC-014 CharacterPager<br/>IC-021 AppSettingsRepository<br/>IC-024 AppLogger contract<br/>failure = IC-003 Failure]
     end
     subgraph Data[":core:data — depends on :core:domain"]
         REMOTE[IC-011 CharacterRemoteDataSource]
         CACHE[IC-012 CacheStorage]
         LOCAL[IC-013 FavoritesLocalDataSource]
-        PAGER[IC-014 CharacterPager]
+        PAGER[IC-014 pager implementation]
         PREFS[IC-022 AppSettingsLocalDataSource]
     end
     subgraph Pres[":core:presentation — depends on :core:domain"]
@@ -118,7 +118,7 @@ DataResult<T> (sealed), DataSource,        API_SPECS.md §3           :core:doma
   ApiWarning
 ApiFailure (+ every variant)             API_SPECS.md §6           :core:domain  commonMain
 REST DTOs, GraphQL envelopes             API_SPECS.md §4.7, §5.1   :core:data    commonMain (never outside)
-CharacterRepository                      CONTRACTS.md IC-007       :core:domain  commonMain
+CharacterRepository, PageLoadPolicy      CONTRACTS.md IC-007       :core:domain  commonMain
 FavoritesRepository                      CONTRACTS.md IC-008       :core:domain  commonMain
 AppSettingsRepository, AppSettings,      CONTRACTS.md IC-021       :core:domain  commonMain
   RemoteProtocol
@@ -127,7 +127,7 @@ CharacterFilter, StatusFilter            CONTRACTS.md IC-010       :core:domain 
 CharacterRemoteDataSource                CONTRACTS.md IC-011       :core:data    commonMain
 CacheStorage, CacheKey, CacheEntry       CONTRACTS.md IC-012       :core:data    commonMain
 FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data    commonMain
-CharacterPager, PagerState               CONTRACTS.md IC-014       :core:data    commonMain
+CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain  commonMain (implemented in :core:data)
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
@@ -138,6 +138,10 @@ CharacterDetailUiState, InfoRowUi,       CONTRACTS.md IC-019       :feature:char
 FavoritesUiState, FavoritesIntent         CONTRACTS.md IC-020      :feature:favorites  presentation package
 SettingsUiState, SettingsIntent           CONTRACTS.md IC-023      :feature:settings  presentation package
 CharacterAccentResolver                   DESIGN.md §4.4            :feature:discovery  androidMain UI
+AppLogger, LogLevel, LogEvent (+ field   CONTRACTS.md IC-024       :core:domain  commonMain
+  enums)
+LogSink, LogRecord                       CONTRACTS.md IC-024       :core:data    commonMain
+Debug diagnostic API (TASK-047)          ADR-0013, DEC-088         :core:diagnostics  commonMain (target state)
 ```
 
 ### 3.1 The boundary rule between this file and `API_SPECS.md`
@@ -243,11 +247,18 @@ Each entry below is a pointer plus the invariants that apply to *consumers*. The
 
 ```kotlin
 interface CharacterRepository {
-    suspend fun page(filter: CharacterFilter, page: Int): DataResult<CharacterPage>
+    suspend fun page(
+        filter: CharacterFilter,
+        page: Int,
+        policy: PageLoadPolicy = PageLoadPolicy.Default,
+    ): DataResult<CharacterPage>
     suspend fun details(id: CharacterId, enrich: Boolean): DataResult<CharacterDetails>
 }
+
+enum class PageLoadPolicy { Default, ForceNetwork }
 ```
 
+- **Page-load policy (`DEC-086`).** `Default` lets the implementation serve the page under the cache read policy of `API_SPECS.md` §7.3. `ForceNetwork` is the manual-refresh policy: the implementation `MUST` issue a network request for the page even when a fresh cached entry exists. The policy is part of the request identity the implementation coalesces on, so in-flight or cached `Default` work `MUST NOT` satisfy a `ForceNetwork` call, and the bypass `MUST` be observable in a test (a recorded network call for a fresh entry). `PageLoadPolicy` is platform-free and carries no cache vocabulary of its own.
 - **Invariants**
   - Both methods return `DataResult` and never throw for an expected remote failure: success is `DataResult.Success` carrying a fully mapped value, failure is `DataResult.Failure` carrying the `ApiFailure` (`IC-003`). A `null` value has no meaning here and `MUST NOT` be used to signal a miss.
   - `page` returns the requested page only, and `MUST NOT` fetch a later page as part of the same call (`REQ-FUNC-001`, `AC-REQ-FUNC-001-1`).
@@ -255,11 +266,12 @@ interface CharacterRepository {
   - `page` applies the caller's filter unchanged: all active filters are sent on every page (`REQ-FUNC-001`).
   - `details(id, enrich = false)` `MUST NOT` issue an episode request; `details(id, enrich = true)` performs at most one bounded episode batch call, never one request per episode (`REQ-FUNC-023`, `AC-REQ-FUNC-023-1`).
   - A detail for an unknown id returns `DataResult.Failure` carrying `ApiFailure.NotFound`; the repository `MUST NOT` return an empty shell model (`API_SPECS.md` §4.4).
-  - Concurrent identical calls are deduplicated in the implementation, so two simultaneous identical loads issue one remote request (`REQ-REL-002`, `AC-REQ-REL-002-1`).
+  - Concurrent identical calls are deduplicated in the implementation, so two simultaneous identical loads issue one remote request (`REQ-REL-002`, `AC-REQ-REL-002-1`). Identity includes the protocol, the operation, the page or id, the normalized filter, the enrichment mode and the `PageLoadPolicy`.
+  - `page(…, policy = ForceNetwork)` reaches the network even when a fresh entry exists (`AC-REQ-FUNC-012-1`, `DEC-086`).
   - Only successfully decoded, domain-valid payloads are promoted to a cache; errors, empty bodies and partial responses are never written (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`).
   - A `CancellationException` from an underlying suspending call propagates unchanged and is never converted into a `Failure` (`IC-003`).
   - The repository `MUST NOT` expose, accept or depend on a DTO type or a platform type.
-- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-010`, `REQ-FUNC-020`, `REQ-FUNC-023`, `REQ-REL-002`, `DEC-012`, `DEC-018`.
+- **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-002`, `REQ-FUNC-010`, `REQ-FUNC-012`, `REQ-FUNC-020`, `REQ-FUNC-023`, `REQ-REL-002`, `DEC-012`, `DEC-018`, `DEC-086`.
 
 ### IC-008 — `FavoritesRepository`
 
@@ -334,13 +346,15 @@ enum class StatusFilter { All, Alive, Dead, Unknown }
 ```kotlin
 interface CharacterRemoteDataSource {
     /** One page of the character list for the given filter. */
-    suspend fun characterPage(filter: CharacterFilter, page: Int): CharacterPage
+    suspend fun characterPage(filter: CharacterFilter, page: Int): DataResult<CharacterPage>
     /** One character with its episode id list; enrichment is orchestrated above this seam. */
-    suspend fun characterDetails(id: CharacterId): CharacterDetails
+    suspend fun characterDetails(id: CharacterId): DataResult<CharacterDetails>
     /** Episode summaries for the given ids, in one bounded batch. */
-    suspend fun episodes(ids: List<EpisodeId>): List<EpisodeSummary>
+    suspend fun episodes(ids: List<EpisodeId>): DataResult<List<EpisodeSummary>>
 }
 ```
+
+- **Return type (`DEC-090`, `CONF-64`).** The methods return the sealed `DataResult` of `IC-003`: the baseline declared raw values while the invariants below already required `DataResult.Failure`, and `API_SPECS.md` §3 makes failure a value. Every outcome of this seam has `source = NETWORK`; the seam carries no cache provenance.
 
 - **Semantics:** the seam returns **domain** types. DTO decoding and mapping happen inside the implementation so `IC-005` cannot leak through it. The remote data sources of `:core:data` are exactly three, each with one responsibility:
   - `RestCharacterRemoteDataSource` — `IC-011`, the default protocol, `GET` against `/api/...`.
@@ -352,8 +366,9 @@ interface CharacterRemoteDataSource {
   - An expected remote failure is returned as `DataResult.Failure` (`IC-003`); transport and decoding exceptions never escape, and only a `CancellationException` propagates.
   - `episodes(emptyList())` returns an empty list without any network request; a single-id call uses the single-resource operation and a multi-id call the batch operation, per the routing rule in `API_SPECS.md` §4.2. An implementation `MUST NOT` define one polymorphic batch decoder.
   - A batch chunk is bounded, and the final singleton chunk is routed through the single-resource operation (`API_SPECS.md` §4.4).
-  - A batch response that omits a requested id is reconciled by id; the omission is reported as a warning rather than as a failure (`API_SPECS.md` §6.1).
-  - Requests are issued only to the configured HTTPS host; a relation or pagination URL naming another host is rejected (`REQ-SEC-001`, `AC-REQ-SEC-001-1`).
+  - A batch response that omits a requested id is reconciled by id; the omission is reported as a warning rather than as a failure (`API_SPECS.md` §6.1). A returned resource is matched to a request by its own id, never by its position.
+  - Requests are issued only to the configured HTTPS host; a relation or pagination URL naming another host or another scheme is rejected — the response maps to `DataResult.Failure(ApiFailure.InvalidRequest)` and nothing is followed (`REQ-SEC-001`, `AC-REQ-SEC-001-1`). Transport-wide enforcement, redirects included, is `TASK-038`'s.
+  - A list `404` on page 1 of a filtered request (`name` or `status` sent) is an empty page; every other list `404` is `ApiFailure.NotFound`, and deciding that a `404` reached through a valid paging sequence ends pagination is the pager's job (`IC-014`, `ERROR_FLOW.md` §5.2).
   - The seam carries no cache policy: caching is decided above it (`IC-012`).
   - Both implementations return equal domain values for the same logical request, and map failures to the same `ApiFailure` variants (`API_SPECS.md` §6.1, §6.2). An empty filtered result is an empty page on both, whatever the wire shape (`AC-REQ-FUNC-034-3`).
 - **Traceability:** `REQ-FUNC-001`, `REQ-FUNC-023`, `REQ-FUNC-034`, `REQ-NFR-001`, `REQ-SEC-001`, `API_SPECS.md` §4.2, §5.5, §6.1, §6.2, `DEC-011`, `DEC-055`, `DEC-056`.
@@ -417,7 +432,7 @@ interface FavoritesLocalDataSource {
 
 ### IC-014 — `CharacterPager`
 
-- **Declarations** (`:core:data`, `commonMain`):
+- **Declarations** (`:core:domain`, `commonMain`; implemented in `:core:data`). Relocated from `:core:data` on 2026-10-02 by `DEC-091` ([ADR-0014](adr/0014-api-impl-boundary.md)) before any implementation existed: the discovery state holder consumes the pager, and a feature's production code depends on the API module only:
 
 ```kotlin
 interface CharacterPager {
@@ -439,14 +454,14 @@ data class PagerState(
 ```
 
 - **Semantics:** the shared paging engine (`DEC-016`). It owns page accumulation, prefetch eligibility, cancellation of a superseded load and the end-of-pagination flag. It reports a failure through `PagerState.failure` rather than throwing, because a failed `next()` must not destroy the content already displayed (`REQ-FUNC-012`, `AC-REQ-FUNC-012-2`).
-- **Layering note:** `PagerState` does not reuse `IC-015`; `:core:data` depends only on `:core:domain` (`adr/0001-module-boundaries.md`), so a presentation primitive cannot appear in a pager signature. The feature presentation package maps `PagerState` to `IC-018` (see `IC-018` invariants).
+- **Layering note:** `PagerState` does not reuse `IC-015`: the contract lives in `:core:domain`, which depends on no project module (`DEC-066`), and its implementation in `:core:data`, which depends only on `:core:domain`, so a presentation primitive cannot appear in a pager signature. The feature presentation package maps `PagerState` to `IC-018` (see `IC-018` invariants), and the composition root supplies the `:core:data` implementation (`DEC-091`).
 - **Invariants**
   - `state` is hot with replay of the current value: a new collector receives the current `PagerState` as its first emission and never triggers a load by collecting.
   - `setFilter` resets to page 1 and cancels any in-flight page load; the items of the previous filter are not carried into the new filter's accumulation (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-003-2`).
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
   - `isAppending` is `true` only while a page is being appended to existing content; it is always `false` outside an append (so a first page load and a `refresh()` do not set it).
-  - `refresh()` performs a network request even when the served entry is fresh, and a failed `refresh()` leaves `items` untouched (`REQ-FUNC-012`, `AC-REQ-FUNC-012-1`, `AC-REQ-FUNC-012-2`).
+  - `refresh()` loads page 1 through `IC-007` with `PageLoadPolicy.ForceNetwork` (`DEC-086`), so it performs a network request even when the served entry is fresh, and a failed `refresh()` leaves `items` untouched (`REQ-FUNC-012`, `AC-REQ-FUNC-012-1`, `AC-REQ-FUNC-012-2`). It `MUST NOT` rely on the absence of a cache to reach the network.
   - `items` is never emptied by `next()`, `refresh()` or a failure: `setFilter` is the only transition that empties it, and the following successful load replaces rather than appends. A consumer can therefore never observe an empty list that is merely a reload (`ERROR_FLOW.md` §3 invariant 2).
   - `items` preserves server order with no duplicates, and page *n* is appended only after pages `1..n-1` are present.
   - `totalCount` is `null` until the server establishes it and `MUST NOT` be replaced with `0` (`AC-REQ-FUNC-001-3`).
@@ -502,6 +517,55 @@ interface AppSettingsLocalDataSource {
   - Persistence survives process restart, and both `actual`s satisfy this one contract with identical semantics.
   - The store holds exactly the two `AppSettings` fields and shares no key with `IC-013`.
 - **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `DEC-017`, `DEC-055`.
+
+### IC-024 — `AppLogger`, `LogLevel`, `LogEvent`, `LogSink`
+
+- **Declarations** (`DEC-087`, [ADR-0013](adr/0013-observability-placement.md)). The contract half is in `:core:domain`, `commonMain`; the sink half is in `:core:data`, `commonMain`:
+
+```kotlin
+// :core:domain
+enum class LogLevel { DEBUG, INFO, WARN, ERROR }
+
+interface AppLogger {
+    /** Whether an event at [level] can reach a sink in this build. */
+    fun isEnabled(level: LogLevel): Boolean
+    /** Records [event] at its catalogue level. Never throws, never blocks. */
+    fun log(event: LogEvent)
+}
+
+/** Builds the event only when its level is enabled (`OBSERVABILITY.md` §7 rule 3). */
+inline fun AppLogger.log(level: LogLevel, event: () -> LogEvent) {
+    if (isEnabled(level)) log(event())
+}
+
+/** The closed catalogue: one implementation per `OBSERVABILITY.md` §3 row that has an emitter in the build. */
+sealed interface LogEvent {
+    val catalogueId: String     // "LOG-001" … "LOG-022"
+    val level: LogLevel         // fixed per row by the catalogue
+}
+
+// :core:data
+fun interface LogSink {
+    fun write(record: LogRecord)
+}
+
+class LogRecord(
+    val level: LogLevel,
+    val catalogueId: String,
+    val fields: Map<LogField, String>,   // validated permitted fields only
+)
+```
+
+- **Semantics:** one contract for both platforms (`REQ-OBS-001`). Each `LogEvent` implementation is a `data class` whose properties are exactly the fields its catalogue row lists, typed by closed enums (`LogField`, the operation, path-template, status-family, cache-source, outcome, error-class, screen and component sets of `OBSERVABILITY.md` §2.2), never by a free-form `String` that a feature fills in. The `:core:data` implementation validates every field against `OBSERVABILITY.md` §2.2, drops a field that fails validation, and writes a `LogRecord` to the injected `LogSink`; the app shells supply the platform sinks. The debug-only diagnostic API reads the same validated records from `:core:diagnostics` (`DEC-088`).
+- **Invariants**
+  - There is exactly one logging interface. No other module declares a second one, and platform code calls no platform logging API for app diagnostics (`OBSERVABILITY.md` §2.1).
+  - `log` never throws into its caller and never blocks it; a failing sink loses the record rather than queueing it (`OBSERVABILITY.md` §7).
+  - A disabled level builds no event: callers use the inline `log(level) { … }` form for `DEBUG`/`INFO`/`WARN` events.
+  - Release builds emit `ERROR` events only, with no runtime override (`DEC-039`, `OBSERVABILITY.md` §4.1 rule 7).
+  - No event carries search text, a filter value, a URL with parameters, an id-bearing path, a cache key, a response body or a stack trace (`REQ-SEC-005`, `OBSERVABILITY.md` §2.3). `TEST-UNIT-029` proves it on the real request path.
+  - The contract adds no dependency to `:core:domain` beyond those `DEC-066` permits.
+- **Status:** declared here before implementation; `TASK-047` implements it in B3 Phase 3.2 and refines the per-event members in this row in the same change.
+- **Traceability:** `REQ-OBS-001`, `REQ-OBS-002`, `REQ-SEC-005`, `DEC-038`, `DEC-039`, `DEC-087`, `DEC-088`, `OBSERVABILITY.md` §2–§5.
 
 ## 6. Presentation contracts (owned here)
 
@@ -731,7 +795,7 @@ sealed interface SettingsIntent {
 - **R5** Where a state change is behavioural (a filter applied, a page appended, a favourite toggled), the rule is implemented in shared Kotlin, and the platform state holder only dispatches the intent. Divergence between the two platforms is a defect in the shared contract, not a platform choice.
 - **R6** If a UI-state type changes, this file is edited first; then the Kotlin feature module; then the Android ViewModel and the iOS `ObservableObject` if the consumed surface changed; then any test that pins the old shape. `DESIGN.md` §4.1 is edited only when the *flow* or the module picture changed, not when a field changes.
 
-Swift reaches these types without SKIE: the framework exposes them as Objective-C-compatible classes, and the state holder reads properties and dispatches intents (`adr/0003-ui-sharing-strategy.md`). The framework itself is packaging, not a contract: exactly one is produced by the `:core:ios` export module, it exports the five `:feature:*` and the four other `:core:*` modules through `api`, and `iosApp/` links no second Kotlin framework ([ADR-0012](adr/0012-ios-framework-export.md), `DEC-058`) — the Swift-visible surface is therefore exactly the `IC-###` types of this file, and adding a type to it is a contract change (`§8.2`). The module and the framework do not exist yet (`TASK-078`, M1); the packaging decision is recorded and the surface above is target state. The hand-written bridge is project code and is covered by an iOS test (see §9.4).
+Swift reaches these types without SKIE: the framework exposes them as Objective-C-compatible classes, and the state holder reads properties and dispatches intents (`adr/0003-ui-sharing-strategy.md`). The framework itself is packaging, not a contract: exactly one is produced by the `:core:ios` export module, it exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api` and links `:core:data` as an unexported `implementation` (`DEC-091`, amending ADR-0012), and `iosApp/` links no second Kotlin framework ([ADR-0012](adr/0012-ios-framework-export.md), `DEC-058`) — the Swift-visible surface is therefore exactly the `IC-###` types of this file, and adding a type to it is a contract change (`§8.2`). The module and the framework do not exist yet (`TASK-078`, M1); the packaging decision is recorded and the surface above is target state. The hand-written bridge is project code and is covered by an iOS test (see §9.4).
 
 ## 8. Change, versioning and compatibility rules
 
@@ -786,7 +850,7 @@ Test ids and layers are owned by `TESTING.md`; this section states which mechani
 | Contract | Mechanism | Notes |
 | --- | --- | --- |
 | `IC-003` (with `IC-007`, `IC-011`) | Sealed-outcome tests over fakes: `Success` carries a fully mapped value and may carry warnings; `Failure` carries the `ApiFailure` and no value; `Failure.source` is never a cache hit; a `CancellationException` propagates and produces no `Failure`; the hierarchy is handled exhaustively | No network, no platform type |
-| `IC-007` | Fake remote source + fake cache storage; assertions on empty-result success, enrichment bounds, deduplication, `Failure` propagation and cancellation pass-through | `TEST-UNIT-001`, `TEST-UNIT-005`, `TEST-UNIT-011`, `TEST-UNIT-021` |
+| `IC-007` | Fake remote source + fake cache storage; assertions on empty-result success, enrichment bounds, deduplication, `Failure` propagation and cancellation pass-through. `FakeCharacterRepository` (`TASK-036`) is the behavioural double of this seam for its consumers, and `FakeRemoteSource` (`TASK-037`) is the double of `IC-011` below it (`DEC-090`) | `TEST-UNIT-001`, `TEST-UNIT-005`, `TEST-UNIT-011`, `TEST-UNIT-021`, `TEST-UNIT-053` |
 | `IC-008` | `FakeFavoritesStore` (in-memory, `Flow`-backed) reused across a simulated restart | `TEST-UNIT-004` |
 | `IC-009` | Fake repository; assertions that a use case does not swallow failure or cancellation | `TEST-UNIT-003`, `TEST-UNIT-011` |
 | `IC-010` | Pure value tests: equality, cache-key distinction per filter combination, blank-query rule | `TEST-UNIT-020` |
@@ -846,9 +910,9 @@ Failure copy, rendered visuals and retry affordances are verified where they are
 | A2 | `IC-012` stores bytes plus a validator, and the freshness policy lives above the seam | `API_SPECS.md` §7 owns the policy but does not describe the storage shape; this keeps the policy out of the storage contract |
 | A3 | `IC-020` pins determinism only; the favourites ordering is not fixed by any requirement | `UI_SPEC.md` §6.4 specifies the empty and populated cases but not an order. The concrete order is recorded when `:feature:favorites` is implemented |
 | A4 | `IC-017` returns `CopyKey` for user-visible text and `String` for data-derived text | `ERROR_FLOW.md` §3 invariant 3 requires copy to be resolved from localisable resources; a formatter therefore must not embed English |
-| A5 | `PagerState` is pager-local rather than reusing `IC-015` | `:core:data` may not depend on `:core:presentation` (`adr/0001-module-boundaries.md`); mapping to `LoadState` happens in `IC-018` |
+| A5 | `PagerState` is pager-local rather than reusing `IC-015` | Neither `:core:domain`, where the contract lives since `DEC-091`, nor `:core:data`, where it is implemented, may depend on `:core:presentation` (`adr/0001-module-boundaries.md`); mapping to `LoadState` happens in `IC-018` |
 | A6 | The repository is the only seam that deduplicates concurrent identical requests | `REQ-REL-002` requires deduplication; this file fixes where it is observable (`IC-007`), not how it is implemented |
-| A7 | The Kotlin→Swift surface is the `api` export graph of `:core:ios`, not a per-module framework set (ADR-0012, `DEC-058`) | The export module is M1 work (`TASK-078`) and the mechanism's behaviour with `@Serializable data object` routes and `sealed interface` intents is confirmed by that task's spike, not by this file; the surface is declared here so a contract change can be judged against it (`§8.2`) |
+| A7 | The Kotlin→Swift surface is the `api` export graph of `:core:ios` — the five features, `:core:domain` and `:core:presentation`, never `:core:data` (`DEC-091`) — not a per-module framework set (ADR-0012, `DEC-058`) | The export module is M1 work (`TASK-078`) and the mechanism's behaviour with `@Serializable data object` routes and `sealed interface` intents is confirmed by that task's spike, not by this file; the surface is declared here so a contract change can be judged against it (`§8.2`) |
 
 ### 10.2 Drift found in other documents
 
@@ -867,6 +931,8 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | `IC-014` (`CharacterPager`, `PagerState`) relocated from `:core:data` to `:core:domain` before implementation, and §7 states the narrowed `:core:ios` export list; the signatures and invariants are unchanged (`DEC-091`, ADR-0014). | `DEC-091` |
+| 2026-10-02 | B3 Phase 3.1: `IC-007` gains the defaulted `PageLoadPolicy` parameter and the policy-in-identity invariant (`DEC-086`, `CONF-66`); `IC-011` returns `DataResult` as its invariants already required, and states the foreign-host and list-`404` rules (`DEC-090`, `CONF-64`); `IC-014.refresh()` uses `ForceNetwork`; `IC-024` declares the single logging contract in `:core:domain` with its `:core:data` sink (`DEC-087`, ADR-0013); the fakes are mapped to `IC-007`/`IC-011` (`CONF-69`). | `DEC-086`, `DEC-087`, `DEC-088`, `DEC-090` |
 | 2026-10-01 | Accepted as the `IC-###` baseline by `TASK-019`: `IC-001`…`IC-023` audited for identifier uniqueness across the repository, module ownership, absence of platform and wire types in shared signatures, DTO containment, and agreement with `DESIGN.md` §3, `API_SPECS.md` §7, `ERROR_FLOW.md` §2 and the `DEC-066` `:core:domain` rule. §7.1 states the `:core:ios` `api`-export surface (`ADR-0012`); assumption A7 added; drift rows D3 and D4 resolved. No signature changed. | `TASK-019`, `DEC-066`, `DEC-058`, ADR-0012 |
 | 2026-09-29 | Document created on the `docs/documentation-system` branch: `IC-###` scheme and reference rules, the one-owner map, reference-only entries for the `API_SPECS.md` declarations, the data/domain seam contracts (`CharacterRepository`, `FavoritesRepository`, use cases, filters, `CharacterRemoteDataSource`, `CacheStorage`, `FavoritesLocalDataSource`, `CharacterPager`), the presentation contracts (`LoadState`, `CharacterCardUi`, formatters and copy keys, the list/detail/favorites state and intent types), platform consumption rules, change and Swift-compatibility rules, the verification strategy and the assumptions/drift register. Module names follow the feature-per-module layout of `DEC-052`. | `DEC-013`, `DEC-015`, `DEC-016`, `DEC-017`, `DEC-018`, `DEC-021`, `DEC-052`, `DEC-053`, `DEC-054` |
 | 2026-09-29 | Failure signalling changed from a thrown `ApiException` to a sealed `DataResult` (`Success`/`Failure`); `IC-006` withdrawn and its id retired as a gap rather than reallocated, so `IC-007`…`IC-020` keep their numbers. `IC-003` rewritten around the sealed envelope; `IC-007`, `IC-009`, `IC-011` and `IC-014` reworded from throwing/returning to `DataResult` outcomes; §3, §9.1 and §10.1 updated. `API_SPECS.md` §3 owns the declaration. | `DEC-013`, `ADR-0003` |
