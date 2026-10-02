@@ -51,10 +51,12 @@ Beyond the build checks of LOG-0026 and the repository-policy verification tasks
 
 ## 1.2 Block state (2026-10-02)
 
-**Block 2 is in review.** Eight of its nine rows are merged and `Done` under D2 against the checks active at their stage
-(`TASK-024`, `TASK-025`, `TASK-028` in PR #52; `TASK-031` #62; `TASK-030` #63; `TASK-093` #64; `TASK-029` #65; `TASK-073` #66), `TASK-026` is
-in review (#67) and `TASK-027` is **partially blocked**: the scheduled live job needs a compiled source set the toolchain does not provide
-without an owner decision (see §5). `TASK-082` is closed with the detekt outcome (`DEC-075`).
+**Block 2 is complete.** All nine of its rows are `Done` under D2 against the checks active at their stage: `TASK-024`, `TASK-025` and `TASK-028` in PR #52;
+`TASK-031` in #62; `TASK-030` in #63; `TASK-093` in #64; `TASK-029` in #65; `TASK-073` in #66; `TASK-026` in #67 (merged as `8e58d77`); `TASK-027` in #70
+(merged as `4059e1d`). `TASK-094` recorded the closure reconciliation in #69, and `TASK-082` closed with the detekt outcome (`DEC-075`).
+
+Two repository settings remain human-only (`DEC-049`): naming `android` and `ios` as required status checks, and reviewing the ruleset's standing bypass
+actor (`LOG-0058`). The exact configuration is in `CONTRIBUTING.md` §5.3.
 
 ## 2. Completed work
 
