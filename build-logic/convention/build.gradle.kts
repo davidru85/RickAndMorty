@@ -21,6 +21,12 @@ dependencies {
     // The ktlint extension type the convention plugins configure (TASK-029).
     compileOnly(libs.ktlint.gradle)
 
+    // TASK-098 (B2-R01): the workflow gate parses workflow YAML structurally instead of
+    // searching concatenated text, so it needs a real YAML parser. `snakeyaml-engine` is the
+    // engine the ktlint plugin already drags onto the build's own classpath; it is pinned here
+    // explicitly rather than relied on transitively (DESIGN.md 3.5, REQ-NFR-002).
+    implementation(libs.snakeyaml.engine)
+
     // TASK-091: the durable regression suite for the boundary and policy logic. `kotlin-test`
     // and `junit4` are already pinned in the catalog for the shared test harness (TASK-024) and
     // are reused here rather than introducing a second framework; TestKit ships with Gradle.
