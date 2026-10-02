@@ -53,7 +53,36 @@ tasks.matching { it.name in contractTestTargets }.configureEach {
     if (invokedForContracts && hasContractCase) {
         // `includeTestsMatching` treats the pattern as a class name; a case id lives in the test
         // *name*, so the class-method form is required (`TESTING.md` §13.2 puts the id first).
-        (this as? org.gradle.api.tasks.testing.Test)?.filter?.setIncludePatterns("*.*TEST-CONTRACT-*")
+        //
+        // TASK-100 (`B2-R03`, `GAP-017`): the Kotlin/Native simulator task is a
+        // `KotlinTest`-shaped task that also implements `TestFilter`, but it is NOT a JVM
+        // `org.gradle.api.tasks.testing.Test`, so the previous cast silently left it unfiltered and
+        // the native target executed the whole module's tests. The filter is applied through the
+        // interface both task types implement.
+        when (this) {
+            is org.gradle.api.tasks.testing.Test -> filter.setIncludePatterns("*.*TEST-CONTRACT-*")
+            else -> {
+                // The Kotlin/Native simulator task is not a JVM `Test`, but it does expose the
+                // Kotlin test filter. `setIncludePatterns` there takes an array, not a `Set`, so the
+                // argument is adapted to the declared parameter type; a task without the setter is a
+                // configuration error, not a silent no-op (`GAP-017`).
+                val filter =
+                    javaClass.methods
+                        .firstOrNull { it.name == "getFilter" && it.parameterCount == 0 }
+                        ?.invoke(this)
+                val setPatterns =
+                    filter
+                        ?.javaClass
+                        ?.methods
+                        ?.firstOrNull { it.name == "setIncludePatterns" && it.parameterCount == 1 }
+                requireNotNull(setPatterns) {
+                    "the native test task exposes no setIncludePatterns; the contract filter cannot be applied"
+                }
+                val pattern = "*.*TEST-CONTRACT-*"
+                val argument = if (setPatterns.parameterTypes[0].isArray) arrayOf(pattern) else listOf(pattern)
+                setPatterns.invoke(filter, argument)
+            }
+        }
     }
 }
 
@@ -62,12 +91,18 @@ tasks.named<io.github.davidru85.multiverse.buildlogic.testing.VerifyContractCase
     mustRunAfter(tasks.matching { it.name in contractTestTargets })
     outputs.upToDateWhen { false }
     reports.from(
-        layout.buildDirectory.dir("test-results/testAndroidHostTest").map { dir ->
-            fileTree(dir) { include("*.xml") }
-        },
-        layout.buildDirectory.dir("test-results/iosSimulatorArm64Test").map { dir ->
-            fileTree(dir) { include("*.xml") }
-        },
+        layout.buildDirectory.dir("test-results/testAndroidHostTest").map { dir -> fileTree(dir) { include("*.xml") } },
+        layout.buildDirectory.dir("test-results/iosSimulatorArm64Test").map { dir -> fileTree(dir) { include("*.xml") } },
+    )
+    // TASK-100 (`B2-R03`, `GAP-017`): the decision is per target, so a green JVM run cannot stand in
+    // for a native run that produced no report (`DEC-054`, `DEC-071`).
+    val androidHostReports = layout.buildDirectory.dir("test-results/testAndroidHostTest")
+    val iosSimulatorReports = layout.buildDirectory.dir("test-results/iosSimulatorArm64Test")
+    targetReportDirectories.set(
+        mapOf(
+            "testAndroidHostTest" to androidHostReports.get().asFile.absolutePath,
+            "iosSimulatorArm64Test" to iosSimulatorReports.get().asFile.absolutePath,
+        ),
     )
 }
 
