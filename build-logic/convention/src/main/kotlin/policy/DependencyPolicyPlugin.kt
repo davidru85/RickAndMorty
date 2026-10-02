@@ -4,7 +4,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.getByType
+import io.github.davidru85.multiverse.buildlogic.libraryNamespace
 import org.gradle.kotlin.dsl.register
+import java.io.File
 
 /**
  * `multiverse.dependency.policy` — the repository's dependency policy as build checks
@@ -252,8 +254,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
         val packageRoot = target.findProperty("multiverse.packageRoot")?.toString().orEmpty()
         val adviceRegister = target.tasks.register<VerifyDependencyAdviceRegisterTask>("verifyDependencyAdviceRegister") {
             group = VERIFICATION_GROUP
-            description = "DEC-077: every buildHealth exclusion names a live module, a declared " +
-                "dependency the module does not yet consume, and the task that removes it."
+            description = "DEC-081: every buildHealth exclusion names a live module, a declared " +
+                "dependency the edge's own consumer does not yet consume, and a removal task that is not Done."
             this.register.set(target.layout.projectDirectory.file("gradle/dependency-advice-exclusions.txt"))
             this.declaredProjectDependencies.set(
                 target.rootProject.allprojects.associate { project ->
@@ -271,23 +273,64 @@ class DependencyPolicyPlugin : Plugin<Project> {
                     project.path to declared
                 },
             )
-            this.packagePrefixes.set(
-                target.rootProject.allprojects.associate { project ->
-                    val path = project.path
-                    val prefix = when {
-                        path == ":androidApp" -> "$packageRoot.app"
-                        path.startsWith(":core:") -> "$packageRoot.${path.removePrefix(":core:")}"
-                        path.startsWith(":feature:") -> "$packageRoot.feature.${path.removePrefix(":feature:")}"
-                        else -> null
-                    }
-                    path to prefix
-                }.filterValues { it != null } as Map<String, String>,
+            // DEC-081: the package of a module is the one its source declares, read from the build
+            // model. Deriving it from the Gradle path is what produced `…feature.character-detail`
+            // for a module whose code declares `…feature.characterdetail` (GAP-022).
+            this.packageNames.set(
+                target.rootProject.allprojects
+                    .filter { project -> hasSource(project, rootDir) }
+                    .associate { project -> project.path to project.libraryNamespace().get() },
+            )
+            // The package roots of every dependency the register can name: a project dependency's
+            // package is the dependency module's own declared package; an external one's is its
+            // group. A dependency with neither is left absent on purpose, so the task reports the
+            // missing fact instead of assuming "unused".
+            this.dependencyPackageRoots.set(dependencyPackageRoots(target.rootProject, rootDir))
+            this.modulesWithSource.set(
+                target.rootProject.allprojects
+                    .filter { project -> hasSource(project, rootDir) }
+                    .map { it.path }
+                    .toSet(),
             )
             this.productionSources.from(
                 target.fileTree(rootDir) {
                     include("**/src/*Main/kotlin/**/*.kt", "**/src/main/kotlin/**/*.kt")
                     exclude(*BUILD_STATE_EXCLUDES)
                 },
+            )
+            this.testSources.from(
+                target.fileTree(rootDir) {
+                    include("**/src/*Test/kotlin/**/*.kt", "**/src/test/kotlin/**/*.kt")
+                    exclude(*BUILD_STATE_EXCLUDES)
+                },
+            )
+            // The excluded configurations the register's edges use today. `DEC-081` records that
+            // test consumption counts, and this is the set that decides "the excluded
+            // configuration's own source set" without the build model inside the task.
+            this.testConfigurationEdges.set(
+                target.rootProject.allprojects.flatMap { project ->
+                    project.configurations
+                        .filter { configuration ->
+                            runCatching { configuration.name.endsWith("TestImplementation") }.getOrDefault(false)
+                        }
+                        .flatMap { configuration ->
+                            runCatching {
+                                configuration.dependencies
+                                    .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
+                                    .map { "${project.path}|${it.path}" }
+                            }.getOrDefault(emptyList())
+                        }
+                }.toSet(),
+            )
+            // A removal task that has already finished may not remain the owner of a live exclusion.
+            // The ids come from the backlog's completed set, which the build reads as a property so
+            // the task stays configuration-cache safe.
+            this.completedTasks.set(
+                (target.findProperty("multiverse.completedTasks")?.toString().orEmpty())
+                    .split(',')
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .toSet(),
             )
         }
 
@@ -378,6 +421,68 @@ class DependencyPolicyPlugin : Plugin<Project> {
         root.tasks.flatMap { task ->
             task.dependsOn.filterIsInstance<org.gradle.api.tasks.TaskReference>().map { it.name }
         }.distinct()
+
+
+    /**
+     * The Kotlin package a module's own source declares, read from the source tree.
+     *
+     * The file's `package` declaration is the fact `DESIGN.md` §3.4 fixes; the Gradle path is not.
+     * Only the module's own source is read — never a generated directory and never another module.
+     */
+    private fun declaredPackageOf(project: Project, rootDir: File): String? {
+        val segment = project.path.removePrefix(":").replace(':', '/')
+        val srcRoot = File(rootDir, "$segment/src")
+        if (!srcRoot.isDirectory) return null
+        // Every source set counts, in a stable order: a module whose only source today is the
+        // scheduled live compilation still declares the package its production code will use, and
+        // the module's own package is what its dependencies are compared against (`DEC-081`).
+        return srcRoot
+            .walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .sortedBy { it.path }
+            .mapNotNull { file ->
+                file.useLines { lines -> lines.firstOrNull { it.trimStart().startsWith("package ") } }
+            }
+            .firstOrNull()
+            ?.removePrefix("package ")
+            ?.trim()
+            ?.removeSuffix(";")
+    }
+
+    /** Whether a module owns any Kotlin source at all, which decides "unknown" versus "not yet". */
+    private fun hasSource(project: Project, rootDir: File): Boolean {
+        val segment = project.path.removePrefix(":").replace(':', '/')
+        return File(rootDir, "$segment/src").walkTopDown().any { it.isFile && it.extension == "kt" }
+    }
+
+    /**
+     * Dependency path (or external coordinate) to the package roots its artifact exposes.
+     *
+     * A project dependency's package is the dependency module's own declared package. An external
+     * artifact's is its group, which is the vendor's package root. A dependency whose package
+     * cannot be established is absent from this map on purpose: the task turns that absence into a
+     * diagnostic rather than assuming the edge is unused (`DEC-081`).
+     */
+    private fun dependencyPackageRoots(root: Project, rootDir: File): Map<String, String> {
+        val projects =
+            root.allprojects
+                .filter { project -> hasSource(project, rootDir) }
+                .associate { project -> project.path to project.libraryNamespace().get() }
+        val externals =
+            root.allprojects
+                .flatMap { project ->
+                    project.configurations.flatMap { configuration ->
+                        runCatching {
+                            configuration.dependencies
+                                .filterIsInstance<org.gradle.api.artifacts.ExternalModuleDependency>()
+                                .map { it.group + ":" + it.name }
+                        }.getOrDefault(emptyList())
+                    }
+                }
+                .distinct()
+                .associateWith { coordinate -> coordinate.substringBefore(':') }
+        return projects + externals
+    }
 
     /** The suites a row documenting "all shared and unit tests" must actually execute. */
     private val SHARED_SUITE_TASKS =
