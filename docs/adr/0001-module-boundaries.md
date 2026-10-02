@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (module set amended by [ADR-0010](0010-settings-destination.md))
 - **Date:** 2026-09-29
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementers Implementation Engineer (Android) and Implementation Engineer (iOS); consulted UI/UX Designer (design-system boundary)
 - **Authoritative for:** the module set, the source-set layout inside a feature module, and the permitted dependency edges between modules. Not the layer responsibilities themselves (`DESIGN.md` §1) and not the class-level contracts (`CONTRACTS.md`).

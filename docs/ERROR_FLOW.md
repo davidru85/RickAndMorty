@@ -1,7 +1,7 @@
 # ERROR_FLOW.md - Failure to State to Copy Chain
 
 - **Status:** Active - target state (DEC-046; the Gradle/KMP build skeleton exists as of TASK-014, no error path is implemented yet, see `AGENTS.md` §1)
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see `AGENTS.md` §3.3)
 - **Authoritative for:** the canonical chain from a remote/transport failure to a domain failure (`ApiFailure`), to a UI-state field, to an on-screen state, to the copy key and the retry affordance. This is the only place where that chain is stated (DEC-021).
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) · [`API_SPECS.md`](API_SPECS.md) §6, §7, §8 · [`DESIGN.md`](DESIGN.md) §4, §7 · [`UI_SPEC.md`](UI_SPEC.md) §8 · [`DECISION_BOARD.md`](DECISION_BOARD.md) · [`TESTING.md`](TESTING.md) · [`OBSERVABILITY.md`](OBSERVABILITY.md) · [`SECURITY.md`](SECURITY.md)

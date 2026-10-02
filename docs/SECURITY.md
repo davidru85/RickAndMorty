@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-01
+- **Last verified:** 2026-10-02
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -164,6 +164,7 @@ If anything sensitive is committed or published, the following order applies. Ea
 ### 5.2 Verification
 
 - `TEST-UNIT-025` asserts HTTPS-only enforcement plus the host allow-list and foreign-host rejection (`AC-REQ-SEC-001-1`).
+- The REST adapter of `TASK-037` builds every request against the fixed HTTPS host and rejects a pagination or relation URL on another host or scheme before anything is taken from it, so nothing in a response can redirect a request; `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` prove it on fixtures. Its client follows no redirect, and the OkHttp and Darwin engines keep no response cache (`TEST-UNIT-054`). The transport-wide half — every request and redirect through one policy — is `TASK-038`'s.
 
 ### 5.3 Transport assets
 

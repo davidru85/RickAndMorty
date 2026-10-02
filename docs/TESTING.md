@@ -47,7 +47,7 @@ IDs are permanent, like the `REQ-`/`DEC-` namespaces. An ID is never reused for 
 
 ### Current state vs target state
 
-- **Current state (2026-10-02):** the Gradle/KMP build skeleton exists (TASK-014, PR #6) with the 11 modules and five route declarations; the repository-policy checks run in the root `check` — `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061), `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062), `verifyModuleBoundaries` (TASK-017) and `verifyWorkflowGate` (TASK-028); the shared harness with twenty dated fixtures and the `MockEngine`/time-control helpers is merged (TASK-024, PR #52), and its own tests are the only cases that execute today; the fixture/replay contract entry point `:core:data:contractTestReplay` exists and fails on zero cases (TASK-026); the both-runner pull-request gate runs (TASK-025, PR #52) and the quality toolchain is active and blocking — ktlint, Android Lint and `buildHealth` (TASK-029, PR #65), with the Swift toolchain pinned (TASK-030, PR #63). **No product test exists yet**: every `TEST-UNIT-###`/`TEST-CONTRACT-###` case below is the target state until the task that owns it lands its first red test. The activation order is `DEC-071`'s, one harness at a time.
+- **Current state (2026-10-02):** the Gradle/KMP build skeleton exists (TASK-014, PR #6) with the 11 modules and five route declarations; the repository-policy checks run in the root `check` — `verifyDependencyPolicy` (`TEST-UNIT-013`, `TEST-UNIT-014`, `TEST-UNIT-051`, DEC-061), `verifyRepositoryHygiene` (`TEST-UNIT-026`, DEC-062), `verifyModuleBoundaries` (TASK-017) and `verifyWorkflowGate` (TASK-028); the shared harness with twenty dated fixtures and the `MockEngine`/time-control helpers is merged (TASK-024, PR #52), and its own tests are the only cases that execute today; the fixture/replay contract entry point `:core:data:contractTestReplay` exists and fails on zero cases (TASK-026); the both-runner pull-request gate runs (TASK-025, PR #52) and the quality toolchain is active and blocking — ktlint, Android Lint and `buildHealth` (TASK-029, PR #65), with the Swift toolchain pinned (TASK-030, PR #63). **B3 Phase 3.1 (`TASK-036`, `TASK-037`) adds the first product tests**: `TEST-UNIT-052` in `:core:domain`, `TEST-UNIT-053` for the behavioural fakes in `:core:testing`, and `TEST-CONTRACT-001`, `TEST-CONTRACT-003`, `TEST-UNIT-001` and `TEST-UNIT-054` in `:core:data`; `TEST-CONTRACT-007` gains the per-target entry points. Every other `TEST-UNIT-###`/`TEST-CONTRACT-###` case below is the target state until the task that owns it lands its first red test. The activation order is `DEC-071`'s, one harness at a time, and `DEC-083` suspends the `ios` job until `TASK-051`.
 - **Target state:** the layers, IDs, layout and policies defined here, implemented in the Android milestone (M1) and extended in the iOS milestone (M2) (`DEC-040`, `REQ-PLAT-004`).
 
 ### Stated assumptions
@@ -248,6 +248,11 @@ Fixtures live in `:core:testing` at `core/testing/src/commonMain/resources/fixtu
 | `graphql-null-root.json` | `character(id:"99999")` | `{"data":{"character":null}}` with HTTP `200` → `NotFound` | `TEST-CONTRACT-004`, `TEST-UNIT-010` |
 | `graphql-empty-filter.json` | Empty-filter GraphQL query | All `info` fields null with `results: []` → empty result, not a malformed response | `TEST-CONTRACT-004` |
 | `graphql-validation-error-400.json` | Live GraphQL query with an unknown field | HTTP `400` with `GRAPHQL_VALIDATION_FAILED` → `InvalidRequest`, non-retryable | `TEST-CONTRACT-004`, `TEST-UNIT-022` |
+| `character-detail-not-found-404.json` | Derived (`TASK-037`): the live `404` error envelope with the detail message observed on 2026-09-29 (`API_SPECS.md` §4.4) | Detail `404` → `NotFound(character, id)`, never an empty shell | `TEST-CONTRACT-001` |
+| `character-detail-missing-name.json` | Derived (`TASK-037`) from `character-detail.json` without `name` | A missing required field → `MalformedResponse`, never a defaulted value | `TEST-CONTRACT-003` |
+| `character-detail-foreign-episode.json` | Derived (`TASK-037`) from `character-detail.json`, first episode URL on a foreign host | A relation URL on another host is rejected, not followed (`REQ-SEC-001`) | `TEST-CONTRACT-003` |
+| `character-page-01-foreign-next.json` | Derived (`TASK-037`) from `character-page-01.json`, `info.next` on a foreign host | A pagination URL on another host is rejected, not followed (`API-CHAR-002`) | `TEST-CONTRACT-001` |
+| `episode-single.json` | Derived (`TASK-037`) from `episode-batch.json`, first element as an object | One id uses the single-resource route, which answers with an object | `TEST-CONTRACT-001` |
 
 The GraphQL fixtures exist because GraphQL is a shipped, user-selectable protocol (`DEC-056`, `REQ-FUNC-034`): `API_SPECS.md` §5 and §10.2 describe shipped behaviour, and protocol parity (`TEST-CONTRACT-005`) proves both protocols map to equal domain values (`AC-REQ-FUNC-034-3`).
 
@@ -557,7 +562,7 @@ Every check below runs on **every** pull request (feature branches such as `docs
 
 | Check | Runs | Why it is required |
 | --- | --- | --- |
-| Shared test suites | All `commonTest` suites of the `:core:*` modules and every `:feature:*` module, across the KMP targets — **active** since `TASK-024`/`TASK-025` (7 harness tests today; each feature's own cases activate with its feature task) | `TEST-UNIT-###`; the bulk of the pyramid (§2) |
+| Shared test suites | All `commonTest` suites of the `:core:*` modules and every `:feature:*` module, across the KMP targets — **active** since `TASK-024`/`TASK-025` (after B3 Phase 3.1: 8 domain, 26 data and 18 harness tests on the Android host target — the data count includes one Android-engine case — with the same common suites on `iosSimulatorArm64Test` and `jvmTest`; each feature's own cases activate with its feature task) | `TEST-UNIT-###`; the bulk of the pyramid (§2) |
 | Contract suite in fixture/replay mode | `./gradlew :core:data:contractTestReplay` runs exactly the `TEST-CONTRACT-*` cases on both targets and **fails when it executes zero of them** (`TASK-026`, `DEC-073`). `TASK-037` adds the target-specific entry points `contractTestReplayAndroidHost` and `contractTestReplayIosSimulator` (`DEC-090`), each with its own report set. **Active on the `android` job since `TASK-037`** through `contractTestReplayAndroidHost`, which `WorkflowGateGuard.REQUIRED_COMMANDS` requires; the native entry point runs locally on macOS while `DEC-083` suspends the `ios` job and becomes blocking with `TASK-051` | The contract is exercised on every change without depending on a live service (§11.1) |
 | Android unit and integration tests | `TEST-INT-###`, `TEST-INT-003`/`004`, state-holder tests, `TEST-PERF-003` — **activates with `TASK-036`** (the first Android host tests) and the M1 feature tasks (`TASK-040`, `TASK-044`) | Repository and storage behaviour, plus the zero-network assertion |
 | Android semantics and accessibility tests | `TEST-UI-###` semantics, `TEST-A11Y-001`…`006` automated parts — **activates with `TASK-043`/`TASK-044`** (the design system and the app shell) | Merged card node, status label, favourite state, mic absent, state rendering |
@@ -646,16 +651,16 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017` |
 | `REQ-FUNC-035` — Delete all favorites | Should | `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017` |
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
-| `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017` |
+| `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-052` |
 | `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034`, `TEST-UNIT-051` |
 | `REQ-NFR-003` — Performance budgets | Must | `TEST-PERF-001`, `TEST-PERF-002`, `TEST-PERF-003` |
-| `REQ-NFR-004` — Resilience | Must | `TEST-CONTRACT-003`, `TEST-CONTRACT-004`, `TEST-CONTRACT-005` |
+| `REQ-NFR-004` — Resilience | Must | `TEST-CONTRACT-001`, `TEST-CONTRACT-003`, `TEST-CONTRACT-004`, `TEST-CONTRACT-005`, `TEST-UNIT-001` |
 | `REQ-NFR-005` — Verification depth | Must | All `TEST-UNIT-###`, `TEST-CONTRACT-###`, `TEST-INT-###`, `TEST-UI-###` ids in this document, including the test-first discipline check `TEST-UNIT-041`, the Kotlin→Swift parity check `TEST-UNIT-042`, the no-network guard `TEST-UNIT-024` and the live probes `TEST-CONTRACT-006` |
 | `REQ-NFR-006` — Reproducible builds | Must | `TEST-UNIT-014` (exact pins, single catalog/BOM, and — after `TASK-018` — the `VERSION` single source) |
 | `REQ-NFR-007` — Quality gates | Must | `TEST-UNIT-015`, `TEST-UNIT-044`, every blocking row of §14 (each row's activation per `DEC-071`/`DEC-075`/`DEC-076`/`DEC-077`) |
 | `REQ-NFR-009` — Feature-per-module structure | Must | `TEST-UNIT-017`, `TEST-UNIT-043` |
 | `REQ-NFR-010` — Test-driven development protocol | Must | `TEST-UNIT-041` |
-| `REQ-NFR-011` — Mandatory full test suite on every pull request | Must | `TEST-UNIT-044`, `TEST-UNIT-015` |
+| `REQ-NFR-011` — Mandatory full test suite on every pull request | Must | `TEST-UNIT-044`, `TEST-UNIT-015`, `TEST-CONTRACT-007` |
 | `REQ-PLAT-001` — Shared multiplatform code | Must | `TEST-UNIT-017`, `TEST-UNIT-042` |
 | `REQ-PLAT-002` — Native Android app, SDK levels | Must | `TEST-UNIT-018` |
 | `REQ-PLAT-003` — Native iOS app, deployment target, Liquid Glass | Must | `TEST-UI-010` |
@@ -674,7 +679,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-REL-002` — Concurrent request deduplication | Must | `TEST-UNIT-021` |
 | `REQ-REL-003` — Bounded retries and non-retryable outcomes | Must | `TEST-UNIT-022` |
 | `REQ-REL-004` — Stale marking and clock-change resilience | Must | `TEST-UNIT-023`, `TEST-UNIT-009` |
-| `REQ-SEC-001` — HTTPS-only, configured host only | Must | `TEST-UNIT-025` |
+| `REQ-SEC-001` — HTTPS-only, configured host only | Must | `TEST-UNIT-025`; the adapter's rejection of foreign pagination and relation URLs is also asserted by `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` (`TASK-037`), and `TASK-038` completes the transport-wide half |
 | `REQ-SEC-002` — No secrets in the repository | Must | `TEST-UNIT-026` |
 | `REQ-SEC-003` — No personal data; favourites only | Must | `TEST-UNIT-027` |
 | `REQ-SEC-004` — No microphone or speech permissions | Must | `TEST-UNIT-028`, `TEST-UI-013` |
@@ -717,7 +722,7 @@ The complete set of allocated ids and the module that owns each. Level names mat
 | `TEST-UNIT-025`…`034` | Build root (025, 026, 030), `:core:data` (027), both app shells (028, 033), `:core:presentation` + `:core:data` (029, 032, 034) | unit | Security and observability policy checks: host allow-list, secret scan, persisted-field inventory, microphone/speech absence, log redaction, advisory register, reporting route, logging contract, debug surface, analytics absence |
 | `TEST-UNIT-043`…`045` | Build root | unit | Destination/package rules (`TASK-017`), the workflow required set (`TASK-028`), and the branch/PR delivery guard (`TEST-UNIT-045`, implemented by `TASK-093`, `DEC-078`) |
 | `TEST-UNIT-035`…`042` | `:core:designsystem` + iOS `DesignSystem` (035), `:core:presentation` (036), `:feature:discovery` (037–038), `:feature:character-detail` (039), `:feature:favorites` (040), build root (041), `iosApp/Tests` (042) | unit | Token parity, copy-key parity, feature cache policies, feature favorites, test-first discipline, Kotlin→Swift contract parity |
-| `TEST-CONTRACT-001`…`005` | `:core:data` common test (001–004), parity suite (005) | contract | REST page/detail/batch decoding, detail edge cases, resilience bodies, GraphQL envelopes, REST↔GraphQL domain parity |
+| `TEST-CONTRACT-001`…`005` | `:core:data` common test (001–004), parity suite (005) | contract | REST page/detail/batch decoding, detail edge cases, resilience bodies, GraphQL envelopes, REST↔GraphQL domain parity. `001` and `003` are **implemented** by `TASK-037` (18 cases, run per target by `contractTestReplayAndroidHost`/`contractTestReplayIosSimulator`) |
 | `TEST-CONTRACT-006` | `contract-live` | contract | Live observation probes |
 | `TEST-INT-001`…`004` | `:core:data` platform test source sets | integration | HTTP cache policy and `404` hardening, image cache independence, favorites store contract, platform storage |
 | `TEST-UI-001`…`016` | `:feature:*` Android unit test source sets and the iOS feature packages | ui | Semantics assertions (001–009, 011, 013), appearance and platform variants (010, 012, 014, 015), state rendering (016) |
@@ -730,6 +735,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-02 | B3 Phase 3.1: the first product tests land — `TEST-UNIT-052` (domain values), `TEST-UNIT-053` (the `IC-007`/`IC-011` fakes), `TEST-UNIT-054` (REST client configuration), `TEST-CONTRACT-001`/`003` and `TEST-UNIT-001` (the REST adapter and mappers); `TEST-CONTRACT-007` gains the per-target entry points; `TEST-UNIT-044` gains the `DEC-083` suspension and tripwire; `TEST-UNIT-017`/`012` gain the `DEC-089` test-source-set reading and the `DEC-091` API/IMPL rules. Five derived fixtures are inventoried. §14.2 activates the contract row on the `android` job and records the `ios` suspension. | `TASK-036`, `TASK-037`, `DEC-083`, `DEC-089`, `DEC-090`, `DEC-091` |
 | 2026-10-02 | §11.1 now states that a **fixture/replay** detection fails the pull request and only the live mode is a non-blocking signal; the remediation audit's new test families (`TEST-UNIT-046`, `TEST-UNIT-047`, `TEST-CONTRACT-007`) land with `TASK-099`/`TASK-104`/`TASK-100`. | `GAP-017`, `GAP-021`, `GAP-023`, `TASK-098`…`TASK-105` |
 | 2026-10-02 | `TASK-097`: every §14.2 row now names its owner or its activation task (the block's §11.2 condition); §14.3 records the first observed run of the scheduled job; the header names the merged contract paths and toolchain. | `TASK-097`, `DEC-071`, `DEC-046` |
 | 2026-10-02 | **Block 2 closed:** the fixture/replay entry point is merged (PR #67) and the scheduled live signal is merged (PR #70), so the required-check table's contract row names its entry point and the live row names its workflow. `TASK-037` still activates the CI wiring with the first `TEST-CONTRACT-*` case. | `TASK-026`, `TASK-027`, `DEC-071`, `DEC-073`, `DEC-074` |

@@ -1,7 +1,7 @@
 # REQUIREMENTS.md — Product Requirements
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** Requirements Analyst (see `AGENTS.md`)
 - **Authoritative for:** *what* the product must do and *how well*. Not for *how* (see `DESIGN.md`, `API_SPECS.md`, `UI_SPEC.md`).
 - **Inputs:** [`assessment.md`](../assessment.md)

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-30
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementers Implementation Engineer (iOS) for the export module and the Xcode linkage, Implementation Engineer (Android) as consulted for the `api` promotions the export forces on the shared modules; consulted UI/UX Designer for the Swift-visible surface the hand-written binding consumes.
 - **Authoritative for:** which Gradle module produces the Kotlin framework the iOS app links, what that module exports, and how the Swift side reaches feature-owned types. Not the sharing boundary or the interop mechanism, which belong to [ADR-0003](0003-ui-sharing-strategy.md) and [`CONTRACTS.md`](../CONTRACTS.md) §7; not the target list and OS floors, which belong to [ADR-0002](0002-platform-targets.md); not the module set as a whole, which belongs to [ADR-0001](0001-module-boundaries.md); not the Swift-package split under `iosApp/Features/*`, which belongs to [`DESIGN.md`](../DESIGN.md) §3.2.

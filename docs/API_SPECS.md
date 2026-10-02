@@ -1,7 +1,7 @@
 # API_SPECS.md - REST and GraphQL Technical Specification
 
 - **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-02
 - **Owner:** API Architect (see `AGENTS.md`)
 - **Authoritative for:** the remote data contract — endpoints, DTOs, failure taxonomy, retry, response and image caching policy, contract identifiers.
 - **Not authoritative for:** architecture (`DESIGN.md`), internal Kotlin seams (`CONTRACTS.md`), failure-to-copy behaviour (`ERROR_FLOW.md`), UI (`UI_SPEC.md`).

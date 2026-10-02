@@ -1,7 +1,7 @@
 # DEFINITION.md — Gates: Ready, Done, Release and Documentation Completeness
 
 - **Status:** Active — target state
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-02
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the project's gates — Definition of Ready, Definition of Done, milestone exit criteria, release readiness, documentation completeness, the quality-gate inventory, and the waiver and escalation path when a gate cannot be met.
 - **Inputs:** `AGENTS.md`, `../assessment.md`, `REQUIREMENTS.md`, `DECISION_BOARD.md`, `TESTING.md`, `TECHNICAL_PLAN.md`, `BACKLOG.md`, `PERFORMANCE.md`, `SECURITY.md`, `GUIDELINES.md`, `CONTRIBUTING.md`, `DOCUMENTATION_AUDIT.md`, `PROJECT_LOG.md`
