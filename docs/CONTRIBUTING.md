@@ -261,7 +261,28 @@ Notes that keep the list honest:
 **Configured check names.** The workflow lands with `TASK-025`; the checks it contributes to the required set today are `android` and `ios` (its two jobs). The per-suite rows of §14.2 are added to the required list by the same change that introduces their harness (`DEC-071`).
 
 **The check names are provisional until the workflow files land.** The authoritative definitions are `DEFINITION.md` §3/§7 and `TESTING.md` §14; where a workflow job name diverges from this table, `TESTING.md` and the workflow are the truth and this table is corrected in the same change.
-- **Branch protection is a repository setting and therefore a human action** (DEC-049). The agent prepares the list; a maintainer applies it. As of 2026-10-01 the workflows of `TASK-025` exist (`.github/workflows/pull-request.yml`, jobs `android` and `ios`), so the configuration below is actionable: add each check below as a **required status check** on `main`, individually named, and verify that a failing, skipped or absent check blocks approval (`AC-REQ-FUNC-014-2`, `AC-REQ-NFR-007-2`). The `main` ruleset must additionally require a pull request and forbid deletion and force-push, and its `bypass_actors` **MUST NOT** grant a standing bypass to an account that runs agent work (`LOG-0058`).
+- **Branch protection is a repository setting and therefore a human action** (DEC-049). The agent prepares the list; a maintainer applies it. As of 2026-10-01 the workflows of `TASK-025` exist (`.github/workflows/pull-request.yml`, jobs `android` and `ios`).
+
+**Recorded repository state (`TASK-106`, `B2-R09`; read 2026-10-02).** The effective configuration was read from the GitHub API and is recorded here so the packet's starting point is evidence rather than recollection:
+
+| Setting | Observed value on 2026-10-02 |
+| --- | --- |
+| Effective ruleset | `main protection` (id `24241444`), target `branch`, `enforcement: active`, matched by `refs/heads/main` |
+| Rules present | `deletion`, `non_fast_forward`, `pull_request` |
+| `pull_request` parameters | `required_approving_review_count: 0`, `require_last_push_approval: false`, `required_review_thread_resolution: true`, `allowed_merge_methods: ["merge"]` (squash and rebase are disabled — merge-commit delivery, `DEC-049`) |
+| Required status checks | **none** — no `required_status_checks` rule exists, so the set is not enforced by the platform |
+| Bypass actors | one standing bypass: `User` id `472324` (`davidru85`), `bypass_mode: always` |
+| Repository merge methods | `allow_merge_commit: true`, `allow_squash_merge: false`, `allow_rebase_merge: false` |
+| Observed enforcement | a pull request with no reported checks and no approval reads `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN` on 2026-10-02 — the platform would accept it |
+
+**The packet for the maintainer (human-only, `DEC-049`).** Nothing below has been applied; the list is what to apply, and each line is a setting rather than a code change:
+
+1. Add a `required_status_checks` rule to the `main protection` ruleset with the **exact contexts** `android` and `ios`, the two jobs the workflow reports (GitHub's Actions provider names a context by job, not by workflow). Do not add the per-suite rows: those become blocking when their harness exists (`DEC-071`) and `TESTING.md` §14.2 owns the list.
+2. Verify enforcement: with the checks required, a pull request whose head has a failing, skipped or absent check must read `mergeStateStatus: BLOCKED`, not `CLEAN` (`AC-REQ-FUNC-014-2`, `AC-REQ-NFR-007-2`). This is a read-only API observation; it needs no merge attempt.
+3. Review the standing bypass. A bypass actor with `bypass_mode: always` for an account used for agent work means the ruleset cannot bind that account, so the requirement above is unenforced for exactly the changes most likely to need it. Either remove the actor or restrict the mode so it cannot bypass the required checks on `main` (`LOG-0058`).
+4. Preserve what already holds: `deletion` and `non_fast_forward` are required rules, `allowed_merge_methods` is `["merge"]`, and squash/rebase stay disabled.
+
+Until a maintainer applies 1–3, the correct statement is **"workflow implemented, platform enforcement pending a human settings change"**; the rows above are the evidence, and this section is corrected in the change that records the new state.
 - **No retry-to-green.** Automatic retries are forbidden on the blocking gate, and re-running a failing check until it passes is not an acceptable response (`TESTING.md` §15). A test that fails intermittently is quarantined with an owner and a deadline, with the justification recorded, and is excluded from the required set only on that basis.
 - **Both platform runners are mandatory.** The Android suites and the macOS runner that executes the iOS suites are required on every pull request; the cost of the macOS runner is accepted (DEC-054). A job that is skipped for cost, or absent, is a missing required check, not a pass.
 - **The live-network contract job is not in this list.** It stays a separate scheduled job that is a signal, not a merge blocker; the gate's contract run uses fixture/replay mode, so the required set never depends on an unversioned live service (`TESTING.md` §11, DEC-054).
