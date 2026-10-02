@@ -100,6 +100,94 @@ class ModuleBoundaryRulesTest {
     }
 
     @Test
+    fun `R2 and R3 accept core testing from a test source set and keep production closed`() {
+        listOf(":core:data" to "R2", ":core:presentation" to "R3").forEach { (module, rule) ->
+            val testEdge = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(
+                            edge(
+                                module,
+                                ":core:testing",
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(
+                emptyList(),
+                only(testEdge, rule).map { it.render() },
+                "DEC-089: $module's test source sets may consume the shared harness",
+            )
+            assertEquals(emptyList(), only(testEdge, "R6").map { it.render() })
+
+            // The same edge inherited into `commonMain` is a production edge, so both rules still fire.
+            val inherited = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(edge(module, ":core:testing", origin = "testHarness")),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(1, only(inherited, rule).size, "DEC-089: production stays closed for $module")
+            assertEquals(1, only(inherited, "R6").size, "DEC-089: production never consumes :core:testing")
+
+            // A test source set gains the harness only: any other core module stays rejected.
+            val sibling = if (module == ":core:data") ":core:presentation" else ":core:data"
+            val otherTestEdge = ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        module,
+                        edges = listOf(
+                            edge(
+                                module,
+                                sibling,
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            )
+            assertEquals(1, only(otherTestEdge, rule).size, "DEC-089: $module's tests may not reach $sibling")
+        }
+    }
+
+    @Test
+    fun `R1 rejects core testing even from a domain test source set`() {
+        val violation = only(
+            ModuleBoundaryRules.evaluate(
+                complete(
+                    project(
+                        ":core:domain",
+                        edges = listOf(
+                            edge(
+                                ":core:domain",
+                                ":core:testing",
+                                configuration = "commonTestImplementation",
+                                sourceSet = "commonTest",
+                                kind = SourceSetKind.TEST,
+                            ),
+                        ),
+                    ),
+                ),
+                emptyMap(),
+            ),
+            "R1",
+        )
+        assertEquals(1, violation.size, "DEC-089: a domain test never reaches the HTTP-bearing harness")
+    }
+
+    @Test
     fun `R4 and R15 reject a project edge and a non-Compose external in the design system`() {
         val designSystem = ":core:designsystem"
         val projectEdge = ModuleBoundaryRules.evaluate(
