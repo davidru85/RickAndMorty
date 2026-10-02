@@ -9,14 +9,14 @@ import kotlin.test.assertTrue
  * `TEST-UNIT-044` — the workflow must carry the required set and block on it (`TESTING.md` §14.2).
  *
  * The guard is only worth having if it fails when the workflow narrows: these tests pin both
- * directions, so deleting a job, dropping a runner, making a check advisory or unpinning an action
- * is a build failure rather than a quietly smaller gate.
+ * directions, so deleting a job, dropping a runner, making a check advisory, unpinning an action or
+ * satisfying a rule without executing it is a build failure rather than a quietly smaller gate.
  *
  * The fixtures are synthesised from the real workflow's shape, and the action SHAs are the
- * repository's own pinned values, so a test never needs the network.
+ * repository's own pinned values, so a test never needs the network. The `GAP-016` reproductions
+ * that mutate the repository's own workflows live in `WorkflowGateReproductionTest`.
  */
 class WorkflowGateGuardTest {
-
     private val pinned = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 
     private fun workflow(vararg jobs: Pair<String, String>): File {
@@ -28,6 +28,9 @@ class WorkflowGateGuardTest {
                 appendLine("name: pull-request")
                 appendLine("on:")
                 appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
                 appendLine("jobs:")
                 jobs.forEach { (name, body) ->
                     appendLine("  $name:")
@@ -50,6 +53,9 @@ class WorkflowGateGuardTest {
                 appendLine("name: pull-request")
                 appendLine("on:")
                 appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
                 appendLine("jobs:")
                 listOf("android" to "ubuntu-latest", "ios" to "macos-latest").forEach { (name, runner) ->
                     appendLine("  $name:")
@@ -94,16 +100,29 @@ class WorkflowGateGuardTest {
 
     @Test
     fun `a missing job or runner is reported`() {
-        val noIos = workflow("android" to "ubuntu-latest").let { root ->
-            val f = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-            f.writeText(
-                f.readText() + "./gradlew check\n:androidApp:assembleDebug\niosSimulatorArm64Test\n" +
-                    "verifyModuleBoundaries\nverifyDependencyPolicy\nverifyRepositoryHygiene\nverifyNoLiveHosts\n",
-            )
-            root
-        }
+        val root = kotlin.io.path.createTempDirectory("workflow-guard-no-ios").toFile()
+        val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+        dir.mkdirs()
+        File(dir, "pull-request.yml").writeText(
+            buildString {
+                appendLine("name: pull-request")
+                appendLine("on:")
+                appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
+                appendLine("jobs:")
+                appendLine("  android:")
+                appendLine("    runs-on: ubuntu-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: ./gradlew check :androidApp:assembleDebug buildHealth verifyModuleBoundaries")
+                appendLine("      - run: ./gradlew verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts")
+                appendLine("      - run: ./gradlew verifyDocumentedGate")
+            },
+        )
         assertTrue(
-            findings(noIos).any { it.reason.contains("`ios` job is missing") },
+            findings(root).any { it.reason.contains("`ios` job is missing") },
             "TEST-UNIT-044: a missing platform job must be reported",
         )
     }
@@ -123,7 +142,12 @@ class WorkflowGateGuardTest {
     fun `a neutralised check is reported`() {
         val root = complete()
         val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText("      - uses: $pinned\n        continue-on-error: true\n" + file.readText())
+        file.writeText(
+            file.readText().replaceFirst(
+                "      - uses: $pinned",
+                "      - uses: $pinned\n        continue-on-error: true",
+            ),
+        )
         assertTrue(
             findings(root).any { it.reason.contains("continue-on-error") },
             "TEST-UNIT-044: an advisory required check is not a required check",
@@ -150,19 +174,32 @@ class WorkflowGateGuardTest {
         )
     }
 
+    @Test
+    fun `the real workflows pass every rule`() {
+        val root =
+            File(System.getProperty("user.dir"))
+                .let { start -> generateSequence(start) { it.parentFile }.first { File(it, ".github/workflows").isDirectory } }
+        assertTrue(
+            allFindings(root).isEmpty(),
+            "TEST-UNIT-044: the repository's own workflows must satisfy every rule; got " +
+                allFindings(root).map { "${it.path}:${it.line}: ${it.reason}" },
+        )
+    }
+
     // --- TEST-UNIT-045 (TASK-093, DEC-078): no workflow step may merge, tag, release or push ---
 
     /** A workflow that passes every existing rule plus one automated integration step. */
     private fun withIntegrationStep(step: String): File {
         val root = complete()
         val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        val text = file.readText().trimEnd().removeSuffix("jobs:").trimEnd()
-        // `complete()` writes jobs as lines; rebuild a readable workflow with one extra step.
         file.writeText(
             buildString {
                 appendLine("name: pull-request")
                 appendLine("on:")
                 appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
                 appendLine("jobs:")
                 appendLine("  android:")
                 appendLine("    runs-on: ubuntu-latest")
@@ -178,6 +215,7 @@ class WorkflowGateGuardTest {
                 appendLine("      - run: ./gradlew iosSimulatorArm64Test")
                 appendLine("      - run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy")
                 appendLine("      - run: ./gradlew verifyRepositoryHygiene verifyNoLiveHosts")
+                appendLine("      - run: ./gradlew buildHealth verifyDocumentedGate")
             },
         )
         return root
@@ -198,10 +236,9 @@ class WorkflowGateGuardTest {
 
     @Test
     fun `an automated tag or release step is rejected`() {
-        val tagged = integrationFindings("git tag v1.0.0 && git push origin v1.0.0")
         assertTrue(
-            tagged.any { it.contains("tag") || it.contains("push") },
-            "TEST-UNIT-045: a step that tags or pushes must fail the guard (AC-REQ-FUNC-014-2); observed: $tagged",
+            integrationFindings("gh release create v1.0.0").any { it.contains("release") },
+            "TEST-UNIT-045: a step that releases must fail the guard (AC-REQ-FUNC-014-2)",
         )
     }
 
@@ -209,55 +246,29 @@ class WorkflowGateGuardTest {
     fun `a workflow that asks for write permission is rejected`() {
         val root = complete()
         val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText(file.readText() + "permissions:\n  contents: write\n")
+        file.writeText("permissions:\n  contents: write\n" + file.readText())
         assertTrue(
             findings(root).any { it.reason.contains("contents: write") },
-            "TEST-UNIT-045: a write token could push, so it must fail the guard (AC-REQ-FUNC-014-2)",
+            "TEST-UNIT-045: a write token is what an automated integration would need",
         )
     }
 
     @Test
-    fun `the real workflows pass every rule`() {
-        val root = File("").absoluteFile.let { dir ->
-            generateSequence(dir) { it.parentFile }.first { File(it, "build-logic/settings.gradle.kts").isFile }
-        }
-        val workflows = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
-            .listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
-            ?.toList()
-            ?: emptyList()
-        assertTrue(workflows.isNotEmpty(), "the repository has at least one workflow")
-        assertEquals(
-            emptyList(),
-            findings(root).map { it.reason },
-            "TEST-UNIT-045: the repository's own workflows must satisfy every rule",
-        )
-    }
-
-    // --- TEST-UNIT-044 / DEC-073: no merge-gate workflow may reach live mode ---
-
-    @Test
-    fun `a pull-request workflow that references the live entry point is rejected`() {
-        val root = complete()
-        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText(
-            file.readText().replace(
-                "./gradlew verifyDocumentedGate",
-                "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:contractLiveTest",
-            ),
-        )
+    fun `the repository's own integration prohibition holds`() {
+        // Only the integration rule is asserted here: the baseline workflow is `complete()`, which
+        // already carries the full required set, and this asserts no integration finding appears.
+        val reasons = findings(complete()).map { it.reason }
         assertTrue(
-            allFindings(root).any { it.reason.contains("fixture/replay mode only") },
-            "the merge gate must never reach live mode (AC-REQ-NFR-011-2)",
+            reasons.none { it.contains("integrate automatically") },
+            "TEST-UNIT-045: a workflow without an integration step must not raise the integration rule",
         )
     }
 
-    // TASK-096: the shipped marker set and the registered task names must agree, or a live case
-    // can be reached from a merge-gate workflow with the guard green. The previous version listed
-    // `contractTestLive`, a name no build registers, while the real task is `contractLiveTest`.
+    // --- TEST-UNIT-044 (TASK-026, DEC-073): live mode is unreachable from the merge gate ---
+
     @Test
     fun `every registered live task name is recognised as a live-mode marker`() {
-        val registeredLiveNames = listOf("contractLiveProbe", "contractLiveTest")
-        registeredLiveNames.forEach { task ->
+        listOf("contract-live", "contractLiveProbe", "contractLiveTest").forEach { task ->
             val root = complete()
             val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
             file.writeText(
@@ -298,6 +309,285 @@ class WorkflowGateGuardTest {
             emptyList(),
             allFindings(root).map { it.reason },
             "a schedule-only live workflow satisfies every rule",
+        )
+    }
+
+    // --- TASK-098 (B2-R01): structure, not concatenated text --------------------------------
+
+    /**
+     * A gate workflow in which the step that would carry `verifyNoLiveHosts` is replaced by the
+     * given YAML. Every other required check stays present, so a finding can only be about the
+     * substituted step: the fixture isolates one bypass at a time.
+     */
+    private fun withStep(stepYaml: String): File {
+        val root = kotlin.io.path.createTempDirectory("workflow-guard-withstep").toFile()
+        val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)
+        dir.mkdirs()
+        File(dir, "pull-request.yml").writeText(
+            buildString {
+                appendLine("name: pull-request")
+                appendLine("on:")
+                appendLine("  pull_request:")
+                appendLine("    branches: [main]")
+                appendLine("  push:")
+                appendLine("    branches: [main]")
+                appendLine("jobs:")
+                appendLine("  android:")
+                appendLine("    runs-on: ubuntu-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: ./gradlew check :androidApp:assembleDebug buildHealth")
+                appendLine("      - run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy")
+                appendLine("      - run: ./gradlew verifyRepositoryHygiene")
+                appendLine("      - run: ./gradlew verifyDocumentedGate")
+                stepYaml.trimEnd().lines().forEach { appendLine("      $it") }
+                appendLine("  ios:")
+                appendLine("    runs-on: macos-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: ./gradlew check iosSimulatorArm64Test buildHealth")
+                appendLine("      - run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy")
+                appendLine("      - run: ./gradlew verifyRepositoryHygiene")
+                appendLine("      - run: ./gradlew verifyDocumentedGate")
+            },
+        )
+        return root
+    }
+
+    @Test
+    fun `a required check that exists only in a comment does not satisfy the gate`() {
+        val root = withStep("# ./gradlew verifyNoLiveHosts")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: a comment is not a step (B2-R01 item 4)",
+        )
+    }
+
+    @Test
+    fun `a required check named in a step name does not satisfy the gate`() {
+        val root = withStep("- name: ./gradlew verifyNoLiveHosts\n  run: echo done")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: a step name is not an execution (B2-R01 item 4)",
+        )
+    }
+
+    @Test
+    fun `a required check only in an env value does not satisfy the gate`() {
+        val root = withStep("- env:\n    CHECK: ./gradlew verifyNoLiveHosts\n  run: echo ready")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: an env value is data, not an execution (TASK-098 criteria)",
+        )
+    }
+
+    @Test
+    fun `a required check echoed rather than executed does not satisfy the gate`() {
+        val root = withStep("- run: echo ./gradlew verifyNoLiveHosts")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: `echo` prints the command, it does not run it (B2-R01 item 9)",
+        )
+    }
+
+    @Test
+    fun `a required check invoked as a dry run does not satisfy the gate`() {
+        val root = withStep("- run: ./gradlew verifyNoLiveHosts --dry-run")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: a dry run plans the task graph without running it (TASK-098 criteria)",
+        )
+    }
+
+    @Test
+    fun `a required check excluded with -x does not satisfy the gate`() {
+        val root = withStep("- run: ./gradlew check -x verifyNoLiveHosts")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: `-x` excludes the task from the invocation (TASK-098 criteria)",
+        )
+    }
+
+    @Test
+    fun `a required check whose failure is suppressed does not satisfy the gate`() {
+        val root = withStep("- run: ./gradlew verifyNoLiveHosts || true")
+        assertTrue(
+            findings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: `|| true` swallows the failure, so the check is not required " +
+                "(TASK-098 criteria)",
+        )
+    }
+
+    @Test
+    fun `a required check behind a condition that can skip it does not satisfy the gate`() {
+        val root = withStep("- if: false\n  run: ./gradlew verifyNoLiveHosts")
+        assertTrue(
+            findings(root).any { it.reason.contains("can skip") || it.reason.contains("if: false") },
+            "TEST-UNIT-044: `if: false` is an always-skipped step, not a required check (B2-R01 item 4)",
+        )
+    }
+
+    @Test
+    fun `a required check only in a job the gate does not name does not satisfy the gate`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/other.yml")
+        file.writeText(
+            buildString {
+                appendLine("name: other")
+                appendLine("on:")
+                appendLine("  schedule:")
+                appendLine("    - cron: '0 3 * * 1'")
+                appendLine("jobs:")
+                appendLine("  diagnostics:")
+                appendLine("    runs-on: ubuntu-latest")
+                appendLine("    steps:")
+                appendLine("      - uses: $pinned")
+                appendLine("      - run: ./gradlew verifyNoLiveHosts")
+            },
+        )
+        // The real gate must still carry the check; removing it from the gate and leaving it in an
+        // unrelated diagnostic workflow is the narrowing this rule exists to catch.
+        val gate = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        gate.writeText(gate.readText().replace(" verifyNoLiveHosts", ""))
+        assertTrue(
+            allFindings(root).any { it.reason.contains("verifyNoLiveHosts") },
+            "TEST-UNIT-044: an unrelated workflow carrying the command is not the gate (B2-R01 item 3)",
+        )
+    }
+
+    @Test
+    fun `a merge-gate workflow with no pull-request trigger is reported`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(file.readText().replace("  pull_request:\n    branches: [main]\n", ""))
+        assertTrue(
+            findings(root).any { it.reason.contains("not triggered by `pull_request`") },
+            "TEST-UNIT-044: a gate that never runs on a pull request is not a gate (B2-R01 item 6)",
+        )
+    }
+
+    @Test
+    fun `a narrowed pull-request trigger is reported`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(
+            file.readText().replace(
+                "  pull_request:\n    branches: [main]",
+                "  pull_request:\n    paths-ignore: ['docs/**']",
+            ),
+        )
+        assertTrue(
+            findings(root).any { it.reason.contains("filter") },
+            "TEST-UNIT-044: `paths-ignore` would skip the gate for documentation-only changes that still " +
+                "must be gated (B2-R01 item 6)",
+        )
+    }
+
+    @Test
+    fun `a scalar on declaration fails the complete-set requirement`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        // `on: pull_request` is a valid scalar, and it omits the push trigger the gate needs.
+        file.writeText(
+            file.readText().replace(
+                "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]",
+                "on: pull_request",
+            ),
+        )
+        assertTrue(
+            findings(root).any { it.reason.contains("not triggered by `push`") },
+            "TEST-UNIT-044: a scalar `on:` is recognised, so its missing push trigger is reported " +
+                "(TASK-098 criteria)",
+        )
+    }
+
+    @Test
+    fun `every on spelling is recognised for the live-mode rule`() {
+        val spellings =
+            listOf(
+                "on:\n  pull_request:\n    branches: [main]" to "block mapping",
+                "on: {pull_request: {branches: [main]}}" to "flow mapping",
+                "'on':\n  pull_request:\n    branches: [main]" to "quoted key",
+            )
+        spellings.forEach { (declaration, description) ->
+            val root = complete()
+            val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+            file.writeText(
+                file.readText().replace(
+                    "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]",
+                    declaration,
+                ).replace(
+                    "./gradlew verifyDocumentedGate",
+                    "./gradlew verifyDocumentedGate\n          ./gradlew :core:data:contractLiveProbe",
+                ),
+            )
+            assertTrue(
+                findings(root).any { it.reason.contains("fixture/replay mode only") },
+                "TEST-UNIT-044: the live-mode rule must recognise a $description `on:` declaration",
+            )
+        }
+    }
+
+    @Test
+    fun `malformed YAML is reported rather than falling back to text search`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText("on: [pull_request\njobs: {")
+        assertTrue(
+            findings(root).any { it.reason.contains("not valid YAML") },
+            "TEST-UNIT-044: a configuration the guard cannot read is one it cannot vouch for (B2-R01 item 8)",
+        )
+    }
+
+    @Test
+    fun `the iOS job must use the macOS runner by job identity`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        // Both runner names are still present in the file; only the jobs carrying them are swapped.
+        file.writeText(
+            file.readText()
+                .replace("runs-on: ubuntu-latest", "runs-on: SWAP")
+                .replace("runs-on: macos-latest", "runs-on: ubuntu-latest")
+                .replace("runs-on: SWAP", "runs-on: macos-latest"),
+        )
+        assertTrue(
+            findings(root).any { it.reason.contains("must run on") },
+            "TEST-UNIT-044: the runner is bound to the job, not to the directory (B2-R01 item 3)",
+        )
+    }
+
+    @Test
+    fun `an artifact upload may be conditional on always`() {
+        val root = withStep("- name: Upload reports\n  if: always()\n  uses: actions/upload-artifact@3d3c42e5aac5ba805825da76410c181273ba90b1")
+        assertTrue(
+            findings(root).none { it.reason.contains("if: always()") },
+            "TEST-UNIT-044: `if: always()` on an artifact upload is the documented exception",
+        )
+    }
+
+    @Test
+    fun `a condition other than always on an upload is still reported`() {
+        val root = withStep("- name: Upload reports\n  if: success()\n  uses: actions/upload-artifact@3d3c42e5aac5ba805825da76410c181273ba90b1")
+        assertTrue(
+            findings(root).any { it.reason.contains("can skip") },
+            "TEST-UNIT-044: only `if: always()` is exempt; another condition can skip the step",
+        )
+    }
+
+    @Test
+    fun `a commented continue-on-error does not fail an otherwise valid gate`() {
+        val root = complete()
+        val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
+        file.writeText(
+            file.readText().replaceFirst(
+                "      - uses: $pinned",
+                "      # never add continue-on-error: true here\n      - uses: $pinned",
+            ),
+        )
+        assertEquals(
+            emptyList(),
+            findings(root).map { it.reason },
+            "TEST-UNIT-044: a comment explaining the rule is not a violation of it",
         )
     }
 }
