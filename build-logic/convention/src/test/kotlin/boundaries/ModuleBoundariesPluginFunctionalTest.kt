@@ -90,7 +90,7 @@ class ModuleBoundariesPluginFunctionalTest {
             val result = runner(dir, "verifyModuleBoundaries").build()
             assertEquals(TaskOutcome.SUCCESS, result.task(":verifyModuleBoundaries")?.outcome)
             assertTrue(
-                result.output.contains("R1\u2013R16"),
+                result.output.contains("R1\u2013R18"),
                 "the success message names the enforced rule range",
             )
         } finally {

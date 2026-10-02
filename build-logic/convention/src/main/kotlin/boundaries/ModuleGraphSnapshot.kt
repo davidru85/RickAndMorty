@@ -67,6 +67,9 @@ enum class ModuleKind : Serializable {
     CORE_DESIGN_SYSTEM,
     CORE_TESTING,
     CORE_IOS,
+
+    /** The debug-only diagnostic API (`DEC-088`, ADR-0013). */
+    CORE_DIAGNOSTICS,
     FEATURE,
     ANDROID_APP,
 
@@ -137,6 +140,7 @@ internal fun moduleKindOf(path: String): ModuleKind = when {
     path == ":core:designsystem" -> ModuleKind.CORE_DESIGN_SYSTEM
     path == ":core:testing" -> ModuleKind.CORE_TESTING
     path == ":core:ios" -> ModuleKind.CORE_IOS
+    path == ":core:diagnostics" -> ModuleKind.CORE_DIAGNOSTICS
     path == ":androidApp" -> ModuleKind.ANDROID_APP
     path in ModuleSet.FEATURES -> ModuleKind.FEATURE
     else -> ModuleKind.UNKNOWN

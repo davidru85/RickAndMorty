@@ -105,8 +105,8 @@ class ModuleTopologyTest {
     }
 
     @Test
-    fun `the required set matches the documented eleven leaves`() {
-        assertEquals(11, ModuleSet.REQUIRED.size, "ADR-0001 as amended fixes eleven leaf modules")
+    fun `the required set matches the documented twelve leaves`() {
+        assertEquals(12, ModuleSet.REQUIRED.size, "ADR-0001 as amended by ADR-0013 (DEC-088) fixes twelve leaf modules")
         assertEquals(5, ModuleSet.FEATURES.size, "ADR-0010 leaves five feature modules")
     }
 }

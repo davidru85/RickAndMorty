@@ -1,8 +1,8 @@
 package io.github.davidru85.multiverse.buildlogic.boundaries
 
 /**
- * The **canonical module set** of ADR-0001 as amended by ADR-0010 (`DEC-055`) and ADR-0012
- * (`DEC-058`), written down once so the topology rule states what the build must contain rather
+ * The **canonical module set** of ADR-0001 as amended by ADR-0010 (`DEC-055`), ADR-0012
+ * (`DEC-058`) and ADR-0013 (`DEC-088`), written down once so the topology rule states what the build must contain rather
  * than accepting whatever `settings.gradle.kts` happens to include (`GAP-014`, `TASK-091`).
  *
  * Two facts live here and nowhere else:
@@ -26,6 +26,8 @@ internal object ModuleSet {
         ":androidApp",
         ":core:data",
         ":core:designsystem",
+        // `DEC-088`, ADR-0013: the debug-only diagnostic API, created by `TASK-047`.
+        ":core:diagnostics",
         ":core:domain",
         ":core:presentation",
         ":core:testing",
