@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The adaptive launcher icon (`UI_SPEC.md` §10.1, `TASK-044`): a background and a foreground layer
+  only. There is deliberately no monochrome layer, which the spec excludes, and the foreground keeps
+  its content inside the 66 dp safe circle so every launcher mask shows the portal intact.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

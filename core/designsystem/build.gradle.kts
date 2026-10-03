@@ -39,7 +39,10 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
+    // `api`, so a consumer composes with Material 3 while `:core:designsystem` stays the only module
+    // that **declares** it (`GUIDELINES.md` §5.1, ADR-0008 rule 2): the shell and the features name
+    // M3 types without pinning the alpha themselves, so a rollback stays a one-module change.
+    api(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 

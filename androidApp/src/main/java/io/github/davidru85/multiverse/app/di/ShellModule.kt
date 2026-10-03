@@ -1,0 +1,59 @@
+package io.github.davidru85.multiverse.app.di
+
+import android.content.Context
+import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
+import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
+import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
+import io.github.davidru85.multiverse.core.data.remote.androidRickAndMortyHttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import org.koin.core.module.Module
+import java.io.File
+
+/** The DataStore file `SECURITY.md` §3 classifies: favourites only, in the app's private storage. */
+public const val FAVORITES_STORE_FILE: String = "favorites.preferences_pb"
+
+/**
+ * The shell's platform modules (`TASK-044`, `DESIGN.md` §5): every input `coreModule` resolves from
+ * the graph is built here, because only the shell may name a platform type.
+ *
+ * The shell owns the **Ktor client** over `androidRickAndMortyHttpClient()` (host allow-list, no
+ * redirects, no engine cache) and the **favourites DataStore** in `filesDir` over the application
+ * scope, so a write survives the process and a corrupt file logs rather than throws.
+ *
+ * The **logger's variant is chosen by the source set, not by a runtime flag** (`DESIGN.md` §5,
+ * `OBSERVABILITY.md` §5): [shellLogger] is the one seam, and the debug source set replaces that file
+ * rather than the whole module, so nothing here can be turned on at runtime.
+ */
+public fun shellModules(
+    applicationScope: CoroutineScope,
+    context: Context,
+    logging: ShellLogging = ShellLogging(),
+): List<Module> {
+    val appContext = context.applicationContext
+    val logger = logging.logger()
+    return listOf(platformInputs(applicationScope, appContext, logger)) + logging.extraModules(logger)
+}
+
+/** The graph inputs, built once so both variants share every value except the logger. */
+public fun platformInputs(
+    applicationScope: CoroutineScope,
+    appContext: Context,
+    logger: ValidatingAppLogger,
+): Module =
+    CoreGraphInputs(
+        client = androidRickAndMortyHttpClient(),
+        decodingDispatcher = Dispatchers.IO,
+        clock = kotlin.time.Clock.System,
+        applicationScope = applicationScope,
+        favoritesStore =
+            DataStoreFavoritesLocalDataSource(
+                preferencesDataStore(
+                    file = File(appContext.filesDir, FAVORITES_STORE_FILE),
+                    scope = applicationScope,
+                    logger = logger,
+                ),
+            ),
+        logger = logger,
+    ).asModule()
