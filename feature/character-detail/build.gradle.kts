@@ -59,16 +59,21 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core:domain"))
-            implementation(project(":core:presentation"))
+            // The feature's shared production types (`CharacterDetailUiState`, the use cases) are part
+            // of what the iOS consumer links, so the API cores are `api` (GUIDELINES.md 5.1).
+            api(project(":core:domain"))
+            api(project(":core:presentation"))
             // `characterDetailModule` is a Koin module; the composition roots load it
-            // (`DEC-091`, `DESIGN.md` §5), so the DI library is a shared-production dependency.
-            implementation(libs.koin.core)
+            // (`DEC-091`, `DESIGN.md` §5), so the DI library is a shared-production dependency and is
+            // part of the module's exposed contract.
+            api(libs.koin.core)
             // The `CharacterDetail` route is `@Serializable`.
             api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
-            implementation(project(":core:designsystem"))
+            // The design system's components are part of what the feature's Android screen exposes,
+            // so the edge is `api` (GUIDELINES.md 5.1).
+            api(project(":core:designsystem"))
             // The screen's public surface is a composable over `Modifier`, Compose runtime and
             // painter types, and `CharacterDetailViewModel` exposes a `StateFlow`, so those are part
             // of what the module exposes and are declared `api`; the design system exports the BOM
@@ -80,10 +85,20 @@ kotlin {
             api(libs.androidx.compose.ui.graphics)
             // The Android state holder of `IC-019` (`DESIGN.md` §5, ADR-0006).
             api(libs.androidx.lifecycle.viewmodel)
+            // `CharacterDetailViewModel` exposes a `StateFlow`, so `kotlinx-coroutines-core` is part
+            // of what the module exposes and is declared `api` (`DEC-077`).
+            api(libs.kotlinx.coroutines.core)
             // The detail screen scrolls; the module uses `foundation` rather than exposing it.
             implementation(libs.androidx.compose.foundation)
-            // `characterDetailViewModelModule` declares the ViewModel with Koin's `viewModel` DSL.
-            implementation(libs.koin.android)
+            // The scroll container composes over `foundation-layout` primitives, which the module
+            // uses rather than exposing (`DEC-077`).
+            api(libs.androidx.compose.foundation.layout)
+            // Material 3 components are the screen's own composition, not its exposed surface; the
+            // design system exports the alpha, so the feature never pins it (ADR-0008 rule 2).
+            implementation(libs.androidx.compose.material3)
+            // Text and unit types are Compose's own; the module uses them (`DEC-077`).
+            implementation(libs.androidx.compose.ui.text)
+            implementation(libs.androidx.compose.ui.unit)
         }
         commonTest.dependencies {
             // `DEC-089`: the harness is a test source set's dependency only.
@@ -94,22 +109,32 @@ kotlin {
             implementation(project(":core:data"))
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-            // The contract case holds the harness's `HttpClient` and `MockEngine` routes, so the
-            // artifact is declared where it is used (`onUsedTransitiveDependencies`, DEC-077).
+            // The contract case holds the harness's `HttpClient`, so the artifact is declared where
+            // it is used (`onUsedTransitiveDependencies`, DEC-077).
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.mock)
         }
         androidHostTest.dependencies {
             // `TEST-UI-002` runs on the JVM host with Robolectric and the Compose test rule.
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)
             implementation(libs.junit4)
-            implementation(libs.robolectric)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.androidx.compose.ui.test.junit4)
-            // The Compose rule hosts its content in a provided activity; the artifact supplies it to
-            // the test manifest, so a case needs no activity of the module's own.
-            implementation(libs.androidx.compose.ui.test.manifest)
+            // The rule's own assertion API the cases call, declared where it is used (`DEC-077`).
+            implementation(libs.androidx.compose.ui.test)
+            // `AndroidJUnit4` is the runner the host cases execute on (`DEC-077`).
+            implementation(libs.androidx.test.ext.junit)
+            // The contract case reaches `io.ktor.http.Url` and `HttpStatusCode` directly (`DEC-077`).
+            implementation(libs.ktor.http)
+            // The screen cases drive suspending state holders, so the coroutines runtime is declared
+            // where it is used (`DEC-077`).
+            implementation(libs.kotlinx.coroutines.core)
+            // `@Config` and the `Shadow` types the host run resolves (`DEC-077`).
+            implementation(libs.robolectric.annotations)
+            implementation(libs.robolectric.shadows.framework)
+            // Robolectric is only needed on the host-test **runtime** path: no case compiles against
+            // it, so the edge is `runtimeOnly` (`DEC-077`).
+            runtimeOnly(libs.robolectric)
         }
     }
 }

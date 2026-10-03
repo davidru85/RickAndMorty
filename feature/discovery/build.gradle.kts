@@ -20,20 +20,14 @@ composeCompiler {
     targetKotlinPlatforms.set(setOf(org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm))
 }
 
-// The UI cases resolve the Android copy set `:core:designsystem` ships and the Compose rule needs the
-// merged test resources, so the host-test component the convention plugin creates is configured to
-// carry them. `withHostTestBuilder` reaches the component that already exists; a second
-// `withHostTest` would be a second component, which AGP rejects.
-
 // Robolectric reads `SharedSecrets` reflectively, which the pinned daemon JDK restricts; the Android
 // host-test JVM therefore gets the same grants `:core:designsystem` and `:androidApp` declare for
 // their own Robolectric runs (`TEST-UI-001`, `TEST-UI-003`, `TEST-UI-009`).
 //
-// A Kotlin Multiplatform library's host-test run gets no `com/android/tools/test_config.properties`
-// from AGP (there is no test APK to point at), so this module commits one under its host-test
-// resources: its own test manifest, and the one Android copy set that ships (`:core:designsystem`).
-// Both are declared as inputs below, so a change to either re-runs the cases that read them.
-val hostTestManifest = layout.projectDirectory.file("src/androidHostTest/resources/AndroidManifest.xml")
+// AGP points the host run at the manifest and resource APK it merges from this module's own
+// `androidHostTest` manifest and the Android copy set `:core:designsystem` ships. Both are declared as
+// inputs below, so a change to either re-runs the cases that read them.
+val hostTestManifest = layout.projectDirectory.file("src/androidHostTest/AndroidManifest.xml")
 val androidCopySet = layout.projectDirectory.dir("../../core/designsystem/src/main/res")
 tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
     jvmArgs(
@@ -47,29 +41,61 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 }
 
 kotlin {
+    // A Kotlin Multiplatform library's host-test run has no test APK, so AGP does not create the
+    // manifest-merge and resource pipeline Robolectric needs unless the compilation opts in. With it,
+    // the module's committed host-test manifest (the `androidx.activity.ComponentActivity` the Compose
+    // rule hosts its content in) and the Android copy set `:core:designsystem` ships are merged into
+    // the packaged manifest and resource APK the host run is pointed at (`TEST-UI-003`).
+    extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget> {
+        compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java).configureEach {
+            isIncludeAndroidResources = true
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core:domain"))
-            implementation(project(":core:presentation"))
+            // The feature's shared production types (`CharacterListUiState`, the use cases) are part
+            // of what the iOS consumer links, so the API cores are `api` (GUIDELINES.md 5.1).
+            api(project(":core:domain"))
+            api(project(":core:presentation"))
             // `discoveryModule` is a Koin module; the graph is built in the composition roots
-            // (`DEC-091`), so the DI library is a shared-production dependency here.
-            implementation(libs.koin.core)
+            // (`DEC-091`), so the DI library is a shared-production dependency and is part of the
+            // module's exposed contract.
+            api(libs.koin.core)
             api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
-            implementation(project(":core:designsystem"))
+            // The design system's components are part of what the feature's Android screen exposes,
+            // so the edge is `api` (GUIDELINES.md 5.1).
+            api(project(":core:designsystem"))
             // The screen's public surface is a composable over `Modifier` and Compose runtime types,
             // and `DiscoveryViewModel` exposes a `StateFlow`, so those are part of what the module
             // exposes and are declared `api`; the design system exports the BOM and Material 3 the
             // same way, so the feature never pins the alpha itself (GUIDELINES.md 5.1, ADR-0008 rule 2).
             api(libs.androidx.compose.runtime)
             api(libs.androidx.compose.ui)
+            // The screen draws with `Color`/`Painter` types, so `ui-graphics` is part of the module's
+            // exposed surface (`DEC-077`).
+            api(libs.androidx.compose.ui.graphics)
             api(libs.androidx.lifecycle.viewmodel)
+            // `DiscoveryViewModel` exposes a `StateFlow`, so `kotlinx-coroutines-core` is part of what
+            // the module exposes and is declared `api` (`DEC-077`).
+            api(libs.kotlinx.coroutines.core)
             // The staggered grid, the search field and the chip row are composables over
             // `foundation`; the module uses them rather than exposing them, so the edge is
             // `implementation`.
-            implementation(libs.androidx.compose.foundation)
+            api(libs.androidx.compose.foundation)
+            // The grid and the scroll container compose over `foundation-layout` primitives, which the
+            // module uses (`DEC-077`).
+            implementation(libs.androidx.compose.foundation.layout)
+            // The `SharedTransitionLayout` the screen composes for the card transition (`DEC-077`).
+            implementation(libs.androidx.compose.animation.core)
+            // Material 3 components are the screen's own composition, not its exposed surface; the
+            // design system exports the alpha, so the feature never pins it (ADR-0008 rule 2).
+            implementation(libs.androidx.compose.material3)
+            // Text and unit types are Compose's own; the module uses them (`DEC-077`).
+            implementation(libs.androidx.compose.ui.text)
+            implementation(libs.androidx.compose.ui.unit)
         }
         commonTest.dependencies {
             implementation(project(":core:testing"))
@@ -82,12 +108,23 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)
             implementation(libs.junit4)
-            implementation(libs.robolectric)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.androidx.compose.ui.test.junit4)
-            // The Compose rule hosts its content in a provided activity; the artifact supplies it to
-            // the test manifest, so a case needs no activity of the module's own.
-            implementation(libs.androidx.compose.ui.test.manifest)
+            // The rule's own assertion API the cases call, declared where it is used (`DEC-077`).
+            implementation(libs.androidx.compose.ui.test)
+            // `AndroidJUnit4` is the runner the host cases execute on (`DEC-077`).
+            implementation(libs.androidx.test.ext.junit)
+            // The cases compose over `Color`/`ColorPainter`, so the graphics artifact is declared where
+            // it is used (`DEC-077`).
+            implementation(libs.androidx.compose.ui.graphics)
+            // The screen cases drive suspending state holders, so the coroutines runtime is declared
+            // where it is used (`DEC-077`).
+            implementation(libs.kotlinx.coroutines.core)
+            // `@Config` and the `Shadow` types the host run resolves (`DEC-077`).
+            implementation(libs.robolectric.annotations)
+            // Robolectric is only needed on the host-test **runtime** path: no case compiles against
+            // it, so the edge is `runtimeOnly` (`DEC-077`).
+            runtimeOnly(libs.robolectric)
         }
     }
 }
