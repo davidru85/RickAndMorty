@@ -1,8 +1,8 @@
 package io.github.davidru85.multiverse.feature.characterdetail.presentation
 
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
-import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
@@ -60,13 +60,26 @@ class CharacterDetailContractTest {
                     formatters = formatters,
                 )
 
-            assertEquals(meta.path, io.ktor.http.Url(served.single().url).encodedPath, "TEST-CONTRACT-002: the single-resource route the sidecar records")
+            assertEquals(
+                meta.path,
+                io.ktor.http
+                    .Url(served.single().url)
+                    .encodedPath,
+                "TEST-CONTRACT-002: the single-resource route the sidecar records",
+            )
             val details = assertIs<DataResult.Success<*>>(result).value as io.github.davidru85.multiverse.core.domain.model.CharacterDetails
-            assertNull(details.episodeSummaries, "TEST-CONTRACT-002: the adapter does not enrich; that is the repository's and the use case's job")
+            assertNull(
+                details.episodeSummaries,
+                "TEST-CONTRACT-002: the adapter does not enrich; that is the repository's and the use case's job",
+            )
             assertEquals(details.episodeIds.size, state.episodeCount, "TEST-CONTRACT-002: the count is the fixture's own episode list")
             assertEquals(LoadState.Content, state.loadState, "TEST-CONTRACT-002: a decoded detail is content")
             assertEquals("Rick Sanchez", state.header?.name, "TEST-CONTRACT-002: the header comes from the decoded fixture")
-            assertEquals("C-137", state.dimension, "TEST-CONTRACT-002: the dimension is the parenthesised designation of the fixture's origin")
+            assertEquals(
+                "C-137",
+                state.dimension,
+                "TEST-CONTRACT-002: the dimension is the parenthesised designation of the fixture's origin",
+            )
             assertEquals(
                 listOf(CopyKeys.DETAIL_INFO_ORIGIN, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION),
                 state.info.map { it.copyKey },

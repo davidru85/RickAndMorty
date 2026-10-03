@@ -1,10 +1,7 @@
 package io.github.davidru85.multiverse.feature.characterdetail.presentation
 
-import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
-import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
-import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.domain.result.DataSource
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -73,7 +70,11 @@ class CharacterDetailReducerTest {
                 formatters = formatters,
             )
         assertEquals(card, state.header, "TEST-UNIT-002: a detail failure never clears a non-null header (AC-REQ-FUNC-002-3)")
-        assertEquals(LoadState.Error(failure), state.loadState, "TEST-UNIT-002: the failure is the load state, so the inline retry can offer itself")
+        assertEquals(
+            LoadState.Error(failure),
+            state.loadState,
+            "TEST-UNIT-002: the failure is the load state, so the inline retry can offer itself",
+        )
         assertTrue(state.info.isEmpty(), "TEST-UNIT-002: the inline error replaces the info list, not the header")
     }
 
@@ -85,7 +86,9 @@ class CharacterDetailReducerTest {
                 result =
                     DataResult.Success(
                         details(
-                            origin = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "Earth (C-137)"),
+                            origin =
+                                io.github.davidru85.multiverse.core.domain.model
+                                    .LocationSummary(id = null, name = "Earth (C-137)"),
                             episodeIds = listOf("1", "2", "3"),
                             episodeSummaries = listOf(firstEpisode()),
                         ),
@@ -122,7 +125,12 @@ class CharacterDetailReducerTest {
         val state =
             CharacterDetailReducer.render(
                 header = null,
-                result = DataResult.Success(details(episodeIds = listOf("1", "2", "3"), episodeSummaries = null), DataSource.NETWORK, isStale = false),
+                result =
+                    DataResult.Success(
+                        details(episodeIds = listOf("1", "2", "3"), episodeSummaries = null),
+                        DataSource.NETWORK,
+                        isStale = false,
+                    ),
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -144,7 +152,12 @@ class CharacterDetailReducerTest {
         val state =
             CharacterDetailReducer.render(
                 header = null,
-                result = DataResult.Success(details(episodeIds = emptyList(), episodeSummaries = emptyList()), DataSource.NETWORK, isStale = false),
+                result =
+                    DataResult.Success(
+                        details(episodeIds = emptyList(), episodeSummaries = emptyList()),
+                        DataSource.NETWORK,
+                        isStale = false,
+                    ),
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -166,8 +179,14 @@ class CharacterDetailReducerTest {
                         details(
                             species = "unknown",
                             status = CharacterStatus.Unknown,
-                            origin = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "unknown"),
-                            lastKnownLocation = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "unknown"),
+                            origin =
+                                io.github.davidru85.multiverse.core.domain.model
+                                    .LocationSummary(id = null, name = "unknown"),
+                            lastKnownLocation =
+                                io.github.davidru85.multiverse.core.domain.model.LocationSummary(
+                                    id = null,
+                                    name = "unknown",
+                                ),
                             episodeIds = listOf("1"),
                             episodeSummaries = null,
                         ),

@@ -13,8 +13,8 @@ import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
 import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavorite
-import io.github.davidru85.multiverse.testing.FakeCharacterRepository
 import io.github.davidru85.multiverse.testing.FakeCatalogue
+import io.github.davidru85.multiverse.testing.FakeCharacterRepository
 import io.github.davidru85.multiverse.testing.FakeFavoritesStore
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
@@ -97,8 +97,16 @@ class CharacterDetailStateHolderTest {
             advanceTimeBy(100.milliseconds)
 
             assertEquals(card, holder.state.value.header, "TEST-UNIT-002: a failure keeps the known fields (AC-REQ-FUNC-002-3)")
-            assertEquals(LoadState.Error(ApiFailure.Offline), holder.state.value.loadState, "TEST-UNIT-002: the inline retry replaces the info list")
-            assertTrue(holder.state.value.info.isEmpty(), "TEST-UNIT-002: no rows render on a failure")
+            assertEquals(
+                LoadState.Error(ApiFailure.Offline),
+                holder.state.value.loadState,
+                "TEST-UNIT-002: the inline retry replaces the info list",
+            )
+            assertTrue(
+                holder.state.value.info
+                    .isEmpty(),
+                "TEST-UNIT-002: no rows render on a failure",
+            )
         }
 
     @Test
@@ -111,7 +119,8 @@ class CharacterDetailStateHolderTest {
 
             assertEquals(1, holder.state.value.episodeCount, "TEST-UNIT-011: the count comes from episodeIds.size")
             assertTrue(
-                holder.state.value.info.none { it.kind == InfoRowKind.FirstSeenIn },
+                holder.state.value.info
+                    .none { it.kind == InfoRowKind.FirstSeenIn },
                 "TEST-UNIT-011: the catalogue holds no episode summary, so the row is absent (AC-REQ-FUNC-023-2)",
             )
         }
@@ -130,7 +139,11 @@ class CharacterDetailStateHolderTest {
             holder.onIntent(CharacterDetailIntent.Retry)
             advanceTimeBy(100.milliseconds)
 
-            assertEquals(LoadState.Content, holder.state.value.loadState, "TEST-UNIT-002: a retry starts a fresh attempt and clears the error")
+            assertEquals(
+                LoadState.Content,
+                holder.state.value.loadState,
+                "TEST-UNIT-002: a retry starts a fresh attempt and clears the error",
+            )
         }
 
     @Test

@@ -75,7 +75,13 @@ class GetCharacterDetailsTest {
             val details = assertIs<DataResult.Success<CharacterDetails>>(result).value
             assertNull(details.episodeSummaries, "TEST-UNIT-011: enrich = false leaves enrichment unrequested (AC-REQ-FUNC-023-2)")
             assertEquals(3, details.episodeIds.size, "TEST-UNIT-011: the episode list itself is unaffected")
-            assertTrue(repository.calls.filterIsInstance<FakeCharacterRepository.Call.Details>().single().enrich.not())
+            assertTrue(
+                repository.calls
+                    .filterIsInstance<FakeCharacterRepository.Call.Details>()
+                    .single()
+                    .enrich
+                    .not(),
+            )
         }
 
     @Test
