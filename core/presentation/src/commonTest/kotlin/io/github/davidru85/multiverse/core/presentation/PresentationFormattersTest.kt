@@ -31,7 +31,7 @@ class PresentationFormattersTest {
         type = type,
         gender = CharacterGender.Male,
         lastKnownLocation = LocationSummary(id = null, name = "Citadel of Ricks"),
-        imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+        imageUrl = "https://images.example/character/avatar/1.jpeg?size=300",
     )
 
     @Test
