@@ -688,6 +688,54 @@ class WorkflowGateGuardTest {
         )
     }
 
+    // --- TEST-UNIT-044 (GAP-028): a check the runner's platform disables is excluded by name ---
+
+    /**
+     * A native suite the KMP plugin disables on the Linux host may be excluded from the Linux gate.
+     *
+     * This is the `GAP-028` shape: `check` reached `iosSimulatorArm64Test`, which the plugin
+     * *disables* on a non-Apple host, so the exclusion removes nothing that could execute — while
+     * the dependency subtree it dragged in (the Kotlin/Native download and the Apple compiles)
+     * was what exhausted the job's ceiling. The exclusion is named in the guard, so it cannot be
+     * widened into a general "skip a check with `-x`".
+     */
+    @Test
+    fun `a gate excluding the suite the linux host disables is accepted`() {
+        val root = androidOnly(androidGateCommands.map { if (it == "./gradlew check") "$it -x iosSimulatorArm64Test" else it })
+        assertEquals(
+            emptyList(),
+            findings(root).map { it.reason },
+            "TEST-UNIT-044: excluding the host-disabled native suite is the GAP-028 fix, not a narrowed gate",
+        )
+    }
+
+    @Test
+    fun `a gate excluding any other task is rejected`() {
+        val reasons =
+            findings(androidOnly(androidGateCommands.map { if (it == "./gradlew check") "$it -x testAndroidHostTest" else it }))
+                .map { it.reason }
+        assertTrue(
+            reasons.any { it.contains("testAndroidHostTest") },
+            "TEST-UNIT-044: only a task the runner's platform disables may be excluded; got $reasons",
+        )
+    }
+
+    @Test
+    fun `a gate excluding a required check and swallowing its result is still rejected`() {
+        val reasons =
+            findings(
+                androidOnly(
+                    androidGateCommands.map {
+                        if (it == "./gradlew check") "$it -x iosSimulatorArm64Test --dry-run" else it
+                    },
+                ),
+            ).map { it.reason }
+        assertTrue(
+            reasons.any { it.contains("./gradlew check") },
+            "TEST-UNIT-044: the host-disabled exclusion does not license a dry run; got $reasons",
+        )
+    }
+
     @Test
     fun `an iOS application target restores the ios job, its native suites and the native replay`() {
         val reasons = findings(withIosApp(androidOnly())).map { it.reason }

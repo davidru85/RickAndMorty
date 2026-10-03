@@ -1,13 +1,21 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-10-03 (**B3 complete**: Phase 3.3 merged in PR #117); must be updated on every handoff (`AGENTS.md` §5 step 7).
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### PR #145 CI decomposition — 2026-10-04
+
+The owner authorised `TASK-110` / `DEC-112` on `feat/b5-phase-5-2`, covering `.github/workflows/pull-request.yml`, `.github/scripts/`, the workflow guard and its regressions in `build-logic/convention/`, and the affected documents. The workflow contains 17 independent worker checks and the required `android` result. Module scopes use explicit Android/JVM tasks; app tests and APK inspection are separate, and contract replay has its own invocation. Native CI stays suspended under `DEC-083`; settings and merge remain human-controlled.
+
+Observed before this change: run `37191137085` timed out at 60 minutes during the local gate. The earlier `TASK-109` mitigation did not unblock D2. Observed regression evidence: the new modular guard fixture initially reported 3 failures out of 9 tests; after implementation those 9 passed, and one further regression covers step expressions and environment replacement. The final tooling run passed all 164 tests; the result-process suite passed 7 tests, including failure/cancellation/skip/missing-result cases. The full tooling run exposed one reproduction fixture that inserted a duplicate aggregate `if` key; its mutation now replaces the existing condition before adding the negative condition. All Linux worker scopes passed locally, including APK inspection, in 1 minute 21 seconds; the separate replay passed 18 contract cases. Exact commands and coverage comparison are recorded in `PROJECT_LOG.md` LOG-0098. Until the final PR-head `android` result is green, this change is in progress, not Done.
+
+The first parallel run (`37196552961`, head `404e9a8`) passed 15 workers but exposed two real defects: `verifyRepositoryHygiene` deadlocked its Git batch pipes and `verifySdkLevels` snapshotted the entire installed SDK. Their new regressions both failed before the fix; all 166 tooling tests now pass, and the combined real hygiene/APK/SDK verification passed in one minute (`LOG-0099`). The jobs now have 10–15 minute ceilings. The corrected implementation head `6382e1c` passed all 18 checks in run `37198426989`: policies in 2m46s, APK artifacts in 4m27s, and the full run in 4m37s. GH CLI reported PR #145 `MERGEABLE` / `CLEAN` with every check `SUCCESS`. `TASK-110` is in review and `GAP-028` is resolved on that observed evidence (`LOG-0100`); the final documentation head must also pass its required CI before merge. No merge or settings change was performed.
 
 ## 1. Current state (2026-10-03)
 
@@ -127,7 +135,7 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations later work inherits:** `TASK-013` and `TASK-060` pass the real resource folders and `CopyKeys.all` to `CopyParity.verify`, and register the feature keys they add in `CopyKeys`; `TASK-044`/`TASK-051` build the favourites store over the app's DataStore file or `NSUserDefaults.standardUserDefaults` and `ObserveFavoriteIds` over its repository (`DESIGN.md` §5); the per-failure error strings stay unenumerated until `UI_SPEC.md` §8 lists them (`ERROR_FLOW.md` §4.1). **B3 closed with the merge of this phase (PR #117, `f1fc88f`).**
 
-## 1.6 B4 Phase 4.1 (2026-10-03) — in review
+
 
 **Phase 4.1 (`TASK-042`, issue #120; `TASK-013`, issue #121; `TASK-035`, issue #122) is implemented on `feat/b4-phase-4-1` and in review; it is not `Done` until the owner merges it** (`DEC-096`). What it delivers:
 
@@ -180,8 +188,23 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 - **`IC-025`:** the shared card-to-detail hand-off `DESIGN.md` §4.2 required and no contract declared. It lives in `:core:presentation`, the shell owns the single instance, Discovery publishes and Detail consumes.
 - **Observed gate:** `./gradlew check buildHealth verifyDependencyPolicy verifyDependencyInventory verifyDependencyPins` — BUILD SUCCESSFUL. `:core:data` 137 JVM / 158 Android-host, `:feature:discovery` 13, `:feature:character-detail` 24, `:androidApp` 26, all green. Red was observed before each green.
 **Obligations phase 5.3 inherits:** its shell wiring must compose the two new routes rather than the placeholders; the card-to-detail hand-off instance it creates is the one both features share; and `TASK-075`'s per-request protocol selection is the identity change the Discovery pager already observes.
+## 1.9 B5 Phase 5.1 (2026-10-03) — implemented on `feat/b5-phase-5-1`, awaiting its pull request
+**Phase 5.1 (`TASK-020`, issue #133; `TASK-012`, issue #134; `TASK-022`, issue #135; `TASK-011`, issue #136) is implemented and locally verified on `feat/b5-phase-5-1`; it is not `Done` until the owner merges the phase pull request** (`DEC-106`). What it delivers:
+- **`TASK-020`:** `IC-012` is implemented as the application-level response cache in `:core:data` — `CacheKeyBuilder` (the complete normalized request identity), `CachePolicy` (24 h fresh / 7 d stale-while-revalidate / 30 d offline fallback, injectable), `ResponseCache` (the read policy of `API_SPECS.md` §7.3, the never-cache write guard, `isStale` and `DataResult.source`), the Android `FileCacheStorage` under the app's private cache directory, the `FakeCacheStorage` and `NoCacheStorage` doubles (`DEC-072`), and the `LOG-005`…`LOG-009` emitters. The shell supplies the store through `CoreGraphInputs.cacheStorage`. `ForceNetwork` bypasses every band, so `IC-014.refresh()` is proved against the production cache.
+- **`TASK-022`:** `IC-017` maps every `ApiFailure` to its own copy key, states the recovery table's automatic-retry answer per class, and closes `GAP-027` with `rateLimitCountdown`: the countdown of `error_message_rate_limited` is an argument of the key rather than interpolated text, so both platforms substitute the same number from their own resource file.
+- **`TASK-012` / `TASK-011`:** their acceptance is evidence over the production cache — a refresh and a retry each reach the network despite a fresh entry, a failed refresh and a failed append keep their items, and a cancellation reaches no state field. No production code was needed for either.
+- **Observed gate:** `./gradlew check buildHealth verifyDocumentedGate` — BUILD SUCCESSFUL. `:core:data` 130 JVM + 133 Android-host tests, `:core:presentation` 25 host tests, all green. Red was observed before each green (9 cases for the cache policy, 4 for the failure map).
+- **Defects the phase's own checks found and fixed:** the offline fallback bypassed `ResponseCache.serveFallback`, so `LOG-007` was never emitted; the new cache suite named the live API host in a fixture URL, which `verifyNoLiveHosts` rejected; a retry case's expected item count was wrong, and the append-versus-page-1 distinction it was meant to assert is now pinned explicitly.
+**Obligations phase 5.2 inherits:** the discovery and detail screens consume `IC-012` through `CharacterRepository` and must render `isStale` and `DataResult.source`; `TASK-001` and `TASK-002` own the presentation state holders that map the failure chain to `IC-018`/`IC-019`; `TASK-010` owns the designed empty-results state the filtered `404` reaches.
 
 **Not verified:** the phase pull request's CI run (not opened yet); the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
+
+## 1.12 PR #145's earlier gate mitigation (2026-10-04) — superseded by DEC-112
+**Prior mitigation, superseded by `DEC-112`: `GAP-028`/`DEC-111` (`TASK-109`) was implemented on PR #145's head** (`ci/pr145-gate-fit` branched from `1191b33d`) and **not `Done` under D2 until the run it triggers is observed green**. What that attempt changed:
+- **`.github/workflows/pull-request.yml`:** the `android` job runs `./gradlew check -x iosSimulatorArm64Test`, and its `timeout-minutes` rises 45 → 60. The exclusion removes no check that could run: KMP **disables** the suite on Linux and the dependency chain it carried was the whole Kotlin/Native download plus the Apple compiles.
+- **`WorkflowGateGuard`:** a new `HOST_DISABLED_EXCLUSIONS` allow-list (the `android` job may exclude `iosSimulatorArm64Test`, the `ios` job may exclude nothing), enforced per job and per step, so the fix cannot be widened into a general `-x`; the existing execution filter now strips the sanctioned exclusion before deciding a step still executes its other commands.
+- **Observed locally:** red first — 3 guard-test failures against the unfixed guard; green after — the 40-test `WorkflowGateGuardTest` class and `:build-logic:convention:check ktlintCheck` all pass. `check --dry-run`: 1158 → 982 tasks, 30 → 0 Kotlin/Native tasks, with every Linux-executable step unchanged.
+**Obligation this change inherits:** its own pull-request run must be observed, and `GAP-028` is closed only on that evidence (`LOG-0097`).
 
 ## 2. Completed work
 

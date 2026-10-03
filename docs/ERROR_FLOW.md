@@ -148,7 +148,7 @@ Rules for this register:
 
 - A key `MUST` exist in every shipped locale before the state that uses it renders; a missing key fails the copy parity test (`AC-REQ-FUNC-013-1`, `AC-REQ-UX-008-1`).
 - This file `MUST NOT` gain a second English string table: strings are quoted, never authored, here.
-- The countdown in `error_message_rate_limited` is formatted by a `:core:presentation` formatter (DEC-015), so both platforms render the same number.
+- The countdown in `error_message_rate_limited` is formatted by a `:core:presentation` formatter (DEC-015), so both platforms render the same number. **Delivered by `TASK-022`:** `IC-017.rateLimitCountdown` is the one formatter, `FailureMessage` carries the number as an argument of the key rather than as interpolated text, and a missing or negative `Retry-After` yields no countdown at all instead of an invented zero (`GAP-027`).
 
 ## 5. Non-error outcomes
 
@@ -279,4 +279,5 @@ A test identifier is never cited here as evidence for copy wording. The failure-
 | --- | --- | --- |
 | 2026-09-29 | Created: source-layer error taxonomy with `API-ERR-###` ids, the mapping chain, the full `ApiFailure`→state→copy→retry table, non-error outcomes, cancellation, enrichment/refresh/stale behaviour, recovery and retry-budget rules, failure logging and acceptance coverage. | DEC-021, DEC-022, DEC-015, DEC-020 |
 | 2026-09-29 | Module references updated to the feature-per-module layout: `:shared:data` → `:core:data`, `:shared:presentation` → `:core:presentation` (DEC-052, supersedes DEC-019). A `Verification` column was added to every table so each row names the test that covers it (§2, §4 rendered-state mapping, §7, §10, §11), and the copy-wording evidence rule was added. Test coverage corrected to the authoritative `TESTING.md` identifiers (`TEST-UI-011`, `TEST-UI-016`, `TEST-UNIT-022`); `API-CHAR-005` provenance recorded as an open gap. | DEC-052, DEC-021 |
+| 2026-10-03 | `TASK-022` delivered the failure chain: `IC-017` gains `failureMessage`, `failureTitle`, `retryAction` and `isAutomaticallyRetryable`, and the rate-limit countdown closes `GAP-027` — the number travels as an argument of `error_message_rate_limited`, so both platforms substitute the same value from their own resource file. The §4 matrix is driven fixture by fixture through the real REST adapter. | `TASK-022`, `GAP-027`, `REQ-FUNC-022`, `DEC-015` |
 | 2026-10-03 | §1 and §4.1 state where the copy lives: the key names in `CopyKeys` (`IC-017`), the English and Spanish strings in the platform resource files, held identical by `TEST-UNIT-036`; the earlier wording gave the strings to the key list (`CONF-75`). | `DEC-095`, `TASK-041` |

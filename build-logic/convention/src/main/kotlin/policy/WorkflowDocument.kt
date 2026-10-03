@@ -168,6 +168,9 @@ internal class JobNode(
     private val body: Map<*, *>,
     private val document: WorkflowDocument,
 ) {
+    /** Parsed values for the static matrix, dependency and environment checks. */
+    fun valueAt(key: String): Any? = body[key]
+
     /** The string value of a key, if it is a string scalar. */
     fun stringAt(key: String): String? = body[key] as? String
 
@@ -219,6 +222,10 @@ internal class StepNode(
     private val body: Map<*, *>,
     private val job: JobNode,
 ) {
+    fun valueAt(key: String): Any? = body[key]
+
+    fun scalarAt(key: String): String? = body[key]?.toString()
+
     val startLine: Int = job.lineOf("steps") ?: 1
 
     fun stringAt(key: String): String? = body[key] as? String

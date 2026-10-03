@@ -510,21 +510,27 @@ internal class GitRepository private constructor(private val root: File) {
         var completed = false
         var consumed = 0
         try {
-            process.outputStream.use { it.write(ids.joinToString(separator = "\n", postfix = "\n").toByteArray(Charsets.UTF_8)) }
             val source = process.inputStream
-            for (expected in ids) {
-                val header = readHeaderLine(source)
-                    ?: throw GitFailure("`git cat-file --batch` ended after $consumed of ${ids.size} blob(s); the blob scan is incomplete (HYG-06)")
-                val parts = header.trim().split(' ').filter { it.isNotEmpty() }
-                if (parts.size != 3) throw GitFailure("`git cat-file --batch` returned an unreadable header; the blob scan is incomplete (HYG-06)")
-                if (parts[0] != expected) throw GitFailure("`git cat-file --batch` returned a record for ${parts[0].take(12)}… while ${expected.take(12)}… was requested (HYG-06)")
-                if (parts[1] != "blob") throw GitFailure("`git cat-file --batch` returned type `${parts[1]}` where `blob` was requested (HYG-06)")
-                val size = parts[2].toLongOrNull() ?: throw GitFailure("`git cat-file --batch` returned a non-numeric blob size (HYG-06)")
-                if (size < 0) throw GitFailure("`git cat-file --batch` returned a negative blob size (HYG-06)")
-                onStart(expected)
-                readBlob(source, size, onChunk)
-                onEnd()
-                consumed++
+            // Feed one request, then drain its response. Writing the entire id list first can
+            // fill stdin while Git is blocked on a full stdout pipe (notably on Linux).
+            process.outputStream.bufferedWriter(Charsets.US_ASCII).use { requests ->
+                for (expected in ids) {
+                    requests.write(expected)
+                    requests.newLine()
+                    requests.flush()
+                    val header = readHeaderLine(source)
+                        ?: throw GitFailure("`git cat-file --batch` ended after $consumed of ${ids.size} blob(s); the blob scan is incomplete (HYG-06)")
+                    val parts = header.trim().split(' ').filter { it.isNotEmpty() }
+                    if (parts.size != 3) throw GitFailure("`git cat-file --batch` returned an unreadable header; the blob scan is incomplete (HYG-06)")
+                    if (parts[0] != expected) throw GitFailure("`git cat-file --batch` returned a record for ${parts[0].take(12)}… while ${expected.take(12)}… was requested (HYG-06)")
+                    if (parts[1] != "blob") throw GitFailure("`git cat-file --batch` returned type `${parts[1]}` where `blob` was requested (HYG-06)")
+                    val size = parts[2].toLongOrNull() ?: throw GitFailure("`git cat-file --batch` returned a non-numeric blob size (HYG-06)")
+                    if (size < 0) throw GitFailure("`git cat-file --batch` returned a negative blob size (HYG-06)")
+                    onStart(expected)
+                    readBlob(source, size, onChunk)
+                    onEnd()
+                    consumed++
+                }
             }
             if (source.read() >= 0) throw GitFailure("`git cat-file --batch` returned more records than were requested (HYG-06)")
             completed = true

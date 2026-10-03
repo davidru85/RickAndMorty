@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — Contribution Process
 
 - **Status:** Active — target state. The Gradle/KMP build skeleton exists (TASK-014); no feature code, tests or CI exist yet (`README.md` §14), so the feature and test commands below are the documented interface to work that has not landed.
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-04
 - **Owner:** Documentation Maintainer (see `../AGENTS.md` §3.9)
 - **Authoritative for:** the contribution process — prerequisites, branching, the TDD phase-and-commit protocol and the merge policy (DEC-053, amending DEC-041), Conventional Commits and how release notes are derived, the issue workflow, pull-request expectations including the required-check list, review, agent permissions, and the contribution completion checklist.
 - **Not authoritative for:** code conventions and tool-enforced rules (`GUIDELINES.md`); gates, Ready/Done and waivers (`DEFINITION.md`); test strategy, layers, ids and tooling (`TESTING.md`); the vulnerability-reporting route (`SECURITY.md` §10); module boundaries and dependency direction (`DESIGN.md`, `adr/0001-module-boundaries.md`, DEC-052); operating rules for agents (`../AGENTS.md`).
@@ -258,10 +258,7 @@ Notes that keep the list honest:
 
 - **Activation is staged (`DEC-071`).** The list above is the complete set and does not shrink. Each row becomes blocking when its harness exists — the shared suites and the policy tasks from `TASK-024`/`TASK-025` onward, the snapshot, contract and accessibility suites with the M1/M2 tasks that create them. A pull request whose head ran before the workflow existed is *integrated and locally verified* and `DEFINITION.md` D2 is not satisfied; that is recorded, not waived, and it applies only to history since the workflow merged (`TASK-025`, PR #52).
 
-**Configured check names.** The workflow lands with `TASK-025`; its two jobs are `android` and `ios`. **From B3 Phase 3.1 the `ios` job is temporarily suspended (`DEC-083`)** until the pull request that introduces the buildable `iosApp` application target (`TASK-051`) restores it: during the suspension the workflow contributes `android` only, and the required set the ruleset names is `android` only (see the suspension packet below). The per-suite rows of §14.2 are added to the required list by the same change that introduces their harness (`DEC-071`).
-
-**The check names are provisional until the workflow files land.** The authoritative definitions are `DEFINITION.md` §3/§7 and `TESTING.md` §14; where a workflow job name diverges from this table, `TESTING.md` and the workflow are the truth and this table is corrected in the same change.
-- **Branch protection is a repository setting and therefore a human action** (DEC-049). The agent prepares the list; a maintainer applies it. As of 2026-10-01 the workflows of `TASK-025` exist (`.github/workflows/pull-request.yml`, jobs `android` and `ios`).
+**Configured check names (`DEC-112`).** The required context during the `DEC-083` suspension remains `android`. It now aggregates ten `module / core-*` or `module / feature-*` matrix checks, `module / core-designsystem`, `module / androidApp tests`, `module / androidApp artifacts`, `build-logic`, `repository policies`, `dependency health`, and `contract fixtures / Android host`. Every worker runs independently on every pull request and push to `main`; a failed, cancelled, skipped or absent required worker prevents the final result from passing. Execution coverage and native restoration are owned by `TESTING.md` §14.2. No repository setting changes are needed for this decomposition. `TASK-051` still restores the native checks and `TASK-108` the `ios` required context.
 
 **Recorded repository state (`TASK-106`, `B2-R09`).** The effective configuration is read from the GitHub API and recorded here so the enforcement claim is evidence rather than recollection.
 
@@ -287,7 +284,7 @@ The settings are applied and the enforcement is observed; the rows above are the
 
 | Setting | Observed 2026-10-02 before the change | Applied during the suspension (owner, 2026-10-02) | Restored by |
 | --- | --- | --- | --- |
-| Pull-request workflow jobs | `android`, `ios` | `android` only, carrying every Android check plus the policy checks the `ios` job used to run | `TASK-051` (same pull request as the app target) |
+| Pull-request workflow jobs | `android`, `ios` | Independent Linux workers feeding the required `android` result (`DEC-112`); native CI remains suspended | `TASK-051` (same pull request as the app target) |
 | `main protection` required contexts | `android` and `ios`, both bound to `integration_id 15368` | `android` only, still bound to `integration_id 15368` — **applied and observed 2026-10-02**; every other rule, the empty bypass list and merge-only delivery unchanged | `TASK-108` (the human settings step, read back in the same change as `TASK-051`) |
 | Restoration tripwire | — | `verifyWorkflowGate` requires the `ios` job, `iosSimulatorArm64Test` and `contractTestReplayIosSimulator` again as soon as `iosApp/` contains an Xcode project with an application target | Automatic |
 

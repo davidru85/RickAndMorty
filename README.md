@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
 - **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); the application itself is still target state (see [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see [`AGENTS.md`](AGENTS.md))
 - **Authoritative for:** the developer entry point — prerequisites, build, run, test and quality commands, platform support, known limitations, documentation index.
 - **Not authoritative for:** requirements, architecture, the remote contract, the visual specification or process — each links below.
@@ -187,6 +187,8 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 | Build the shared framework for iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Not run — `:core:ios` does not exist yet (`TASK-078`); the module is the one producer of the framework the iOS app links (`DEC-058`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)) |
 | Build the iOS app | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` | Not run — `iosApp/` does not exist (TASK-051) |
 
+**Parallel CI (`DEC-112`).** Module checks, app tests, APK verification, tooling, policies, dependency health and contract replay run independently. The required `android` result passes only when every worker succeeds; the local commands below retain the comprehensive gate.
+
 ## 9. Test and quality commands
 
 Every pull request must pass the full suite on both platforms before it can be approved (`DEC-054`); the definitions of Ready, Done and the merge gate are in [`docs/DEFINITION.md`](docs/DEFINITION.md), and the test strategy is in [`docs/TESTING.md`](docs/TESTING.md).
@@ -280,7 +282,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Implementation | Shared core complete (B3) and the Android surface landed (B4 Phases 4.2–4.3): `MultiverseTheme`, the component vocabulary, the portrait transport with its accent policy, the Koin graph with `coreModule`, the branded splash as a real loading indicator, four reachable destinations with both placeholders, the launcher icon and the debug-only diagnostics panel. The feature screens arrive with B5 — see [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.8 |
 | Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
 | `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim, `verifyDependencyPins` rejects every malformed value, and every Android artifact task depends on its validation (TASK-089). The iOS `CFBundleShortVersionString` derivation arrives with `TASK-051` |
-| CI | Active — TASK-025, PR #52: `.github/workflows/pull-request.yml` gates every pull request and every push to `main`. The `ios` job is suspended by `DEC-083` until `TASK-051` introduces the iOS app; the `android` job carries the gate meanwhile |
+| CI | Active — TASK-025, PR #52: `.github/workflows/pull-request.yml` gates every pull request and every push to `main`. The `ios` job is suspended by `DEC-083` until `TASK-051` introduces the iOS app; the independent Linux module and verification jobs feed the required `android` result meanwhile (`DEC-112`, `docs/TESTING.md` §14.2) |
 | `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
 | Contracts | Accepted — TASK-019, merged in PR #31 on 2026-10-01: `docs/CONTRACTS.md` is the `IC-###` baseline |
 | Process documents | Reconciled — TASK-034, merged in PR #32 on 2026-10-01: DOC1–DOC8 audit recorded |

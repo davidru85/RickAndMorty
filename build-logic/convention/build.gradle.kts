@@ -70,3 +70,10 @@ gradlePlugin {
         }
     }
 }
+
+// Workflow regressions read the real CI configuration, so changes must invalidate cached results.
+tasks.named<Test>("test") {
+    inputs.files(fileTree("../../.github") { include("workflows/*.yml", "workflows/*.yaml", "scripts/*.py") })
+        .withPropertyName("ciConfiguration")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
