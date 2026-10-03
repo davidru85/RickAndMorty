@@ -156,7 +156,7 @@ public class RemoteCharacterRepository(
             }
             is DataResult.Failure -> {
                 cache.refuse(LogOutcome.FAILURE, outcome.failure)
-                fallback(hit, outcome) { it.page }
+                fallback(hit, outcome, LogOperation.CHARACTER_LIST) { it.page }
             }
         }
     }
@@ -185,7 +185,7 @@ public class RemoteCharacterRepository(
         if (detail !is DataResult.Success) {
             if (detail is DataResult.Failure) {
                 cache.refuse(LogOutcome.FAILURE, detail.failure)
-                return fallback(hit, detail) { it.details }
+                return fallback(hit, detail, LogOperation.CHARACTER_DETAIL) { it.details }
             }
             return detail
         }
@@ -302,15 +302,28 @@ public class RemoteCharacterRepository(
     private fun admitDetails(outcome: DataResult.Success<CharacterDetails>) =
         if (outcome.warnings.isEmpty()) CachedPayloadMapper.details(outcome.value) else null
 
-    /** The offline fallback of a failed read: an in-window entry, or the failure itself. */
-    private fun <T> fallback(
+    /**
+     * The offline fallback of a failed read: an in-window entry, or the failure itself.
+     *
+     * The entry is served through [ResponseCache.serveFallback], which is what emits `LOG-007`; the
+     * result reports `DISK_CACHE` and `isStale = true`, so the screen can mark content it is still
+     * showing (`AC-REQ-FUNC-020-2`, `ERROR_FLOW.md` §9).
+     */
+    private suspend fun <T> fallback(
         hit: CacheHit?,
         failure: DataResult.Failure,
+        operation: LogOperation,
         select: (CacheHit) -> T?,
     ): DataResult<T> {
         val usable = hit?.takeIf { it.freshness == CacheFreshness.OFFLINE_FALLBACK } ?: return failure
         val value = select(usable) ?: return failure
-        return DataResult.Success(value, DataSource.DISK_CACHE, isStale = true, warnings = failure.warnings)
+        val served = cache.serveFallback(usable, operation, null, failure.failure)
+        return DataResult.Success(
+            select(served) ?: value,
+            DataSource.DISK_CACHE,
+            isStale = true,
+            warnings = failure.warnings,
+        )
     }
 }
 
