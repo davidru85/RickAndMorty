@@ -10,6 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import org.koin.core.logger.Level as KoinLevel
 
 /**
  * The Android composition root (`TASK-044`, `DEC-091`, ADR-0014): it starts the one Koin graph and
@@ -35,11 +36,17 @@ public open class MultiverseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            // Koin's own log lines follow the same DEBUG-only rule as the app's (`DEC-039`).
-            androidLogger()
+            // Koin's own log lines follow the variant threshold DEC-039 fixes: the base (release)
+            // class passes ERROR, and the debug subclass carries the DEBUG threshold of its own
+            // logger. The level is a build-time property, so a release artifact logs nothing
+            // below ERROR (`OBSERVABILITY.md` §5, `TEST-UNIT-057`).
+            androidLogger(koinLevel())
             androidContext(this@MultiverseApplication)
             modules(coreModule)
             modules(shellModules(applicationScope, this@MultiverseApplication, logging()))
         }
     }
+
+    /** Koin's own logger level for this variant, derived from the same variant seam as the sink. */
+    internal open fun koinLevel(): KoinLevel = KoinLevel.ERROR
 }

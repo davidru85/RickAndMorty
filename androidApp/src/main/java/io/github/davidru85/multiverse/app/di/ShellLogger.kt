@@ -1,7 +1,6 @@
 package io.github.davidru85.multiverse.app.di
 
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
-import io.github.davidru85.multiverse.core.domain.logging.LogSink
 
 /**
  * The **release** variant's logger (`TASK-044`, `DESIGN.md` §5, `DEC-039`).
@@ -21,6 +20,3 @@ public open class ShellLogging {
     /** Extra modules only a non-release variant registers; none in a release build. */
     open fun extraModules(logger: ValidatingAppLogger): List<org.koin.core.module.Module> = emptyList()
 }
-
-/** The extra sink a variant may attach; the release build attaches none. */
-public fun noExtraSink(): (LogSink) -> Unit = { }
