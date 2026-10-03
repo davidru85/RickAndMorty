@@ -211,7 +211,7 @@ Every change reaches `main` through a pull request. The template is [`docs/templ
 
 ### 5.1 One logical change
 
-A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. **Two block exceptions are recorded:** B3 (`DEC-082`) and B4 (`DEC-096`) each land their tasks in three phase pull requests, each listing every member task with its own evidence row; see `BACKLOG.md` §2.6. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
+A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. **Block exceptions are recorded for B3 through B9:** B3 (`DEC-082`), B4 (`DEC-096`), B5 (`DEC-106`), B6 (`DEC-107`), B7 (`DEC-108`), B8 (`DEC-109`) and B9 (`DEC-110`) each land their tasks in three phase pull requests, each listing every member task with its own evidence row; see `BACKLOG.md` §2.6. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
 
 ### 5.2 Description requirements
 
