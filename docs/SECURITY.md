@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-03
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -109,14 +109,14 @@ This section lists every piece of data the app handles, including every field th
 | 1 | Character list/detail JSON | `{"id":1,"name":"Rick Sanchez",...}` | Yes (app-level response cache in `:core:data`) | Yes — received from the API over HTTPS | No — public catalogue | Cache budget with eviction; stale entries are unreachable after the 30 d offline window (DEC-012, `API_SPECS.md` §7) | Never contains images (`REQ-FUNC-021`). |
 | 2 | Episode JSON | batch `/episode/1,2,3` payloads | Yes, same response cache | Yes, received | No — public catalogue | Same as row 1 | Used only for detail enrichment (`REQ-FUNC-023`). |
 | 3 | Image bytes (portraits) | 300 × 300 JPEG | Yes (memory + disk image cache) | Yes, received from the allow-listed host | No — public asset | Image-cache eviction policy (`UI_SPEC.md` §5.2) | Separated from the JSON cache (`REQ-FUNC-021`). |
-| 4 | Favorite ID set | `{"1","42"}` | Yes — persisted user state, with row 4a | No, never | No — opaque public API identifiers forming a preference set, not an account | Until the user toggles it off, deletes all favorites from Settings (`REQ-FUNC-035`) or clears app data; survives process restart (`REQ-FUNC-006`) | Stored per §6. |
+| 4 | Favorite ID set | `{"1","42"}` | Yes — persisted user state, with row 4a. Android: the string set `favorite_ids` of the app's Preferences DataStore file; Apple: the sorted string array `multiverse.favorites.ids` in `UserDefaults` (`TASK-040`) | No, never | No — opaque public API identifiers forming a preference set, not an account | Until the user toggles it off, deletes all favorites from Settings (`REQ-FUNC-035`) or clears app data; survives process restart (`REQ-FUNC-006`) | Stored per §6. Only the canonical id strings are written, under that one key; `TEST-INT-004` asserts it on both real stores. |
 | 4a | App preferences | `soundsEnabled=false`, `remoteProtocol="rest"` | Yes — persisted user state | No, never; the protocol choice only selects which allow-listed endpoint is called | No — two app-behaviour flags | Until changed in Settings or app data is cleared (`REQ-FUNC-033`, `REQ-FUNC-034`) | Exactly the fields of `CONTRACTS.md` `IC-021`; stored per §6. |
 | 5 | Search text | typed or pasted query | No | Yes — only as the `name` query parameter (REST) or the `filter.name` variable (GraphQL) of an HTTPS request to the allow-listed host | Not classified as personal data, but treated as potentially identifying user input: never persisted, never logged (`REQ-SEC-005`) | Transient: in-memory for the request and its cache key; discarded with the process | Voice search is deferred (`REQ-FUNC-030`); re-classification rule in §8.3. |
 | 6 | Active status filter, page number, filter parameter *names* | `status=Alive`, `page=2` | Yes, as part of the cache key | Yes — as REST query parameters or GraphQL variables (DEC-056) | No | Same as row 1 (the cache entry) | Filter *names* may be logged; values MUST NOT (`OBSERVABILITY.md` §2). |
 | 7 | Cache metadata | cache key, expiry instant, `ETag` | Yes, alongside the cache entry | Inbound only | No | Same as the entry | Freshness uses an injected clock (DEC-018). |
 | 8 | Structured log events | see `OBSERVABILITY.md` §3 | Not persisted by the app; emitted to the platform log sink | No | No, by construction (§7) | Process lifetime for in-memory buffers; the platform log buffer is OS-managed and outside app control | Release builds emit errors only (DEC-039). |
 | 9 | Debug diagnostics snapshot | last failure class, data source, timings | In memory only, debug builds only | No | No | Process lifetime | Never on disk, never in release (§7.4). |
-| 10 | Request correlation id | monotonic counter | No | No — client-side only | No | Request lifetime | MUST NOT be derived from user input (§7.3). |
+| 10 | Request correlation id | 16 hex characters from a random source, e.g. `3f9c0a1b7e2d4c56` | No | No — client-side only | No | Request lifetime | MUST NOT be derived from user input (§7.3). |
 | 11 | Build/runtime facts | app version, platform, build type | No | No | No | — | Used in log envelopes only. |
 | 12 | Device, advertising or account identifiers | — | No | No | — | — | None are read, generated or transmitted. |
 
@@ -184,7 +184,7 @@ Certificate pinning is **not implemented**, and this section states why it is no
 
 | Store | Content | Location | Owner module |
 | --- | --- | --- | --- |
-| Favorite store | the favourite ID set (row 4 of §3) | Android app-private storage (DataStore file under the app's `filesDir`); iOS app-private container (`UserDefaults`) | `:core:data`, `expect/actual` (DEC-017, DEC-052) |
+| Favorite store | the favourite ID set (row 4 of §3) | Android app-private storage (a `.preferences_pb` DataStore file under the app's `filesDir`, supplied by the composition root); iOS app-private container (`UserDefaults`) | `:core:data`: `DataStoreFavoritesLocalDataSource` and `UserDefaultsFavoritesLocalDataSource` behind `IC-013` (DEC-017, DEC-052, `TASK-040`) |
 | Preferences store | the app preferences (row 4a of §3) | same platform stores as the favorite store, with separate keys | `:core:data`, `expect/actual` (DEC-017, DEC-055) |
 | Response cache | public JSON payloads and cache metadata | Android app-private cache directory; iOS app container cache directory | `:core:data` (DEC-018) |
 | Image cache | public image bytes | the image library's memory + disk caches | Android Coil; iOS `URLCache` + `NSCache` (DEC-026) |
@@ -204,7 +204,7 @@ The app relies on the platform's own protections and does not change the platfor
 
 ### 6.3 Integrity boundaries
 
-- The favourite store is the only writer-owned state. A malformed, truncated or unreadable store `MUST` degrade to an empty or partially readable set plus a logged error, never to a crash (`REQ-NFR-004`, `ERROR_FLOW.md`).
+- The favourite store is the only writer-owned state. A malformed, truncated or unreadable store `MUST` degrade to an empty or partially readable set plus a logged error, never to a crash (`REQ-NFR-004`, `ERROR_FLOW.md`). Implemented by `TASK-040`: a DataStore file that cannot be decoded is replaced by an empty one, a `UserDefaults` value that is not a list of strings keeps its readable part, and a write the store cannot complete keeps the last consistent set — each logged as `LOG-019`, and proved by `TEST-INT-004` and `TEST-UNIT-004`.
 - Cache entries `MUST` be validated before use: an entry that fails to decode is discarded and treated as a miss (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`).
 - Nothing read from storage is trusted as a URL, a host or a control-flow decision without the §5 rules being re-applied.
 
@@ -424,6 +424,7 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-03 | B3 Phase 3.3: §3 row 4 names the persisted key on each platform and row 10 the implemented correlation-id form (`CONF-77`); §6.1 names the two stores; §6.3 records how an unreadable store or a failed write degrades. | `TASK-040`, `DEC-017` |
 | 2026-10-02 | B3 Phase 3.2: §5.2 records the transport-wide host enforcement of `TASK-038` and the `LOG-004` redaction; §7.1, §7.3 and §7.4 record what `TASK-047` implements — the redaction proof on the real search path, the validated correlation id and the graph-level release exclusion of the diagnostic API. | `TASK-038`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-01 | §9.3 states the observed position: the two policy checks that run locally in `check` are named, `GAP-010` is indexed as `TASK-084`, and the CI prerequisite for artifact verification is recorded (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-046`, `TASK-084` |
 | 2026-09-30 | App preferences (row 4a) added to the data inventory and stores; GraphQL variables noted as a transmission path; "Delete favorites" added to row 4 retention. | DEC-055, DEC-056 |

@@ -44,6 +44,16 @@ configure<com.autonomousapps.DependencyAnalysisExtension> {
         }
         .groupBy({ it.first }, { it.second })
 
+    // ADR-0007 names the stable `datastore-preferences` artifact for the Android favourites store; its
+    // API lives in the `datastore-core`/`datastore-preferences-core` artifacts it brings. One bundle
+    // keeps the declaration on the artifact the ADR names instead of three (`TASK-040`).
+    structure {
+        bundle("androidx-datastore-preferences") {
+            primary("androidx.datastore:datastore-preferences")
+            includeGroup("androidx.datastore")
+        }
+    }
+
     issues {
         all {
             onAny { severity("fail") }

@@ -27,6 +27,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.okhttp)
+            // The favourites store of `IC-013` on Android is a stable Preferences DataStore (ADR-0007,
+            // `DEC-017`); the composition root hands the store its `DataStore`, so the type is part of
+            // the surface.
+            api(libs.androidx.datastore.preferences)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

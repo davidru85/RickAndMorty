@@ -50,3 +50,6 @@ public enum class ErrorClass {
 }
 
 public enum class LogScreen { SPLASH, DISCOVERY, CHARACTER_DETAIL, FAVORITES, EPISODES, SETTINGS }
+
+/** The component a store or cache event concerns; never a store path or key. */
+public enum class LogComponent { RESPONSE_CACHE, IMAGE_CACHE, FAVORITES_STORE, PAGER }

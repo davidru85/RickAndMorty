@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.core.data.logging
 
 import io.github.davidru85.multiverse.core.domain.logging.ErrorClass
 import io.github.davidru85.multiverse.core.domain.logging.FilterName
+import io.github.davidru85.multiverse.core.domain.logging.LogComponent
 import io.github.davidru85.multiverse.core.domain.logging.LogEvent
 import io.github.davidru85.multiverse.core.domain.logging.LogField
 import io.github.davidru85.multiverse.core.domain.logging.LogOperation
@@ -85,6 +86,15 @@ internal fun LogEvent.fields(): Map<LogField, String> =
                 put(LogField.OUTCOME, LogOutcome.CANCELLED.name)
                 putCorrelation(event.correlationId)
             }
+            is LogEvent.FavoritesToggled -> {
+                put(LogField.COMPONENT, LogComponent.FAVORITES_STORE.name)
+                put(LogField.OUTCOME, event.outcome.name)
+            }
+            is LogEvent.FavoritesStoreDegraded -> {
+                put(LogField.COMPONENT, LogComponent.FAVORITES_STORE.name)
+                put(LogField.ERROR_CLASS, ErrorClass.UNKNOWN.name)
+                event.screen?.let { put(LogField.SCREEN, it.name) }
+            }
             is LogEvent.UnknownValuePreserved -> {
                 put(LogField.OPERATION, event.operation.name)
                 put(LogField.PATH_TEMPLATE, event.pathTemplate.template)
@@ -136,7 +146,8 @@ internal object LogFieldRules {
             LogField.ERROR_CLASS -> ErrorClass.entries.any { it.name == value }
             LogField.SCREEN -> LogScreen.entries.any { it.name == value }
             LogField.PROTOCOL -> value == "REST" || value == "GRAPHQL"
-            LogField.COMPONENT, LogField.APP_VERSION, LogField.PLATFORM, LogField.BUILD_TYPE, LogField.CAUSE -> false
+            LogField.COMPONENT -> LogComponent.entries.any { it.name == value }
+            LogField.APP_VERSION, LogField.PLATFORM, LogField.BUILD_TYPE, LogField.CAUSE -> false
         }
 
     private const val NO_CACHE_SOURCE = "NONE"

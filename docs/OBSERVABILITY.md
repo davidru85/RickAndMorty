@@ -1,7 +1,7 @@
 # OBSERVABILITY.md — Logging Contract, Redaction and Debug Diagnostics
 
-- **Status:** Active — the contract, its validating implementation, the request, retry, coalescing and pager events and the debug-only diagnostic API exist (B3 Phase 3.2, `TASK-047`); the platform sinks, the visible panels and the cache, image, favourites, app-start and screen events are target state (see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-10-02
+- **Status:** Active — the contract, its validating implementation, the request, retry, coalescing and pager events and the debug-only diagnostic API exist (B3 Phase 3.2, `TASK-047`); since B3 Phase 3.3 also the favourites events `LOG-018`/`LOG-019` (`TASK-040`); the platform sinks, the visible panels and the cache, image, app-start and screen events are target state (see `DOCUMENTATION_AUDIT.md` §5)
+- **Last verified:** 2026-10-03
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7) — this document decides *what may be recorded*
 - **Authoritative for:** the shared logging contract (levels, permitted fields, prohibited fields), the `LOG-###` structured event catalogue, redaction rules and their enforcement, the debug-only diagnostics surface, and the metrics vocabulary produced by the logging contract.
 - **Not authoritative for:** the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract and its cache policy (`API_SPECS.md` §6–§7, §9), the security policy and prohibitions (`SECURITY.md` §7), the test strategy and test ids (`TESTING.md`), the gate (`DEFINITION.md`), requirements (`REQUIREMENTS.md`).
@@ -124,8 +124,8 @@ Legend for the **Visibility** column: `D` = debug builds only, `R` = present in 
 | `LOG-015` | Image request started | `DEBUG` | `component=IMAGE_CACHE`, `screen`, `cacheSource` | Android image-loader interceptor / iOS image-cache wrapper | D |
 | `LOG-016` | Image cache outcome | `DEBUG` | `component=IMAGE_CACHE`, `cacheSource`, `durationMs`, `errorClass` | Android image-loader interceptor / iOS image-cache wrapper | D |
 | `LOG-017` | Image load failed | `WARN` | `component=IMAGE_CACHE`, `errorClass`, `screen` | Android image-loader error path / iOS image-cache error path | D |
-| `LOG-018` | Favorites toggled | `INFO` | `component=FAVORITES_STORE`, `outcome` | `:core:data`, favourites store after a successful write | D |
-| `LOG-019` | Favorites store degraded | `ERROR` | `component=FAVORITES_STORE`, `errorClass=UNKNOWN`, `screen` | `:core:data`, `expect/actual` store read/write failure (`SECURITY.md` §6.3) | R |
+| `LOG-018` | Favorites toggled | `INFO` | `component=FAVORITES_STORE`, `outcome` | `:core:data`, the favourites repository after a successful toggle write | D |
+| `LOG-019` | Favorites store degraded | `ERROR` | `component=FAVORITES_STORE`, `errorClass=UNKNOWN`, `screen` | `:core:data`: the favourites repository for a write the store could not complete, and each platform store for a value it could not read (`SECURITY.md` §6.3) | R |
 | `LOG-020` | App start | `INFO` | `appVersion`, `platform`, `buildType` | app shell (`:androidApp` `Application` / iOS app entry point) | D |
 | `LOG-021` | Screen data source resolved | `DEBUG` | `screen`, `cacheSource`, `isStale`, `outcome` | feature state holders | D |
 | `LOG-022` | Unknown remote enum value preserved | `DEBUG` | `operation`, `pathTemplate`, `outcome=SUCCESS` | `:core:data`, tolerant mapper (`AC-REQ-NFR-004-2`) | D |
@@ -238,5 +238,6 @@ Observability `MUST NOT` become a failure source.
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-03 | B3 Phase 3.3 (`TASK-040`): `LOG-018` and `LOG-019` are emitted — the repository logs a written toggle and a write the store could not complete, and each platform store a value it could not read. | `TASK-040` |
 | 2026-10-02 | B3 Phase 3.2 (`TASK-047`): the contract, its validating implementation and the emitters of `LOG-001`…`LOG-004`, `LOG-010`…`LOG-014` and `LOG-022` exist; §2.1's sketch follows `IC-024`; `LOG-010`/`LOG-011` are emitted by the `:core:data` pager, where `DEC-091` placed it; §4.2 names the implementing tests and records that the iOS framework graph joins `TEST-UNIT-034` with `:core:ios`; §5 states what the diagnostic API reports and what is unavailable. | `TASK-047`, `DEC-087`, `DEC-088`, `DEC-091` |
 | 2026-09-29 | Created as the replacement for the never-created `ANALYTICS.md`: shared logging contract with permitted and prohibited fields, `LOG-001`…`LOG-022` catalogue, redaction enforcement, debug diagnostics surface and the metrics mapping for `API_SPECS.md` §9. No analytics SDK and no `EVT-###` namespace. | DEC-038, DEC-039, DEC-052, DEC-053, DEC-054 |

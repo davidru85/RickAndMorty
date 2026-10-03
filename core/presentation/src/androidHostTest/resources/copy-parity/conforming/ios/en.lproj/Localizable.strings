@@ -1,0 +1,11 @@
+/* Controlled parity input for TEST-UNIT-036 (TASK-041, CONF-70): not the app's copy, which arrives
+   with TASK-060. It exercises the parser on comments, placeholders and escapes. */
+
+"error_title" = "Portal link lost";
+"action_retry" = "Retry";
+// Status labels.
+"status_alive" = "Alive";
+"value_unknown" = "Unknown";
+"empty_search_message" = "No one in this dimension matches “%1$@”";
+"probe_escapes" = "Morty's \"portal\" gun & 100%% sure";
+"probe_count" = "%1$ld characters across the multiverse";
