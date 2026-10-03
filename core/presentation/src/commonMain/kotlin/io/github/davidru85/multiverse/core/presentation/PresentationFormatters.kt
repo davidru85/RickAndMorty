@@ -98,7 +98,7 @@ public object DefaultPresentationFormatters : PresentationFormatters {
     override fun rateLimitCountdown(retryAfterSeconds: Long?): String? =
         retryAfterSeconds?.takeIf { it >= 0 }?.toString()
 
-    override fun charactersCount(count: Int): String = ""
+    override fun charactersCount(count: Int): String = count.toString()
 
     override fun failureMessage(failure: ApiFailure): FailureMessage =
         when (failure) {
