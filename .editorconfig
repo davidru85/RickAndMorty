@@ -1,0 +1,13 @@
+# The project's ktlint configuration.
+#
+# Compose's convention names a @Composable with PascalCase — `MaterialTheme`, `CharacterCard` — and
+# a `const val` that carries a public design value is conventional upper camel case only when it is
+# a compile-time constant the compiler inlines; the design system's public constants name timings
+# and sizes that a caller reads as values, so the standard is relaxed for composable declarations
+# and for this module's public constants.
+#
+# Scoped to the design system: every other module keeps ktlint's defaults.
+
+[core/designsystem/**/*.kt]
+ktlint_standard_function-naming = disabled
+ktlint_standard_property-naming = disabled

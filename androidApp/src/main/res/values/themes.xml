@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The system-splash theme (`UI_SPEC.md` §6.1, §9): the AndroidX splashscreen API shows
+  `windowSplashScreenAnimatedIcon` — the launcher icon's foreground — over the app's Surface, and
+  the activity then draws edge to edge. `forceDarkAllowed="false"` keeps the single appearance
+  (`REQ-UX-001`), and there is no `windowBackground` override beyond the splash colour.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Multiverse" parent="android:Theme.Material.NoActionBar">
+        <!-- API 29+; older platforms have no force-dark to disable, which is why the item is
+             annotated rather than moved to a qualifier that would duplicate the whole theme. -->
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.Multiverse.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Multiverse</item>
+    </style>
+</resources>

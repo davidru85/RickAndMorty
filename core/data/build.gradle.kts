@@ -17,6 +17,9 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             // The adapter builds and validates URLs with `io.ktor.http` types directly.
             implementation(libs.ktor.http)
+            // `coreModule` (`GAP-026`, `TASK-044`) declares the Koin module that binds the implementations
+            // behind the domain interfaces; the runtime DSL is `DEC-014`'s, and the composition root loads it.
+            api(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
         }
         jvmMain.dependencies {

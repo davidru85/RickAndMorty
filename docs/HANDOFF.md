@@ -139,6 +139,17 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations the later phases inherit:** `TASK-043` adds the rest of the Compose surface and the compiler plugin to `:core:designsystem` with the components; `TASK-044` keeps the copy resolver name-keyed, builds the shell over `:core:designsystem`, and owns the `coreModule`; `TASK-060` wires the Apple resource folder into `CopyParity.verify`; `TASK-005` adds the tone-30 accent pairs to `TEST-A11Y-002` and lands the vendored colour subset. The Spanish copy shipped in this phase is drafted for owner review (listed in the phase pull request).
 
+## 1.7 B4 Phase 4.2 (2026-10-03) — in review
+
+**Phase 4.2 (`TASK-043`, issue #124; `TASK-044`, issue #125) is implemented on `feat/b4-phase-4-2` and in review; it is not `Done` until the owner merges it** (`DEC-096`). What it delivers:
+
+- **`TASK-043`:** `MultiverseTheme` with the single appearance and the type scale, the component vocabulary of `UI_SPEC.md` §4.1 (status badge, character card and skeleton, Cookie-9 illustration and empty state, stat tiles, info-list item, navigation bar) and the Compose-only `ImageSeam` of `DEC-097`. `TEST-UI-004` drives the real portrait renderer through a recording seam; the module's suite stands at 25 tests.
+- **`TASK-044`:** the composition root — `MultiverseApplication` starting `coreModule` plus the shell's platform modules, `MainActivity` with the system-splash handoff and edge-to-edge, the app-wide `NavHost` over the five typed destinations, the adaptive launcher icon, the `INTERNET` permission and the bundled Material Symbols glyphs (`DEC-103`). `coreModule` itself is authored in `:core:data` with `TEST-UNIT-056` (both Android host and Apple simulator).
+- **New blocking checks:** `verifyReleaseArtifact` (`TEST-UNIT-033`, the real release APK carries neither the diagnostic recorder nor the panel host, and the debug APK carries both) and `verifySdkLevels` (`TEST-UNIT-018`, `aapt2 dump badging`: minSdk 26, targetSdk/compileSdk 37). Both are wired into `check`.
+- **Device evidence, local:** the debug APK installs and launches on API 37 and on API 26; the panel host opens in the debug build and renders every value it cannot know as unavailable, naming its deliverer.
+
+**Obligations the later phases inherit:** `TASK-005` implements the seam over Coil and adds the accent policy (`DEC-097`); `TASK-008` replaces the four section placeholders with the Episodes and Favorites content (`DEC-099`); the feature Koin modules arrive with the B5 task that gives each a binding; `TASK-051` supplies the iOS sink and panel.
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.

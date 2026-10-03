@@ -1,12 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Minimal manifest for the build skeleton (TASK-014).
+  The shell manifest (`TASK-044`). It declares exactly what the app needs:
 
-  It declares an application and nothing else: no activity, therefore no
-  launchable entry point, and no permission — not even INTERNET, which TASK-044
-  adds together with the networking it needs. No `usesCleartextTraffic` and no
-  backup attributes, so the platform defaults stay in force (SECURITY.md §5).
+  - `INTERNET`, because the app reads the public API over HTTPS (`REQ-SEC-001`); no other permission
+    is added, and `REQ-SEC-004` keeps microphone and speech out while voice search is deferred;
+  - no `usesCleartextTraffic` and no network-security-config exception, so the platform default
+    (cleartext blocked) stands and no host is exempted (`SECURITY.md` §5);
+  - no `allowBackup` override and no `dataExtractionRules`, so the platform defaults stay in force
+    and the app ships no backup policy of its own;
+  - `forceDarkAllowed="false"` on the theme, because the app has a single appearance
+    (`UI_SPEC.md` §9, `REQ-UX-001`).
+
+  The debug panel's host is a debug-only manifest overlay (`src/debug/AndroidManifest.xml`), so no
+  runtime flag, intent extra or `BuildConfig` boolean can reach it in a release build
+  (`OBSERVABILITY.md` §5, `DEC-085`).
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name="io.github.davidru85.multiverse.app.MultiverseApplication"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.Multiverse.Splash"
+        android:forceDarkAllowed="false"
+        android:supportsRtl="true">
+        <activity
+            android:name="io.github.davidru85.multiverse.app.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Multiverse.Splash"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

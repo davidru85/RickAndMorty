@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The debug variant's manifest overlay (`TASK-044`, `OBSERVABILITY.md` §5, `DEC-085`).
+
+  Two things exist here and nowhere else: the panel's host activity, and the Application subclass
+  that selects the DEBUG logging threshold and registers the diagnostic recorder. Both are selected
+  by the variant at build time, so a release artifact carries neither class nor entry point
+  (`R11`, `TEST-UNIT-033`). There is no runtime flag, intent extra, hidden gesture or `BuildConfig`
+  boolean anywhere in the release path.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:name="io.github.davidru85.multiverse.app.debug.DebugMultiverseApplication"
+        tools:replace="android:name">
+        <activity
+            android:name="io.github.davidru85.multiverse.app.debug.DiagnosticsActivity"
+            android:exported="true"
+            android:label="Multiverse diagnostics"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

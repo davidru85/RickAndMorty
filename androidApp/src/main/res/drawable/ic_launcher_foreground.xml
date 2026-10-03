@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The launcher foreground (`UI_SPEC.md` §10.1): the M3 Expressive Cookie-9 shape with the portal
+  inside it, on a 108 x 108 dp canvas whose visible area is the central 72 dp. The art is scaled to
+  the 66 dp safe circle, and everything outside it is transparent.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- The Cookie-9 silhouette, inset to the safe circle. -->
+    <path
+        android:fillColor="#FF497401"
+        android:pathData="M54,20 C58,20 61.5,22.4 63,26 C64.5,22.4 68,20 72,20 C77.5,20 82,24.5 82,30 C82,34 79.6,37.5 76,39 C79.6,40.5 82,44 82,48 C82,53.5 77.5,58 72,58 C68,58 64.5,55.6 63,52 C61.5,55.6 58,58 54,58 C50,58 46.5,55.6 45,52 C43.5,55.6 40,58 36,58 C30.5,58 26,53.5 26,48 C26,44 28.4,40.5 32,39 C28.4,37.5 26,34 26,30 C26,24.5 30.5,20 36,20 C40,20 43.5,22.4 45,26 C46.5,22.4 50,20 54,20 Z" />
+    <!-- The portal: a ring with a spiral core. -->
+    <path
+        android:fillColor="#FFC6FF6B"
+        android:pathData="M54,32 A16,16 0 1,0 54,64 A16,16 0 1,0 54,32 Z M54,36 A12,12 0 1,1 54,60 A12,12 0 1,1 54,36 Z" />
+    <path
+        android:fillColor="#FF97CE4C"
+        android:pathData="M54,40 A8,8 0 1,0 54,56 A8,8 0 1,0 54,40 Z M54,43 A5,5 0 1,1 54,53 A5,5 0 1,1 54,43 Z" />
+</vector>
