@@ -132,24 +132,88 @@ public class RemoteCharacterRepository(
         page: Int,
         policy: PageLoadPolicy,
     ): DataResult<CharacterPage> {
+        val key = CacheKeyBuilder.page(protocol, filter, page)
+        val hit = cache.read(key, LogOperation.CHARACTER_LIST, page)
+        val cached = hit?.page
+        if (cached != null && policy == PageLoadPolicy.Default) {
+            when (hit.freshness) {
+                CacheFreshness.FRESH ->
+                    return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = false)
+                CacheFreshness.STALE -> {
+                    revalidatePage(key, filter, page)
+                    return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = true)
+                }
+                CacheFreshness.OFFLINE_FALLBACK -> Unit // Keep it; the network answers first.
+                CacheFreshness.EXPIRED -> cache.evict(key)
+            }
+        }
+        cache.miss(LogOperation.CHARACTER_LIST, page)
         val outcome = retry.run(LogOperation.CHARACTER_LIST) { remote.characterPage(filter, page) }
-        return outcome
+        return when (outcome) {
+            is DataResult.Success -> {
+                admitPage(outcome, page)?.let { cache.store(key, it) }
+                outcome
+            }
+            is DataResult.Failure -> {
+                cache.refuse(LogOutcome.FAILURE, outcome.failure)
+                fallback(hit, outcome) { it.page }
+            }
+        }
     }
 
     private suspend fun loadDetails(
         id: CharacterId,
         enrich: Boolean,
     ): DataResult<CharacterDetails> {
+        val key = CacheKeyBuilder.details(protocol, id, enrich)
+        val hit = cache.read(key, LogOperation.CHARACTER_DETAIL, null)
+        val cached = hit?.details
+        if (cached != null) {
+            when (hit.freshness) {
+                CacheFreshness.FRESH ->
+                    return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = false)
+                CacheFreshness.STALE -> {
+                    revalidateDetails(key, id, enrich)
+                    return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = true)
+                }
+                CacheFreshness.OFFLINE_FALLBACK -> Unit
+                CacheFreshness.EXPIRED -> cache.evict(key)
+            }
+        }
+        cache.miss(LogOperation.CHARACTER_DETAIL, null)
         val detail = retry.run(LogOperation.CHARACTER_DETAIL) { remote.characterDetails(id) }
-        if (!enrich || detail !is DataResult.Success) return detail
+        if (detail !is DataResult.Success) {
+            if (detail is DataResult.Failure) {
+                cache.refuse(LogOutcome.FAILURE, detail.failure)
+                return fallback(hit, detail) { it.details }
+            }
+            return detail
+        }
+        if (!enrich) {
+            admitDetails(detail)?.let { cache.store(key, it) }
+            return detail
+        }
         return when (val episodes = retry.run(LogOperation.EPISODE_BATCH) { remote.episodes(detail.value.episodeIds) }) {
-            is DataResult.Success ->
-                detail.copy(
-                    value = detail.value.copy(episodeSummaries = episodes.value),
-                    warnings = detail.warnings + episodes.warnings,
-                )
-            is DataResult.Failure ->
+            is DataResult.Success -> {
+                val enriched =
+                    detail.copy(
+                        value = detail.value.copy(episodeSummaries = episodes.value),
+                        warnings = detail.warnings + episodes.warnings,
+                    )
+                if (enriched is DataResult.Success) {
+                    val record = admitDetails(enriched)
+                    if (record == null) {
+                        cache.refuse(LogOutcome.SUCCESS, null)
+                    } else {
+                        cache.store(key, record)
+                    }
+                }
+                enriched
+            }
+            is DataResult.Failure -> {
+                cache.refuse(LogOutcome.SUCCESS, null)
                 detail.copy(warnings = detail.warnings + ApiWarning(RemoteWarnings.ENRICHMENT_FAILED))
+            }
         }
     }
 
