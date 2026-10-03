@@ -16,6 +16,13 @@ import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetail
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailViewModelModule
 import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
 import io.github.davidru85.multiverse.feature.discovery.di.discoveryViewModelModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesViewModelModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsViewModelModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailViewModelModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryViewModelModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.After
@@ -68,6 +75,10 @@ class DestinationNavigationTest {
                 discoveryViewModelModule,
                 characterDetailModule,
                 characterDetailViewModelModule,
+                favoritesModule,
+                favoritesViewModelModule,
+                settingsModule,
+                settingsViewModelModule,
             )
         }
     }
