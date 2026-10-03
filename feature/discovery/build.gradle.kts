@@ -81,6 +81,14 @@ kotlin {
             // `koinViewModel()`, so both surfaces are the module's own (DESIGN.md §5).
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
+            // The screens call `collectAsStateWithLifecycle` and resolve their ViewModel with
+            // `koinViewModel()`, so the Compose integration and the Koin ViewModel artifacts are
+            // declared where they are used rather than reached transitively (DEC-077).
+            implementation(libs.androidx.lifecycle.common)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.core.viewmodel)
             api(libs.androidx.lifecycle.viewmodel)
             // `DiscoveryViewModel` exposes a `StateFlow`, so `kotlinx-coroutines-core` is part of what
             // the module exposes and is declared `api` (`DEC-077`).
