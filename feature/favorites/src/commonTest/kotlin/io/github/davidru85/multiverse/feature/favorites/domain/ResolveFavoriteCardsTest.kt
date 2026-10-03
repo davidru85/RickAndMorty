@@ -19,7 +19,6 @@ import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -85,7 +84,10 @@ class ResolveFavoriteCardsTest {
             val repository =
                 RemoteCharacterRepository(
                     remote = remote,
-                    scope = this,
+                    // The repository's coalescing and its background revalidation belong to a scope the
+                    // test owns and closes, exactly as `ResponseCacheIntegrationTest` assembles it; the
+                    // test scope itself would leave that work uncompleted.
+                    scope = backgroundScope,
                     random = FixedRandom(0.5),
                     logger = ValidatingAppLogger.forRelease(RecordingLogSink()),
                     cache = ResponseCache(FakeCacheStorage(), clock, CachePolicy(), ValidatingAppLogger.forRelease(RecordingLogSink())),
@@ -110,7 +112,7 @@ class ResolveFavoriteCardsTest {
     @Test
     fun `TEST-UNIT-040 given_more_favourites_than_the_bound_when_they_are_resolved_then_no_more_than_the_bound_are_in_flight`() =
         TestTime.run { dispatcher ->
-            val recording = ConcurrencyRecordingRepository(catalogue, latency = 20.milliseconds)
+            val recording = ConcurrencyRecordingRepository(latency = 20.milliseconds)
             val resolve = ResolveFavoriteCards(recording, maxConcurrent = 2, dispatcher = dispatcher)
 
             val resolution = resolve((1..6).map { CharacterId("$it") }.toSet())
@@ -175,12 +177,17 @@ class ResolveFavoriteCardsTest {
 
     /**
      * The repository that measures the concurrency, so the bound is asserted on what the seam observed
-     * rather than on the parameter the call site passed.
+     * rather than on the parameter the call site passed. It serves a fixed detail per id, because the
+     * subject here is the bound, not the catalogue's own projection.
      */
     private class ConcurrencyRecordingRepository(
-        private val catalogue: FakeCatalogue,
         private val latency: kotlin.time.Duration,
     ) : CharacterRepository {
+        private val details: Map<CharacterId, CharacterDetails> =
+            (1..6).associate { id ->
+                CharacterId("$id") to FakeCatalogue.character("$id", name = "Rick $id")
+            }
+
         var maxInFlight: Int = 0
             private set
 
@@ -205,8 +212,9 @@ class ResolveFavoriteCardsTest {
             maxInFlight = maxOf(maxInFlight, inFlight)
             try {
                 delay(latency)
-                val details = catalogue.details(id) ?: return DataResult.Failure(ApiFailure.NotFound("character", id.value), DataSource.NETWORK)
-                return DataResult.Success(details, DataSource.NETWORK, isStale = false)
+                val character =
+                    details[id] ?: return DataResult.Failure(ApiFailure.NotFound("character", id.value), DataSource.NETWORK)
+                return DataResult.Success(character, DataSource.NETWORK, isStale = false)
             } finally {
                 inFlight--
             }

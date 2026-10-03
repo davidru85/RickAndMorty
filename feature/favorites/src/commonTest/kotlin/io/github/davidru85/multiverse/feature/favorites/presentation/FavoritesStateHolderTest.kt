@@ -82,10 +82,17 @@ class FavoritesStateHolderTest {
             assertEquals(LoadState.Content, holder.state.value.loadState, "TEST-UNIT-004: a displayable favourite is content")
             assertEquals(
                 listOf(CharacterId("2")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-004: the grid renders the stored character's card",
             )
-            assertEquals("Rick 2", holder.state.value.items.single().name, "TEST-UNIT-004: with its own name")
+            assertEquals(
+                "Rick 2",
+                holder.state.value.items
+                    .single()
+                    .name,
+                "TEST-UNIT-004: with its own name",
+            )
         }
 
     @Test
@@ -103,7 +110,8 @@ class FavoritesStateHolderTest {
 
             assertEquals(
                 listOf(CharacterId("1"), CharacterId("2"), CharacterId("3")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-004: the order is the canonical id order, stable across a re-observation (IC-020)",
             )
         }
@@ -118,7 +126,11 @@ class FavoritesStateHolderTest {
 
             holder.start()
             advanceTimeBy(100.milliseconds)
-            assertTrue(holder.state.value.items.isNotEmpty(), "TEST-UNIT-004: the grid starts populated")
+            assertTrue(
+                holder.state.value.items
+                    .isNotEmpty(),
+                "TEST-UNIT-004: the grid starts populated",
+            )
 
             favorites.clear()
             advanceTimeBy(100.milliseconds)
@@ -147,7 +159,11 @@ class FavoritesStateHolderTest {
                 holder.state.value.loadState,
                 "TEST-UNIT-040: Error is reached from a read that failed, carrying that failure",
             )
-            assertTrue(holder.state.value.items.isEmpty(), "TEST-UNIT-040: the error surface replaces the grid")
+            assertTrue(
+                holder.state.value.items
+                    .isEmpty(),
+                "TEST-UNIT-040: the error surface replaces the grid",
+            )
         }
 
     @Test
@@ -173,7 +189,8 @@ class FavoritesStateHolderTest {
             )
             assertEquals(
                 listOf(CharacterId("1")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-040: and the resolved card renders",
             )
         }
@@ -184,7 +201,10 @@ class FavoritesStateHolderTest {
             val store = FakeFavoritesStore()
             favorites(store).toggle(CharacterId("1"))
             val repository = FakeCharacterRepository(catalogue)
-            repository.failNext(io.github.davidru85.multiverse.core.domain.result.ApiFailure.Server(503))
+            repository.failNext(
+                io.github.davidru85.multiverse.core.domain.result.ApiFailure
+                    .Server(503),
+            )
             val holder = holder(store, repository)
 
             holder.start()

@@ -21,9 +21,6 @@
 :feature:discovery|:core:designsystem|TASK-001
 :feature:discovery|:core:testing|TASK-001
 :feature:episodes|:core:presentation|TASK-008
-:feature:favorites|:core:domain|TASK-006
-:feature:favorites|:core:presentation|TASK-006
-:feature:favorites|:core:testing|TASK-006
 :feature:settings|:core:domain|TASK-074
 :feature:settings|:core:presentation|TASK-074
 :feature:settings|:core:designsystem|TASK-074
