@@ -163,6 +163,21 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations the later blocks inherit:** B5 replaces the two placeholders (`TASK-006`, `TASK-074`) and the Characters and Settings section titles (`TASK-001`, `TASK-074`); `TASK-009` adds the shared-element transition; the tone-30 accent pairs are already in `TEST-A11Y-002` and the placement of the portraits on the grid joins `TASK-001`/`TASK-002` (`DEC-099`).
 
+## 1.11 B5 Phase 5.3 (2026-10-03) — implemented on `feat/b5-phase-5-3`, awaiting its pull request
+
+**Phase 5.3 (`TASK-006`, #146; `TASK-074`, #147; `TASK-075`, #148; `TASK-076`, #149) is implemented and locally verified on `feat/b5-phase-5-3`, with `feat/b5-phase-5-2` merged into it** (`DEC-106`). What it delivers:
+
+- **`TASK-006` — Favorites:** `IC-020`'s declarations, the shared reducer and state holder, and the section that renders the same cards as Discovery. It resolves each favourite id through `IC-007`'s cached single-id read with bounded concurrency, which is the reading `DESIGN.md` §4.5 gives and `CONF-79` records against `IC-020`'s "no remote request" sentence.
+- **`TASK-074` — Settings:** `IC-021` over `IC-022` on both platforms, with a DataStore store on Android, a `UserDefaults` store on Apple, one contract proved once, and the `§6.5` screen with its three settings and its confirmation dialog.
+- **`TASK-075` — the protocol switch:** the third `IC-011` adapter posts the checked-in documents to `/graphql` with every user input as a variable, and the repository resolves its adapter **per request** from `IC-021`, so the protocol joins the request identity and the cache key; the pager observes a change as a new generation. No Apollo artifact resolves.
+- **`TASK-076` — Delete favorites:** the confirmation with Cancel and a destructive Delete, one clear that empties Favorites and Detail without a refresh, disabled when there are no favourites.
+- **The shell:** `startKoin` loads the feature modules, `MainActivity` builds the one `ImageSeam` and the one `DetailHandoff`, and the Favorites and Settings routes replace their placeholders.
+- **Observed gate:** `./gradlew check buildHealth verifyDependencyPolicy verifyDependencyInventory verifyDependencyPins` — BUILD SUCCESSFUL. `:core:data` 161 JVM / 182 Android-host, `:feature:favorites` 27, `:feature:settings` 18, `:androidApp` 26, all green.
+
+**B5 is complete when this phase merges:** all fifteen of its members are then `Done`, and B6 (Android validation and release) is the next block.
+
+**Not verified:** the phase pull request's CI run (not opened yet); the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
