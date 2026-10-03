@@ -46,7 +46,7 @@ public class FakeRemoteSource(
     }
 
     private val recorded = mutableListOf<Call>()
-    private val queuedFailures = ArrayDeque<ApiFailure>()
+    private val queuedFailures = mutableListOf<Queued>()
 
     /** Every remote call so far, in order, including calls that were later cancelled. */
     public val calls: List<Call> get() = recorded.toList()
@@ -55,9 +55,35 @@ public class FakeRemoteSource(
     public var cancellations: Int = 0
         private set
 
-    /** Makes the next remote call, of any kind, return [failure] as a value. Failures queue in order. */
-    public fun failNext(failure: ApiFailure) {
-        queuedFailures.addLast(failure)
+    /** Which remote call a queued failure is waiting for. */
+    public enum class Kind { Page, Details, Episodes }
+
+    /** One queued failure: what to answer, and which kind of call consumes it. */
+    private data class Queued(
+        val failure: ApiFailure,
+        val kind: Kind?,
+    )
+
+    /**
+     * Makes the next remote call of [kind] — or of any kind, when [kind] is `null` — return [failure]
+     * as a value. Failures queue in order.
+     *
+     * The [kind] filter exists because a repository test often needs one call of a sequence to
+     * succeed and a later one to fail: an enriched detail whose episode batch fails is a partial
+     * value, and which call failed decides whether the value is partial at all.
+     */
+    public fun failNext(
+        failure: ApiFailure,
+        kind: Kind? = null,
+    ) {
+        queuedFailures.addLast(Queued(failure, kind))
+    }
+
+    /** The failure reserved for [kind], consumed in queue order, or `null` when none waits. */
+    private fun nextFailure(kind: Kind): ApiFailure? {
+        val index = queuedFailures.indexOfFirst { it.kind == null || it.kind == kind }
+        if (index < 0) return null
+        return queuedFailures.removeAt(index).failure
     }
 
     private suspend fun respondAfterLatency() {
@@ -75,14 +101,14 @@ public class FakeRemoteSource(
     ): DataResult<CharacterPage> {
         recorded += Call.Page(filter, page)
         respondAfterLatency()
-        queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
+        nextFailure(Kind.Page)?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         return catalogue.page(filter, page)
     }
 
     override suspend fun characterDetails(id: CharacterId): DataResult<CharacterDetails> {
         recorded += Call.Details(id)
         respondAfterLatency()
-        queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
+        nextFailure(Kind.Details)?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         return catalogue.details(id)?.let { DataResult.Success(it, DataSource.NETWORK, isStale = false) }
             ?: DataResult.Failure(ApiFailure.NotFound(RemoteResources.CHARACTER, id.value), DataSource.NETWORK)
     }
@@ -91,7 +117,7 @@ public class FakeRemoteSource(
         if (ids.isEmpty()) return DataResult.Success(emptyList(), DataSource.NETWORK, isStale = false)
         recorded += Call.Episodes(ids)
         respondAfterLatency()
-        queuedFailures.removeFirstOrNull()?.let { return DataResult.Failure(it, DataSource.NETWORK) }
+        nextFailure(Kind.Episodes)?.let { return DataResult.Failure(it, DataSource.NETWORK) }
         val (summaries, warnings) = catalogue.episodes(ids)
         return DataResult.Success(summaries, DataSource.NETWORK, isStale = false, warnings = warnings)
     }
