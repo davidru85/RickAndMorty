@@ -8,20 +8,24 @@
 # Format: <module path>|<excluded dependency>|<task that consumes it>
 # The guard `verifyDependencyAdviceRegister` fails when the module gains production Kotlin
 # source outside its route declaration, so an exclusion cannot outlive its placeholder state.
+#
+# The `:core:designsystem` rows name the task whose feature screen first consumes the edge
+# (`DEC-081`, C4 of the B4 brief): `TASK-043` builds the design system, but a feature consumes it
+# only with its own screen, so each row points at that feature's task and is removed by it.
 :feature:character-detail|:core:domain|TASK-002
 :feature:character-detail|:core:presentation|TASK-002
-:feature:character-detail|:core:designsystem|TASK-043
+:feature:character-detail|:core:designsystem|TASK-002
 :feature:character-detail|:core:testing|TASK-002
 :feature:discovery|:core:domain|TASK-001
 :feature:discovery|:core:presentation|TASK-001
-:feature:discovery|:core:designsystem|TASK-043
+:feature:discovery|:core:designsystem|TASK-001
 :feature:discovery|:core:testing|TASK-001
-:feature:episodes|:core:designsystem|TASK-043
+:feature:episodes|:core:designsystem|TASK-008
 :feature:episodes|:core:presentation|TASK-008
 :feature:favorites|:core:domain|TASK-006
 :feature:favorites|:core:presentation|TASK-006
-:feature:favorites|:core:designsystem|TASK-043
+:feature:favorites|:core:designsystem|TASK-006
 :feature:favorites|:core:testing|TASK-006
 :feature:settings|:core:domain|TASK-074
 :feature:settings|:core:presentation|TASK-074
-:feature:settings|:core:designsystem|TASK-043
+:feature:settings|:core:designsystem|TASK-074

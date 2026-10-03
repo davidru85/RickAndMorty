@@ -60,7 +60,7 @@ class CharacterPortraitTest {
         compose.setContent {
             MultiverseTheme {
                 CharacterPortrait(
-                    imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                    imageUrl = "https://example.invalid/avatar/1.jpeg",
                     seam = seam,
                     decodePx = 1_024,
                     modifier = Modifier.size(200.dp),
@@ -78,7 +78,7 @@ class CharacterPortraitTest {
         )
         org.junit.Assert.assertEquals(
             "the URL is the cache key verbatim",
-            "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+            "https://example.invalid/avatar/1.jpeg",
             request.first,
         )
     }
@@ -89,7 +89,7 @@ class CharacterPortraitTest {
         compose.setContent {
             MultiverseTheme {
                 CharacterPortrait(
-                    imageUrl = "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+                    imageUrl = "https://example.invalid/avatar/2.jpeg",
                     seam = seam,
                     modifier = Modifier.size(200.dp),
                 )
@@ -108,7 +108,7 @@ class CharacterPortraitTest {
         compose.setContent {
             MultiverseTheme {
                 CharacterPortrait(
-                    imageUrl = "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+                    imageUrl = "https://example.invalid/avatar/3.jpeg",
                     seam = seam,
                     decodePx = 512,
                     portalMark = ColorPainter(Color.White),
@@ -142,7 +142,7 @@ class CharacterPortraitTest {
                     species = "Human",
                     statusTone = StatusTone.Alive,
                     statusLabel = "Alive",
-                    imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                    imageUrl = "https://example.invalid/avatar/1.jpeg",
                     seam = seam,
                     portalMark = null,
                 )
