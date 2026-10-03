@@ -67,6 +67,29 @@ object CopyParity {
         val appleFolder: String,
     )
 
+    /**
+     * The Android-completeness entry (`DEC-100`, `TASK-013`): the same parser and the same
+     * canonical comparison as [verify], applied to the one Android copy set that ships, in both
+     * locales. The cross-platform comparison stays [verify]'s, because it needs the Apple folder
+     * `TASK-060` adds.
+     */
+    fun verifyAndroid(
+        canonical: Set<String>,
+        androidResources: File,
+    ): List<ParityIssue> =
+        LOCALES.flatMap { locale ->
+            val android = File(androidResources, "${locale.androidFolder}/strings.xml").takeIf { it.isFile }?.let(AndroidStrings::parse)
+            buildList {
+                if (android == null) {
+                    add(ParityIssue.MissingResource(Platform.ANDROID, locale.tag))
+                    return@buildList
+                }
+                android.duplicates.sorted().forEach { add(ParityIssue.DuplicateKey(Platform.ANDROID, locale.tag, it)) }
+                (canonical - android.entries.keys).sorted().forEach { add(ParityIssue.MissingKey(Platform.ANDROID, locale.tag, it)) }
+                (android.entries.keys - canonical).sorted().forEach { add(ParityIssue.ExtraKey(Platform.ANDROID, locale.tag, it)) }
+            }
+        }
+
     fun verify(
         canonical: Set<String>,
         androidResources: File,
