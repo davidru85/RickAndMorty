@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controlled parity input for TEST-UNIT-036 (TASK-041, CONF-70): not the app's copy, which arrives
+     with TASK-013. It exercises the parser on placeholders, escapes, entities and quoting. -->
+<resources>
+    <string name="error_title">Portal link lost</string>
+    <string name="action_retry">Retry</string>
+    <string name="status_alive">Alive</string>
+    <string name="value_unknown">Unknown</string>
+    <string name="empty_search_message">No one in this dimension matches “%1$s”</string>
+    <string name="probe_escapes">Morty\'s \"portal\" gun &amp; 100%% sure</string>
+    <string name="probe_count">%1$d characters across the multiverse</string>
+</resources>

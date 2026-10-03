@@ -50,13 +50,20 @@ class PresentationPublicSurfaceTest {
         )
     }
 
+    /**
+     * The module's own classes: only the location its main classes were loaded from is read, so the
+     * test source set — this class and the parity verifier — is never mistaken for module surface.
+     */
     private fun publicClasses(): List<Class<*>> {
         val loader = javaClass.classLoader
+        val main =
+            LoadState::class.java.protectionDomain.codeSource.location
+                .toURI()
         return loader
             .getResources(root.replace('.', '/'))
             .toList()
+            .filter { it.toString().contains(main.toString().removePrefix("file:").trimEnd('/')) }
             .flatMap(::classNames)
-            .filterNot { it.endsWith("Test") || it.contains("Test$") }
             .distinct()
             .map { Class.forName(it, false, loader) }
             .filter { Modifier.isPublic(it.modifiers) && !it.isSynthetic }

@@ -1,0 +1,10 @@
+/* Controlled parity input for TEST-UNIT-036 (TASK-041, CONF-70): not the app's Spanish copy,
+   which arrives with TASK-060. */
+
+"error_title" = "Enlace al portal perdido";
+"action_retry" = "Reintentar";
+"status_alive" = "Vivo";
+"value_unknown" = "Desconocido";
+"empty_search_message" = "Nadie en esta dimensión coincide con “%1$@”";
+"probe_escapes" = "La pistola de \"portales\" de Morty & 100%% segura";
+"probe_count" = "%1$ld personajes en el multiverso";

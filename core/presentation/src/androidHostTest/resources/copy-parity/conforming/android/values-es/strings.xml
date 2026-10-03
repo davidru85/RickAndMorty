@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controlled parity input for TEST-UNIT-036 (TASK-041, CONF-70): not the app's Spanish copy,
+     which arrives with TASK-013. -->
+<resources>
+    <string name="error_title">Enlace al portal perdido</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="status_alive">Vivo</string>
+    <string name="value_unknown">Desconocido</string>
+    <string name="empty_search_message">Nadie en esta dimensión coincide con “%1$s”</string>
+    <string name="probe_escapes">La pistola de \"portales\" de Morty &amp; 100%% segura</string>
+    <string name="probe_count">%1$d personajes en el multiverso</string>
+</resources>
