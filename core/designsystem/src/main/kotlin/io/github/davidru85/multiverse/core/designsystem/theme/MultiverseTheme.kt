@@ -62,10 +62,9 @@ private val MultiverseColorScheme =
  * The surface-container roles carry the "Space Black" depth model, and the type scale is applied
  * through [MultiverseTypography] on the bundled Roboto Flex (`DEC-103`).
  *
- * The PascalCase name is Compose's convention for a theme factory (`MaterialTheme`), which is why the
- * ktlint function-naming rule is suppressed for this declaration alone.
+ * The PascalCase name is Compose's convention for a theme factory (`MaterialTheme`); the repository's
+ *  scopes that naming rule to the design system.
  */
-@Suppress("ktlint:standard:function-naming")
 @Composable
 public fun MultiverseTheme(content: @Composable () -> Unit) {
     MaterialTheme(
