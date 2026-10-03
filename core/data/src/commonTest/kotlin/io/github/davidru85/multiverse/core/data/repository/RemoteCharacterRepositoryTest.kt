@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
@@ -12,7 +13,6 @@ import io.github.davidru85.multiverse.core.domain.model.CharacterPage
 import io.github.davidru85.multiverse.core.domain.model.EpisodeId
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
-import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.FixtureLoader
 import io.github.davidru85.multiverse.testing.MockHttp

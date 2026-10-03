@@ -105,6 +105,7 @@ private fun encode(entry: CacheEntry): ByteArray {
     val validator = entry.validator?.encodeToByteArray()
     val buffer = ByteArray(HEADER + payload.size + (validator?.size ?: 0))
     var offset = 0
+
     fun putLong(value: Long) {
         for (shift in 56 downTo 0 step 8) {
             buffer[offset++] = (value ushr shift).toByte()
@@ -122,6 +123,7 @@ private fun encode(entry: CacheEntry): ByteArray {
 private fun decode(bytes: ByteArray): CacheEntry? {
     if (bytes.size < HEADER) return null
     var offset = 0
+
     fun readLong(): Long {
         var value = 0L
         repeat(8) { value = (value shl 8) or (bytes[offset++].toLong() and 0xFF) }

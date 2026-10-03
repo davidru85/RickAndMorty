@@ -105,11 +105,9 @@ internal object CachedPayloadMapper {
             imageUrl = imageUrl,
         )
 
-    private fun LocationSummary.record(): CachedLocation =
-        CachedLocation(id = id?.value, name = name, type = type, dimension = dimension)
+    private fun LocationSummary.record(): CachedLocation = CachedLocation(id = id?.value, name = name, type = type, dimension = dimension)
 
-    private fun EpisodeSummary.record(): CachedEpisode =
-        CachedEpisode(id = id.value, name = name, code = code, airDate = airDate)
+    private fun EpisodeSummary.record(): CachedEpisode = CachedEpisode(id = id.value, name = name, code = code, airDate = airDate)
 
     private fun CachedCharacter.domain(): CharacterSummary =
         CharacterSummary(
@@ -126,8 +124,7 @@ internal object CachedPayloadMapper {
     private fun CachedLocation.domain(): LocationSummary =
         LocationSummary(id = id?.let { LocationId(it) }, name = name, type = type, dimension = dimension)
 
-    private fun CachedEpisode.domain(): EpisodeSummary =
-        EpisodeSummary(id = EpisodeId(id), name = name, code = code, airDate = airDate)
+    private fun CachedEpisode.domain(): EpisodeSummary = EpisodeSummary(id = EpisodeId(id), name = name, code = code, airDate = airDate)
 
     /** The server's own string, so an unrecognised value survives the round trip unchanged. */
     private fun CharacterStatus.wireValue(): String =

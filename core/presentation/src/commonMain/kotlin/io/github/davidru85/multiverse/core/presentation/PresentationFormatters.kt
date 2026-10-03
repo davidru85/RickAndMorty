@@ -1,9 +1,9 @@
 package io.github.davidru85.multiverse.core.presentation
 
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
-import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.model.LocationSummary
+import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 
 /**
  * The shared presentation formatters (`IC-017`): pure functions over domain values, with no clock, no
@@ -95,8 +95,7 @@ public object DefaultPresentationFormatters : PresentationFormatters {
         return listOf(first.name, first.code).filter { it.isNotBlank() }.joinToString(SEPARATOR).ifEmpty { null }
     }
 
-    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? =
-        retryAfterSeconds?.takeIf { it >= 0 }?.toString()
+    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? = retryAfterSeconds?.takeIf { it >= 0 }?.toString()
 
     override fun charactersCount(count: Int): String = count.toString()
 

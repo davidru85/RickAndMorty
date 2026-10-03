@@ -205,7 +205,13 @@ class ResponseCacheIntegrationTest {
         TestTime.run {
             val remote = FakeRemoteSource(catalogue)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
-            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource)
+            val pager =
+                io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                    repository,
+                    this,
+                    logger,
+                    timeSource = testScheduler.timeSource,
+                )
 
             // Page 1 first, so the production cache holds a fresh entry for the identity a refresh uses.
             pager.setFilter(CharacterFilter())
@@ -224,7 +230,13 @@ class ResponseCacheIntegrationTest {
         TestTime.run {
             val remote = FakeRemoteSource(catalogue)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
-            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource)
+            val pager =
+                io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                    repository,
+                    this,
+                    logger,
+                    timeSource = testScheduler.timeSource,
+                )
             pager.setFilter(CharacterFilter())
 
             repeat(3) { remote.failNext(ApiFailure.Offline) }
@@ -236,16 +248,17 @@ class ResponseCacheIntegrationTest {
         }
 
     @Test
-    fun `TEST-UNIT-006 given_a_failed_load_over_the_production_cache_when_retry_succeeds_then_a_new_request_is_made_and_the_error_clears`() =
+    fun `TEST-UNIT-006 given_a_failed_load_over_the_production_cache_when_retry_succeeds_then_the_error_clears`() =
         TestTime.run {
             val remote = FakeRemoteSource(catalogue)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
-            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
-                repository,
-                this,
-                logger,
-                timeSource = testScheduler.timeSource,
-            )
+            val pager =
+                io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                    repository,
+                    this,
+                    logger,
+                    timeSource = testScheduler.timeSource,
+                )
 
             // The first load fails outright, so the pager holds a failure and no content.
             repeat(3) { remote.failNext(ApiFailure.Offline) }
@@ -267,12 +280,13 @@ class ResponseCacheIntegrationTest {
         TestTime.run {
             val remote = FakeRemoteSource(catalogue)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
-            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
-                repository,
-                this,
-                logger,
-                timeSource = testScheduler.timeSource,
-            )
+            val pager =
+                io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                    repository,
+                    this,
+                    logger,
+                    timeSource = testScheduler.timeSource,
+                )
 
             pager.setFilter(CharacterFilter())
             // A later append fails; the retry must re-attempt that append, not answer it from the
@@ -296,12 +310,13 @@ class ResponseCacheIntegrationTest {
         TestTime.run {
             val remote = FakeRemoteSource(catalogue, latency = kotlin.time.Duration.parse("5m"))
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
-            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
-                repository,
-                this,
-                logger,
-                timeSource = testScheduler.timeSource,
-            )
+            val pager =
+                io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                    repository,
+                    this,
+                    logger,
+                    timeSource = testScheduler.timeSource,
+                )
 
             val load = launch { pager.setFilter(CharacterFilter()) }
             runCurrent()
