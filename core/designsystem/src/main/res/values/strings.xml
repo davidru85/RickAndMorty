@@ -17,6 +17,11 @@
     <string name="splash_tagline">Every Rick. Every Morty. Every dimension.</string>
     <string name="splash_loading">Loading characters</string>
 
+    <!-- Discovery (UI_SPEC.md §6.2, TASK-001/TASK-004) -->
+    <string name="characters_count">%s characters across the multiverse</string>
+    <string name="search_characters">Search characters</string>
+    <string name="filter_all">All</string>
+
     <!-- Navigation (UI_SPEC.md §4.1) -->
     <string name="nav_characters">Characters</string>
     <string name="nav_episodes">Episodes</string>

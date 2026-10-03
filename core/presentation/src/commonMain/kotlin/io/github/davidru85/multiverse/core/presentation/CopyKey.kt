@@ -64,6 +64,14 @@ public object CopyKeys {
     public val FAVORITES_BODY: CopyKey = key("favorites_body")
     public val BROWSE_CHARACTERS: CopyKey = key("browse_characters")
 
+    // The Discovery surface (`TASK-001`, `TASK-004`, `UI_SPEC.md` §6.2): the headline's count line,
+    // the search field's placeholder and the first of the four filter options. The other three
+    // options reuse `status_alive`, `status_dead` and `value_unknown`, which the spec already
+    // words identically to the status treatment.
+    public val CHARACTERS_COUNT: CopyKey = key("characters_count")
+    public val SEARCH_CHARACTERS: CopyKey = key("search_characters")
+    public val FILTER_ALL: CopyKey = key("filter_all")
+
     /** Every registered key, in registration order. Declared last, so it sees every key above. */
     public val all: Set<CopyKey> = registered.toSet()
 }

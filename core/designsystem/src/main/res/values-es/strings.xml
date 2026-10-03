@@ -13,6 +13,11 @@
     <string name="splash_tagline">Cada Rick. Cada Morty. Cada dimensión.</string>
     <string name="splash_loading">Cargando personajes</string>
 
+    <!-- Discovery (UI_SPEC.md §6.2, TASK-001/TASK-004) -->
+    <string name="characters_count">%s personajes en el multiverso</string>
+    <string name="search_characters">Buscar personajes</string>
+    <string name="filter_all">Todos</string>
+
     <!-- Navigation (UI_SPEC.md §4.1) -->
     <string name="nav_characters">Personajes</string>
     <string name="nav_episodes">Episodios</string>
