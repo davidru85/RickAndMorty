@@ -4,6 +4,10 @@ import android.app.Application
 import io.github.davidru85.multiverse.app.di.ShellLogging
 import io.github.davidru85.multiverse.app.di.shellModules
 import io.github.davidru85.multiverse.core.data.di.coreModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailViewModelModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryViewModelModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,6 +47,12 @@ public open class MultiverseApplication : Application() {
             androidLogger(koinLevel())
             androidContext(this@MultiverseApplication)
             modules(coreModule)
+            modules(
+                discoveryModule,
+                discoveryViewModelModule,
+                characterDetailModule,
+                characterDetailViewModelModule,
+            )
             modules(shellModules(applicationScope, this@MultiverseApplication, logging()))
         }
     }

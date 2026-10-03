@@ -53,14 +53,14 @@ class DiagnosticsRecorderTest {
                 logger,
                 testScheduler.timeSource,
             )
+        // A store that retains nothing: this suite is about the records a request produces, and a real
+        // store would stop a repeat load from reaching the network at all.
         val repository =
             RemoteCharacterRepository(
                 remote,
                 backgroundScope,
                 FixedRandom(0.5),
                 logger,
-                // A store that retains nothing: this suite is about the records a request produces,
-                // and a real store would stop a repeat load from reaching the network at all.
                 ResponseCache(NoCacheStorage, MutableFakeClock(), CachePolicy(), logger),
             )
         return Stack(recorder, RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource), served)
