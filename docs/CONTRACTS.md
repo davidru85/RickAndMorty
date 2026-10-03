@@ -129,6 +129,7 @@ CacheStorage, CacheKey, CacheEntry       CONTRACTS.md IC-012       :core:data   
 FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data    commonMain
 CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain  commonMain (implemented in :core:data)
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
+DetailHandoff                            CONTRACTS.md IC-025       :core:presentation  commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -732,6 +733,26 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `dimensionText` prefers the enriched `origin.dimension` when enrichment was requested, then the designation in parentheses at the end of `origin.name` ("Earth (C-137)" → "C-137"); an unknown value is not a dimension.
   - Every `CopyKey` value produced by these formatters `MUST` exist in both the Android resource file and the iOS resource file; the parity test fails on a missing or extra key (`REQ-UX-008`, `AC-REQ-UX-008-1`, `DEC-020`).
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
+
+### IC-025 — `DetailHandoff`
+
+- **Declaration** (`:core:presentation`, `commonMain`):
+
+```kotlin
+class DetailHandoff {
+    fun publish(card: CharacterCardUi)
+    fun consume(id: CharacterId): CharacterCardUi?
+    fun clear()
+}
+```
+
+- **Semantics:** the card-to-detail hand-off (`DESIGN.md` §4.2). The detail screen must render the card the user tapped **before the network responds**, so the hero animates from the card's bounds and the known fields are on screen immediately (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`). Neither feature may name the other (ADR-0001), so the payload travels through this port: Discovery publishes one `CharacterCardUi`, Detail consumes the one matching the id it was routed with, and the composition root owns the single instance.
+- **Invariants**
+  - It holds at most one card, and never a list, a page or any network state: a screen reads it once on entry.
+  - `consume` returns the held card only when its id equals the requested one; a deep link or a process restart consumes nothing, which is why the detail screen renders from its own state in that case.
+  - It is not a cache: the card a consumer receives is the one that was published, and `clear` drops it rather than retaining it.
+  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`), which is the only composition-root edge to it beyond the shared copy keys.
+- **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-009`, `DESIGN.md` §4.2, `DEC-013`.
 
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 

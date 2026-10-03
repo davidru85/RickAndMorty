@@ -163,6 +163,20 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations the later blocks inherit:** B5 replaces the two placeholders (`TASK-006`, `TASK-074`) and the Characters and Settings section titles (`TASK-001`, `TASK-074`); `TASK-009` adds the shared-element transition; the tone-30 accent pairs are already in `TEST-A11Y-002` and the placement of the portraits on the grid joins `TASK-001`/`TASK-002` (`DEC-099`).
 
+## 1.10 B5 Phase 5.2 (2026-10-03) — implemented on `feat/b5-phase-5-2`, awaiting its pull request
+
+**Phase 5.2 (`TASK-001`, #138; `TASK-002`, #139; `TASK-003`, #140; `TASK-004`, #141; `TASK-023`, #142; `TASK-009`, #143; `TASK-010`, #144) is implemented and locally verified on `feat/b5-phase-5-2`; it is not `Done` until the owner merges the phase pull request** (`DEC-106`). What it delivers:
+
+- **`TASK-001`/`TASK-003`/`TASK-004`/`TASK-010` — Discovery:** `IC-018`'s state and intents, a shared reducer that owns the 300 ms debounce, `distinctUntilChanged`, the cancellation of superseded work and the page-1 reset, and the `§6.2` screen: the search field, the count line formatted once through `IC-017.charactersCount`, four filter chips, a two-column staggered grid of the design system's cards, six skeletons while loading, the paging indicator, the stale banner and both the error surface and the designed empty-results state.
+- **`TASK-002`/`TASK-023` — Detail:** `IC-019`'s declarations, the shared reducer and state holder, the hero portrait through the `DEC-097` seam, the three connected stat tiles, the info list with the enrichment-aware rows, the favourite toggle reconciled with `ObserveFavoriteIds`, and the inline error that keeps the header.
+- **`TASK-009` — the transition:** `PortraitMotion` fixes the 450 ms Emphasized Decelerate container transform, the shared-element key derived from the canonical id, and the cross-fade Reduce Motion substitutes (`AC-REQ-FUNC-009-2` in the form a test can decide). The keyed modifier itself stays `:core:designsystem`'s.
+- **`IC-025`:** the shared card-to-detail hand-off `DESIGN.md` §4.2 required and no contract declared. It lives in `:core:presentation`, the shell owns the single instance, Discovery publishes and Detail consumes.
+- **Observed gate:** `./gradlew check buildHealth verifyDependencyPolicy verifyDependencyInventory verifyDependencyPins` — BUILD SUCCESSFUL. `:core:data` 137 JVM / 158 Android-host, `:feature:discovery` 13, `:feature:character-detail` 24, `:androidApp` 26, all green. Red was observed before each green.
+
+**Obligations phase 5.3 inherits:** its shell wiring must compose the two new routes rather than the placeholders; the card-to-detail hand-off instance it creates is the one both features share; and `TASK-075`'s per-request protocol selection is the identity change the Discovery pager already observes.
+
+**Not verified:** the phase pull request's CI run (not opened yet); the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.
