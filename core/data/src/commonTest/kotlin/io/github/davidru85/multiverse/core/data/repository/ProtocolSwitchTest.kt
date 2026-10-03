@@ -7,6 +7,7 @@ import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.RemoteProtocolSource
 import io.github.davidru85.multiverse.core.data.remote.settingsProtocolSource
+import io.github.davidru85.multiverse.core.domain.model.AppSettings
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
@@ -22,10 +23,14 @@ import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -41,11 +46,16 @@ import kotlin.time.Duration.Companion.milliseconds
  * `TEST-UNIT-034`, `TEST-UNIT-048` and `TEST-UNIT-049` — the runtime protocol switch of `REQ-FUNC-034`
  * (`AC-REQ-FUNC-034-1`…`AC-REQ-FUNC-034-4`, `DEC-056`, `adr/0011-runtime-remote-protocol.md`).
  *
- * The active protocol is a per-request decision: the repository asks its [RemoteProtocolSource], and
- * the pager observes the same source's changes. A switch is therefore an identity change — the load
- * in flight is cancelled, the pager resets to page 1 and reloads through the newly selected adapter,
- * and the two protocols' cache keys never collide, so a switch neither evicts nor reuses the other's
+ * The active protocol is a per-request decision: the repository asks its [RemoteProtocolSource], and the
+ * pager observes the same source's changes. A switch is therefore an identity change — the load in
+ * flight is cancelled, the pager resets to page 1 and reloads through the newly selected adapter, and
+ * the two protocols' cache keys never collide, so a switch neither evicts nor reuses the other's
  * entries.
+ *
+ * Both the repository's shared work and the pager's protocol observer live as long as an owner, which in
+ * an app is a screen's state holder. Each case therefore gives them a real owner on the test scheduler
+ * and closes it at the end, exactly as a closed screen does: `runTest` refuses to finish while a
+ * coroutine suspended in its own scope remains, so a case that left that owner open could never pass.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProtocolSwitchTest {
@@ -54,24 +64,48 @@ class ProtocolSwitchTest {
     private val restCatalogue = FakeCatalogue((1..45).map { FakeCatalogue.character("$it", name = "Rest $it") })
     private val graphQlCatalogue = FakeCatalogue((1..45).map { FakeCatalogue.character("$it", name = "GraphQl $it") })
 
-    /** The active protocol as one mutable source, observed by the repository and by the pager. */
+    /**
+     * The active protocol as one source, read by the repository and observed by the pager.
+     *
+     * A `MutableStateFlow` replays its current value to a new collector, and a replayed value is not a
+     * switch — the rule [RemoteProtocolSource] states and `settingsProtocolSource` honours — so
+     * [changes] drops it.
+     */
     private class TestProtocolSource(
         private val protocols: MutableStateFlow<RemoteProtocol>,
     ) : RemoteProtocolSource {
         override suspend fun current(): RemoteProtocol = protocols.value
 
-        override fun changes(): Flow<RemoteProtocol> = protocols
+        override fun changes(): Flow<RemoteProtocol> = protocols.drop(SEED)
+    }
+
+    /** The `IC-021` repository over the harness's store, for the selector's own case. */
+    private class FakeRepository(
+        private val store: FakeAppSettingsStore,
+    ) : AppSettingsRepository {
+        override fun observe(): Flow<AppSettings> = MutableStateFlow(store.value)
+
+        override suspend fun update(change: (AppSettings) -> AppSettings) {
+            store.write(change(store.value))
+        }
     }
 
     private fun logger() = ValidatingAppLogger.forDebug(RecordingLogSink())
 
     private fun cache(storage: FakeCacheStorage) = ResponseCache(storage, MutableFakeClock(), CachePolicy(), logger())
 
-    /**
-     * The repository under the test's own scope and virtual dispatcher: the shared work must run in the
-     * test scheduler's time, or a latency the case reasons about elapses on a real thread.
-     */
-    private fun TestScope.repository(
+    /** Runs [body] with an owner scope on the test scheduler, and closes it afterwards. */
+    private suspend fun TestScope.owned(body: suspend (CoroutineScope) -> Unit) {
+        val owner = CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher(testScheduler))
+        try {
+            body(owner)
+        } finally {
+            owner.cancel()
+        }
+    }
+
+    private fun repository(
+        owner: CoroutineScope,
         rest: FakeRemoteSource,
         graphQl: FakeRemoteSource,
         protocols: MutableStateFlow<RemoteProtocol>,
@@ -79,17 +113,18 @@ class ProtocolSwitchTest {
     ) = RemoteCharacterRepository(
         rest = rest,
         graphQl = graphQl,
-        scope = this,
+        scope = owner,
         random = FixedRandom(0.5),
         logger = logger(),
         cache = cache(storage),
         protocols = TestProtocolSource(protocols),
     )
 
-    private fun TestScope.pager(
+    private fun pager(
+        owner: CoroutineScope,
         repository: RemoteCharacterRepository,
         protocols: Flow<RemoteProtocol>,
-    ) = RepositoryCharacterPager(repository, this, logger(), protocolChanges = protocols)
+    ) = RepositoryCharacterPager(repository, owner, logger(), protocolChanges = protocols)
 
     /** Every state the pager publishes, in order: an unconfined collector sees each value it is set to. */
     private fun TestScope.record(pager: CharacterPager): List<PagerState> {
@@ -109,16 +144,18 @@ class ProtocolSwitchTest {
     @Test
     fun `TEST-UNIT-034 given_a_fresh_install_when_a_page_loads_then_the_rest_adapter_answers`() =
         TestTime.run {
-            // `AC-REQ-FUNC-034-1`: `AppSettings.remoteProtocol` defaults to REST, and the source
-            // resolves the default without a settings read.
+            // `AC-REQ-FUNC-034-1`: `AppSettings.remoteProtocol` defaults to REST, and the source resolves
+            // the default without a settings read.
             val rest = FakeRemoteSource(restCatalogue)
             val graphQl = FakeRemoteSource(graphQlCatalogue)
 
-            val page = repository(rest, graphQl, MutableStateFlow(RemoteProtocol.Rest)).page(all, 1).value()
+            owned { owner ->
+                val page = repository(owner, rest, graphQl, MutableStateFlow(RemoteProtocol.Rest)).page(all, 1).value()
 
-            assertEquals("Rest 1", page.characters.first().name, "TEST-UNIT-034: the default protocol is REST")
-            assertEquals(1, rest.calls.size)
-            assertTrue(graphQl.calls.isEmpty(), "TEST-UNIT-034: the unselected adapter is never called")
+                assertEquals("Rest 1", page.characters.first().name, "TEST-UNIT-034: the default protocol is REST")
+                assertEquals(1, rest.calls.size)
+                assertTrue(graphQl.calls.isEmpty(), "TEST-UNIT-034: the unselected adapter is never called")
+            }
         }
 
     @Test
@@ -128,10 +165,7 @@ class ProtocolSwitchTest {
             val source = settingsProtocolSource(settings = FakeRepository(store))
 
             assertEquals(RemoteProtocol.Rest, source.current(), "TEST-UNIT-034: a fresh install reads REST (AC-REQ-FUNC-034-1)")
-            store.write(
-                io.github.davidru85.multiverse.core.domain.model
-                    .AppSettings(remoteProtocol = RemoteProtocol.GraphQl),
-            )
+            store.write(AppSettings(remoteProtocol = RemoteProtocol.GraphQl))
             assertEquals(
                 RemoteProtocol.GraphQl,
                 source.current(),
@@ -145,44 +179,48 @@ class ProtocolSwitchTest {
             val rest = FakeRemoteSource(restCatalogue, latency = 300.milliseconds)
             val graphQl = FakeRemoteSource(graphQlCatalogue)
             val protocols = MutableStateFlow(RemoteProtocol.Rest)
-            val pager = pager(repository(rest, graphQl, protocols), protocols)
-            val states = record(pager)
 
-            val superseded = async { pager.setFilter(all) }
-            advanceTimeBy(100)
-            protocols.value = RemoteProtocol.GraphQl
-            advanceUntilIdle()
-            superseded.await()
+            owned { owner ->
+                val repository = repository(owner, rest, graphQl, protocols)
+                val pager = pager(owner, repository, TestProtocolSource(protocols).changes())
+                val states = record(pager)
 
-            assertEquals(1, rest.cancellations, "TEST-UNIT-048: the switch cancels the load in flight (AC-REQ-FUNC-034-2)")
-            assertEquals(
-                listOf(1 to all, 1 to all),
-                listOf(
-                    rest.calls
-                        .single()
-                        .page()
-                        .let { it.page to it.filter },
-                ) +
+                val superseded = async { pager.setFilter(all) }
+                advanceTimeBy(100)
+                protocols.value = RemoteProtocol.GraphQl
+                advanceUntilIdle()
+                superseded.await()
+
+                assertEquals(1, rest.cancellations, "TEST-UNIT-048: the switch cancels the load in flight (AC-REQ-FUNC-034-2)")
+                assertEquals(
+                    listOf(1 to all, 1 to all),
                     listOf(
-                        graphQl.calls
+                        rest.calls
                             .single()
                             .page()
                             .let { it.page to it.filter },
-                    ),
-                "TEST-UNIT-048: page 1 of the same filter is reloaded through the newly selected adapter",
-            )
-            assertTrue(
-                states.none { state -> state.items.any { it.name.startsWith("Rest ") } },
-                "TEST-UNIT-048: no item fetched through the previous protocol is ever emitted",
-            )
-            assertTrue(states.none { it.failure != null }, "TEST-UNIT-048: a cancellation is never a failure (API-ERR-017)")
-            assertEquals(
-                (1..20).map { "GraphQl $it" },
-                pager.state.value.items
-                    .map { it.name },
-            )
-            assertEquals(all, pager.state.value.filter, "TEST-UNIT-048: the filter is kept; only the identity changed")
-            assertFalse(pager.state.value.isStale)
+                    ) +
+                        listOf(
+                            graphQl.calls
+                                .single()
+                                .page()
+                                .let { it.page to it.filter },
+                        ),
+                    "TEST-UNIT-048: page 1 of the same filter is reloaded through the newly selected adapter",
+                )
+                assertTrue(
+                    states.none { state -> state.items.any { it.name.startsWith("Rest ") } },
+                    "TEST-UNIT-048: no item fetched through the previous protocol is ever emitted",
+                )
+                assertTrue(states.none { it.failure != null }, "TEST-UNIT-048: a cancellation is never a failure (API-ERR-017)")
+                assertEquals(
+                    (1..20).map { "GraphQl $it" },
+                    pager.state.value.items
+                        .map { it.name },
+                )
+                assertEquals(all, pager.state.value.filter, "TEST-UNIT-048: the filter is kept; only the identity changed")
+                assertFalse(pager.state.value.isStale)
+            }
         }
 
     @Test
@@ -191,23 +229,27 @@ class ProtocolSwitchTest {
             val rest = FakeRemoteSource(restCatalogue)
             val graphQl = FakeRemoteSource(graphQlCatalogue)
             val protocols = MutableStateFlow(RemoteProtocol.Rest)
-            val pager = pager(repository(rest, graphQl, protocols), protocols)
-            pager.setFilter(all)
-            assertEquals(20, pager.state.value.items.size)
 
-            pager.next()
-            assertEquals(40, pager.state.value.items.size, "the append is in place before the switch")
+            owned { owner ->
+                val repository = repository(owner, rest, graphQl, protocols)
+                val pager = pager(owner, repository, TestProtocolSource(protocols).changes())
+                pager.setFilter(all)
+                assertEquals(20, pager.state.value.items.size)
 
-            protocols.value = RemoteProtocol.GraphQl
-            advanceUntilIdle()
+                pager.next()
+                assertEquals(40, pager.state.value.items.size, "the append is in place before the switch")
 
-            assertEquals(
-                (1..20).map { "GraphQl $it" },
-                pager.state.value.items
-                    .map { it.name },
-                "TEST-UNIT-048: a switch resets to page 1 rather than appending to the other protocol's pages",
-            )
-            assertFalse(pager.state.value.isEndReached)
+                protocols.value = RemoteProtocol.GraphQl
+                advanceUntilIdle()
+
+                assertEquals(
+                    (1..20).map { "GraphQl $it" },
+                    pager.state.value.items
+                        .map { it.name },
+                    "TEST-UNIT-048: a switch resets to page 1 rather than appending to the other protocol's pages",
+                )
+                assertFalse(pager.state.value.isEndReached)
+            }
         }
 
     @Test
@@ -231,22 +273,25 @@ class ProtocolSwitchTest {
             val rest = FakeRemoteSource(restCatalogue)
             val graphQl = FakeRemoteSource(graphQlCatalogue)
             val protocols = MutableStateFlow(RemoteProtocol.Rest)
-            val repository = repository(rest, graphQl, protocols, storage)
 
-            val overRest = repository.page(all, 1).value()
-            protocols.value = RemoteProtocol.GraphQl
-            val overGraphQl = repository.page(all, 1).value()
+            owned { owner ->
+                val repository = repository(owner, rest, graphQl, protocols, storage)
 
-            assertEquals("Rest 1", overRest.characters.first().name)
-            assertEquals(
-                "GraphQl 1",
-                overGraphQl.characters.first().name,
-                "TEST-UNIT-049: the switch reaches the network, never the other protocol's entry",
-            )
-            assertEquals(1, graphQl.calls.size, "TEST-UNIT-049: and it does not reuse the REST entry")
-            assertEquals(2, storage.keys.size, "TEST-UNIT-049: a switch evicts nothing (AC-REQ-FUNC-034-4)")
-            assertTrue(storage.keys.any { it.value.startsWith("rest|GET|/api/character|") }, "TEST-UNIT-049: the REST entry survives")
-            assertTrue(storage.keys.any { it.value.startsWith("graphql|POST|/graphql|") }, "TEST-UNIT-049: and GraphQL has its own")
+                val overRest = repository.page(all, 1).value()
+                protocols.value = RemoteProtocol.GraphQl
+                val overGraphQl = repository.page(all, 1).value()
+
+                assertEquals("Rest 1", overRest.characters.first().name)
+                assertEquals(
+                    "GraphQl 1",
+                    overGraphQl.characters.first().name,
+                    "TEST-UNIT-049: the switch reaches the network, never the other protocol's entry",
+                )
+                assertEquals(1, graphQl.calls.size, "TEST-UNIT-049: and it does not reuse the REST entry")
+                assertEquals(2, storage.keys.size, "TEST-UNIT-049: a switch evicts nothing (AC-REQ-FUNC-034-4)")
+                assertTrue(storage.keys.any { it.value.startsWith("rest|GET|/api/character|") }, "TEST-UNIT-049: the REST entry survives")
+                assertTrue(storage.keys.any { it.value.startsWith("graphql|POST|/graphql|") }, "TEST-UNIT-049: and GraphQL has its own")
+            }
         }
 
     @Test
@@ -256,42 +301,35 @@ class ProtocolSwitchTest {
             val rest = FakeRemoteSource(restCatalogue)
             val graphQl = FakeRemoteSource(graphQlCatalogue)
             val protocols = MutableStateFlow(RemoteProtocol.Rest)
-            val repository = repository(rest, graphQl, protocols, storage)
-            repository.page(all, 1)
-            protocols.value = RemoteProtocol.GraphQl
-            repository.page(all, 1)
 
-            protocols.value = RemoteProtocol.Rest
-            val served = repository.page(all, 1)
+            owned { owner ->
+                val repository = repository(owner, rest, graphQl, protocols, storage)
+                repository.page(all, 1)
+                protocols.value = RemoteProtocol.GraphQl
+                repository.page(all, 1)
 
-            assertEquals(
-                DataSource.DISK_CACHE,
-                served.source,
-                "TEST-UNIT-049: the REST entry was never evicted by the switch (AC-REQ-FUNC-034-4)",
-            )
-            assertEquals(
-                "Rest 1",
-                served
-                    .value()
-                    .characters
-                    .first()
-                    .name,
-            )
-            assertEquals(1, rest.calls.size, "TEST-UNIT-049: and the cached page is not fetched again")
+                protocols.value = RemoteProtocol.Rest
+                val served = repository.page(all, 1)
+
+                assertEquals(
+                    DataSource.DISK_CACHE,
+                    served.source,
+                    "TEST-UNIT-049: the REST entry was never evicted by the switch (AC-REQ-FUNC-034-4)",
+                )
+                assertEquals(
+                    "Rest 1",
+                    served
+                        .value()
+                        .characters
+                        .first()
+                        .name,
+                )
+                assertEquals(1, rest.calls.size, "TEST-UNIT-049: and the cached page is not fetched again")
+            }
         }
 
-    /** The `IC-021` repository over the harness's store, for the source's own case. */
-    private class FakeRepository(
-        private val store: FakeAppSettingsStore,
-    ) : AppSettingsRepository {
-        override fun observe(): Flow<io.github.davidru85.multiverse.core.domain.model.AppSettings> = MutableStateFlow(store.value)
-
-        override suspend fun update(
-            change: (
-                io.github.davidru85.multiverse.core.domain.model.AppSettings,
-            ) -> io.github.davidru85.multiverse.core.domain.model.AppSettings,
-        ) {
-            store.write(change(store.value))
-        }
+    private companion object {
+        /** A seeded `StateFlow` replays one value; dropping it leaves transitions only. */
+        const val SEED = 1
     }
 }
