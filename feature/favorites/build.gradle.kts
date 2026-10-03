@@ -34,7 +34,9 @@ kotlin {
             // (GUIDELINES.md 5.1, ADR-0008 rule 2).
             api(libs.androidx.compose.runtime)
             api(libs.androidx.compose.ui)
-            implementation(libs.androidx.compose.ui.graphics)
+            // The illustration the caller passes in is a `Painter`, so `ui-graphics` is part of the
+            // module's public surface.
+            api(libs.androidx.compose.ui.graphics)
         }
         commonTest.dependencies {
             implementation(project(":core:testing"))
