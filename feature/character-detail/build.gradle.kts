@@ -83,6 +83,10 @@ kotlin {
             api(libs.androidx.compose.ui)
             // The inline-error and portrait surfaces the screen composes take a `Painter`.
             api(libs.androidx.compose.ui.graphics)
+            // The ViewModel is bound with Koin's `viewModel` DSL and the screen resolves it with
+            // `koinViewModel()`, so both surfaces are the module's own (DESIGN.md §5).
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
             // The Android state holder of `IC-019` (`DESIGN.md` §5, ADR-0006).
             api(libs.androidx.lifecycle.viewmodel)
             // `CharacterDetailViewModel` exposes a `StateFlow`, so `kotlinx-coroutines-core` is part

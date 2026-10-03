@@ -51,6 +51,7 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
+import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.DisplayText
@@ -81,6 +82,12 @@ public fun DiscoveryScreen(
     seam: ImageSeam = PreviewSeam,
     /** The painter the empty and error surfaces draw; the shell passes the app's own illustration. */
     illustration: Painter = ColorPainter(Color.Transparent),
+    /**
+     * The card the user tapped, so the caller publishes it to the `IC-025` hand-off and navigates
+     * (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`). The screen does not navigate itself, and it does not know
+     * the detail destination exists (`ADR-0001`).
+     */
+    onOpenDetail: (CharacterCardUi) -> Unit = {},
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -98,7 +105,13 @@ public fun DiscoveryScreen(
                 )
 
             LoadState.Loading, LoadState.Content ->
-                CharacterGrid(state = state, onIntent = onIntent, seam = seam, gridState = gridState)
+                CharacterGrid(
+                    state = state,
+                    onIntent = onIntent,
+                    seam = seam,
+                    gridState = gridState,
+                    onOpenDetail = onOpenDetail,
+                )
         }
     }
 }
@@ -238,6 +251,7 @@ private fun CharacterGrid(
     onIntent: (CharacterListIntent) -> Unit,
     seam: ImageSeam,
     gridState: LazyStaggeredGridState,
+    onOpenDetail: (CharacterCardUi) -> Unit,
 ) {
     val items = state.items
     if (state.loadState == LoadState.Content) {
@@ -266,6 +280,7 @@ private fun CharacterGrid(
                         imageUrl = card.imageUrl,
                         seam = seam,
                         height = heightOf(index),
+                        onClick = { onOpenDetail(card) },
                     )
                 }
             }

@@ -106,4 +106,10 @@ public fun imageLoaderModule(
                 diskCacheDirectory = io.github.davidru85.multiverse.app.image.imageCacheDirectory(context),
             )
         }
+        single<io.github.davidru85.multiverse.core.designsystem.image.ImageSeam> {
+            io.github.davidru85.multiverse.app.image.CoilImageSeam(
+                context = context,
+                imageLoader = get(),
+            )
+        }
     }
