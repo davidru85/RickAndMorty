@@ -61,15 +61,21 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core:domain"))
-            implementation(project(":core:presentation"))
+            // `FavoritesStateHolder`'s surface and the state contracts `IC-018`/`IC-019` are the
+            // module's own public shape, so the three edges it composes them from are `api`.
+            api(project(":core:domain"))
+            api(project(":core:presentation"))
             // `favoritesModule` is a Koin module; the composition roots load it (`DEC-091`,
-            // `DESIGN.md` §5), so the DI library is a shared-production dependency.
-            implementation(libs.koin.core)
+            // `DESIGN.md` §5), so the DI library is a shared-production dependency and part of the
+            // module's surface.
+            api(libs.koin.core)
             api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
-            implementation(project(":core:designsystem"))
+            // The screen composes the design-system components and resolves their copy, so the
+            // design-system edge is part of the module's exposed surface (ADR-0001, `DESIGN.md` §3.4
+            // rule 5), as are Compose runtime/UI and the state holder.
+            api(project(":core:designsystem"))
             // The screen's public surface is a composable over `Modifier`, Compose runtime and painter
             // types, and `FavoritesViewModel` exposes a `StateFlow`, so those are part of what the
             // module exposes and are declared `api`; the design system exports the BOM and Material 3
@@ -82,13 +88,34 @@ kotlin {
             api(libs.androidx.compose.ui.graphics)
             // The Android state holder of `IC-020` (`DESIGN.md` §5, ADR-0006).
             api(libs.androidx.lifecycle.viewmodel)
-            // The favourites grid is a `LazyVerticalStaggeredGrid`; the module uses `foundation`
-            // rather than exposing it.
+            // `FavoritesStateHolder` exposes a coroutine-backed `StateFlow`, so the concurrency
+            // runtime is part of its surface too.
+            api(libs.kotlinx.coroutines.core)
+            // The favourites grid is a `LazyVerticalStaggeredGrid`; the module uses `foundation` and
+            // the grid's own layout primitives, and the staggered grid's public parameter types come
+            // from `foundation-layout`, so that one is `api` while the rest of foundation is not.
+            api(libs.androidx.compose.foundation.layout)
             implementation(libs.androidx.compose.foundation)
-            // `favoritesViewModelModule` declares the ViewModel with Koin's `viewModel` DSL, and
-            // `FavoritesRoute` resolves it with `koinViewModel()`.
+            // The screen names Material 3 types (`MaterialTheme`, `Text`, `TextButton`) directly, so
+            // the artifact is declared where it is used. `:core:designsystem` still owns the pin: it
+            // exports Material 3, and this declaration takes its version from the same BOM (ADR-0008
+            // rule 2, `GUIDELINES.md` §5.1).
+            implementation(libs.androidx.compose.material3)
+            // The route's `collectAsStateWithLifecycle`, Koin `viewModel`/`koinViewModel` resolution
+            // and Compose foundation/UI text types; dependency analysis asks the module to state each
+            // where it uses it.
+            implementation(libs.androidx.compose.ui.text)
+            implementation(libs.androidx.lifecycle.common)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.core.viewmodel)
+            // `FavoritesRoute` resolves its ViewModel with Koin's Compose `koinViewModel()`, which the
+            // module *uses* rather than exposes, so the edge is `implementation` (dependency
+            // analysis).
+            implementation(libs.koin.androidx.compose)
+            // `favoritesViewModelModule` declares the ViewModel with Koin's Android `viewModel` DSL.
             implementation(libs.koin.android)
-            api(libs.koin.androidx.compose)
         }
         commonTest.dependencies {
             // `DEC-089`: the harness is a test source set's dependency only.
@@ -105,11 +132,27 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)
             implementation(libs.junit4)
-            implementation(libs.robolectric)
+            // Robolectric is the runtime that executes these cases; they never name its API, so it is
+            // a runtime dependency rather than a compile one (dependency analysis, `DEC-077`).
+            runtimeOnly(libs.robolectric)
+            // The Compose rule's own surface, which the cases name directly; the BOM governs it, so
+            // the version comes from `:core:designsystem`'s platform edge.
             implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.compose.ui.test)
+            // The JUnit 4 runner adapter the Android host tests execute on.
+            implementation(libs.androidx.test.ext.junit)
+            // `FavoritesStateHolder` and the reducer are coroutine-backed, so the cases use the
+            // concurrency runtime directly.
+            implementation(libs.kotlinx.coroutines.core)
+            // Robolectric's annotation surface (`@Config`) and the shadows it loads, both declared
+            // where the cases use them instead of reached transitively (`DEC-077`).
+            implementation(libs.robolectric.annotations)
+            implementation(libs.robolectric.shadows.framework)
             // The Compose rule hosts its content in a provided activity; the artifact supplies it to
-            // the test manifest, so a case needs no activity of the module's own.
-            implementation(libs.androidx.compose.ui.test.manifest)
+            // the test manifest. The cases never name the artifact's API, so it is a runtime
+            // dependency that the Android host-test manifest merge consumes (dependency analysis,
+            // `DEC-077`).
+            runtimeOnly(libs.androidx.compose.ui.test.manifest)
         }
     }
 }
