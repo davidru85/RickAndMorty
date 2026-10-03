@@ -7,6 +7,7 @@ import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.diagnostics.DiagnosticsRecorder
 import io.github.davidru85.multiverse.core.domain.logging.LogRecord
 import io.github.davidru85.multiverse.core.domain.logging.LogSink
+import org.koin.core.logger.Level as KoinLevel
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -31,4 +32,7 @@ public class DebugMultiverseApplication : MultiverseApplication() {
 
             override fun extraModules(logger: ValidatingAppLogger): List<Module> = listOf(module { single { recorder } })
         }
+
+    /** The debug variant reads the DEBUG threshold, the same one its own logger enables (DEC-039). */
+    override fun koinLevel(): KoinLevel = KoinLevel.DEBUG
 }

@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.Koin
+import org.koin.core.logger.Level as KoinLevel
 import org.koin.dsl.koinApplication
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -68,4 +69,16 @@ class ShellGraphTest {
             assertTrue("a release build must not enable INFO", !logger.isEnabled(LogLevel.INFO))
             assertTrue("a release build must enable ERROR", logger.isEnabled(LogLevel.ERROR))
         }
+
+    @Test
+    fun `TEST-UNIT-057 given_the_base_application_when_koin_is_started_then_the_default_koin_level_is_error`() {
+        // Dec-039 forbids any log line below ERROR in a release build — Koin's included. The base
+        // class derives Koin's level from the same variant seam; the debug subclass is covered by
+        // its own threshold behaviour. A regression to the framework default (INFO) fails here.
+        org.junit.Assert.assertEquals(
+            "the release variant must not let Koin log below ERROR (DEC-039)",
+            KoinLevel.ERROR,
+            MultiverseApplication().koinLevel(),
+        )
+    }
 }
