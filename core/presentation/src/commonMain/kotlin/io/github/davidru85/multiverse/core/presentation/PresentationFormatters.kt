@@ -29,19 +29,27 @@ public interface PresentationFormatters {
     /** The first episode as "name · code", or `null` when enrichment was not requested or found none. */
     public fun firstSeenText(summaries: List<EpisodeSummary>?): String?
 
-    /** Stub: the countdown `error_message_rate_limited` substitutes (`GAP-027`). */
+    /**
+     * The countdown `error_message_rate_limited` substitutes (`GAP-027`, `ERROR_FLOW.md` §4.1).
+     *
+     * `null` when the server advised nothing usable, so the message renders without an invented
+     * number; otherwise the advised seconds, which both platforms substitute identically.
+     */
     public fun rateLimitCountdown(retryAfterSeconds: Long?): String?
 
-    /** Stub: the message of a failure (`ERROR_FLOW.md` §4). */
+    /** The message of [failure] (`ERROR_FLOW.md` §4), with the values its wording substitutes. */
     public fun failureMessage(failure: ApiFailure): FailureMessage
 
-    /** Stub: the shared full-surface error title. */
+    /** The shared full-surface error title (`ERROR_FLOW.md` §4.1). */
     public fun failureTitle(): CopyKey
 
-    /** Stub: the retry affordance's key. */
+    /** The retry affordance's key (`ERROR_FLOW.md` §10). */
     public fun retryAction(): CopyKey
 
-    /** Stub: whether the retry policy may retry this failure automatically. */
+    /**
+     * Whether the retry policy may re-attempt [failure] automatically (`ERROR_FLOW.md` §10,
+     * `API-ERR-003`/`006`/`008`/`009`: never for TLS, another `4xx`, an empty body or a decode failure).
+     */
     public fun isAutomaticallyRetryable(failure: ApiFailure): Boolean
 }
 
@@ -79,15 +87,39 @@ public object DefaultPresentationFormatters : PresentationFormatters {
         return listOf(first.name, first.code).filter { it.isNotBlank() }.joinToString(SEPARATOR).ifEmpty { null }
     }
 
-    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? = null
+    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? =
+        retryAfterSeconds?.takeIf { it >= 0 }?.toString()
 
-    override fun failureMessage(failure: ApiFailure): FailureMessage = FailureMessage(CopyKeys.ERROR_MESSAGE_UNKNOWN)
+    override fun failureMessage(failure: ApiFailure): FailureMessage =
+        when (failure) {
+            ApiFailure.Offline -> FailureMessage(CopyKeys.ERROR_MESSAGE_OFFLINE)
+            ApiFailure.Timeout -> FailureMessage(CopyKeys.ERROR_MESSAGE_TIMEOUT)
+            is ApiFailure.NotFound -> FailureMessage(CopyKeys.ERROR_MESSAGE_NOT_FOUND)
+            is ApiFailure.InvalidRequest -> FailureMessage(CopyKeys.ERROR_MESSAGE_INVALID_REQUEST)
+            is ApiFailure.RateLimited ->
+                FailureMessage(
+                    CopyKeys.ERROR_MESSAGE_RATE_LIMITED,
+                    listOfNotNull(rateLimitCountdown(failure.retryAfterSeconds)),
+                )
+            is ApiFailure.Server -> FailureMessage(CopyKeys.ERROR_MESSAGE_SERVER)
+            is ApiFailure.GraphQl -> FailureMessage(CopyKeys.ERROR_MESSAGE_GRAPHQL)
+            ApiFailure.MalformedResponse -> FailureMessage(CopyKeys.ERROR_MESSAGE_MALFORMED)
+            ApiFailure.EmptyBody -> FailureMessage(CopyKeys.ERROR_MESSAGE_EMPTY_BODY)
+            is ApiFailure.Unknown -> FailureMessage(CopyKeys.ERROR_MESSAGE_UNKNOWN)
+        }
 
     override fun failureTitle(): CopyKey = CopyKeys.ERROR_TITLE
 
     override fun retryAction(): CopyKey = CopyKeys.ACTION_RETRY
 
-    override fun isAutomaticallyRetryable(failure: ApiFailure): Boolean = false
+    override fun isAutomaticallyRetryable(failure: ApiFailure): Boolean =
+        when (failure) {
+            // API-ERR-001/002/004/007: the transient classes the bounded budget covers (DEC-084).
+            ApiFailure.Offline, ApiFailure.Timeout, is ApiFailure.Server -> true
+            // API-ERR-003 (TLS), 006 (other 4xx), 008 (empty body), 009 (malformed) and the rest are
+            // terminal for an automatic attempt; the user may still retry (ERROR_FLOW.md 10).
+            else -> false
+        }
 
     @OptIn(kotlin.contracts.ExperimentalContracts::class)
     private fun String?.isKnown(): Boolean {
