@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.core.presentation
 
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
+import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.model.LocationSummary
 
@@ -27,6 +28,21 @@ public interface PresentationFormatters {
 
     /** The first episode as "name · code", or `null` when enrichment was not requested or found none. */
     public fun firstSeenText(summaries: List<EpisodeSummary>?): String?
+
+    /** Stub: the countdown `error_message_rate_limited` substitutes (`GAP-027`). */
+    public fun rateLimitCountdown(retryAfterSeconds: Long?): String?
+
+    /** Stub: the message of a failure (`ERROR_FLOW.md` §4). */
+    public fun failureMessage(failure: ApiFailure): FailureMessage
+
+    /** Stub: the shared full-surface error title. */
+    public fun failureTitle(): CopyKey
+
+    /** Stub: the retry affordance's key. */
+    public fun retryAction(): CopyKey
+
+    /** Stub: whether the retry policy may retry this failure automatically. */
+    public fun isAutomaticallyRetryable(failure: ApiFailure): Boolean
 }
 
 /** The formatters of `UI_SPEC.md` §6.2–§6.3, shared by both platforms. */
@@ -62,6 +78,16 @@ public object DefaultPresentationFormatters : PresentationFormatters {
         val first = summaries?.firstOrNull() ?: return null
         return listOf(first.name, first.code).filter { it.isNotBlank() }.joinToString(SEPARATOR).ifEmpty { null }
     }
+
+    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? = null
+
+    override fun failureMessage(failure: ApiFailure): FailureMessage = FailureMessage(CopyKeys.ERROR_MESSAGE_UNKNOWN)
+
+    override fun failureTitle(): CopyKey = CopyKeys.ERROR_TITLE
+
+    override fun retryAction(): CopyKey = CopyKeys.ACTION_RETRY
+
+    override fun isAutomaticallyRetryable(failure: ApiFailure): Boolean = false
 
     @OptIn(kotlin.contracts.ExperimentalContracts::class)
     private fun String?.isKnown(): Boolean {
