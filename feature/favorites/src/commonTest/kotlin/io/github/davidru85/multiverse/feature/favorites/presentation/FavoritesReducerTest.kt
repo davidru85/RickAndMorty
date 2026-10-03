@@ -126,6 +126,26 @@ class FavoritesReducerTest {
     }
 
     @Test
+    fun `TEST-UNIT-004 given_a_failed_read_that_still_resolved_some_cards_when_it_is_mapped_then_the_displayable_cards_win`() {
+        val state =
+            render(
+                ids = setOf(CharacterId("1"), CharacterId("2")),
+                summaries = mapOf(CharacterId("1") to summary("1")),
+                failure = ApiFailure.Offline,
+            )
+        assertEquals(
+            LoadState.Content,
+            state.loadState,
+            "TEST-UNIT-004: Error is reachable only while no favourite is displayable (IC-018's precedence, which IC-020's sibling pins)",
+        )
+        assertEquals(
+            listOf(CharacterId("1")),
+            state.items.map { it.id },
+            "TEST-UNIT-004: and the card that did resolve still renders",
+        )
+    }
+
+    @Test
     fun `TEST-UNIT-004 given_the_reducer_when_it_is_used_then_it_is_the_shared_implementation_the_two_platforms_read`() {
         // A guard on the contract's own shape: the state type is `IC-020`'s, with its documented defaults.
         assertEquals(FavoritesUiState(), FavoritesUiState(emptyList(), LoadState.Loading))

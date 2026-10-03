@@ -143,7 +143,46 @@ class FavoritesStateHolderTest {
         }
 
     @Test
-    fun `TEST-UNIT-040 given_a_read_that_fails_when_the_grid_renders_then_the_full_surface_error_is_shown`() =
+    fun `TEST-UNIT-040 given_a_new_id_whose_card_is_still_resolving_when_the_store_emits_it_then_the_previous_cards_stay_content`() =
+        TestTime.run {
+            val store = FakeFavoritesStore()
+            val favorites = favorites(store)
+            favorites.toggle(CharacterId("1"))
+            val holder = holder(store)
+
+            holder.start()
+            advanceTimeBy(100.milliseconds)
+            assertEquals(
+                listOf(CharacterId("1")),
+                holder.state.value.items.map { it.id },
+                "TEST-UNIT-040: the first favourite renders",
+            )
+
+            // A second id arrives; its read has not landed yet.
+            favorites.toggle(CharacterId("2"))
+            advanceTimeBy(1.milliseconds)
+
+            assertEquals(
+                LoadState.Content,
+                holder.state.value.loadState,
+                "TEST-UNIT-040: a displayable card stays Content while another id resolves (IC-018's precedence via IC-020)",
+            )
+            assertEquals(
+                listOf(CharacterId("1")),
+                holder.state.value.items.map { it.id },
+                "TEST-UNIT-040: and the card that is already displayable is not dropped",
+            )
+
+            advanceTimeBy(100.milliseconds)
+            assertEquals(
+                listOf(CharacterId("1"), CharacterId("2")),
+                holder.state.value.items.map { it.id },
+                "TEST-UNIT-040: the new card joins it once its read lands",
+            )
+        }
+
+    @Test
+    fun `TEST-UNIT-040 given_a_failed_read_when_the_grid_renders_then_the_full_surface_error_is_shown`() =
         TestTime.run {
             val store = FakeFavoritesStore()
             favorites(store).toggle(CharacterId("1"))
