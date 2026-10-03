@@ -11,11 +11,11 @@ import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * `TEST-UNIT-050` and the Settings half of `TEST-UNIT-046` — the shared Settings state holder
@@ -52,12 +52,12 @@ class SettingsStateHolderTest {
             val favorites = FakeFavoritesRepository()
             val holder = holder(favorites = favorites)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertFalse(holder.state.value.canDeleteFavorites, "TEST-UNIT-050: an empty set disables the action")
 
             holder.onIntent(SettingsIntent.DeleteFavoritesRequested)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertFalse(
                 holder.state.value.isConfirmingDelete,
@@ -73,12 +73,12 @@ class SettingsStateHolderTest {
             favorites.mark(character)
             val holder = holder(favorites = favorites)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertTrue(holder.state.value.canDeleteFavorites, "TEST-UNIT-050: a non-empty set enables the action")
 
             holder.onIntent(SettingsIntent.DeleteFavoritesRequested)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertTrue(holder.state.value.isConfirmingDelete, "TEST-UNIT-050: the request opens the confirmation")
             assertEquals(0, favorites.clears, "TEST-UNIT-050: opening the confirmation deletes nothing")
@@ -92,11 +92,16 @@ class SettingsStateHolderTest {
             favorites.mark(character)
             val holder = holder(favorites = favorites)
             holder.start()
+            // The observation must have delivered before the request: the action is enabled by the
+            // observed set, not by the store's contents (`AC-REQ-FUNC-035-3`).
+            testScheduler.advanceTimeBy(1.milliseconds)
+            assertTrue(holder.state.value.canDeleteFavorites, "TEST-UNIT-050: the case starts with favorites present")
+
             holder.onIntent(SettingsIntent.DeleteFavoritesRequested)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             holder.onIntent(SettingsIntent.DeleteFavoritesConfirmed)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertEquals(1, favorites.clears, "TEST-UNIT-050: Delete invokes ClearFavorites exactly once")
             assertTrue(favorites.ids.isEmpty(), "TEST-UNIT-050: one clear empties the stored set (AC-REQ-FUNC-035-2)")
@@ -111,11 +116,14 @@ class SettingsStateHolderTest {
             favorites.mark(character)
             val holder = holder(favorites = favorites)
             holder.start()
+            testScheduler.advanceTimeBy(1.milliseconds)
+            assertTrue(holder.state.value.canDeleteFavorites, "TEST-UNIT-050: the case starts with favorites present")
+
             holder.onIntent(SettingsIntent.DeleteFavoritesRequested)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             holder.onIntent(SettingsIntent.DeleteFavoritesDismissed)
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertEquals(0, favorites.clears, "TEST-UNIT-050: Cancel invokes nothing (AC-REQ-FUNC-035-1)")
             assertEquals(setOf(character), favorites.ids, "TEST-UNIT-050: Cancel changes nothing")
@@ -128,10 +136,10 @@ class SettingsStateHolderTest {
             val settings = FakeAppSettingsRepository()
             val holder = holder(settings = settings)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             holder.onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.Rest))
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertEquals(0, settings.updates, "TEST-UNIT-050: the current protocol writes nothing")
             assertEquals(0, settings.writes, "TEST-UNIT-050: and reaches no store write")
@@ -144,10 +152,10 @@ class SettingsStateHolderTest {
             val settings = FakeAppSettingsRepository()
             val holder = holder(settings = settings)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             holder.onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.GraphQl))
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertEquals(1, settings.updates, "TEST-UNIT-050: a real change reaches the seam once")
             assertEquals(1, settings.writes, "TEST-UNIT-050: and is written once")
@@ -165,10 +173,10 @@ class SettingsStateHolderTest {
             val settings = FakeAppSettingsRepository()
             val holder = holder(settings = settings)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             holder.onIntent(SettingsIntent.SoundsToggled(true))
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertTrue(settings.settings.soundsEnabled, "TEST-UNIT-050: a toggle reaches the store")
             assertTrue(holder.state.value.soundsEnabled, "TEST-UNIT-050: the state mirrors the emission")
@@ -180,10 +188,10 @@ class SettingsStateHolderTest {
             val settings = FakeAppSettingsRepository()
             val holder = holder(settings = settings)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             settings.emit(AppSettings(soundsEnabled = true, remoteProtocol = RemoteProtocol.GraphQl))
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             val mirrored = holder.state.value
             assertTrue(mirrored.soundsEnabled, "TEST-UNIT-046: a new emission updates soundsEnabled")
@@ -195,7 +203,7 @@ class SettingsStateHolderTest {
             assertEquals(0, settings.updates, "TEST-UNIT-046: mirroring an emission is not a write")
 
             settings.emit(AppSettings())
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertEquals(
                 SettingsUiState(),
@@ -211,12 +219,12 @@ class SettingsStateHolderTest {
             favorites.mark(character)
             val holder = holder(favorites = favorites)
             holder.start()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertTrue(holder.state.value.canDeleteFavorites, "TEST-UNIT-046: the non-empty set enables the action")
 
             favorites.store.clear()
-            advanceUntilIdle()
+            testScheduler.advanceTimeBy(1.milliseconds)
 
             assertFalse(
                 holder.state.value.canDeleteFavorites,
