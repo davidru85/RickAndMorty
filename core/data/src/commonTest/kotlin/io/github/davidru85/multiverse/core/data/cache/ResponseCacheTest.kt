@@ -47,7 +47,7 @@ class ResponseCacheTest {
                                 species = "Human",
                                 gender = "male",
                                 location = CachedLocation(name = "Earth"),
-                                imageUrl = "https://rickandmortyapi.com/api/character/avatar/$it.jpeg",
+                                imageUrl = IMAGE_URL,
                             )
                         },
                     page = 1,
@@ -177,5 +177,12 @@ class ResponseCacheTest {
 
     private companion object {
         val OPERATION = LogOperation.CHARACTER_LIST
+
+        /**
+         * A URL-shaped value the cache stores verbatim (`IC-016`: the image URL is the cache key).
+         * It names no real host, so the no-live-host rule of `TESTING.md` §4.1 stays satisfied; nothing
+         * in this suite fetches it.
+         */
+        const val IMAGE_URL: String = "https://images.invalid/avatar/portrait.png"
     }
 }
