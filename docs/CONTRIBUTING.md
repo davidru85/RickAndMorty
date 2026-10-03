@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — Contribution Process
 
 - **Status:** Active — target state. The Gradle/KMP build skeleton exists (TASK-014); no feature code, tests or CI exist yet (`README.md` §14), so the feature and test commands below are the documented interface to work that has not landed.
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-03
 - **Owner:** Documentation Maintainer (see `../AGENTS.md` §3.9)
 - **Authoritative for:** the contribution process — prerequisites, branching, the TDD phase-and-commit protocol and the merge policy (DEC-053, amending DEC-041), Conventional Commits and how release notes are derived, the issue workflow, pull-request expectations including the required-check list, review, agent permissions, and the contribution completion checklist.
 - **Not authoritative for:** code conventions and tool-enforced rules (`GUIDELINES.md`); gates, Ready/Done and waivers (`DEFINITION.md`); test strategy, layers, ids and tooling (`TESTING.md`); the vulnerability-reporting route (`SECURITY.md` §10); module boundaries and dependency direction (`DESIGN.md`, `adr/0001-module-boundaries.md`, DEC-052); operating rules for agents (`../AGENTS.md`).
@@ -211,7 +211,7 @@ Every change reaches `main` through a pull request. The template is [`docs/templ
 
 ### 5.1 One logical change
 
-A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. **B3 is the one recorded exception (`DEC-082`):** its seven tasks land in three phase pull requests, each listing every member task with its own evidence row; see `BACKLOG.md` §2.6. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
+A pull request carries one logical change: one requirement, one defect, or one refactor. A change spanning two requirements is split unless the requirements cannot be satisfied independently. **Two block exceptions are recorded:** B3 (`DEC-082`) and B4 (`DEC-096`) each land their tasks in three phase pull requests, each listing every member task with its own evidence row; see `BACKLOG.md` §2.6. Opportunistic refactors, unrelated formatting, dependency bumps and documentation tidy-ups belong in their own pull requests with their own justification (`../AGENTS.md` §4.2, §14).
 
 ### 5.2 Description requirements
 
@@ -443,6 +443,7 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-03 | §5.1 records B4 as the second block exception to one logical change per pull request: its tasks land in three phase pull requests, like B3's. | `DEC-096`, `DEC-082` |
 | 2026-10-01 | §5.3 states the staged activation of the required set (`DEC-071`, `CONF-53`) and that a pre-CI pull request is integrated and locally verified, never *Done under D2*. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | §3.1 states the protocol as twelve ordered steps (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit) with the three exception classes; §2 states that bringing an open branch up to date merges `main` rather than rewriting its phase commits. | `DEC-053`, `DEC-059`, `REQ-NFR-010`, `TASK-072` |
 | 2026-10-01 | §1.2 no longer points at a single documentation branch: changes are prepared on a typed branch and merged into `main`, the only integrated branch (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-059`, `DEC-046` |
