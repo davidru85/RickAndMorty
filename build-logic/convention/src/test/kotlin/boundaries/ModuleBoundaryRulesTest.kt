@@ -632,7 +632,7 @@ class ModuleBoundaryRulesTest {
             complete(project(feature)),
             mapOf(
                 feature to listOf(
-                    FeatureSource("feature/discovery/src/commonMain/kotlin/…/navigation/CharacterList.kt", null, false, false),
+                    FeatureSource("feature/discovery/src/commonMain/kotlin/…/navigation/CharacterList.kt", null, false, false, false),
                 ),
             ),
         )
@@ -640,7 +640,7 @@ class ModuleBoundaryRulesTest {
 
         val destination = ModuleBoundaryRules.evaluate(
             complete(project(feature)),
-            mapOf(feature to listOf(FeatureSource("…/navigation/CharacterList.kt", null, true, false))),
+            mapOf(feature to listOf(FeatureSource("…/navigation/CharacterList.kt", null, true, false, false))),
         )
         assertEquals(emptyList(), only(destination, "S1").filter { it.consumer == feature }.map { it.render() })
 
@@ -648,10 +648,11 @@ class ModuleBoundaryRulesTest {
             complete(project(feature)),
             mapOf(
                 feature to listOf(
-                    FeatureSource("…/navigation/CharacterList.kt", null, true, false),
+                    FeatureSource("…/navigation/CharacterList.kt", null, true, false, false),
                     FeatureSource(
                         "…/domain/Character.kt",
                         "io.github.davidru85.multiverse.wrong",
+                        false,
                         false,
                         false,
                     ),
@@ -664,13 +665,48 @@ class ModuleBoundaryRulesTest {
             complete(project(feature)),
             mapOf(
                 feature to listOf(
-                    FeatureSource("…/navigation/CharacterList.kt", null, true, false),
-                    FeatureSource("…/domain/Character.kt", "io.github.davidru85.multiverse.feature.discovery.domain", false, false),
-                    FeatureSource("…/presentation/State.kt", "io.github.davidru85.multiverse.feature.discovery.presentation", false, false),
+                    FeatureSource("…/navigation/CharacterList.kt", null, true, false, false),
+                    FeatureSource("…/domain/Character.kt", "io.github.davidru85.multiverse.feature.discovery.domain", false, false, false),
+                    FeatureSource("…/presentation/State.kt", "io.github.davidru85.multiverse.feature.discovery.presentation", false, false, false),
                 ),
             ),
         )
         assertEquals(emptyList(), only(rightPackages, "S3").filter { it.consumer == feature }.map { it.render() })
+    }
+
+    @Test
+    fun `S3 exempts a stateless UI placeholder but not a stateful screen`() {
+        // DEC-104: a feature whose only production source outside its route declaration is a stateless
+        // UI placeholder is exempt, because it has no state and no use case to place. Episodes is
+        // permanently one (DEC-005); Favorites is one until TASK-006 gives it state.
+        val feature = ":feature:episodes"
+        val placeholder = ModuleBoundaryRules.evaluate(
+            complete(project(feature)),
+            mapOf(
+                feature to listOf(
+                    FeatureSource("…/navigation/Episodes.kt", null, true, false, false),
+                    FeatureSource("…/ui/EpisodesPlaceholder.kt", "io.github.davidru85.multiverse.feature.episodes.ui", false, false, true),
+                ),
+            ),
+        )
+        val placeholderViolations = only(placeholder, "S3").filter { it.consumer == feature }.map { it.render() }
+        assertEquals(
+            listOf<String>(),
+            placeholderViolations,
+            "a stateless UI placeholder is exempt from the domain/presentation requirement (DEC-104)",
+        )
+
+        // The same shape with state is not exempt: the rule still demands the real layers.
+        val stateful = ModuleBoundaryRules.evaluate(
+            complete(project(feature)),
+            mapOf(
+                feature to listOf(
+                    FeatureSource("…/navigation/Episodes.kt", null, true, false, false),
+                    FeatureSource("…/ui/EpisodesScreen.kt", "io.github.davidru85.multiverse.feature.episodes.ui", false, false, false),
+                ),
+            ),
+        )
+        assertEquals(1, only(stateful, "S3").count { it.consumer == feature }, "stateful source still needs its layers")
     }
 
     @Test

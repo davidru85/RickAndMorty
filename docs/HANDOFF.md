@@ -150,6 +150,19 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations the later phases inherit:** `TASK-005` implements the seam over Coil and adds the accent policy (`DEC-097`); `TASK-008` replaces the four section placeholders with the Episodes and Favorites content (`DEC-099`); the feature Koin modules arrive with the B5 task that gives each a binding; `TASK-051` supplies the iOS sink and panel.
 
+## 1.8 B4 Phase 4.3 (2026-10-03) — in review
+
+**Phase 4.3 (`TASK-005`, issue #127; `TASK-021`, issue #128; `TASK-007`, issue #129; `TASK-008`, issue #130) is implemented on `feat/b4-phase-4-3` and in review; it is not `Done` until the owner merges it** (`DEC-096`). What it delivers:
+
+- **`TASK-005`/`TASK-021`:** the portrait transport (Coil over the same allow-listed Ktor client, keyed by the URL verbatim, with a memory cache and the documented 64 MB disk budget) and the accent policy — the vendored Apache-2.0 quantize→score→palette chain with the chroma clamp and the tone-30 container, computed on an injected dispatcher with a one-per-URL LRU and the Portal Green fallback. Closes `TASK-083` and `CONF-50`.
+- **`TASK-007`:** the readiness gate (1.2 s floor, 3 s ceiling, completion on the first-page outcome) and the branded splash, exposed as an indeterminate progress indicator labelled "Loading characters" with the Reduce Motion pulse path.
+- **`TASK-008`:** the four reachable destinations and both placeholder screens, with `DEC-104`'s `S3` exemption for a stateless UI placeholder and the consumed exclusion rows removed.
+- **Device evidence, local:** on API 37 the branded splash renders with its wordmark and tagline, each destination's tab is marked selected, and both placeholders render their glyphs, with no crash record.
+
+**Defects the phase's own checks and device run found and fixed:** the memo returned a cache hit without refreshing its order; the palette's HSL conversion compressed the chroma so the clamp measured 14.5 % instead of the requested 24 %; the splash gate raced a monotonic clock against the coroutine clock; `MainActivity` never bound the gate, so the branded splash never appeared; the placeholder illustration rendered as a white square; and the Compose compiler ran on the Apple compilations of a KMP feature module, which has no Compose runtime.
+
+**Obligations the later blocks inherit:** B5 replaces the two placeholders (`TASK-006`, `TASK-074`) and the Characters and Settings section titles (`TASK-001`, `TASK-074`); `TASK-009` adds the shared-element transition; the tone-30 accent pairs are already in `TEST-A11Y-002` and the placement of the portraits on the grid joins `TASK-001`/`TASK-002` (`DEC-099`).
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.

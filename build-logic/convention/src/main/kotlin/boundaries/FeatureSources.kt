@@ -18,6 +18,13 @@ internal data class FeatureSource(
     val packageName: String?,
     val declaresDestination: Boolean,
     val namesAppWideNavHost: Boolean,
+    /**
+     * True when the file declares only a **stateless UI placeholder** (`DEC-104`): a composable that
+     * renders copy it is given and holds no state, no use case and no data access. Such a feature has
+     * no `domain` and no `presentation` layer to place, so `S3` exempts it rather than demanding empty
+     * packages.
+     */
+    val isStatelessUi: Boolean,
 )
 
 /** The masked Kotlin facts one feature source contributes to the structure rules. */
@@ -29,6 +36,18 @@ internal object FeatureSources {
             "((?:public\\s+|internal\\s+)?(?:data\\s+)?(?:object|class|enum\\s+class|sealed\\s+(?:class|interface))\\s+\\w+)",
     )
     private val NAV_HOST = Regex("\\bNavHost\\s*[(<]|\\bNavHost\\b")
+
+    /**
+     * A stateless UI placeholder: a `@Composable` function whose file declares no state, no use case
+     * and no repository. The masking step has already removed comments and strings, so this reads only
+     * executable declarations.
+     */
+    private val STATELESS_UI_COMPOSABLE = Regex("(?m)^\\s*(?:public\\s+|internal\\s+|private\\s+)?@Composable\\b")
+    private val STATE_OR_DATA = Regex(
+        "\\b(?:remember\\s*\\{|mutableStateOf|collectAsState|StateFlow|suspend\\s+fun|" +
+            "class\\s+\\w*(?:ViewModel|State|UseCase)|interface\\s+\\w*Repository|" +
+            "LaunchedEffect|withContext|coroutineScope)\\b",
+    )
 
     /** Every production Kotlin source under [projectDirectory]`/src`, repository-relative. */
     fun of(rootDirectory: File, projectDirectory: File): List<FeatureSource> {
@@ -59,6 +78,8 @@ internal object FeatureSources {
         packageName = PACKAGE.find(masked)?.groupValues?.get(1),
         declaresDestination = DESTINATION.containsMatchIn(masked),
         namesAppWideNavHost = NAV_HOST.containsMatchIn(masked),
+        isStatelessUi =
+            STATELESS_UI_COMPOSABLE.containsMatchIn(masked) && !STATE_OR_DATA.containsMatchIn(masked),
     )
 
     /** Masks [text] and analyses it as if it were a file at [path]. */

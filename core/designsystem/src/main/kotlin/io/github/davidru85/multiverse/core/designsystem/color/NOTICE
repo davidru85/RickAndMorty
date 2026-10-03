@@ -1,0 +1,39 @@
+The files in this package are a Kotlin port of a subset of
+material-color-utilities, vendored under the Apache License 2.0 (see LICENSE
+beside this NOTICE).
+
+Upstream: https://github.com/material-foundation/material-color-utilities
+Copyright 2021 Google LLC
+Ported: 2026-10-03 (DEC-097, ADR-0015)
+
+Why vendored: the upstream project publishes no first-party Maven artifact on
+Maven Central or Google Maven — probed 2026-09-30 (CONF-50) — and the accent
+policy of UI_SPEC.md §5.4 needs exactly three of its algorithms:
+QuantizerCelebi (a Wu quantizer refined by k-means), Score (the population and
+chroma ranking) and TonalPalette (hue/chroma to a tone-30 container). The port
+follows those algorithms; deviations are listed here.
+
+Ports and simplifications, one per line:
+- The colour maths is NOT upstream's sRGB -> XYZ -> CAM16 -> HCT pipeline: this
+  port works in HSL terms throughout, so `chroma` is the channel spread
+  ((max - min) / 255 * 100), `hue` comes from the channel order, and `tone` is
+  placed as the mean channel of the built colour rather than the CIE L* value
+  upstream defines. The three rules the specification fixes (hue from the
+  scored colour, chroma clamped to [24, 48], container at tone 30) are kept,
+  and the derived container is measurable and deterministic, which is what
+  TEST-A11Y-002 records; but its colours are not bit-identical to what the
+  CAM16 path would produce, and the contrast record, not upstream, is the
+  authority for their readability.
+- QuantizerCelebi keeps upstream's two-stage shape (histogram pass refined by
+  k-means over twelve iterations), with two differences: the starting palette
+  is the most populous 5-bit histogram bins rather than upstream's Wu
+  variance-minimising pass, and the histogram is 5 bits per channel.
+- Score keeps upstream's weights (target chroma 48, proportion 0.7, above 0.3,
+  below 0.1, cutoff chroma 5, excited-proportion cutoff 1.4 %), applied to the
+  HSL-style chroma above rather than CAM16 chroma.
+- The inverse mapping (hue/chroma/tone -> sRGB) is the direct HSL construction
+  documented at its call site, not upstream's HctSolver gamut search: the
+  requested channel spread is placed around the tone, so a caller can assert
+  the returned colour's spread and mean directly.
+
+No other file in this repository is derived from upstream.

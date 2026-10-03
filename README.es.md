@@ -246,7 +246,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Especificación visual | Completa, pendiente de dos pantallas de Figma (estados de error) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Documentación de proceso | Completa — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
 | Esqueleto de build | Hecho — TASK-014, fusionado en el PR #6 el 2026-09-30: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
-| Implementación | El núcleo compartido está completo (B3) y el shell de Android está integrado (fase 4.2 de B4): `MultiverseTheme`, el vocabulario de componentes, la interfaz de imagen de los retratos, el grafo Koin con `coreModule`, el `NavHost` de la app, el traspaso del splash del sistema, el icono de lanzador y el panel de diagnóstico solo de depuración. Las pantallas de producto llegan con B5 — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.7 |
+| Implementación | El núcleo compartido está completo (B3) y la superficie de Android está integrada (fases 4.2–4.3 de B4): `MultiverseTheme`, el vocabulario de componentes, el transporte de retratos con su política de acento, el grafo Koin con `coreModule`, el splash de marca como indicador de carga real, cuatro destinos alcanzables con sus dos pantallas provisionales, el icono de lanzador y el panel de diagnóstico solo de depuración. Las pantallas de producto llegan con B5 — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.8 |
 | Catálogo de versiones | Hecho — TASK-015, fusionado en el PR #10 el 2026-09-30: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario, y `verifyDependencyPolicy` hace cumplir ambos |
 | `VERSION` | Hecho — TASK-018, fusionado en el PR #34 el 2026-10-01: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal y `verifyDependencyPins` rechaza un segundo literal. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
 | CI | Activo — TASK-025, PR #52: `.github/workflows/pull-request.yml` controla cada pull request y cada push a `main`. El job `ios` está suspendido por `DEC-083` hasta que `TASK-051` introduzca la app iOS; mientras tanto el job `android` sostiene el gate |
@@ -294,8 +294,9 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.koin.android` | `io.insert-koin:koin-android` | `4.2.2` | Declared | `:androidApp` | TASK-044 |
 | `libs.koin.androidx.compose` | `io.insert-koin:koin-androidx-compose` | `4.2.2` | Declared | `:androidApp` | TASK-044 |
 | `libs.androidx.compose.bom` | `androidx.compose:compose-bom` | `2026.09.00` | Declared | `:androidApp`, `:core:designsystem` | TASK-043, TASK-044 |
-| `libs.androidx.compose.runtime` | `androidx.compose.runtime:runtime` | `2026.09.00` (BOM) | Declared | `:androidApp`, `:core:designsystem` | TASK-043, TASK-044 |
-| `libs.androidx.compose.ui` | `androidx.compose.ui:ui` | `2026.09.00` (BOM) | Declared | `:androidApp`, `:core:designsystem` | TASK-042, TASK-043, TASK-044 |
+| `libs.androidx.compose.runtime` | `androidx.compose.runtime:runtime` | `2026.09.00` (BOM) | Declared | `:androidApp`, `:core:designsystem`, `:feature:episodes`, `:feature:favorites` | TASK-008, TASK-043, TASK-044 |
+| `libs.androidx.compose.ui` | `androidx.compose.ui:ui` | `2026.09.00` (BOM) | Declared | `:androidApp`, `:core:designsystem`, `:feature:episodes`, `:feature:favorites` | TASK-008, TASK-042, TASK-043, TASK-044 |
+| `libs.androidx.compose.ui.graphics` | `androidx.compose.ui:ui-graphics` | `2026.09.00` (BOM) | Declared | `:feature:episodes`, `:feature:favorites` | TASK-008 |
 | `libs.androidx.compose.foundation` | `androidx.compose.foundation:foundation` | `2026.09.00` (BOM) | Declared | `:androidApp`, `:core:designsystem` | TASK-001, TASK-043 |
 | `libs.androidx.compose.animation` | `androidx.compose.animation:animation` | `2026.09.00` (BOM) | Pinned | — | TASK-009 |
 | `libs.androidx.compose.ui.tooling.preview` | `androidx.compose.ui:ui-tooling-preview` | `2026.09.00` (BOM) | Declared | `:core:designsystem` | TASK-043 |
@@ -317,7 +318,7 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.roborazzi.junit.rule` | `io.github.takahirom.roborazzi:roborazzi-junit-rule` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.plugins.kotlin.multiplatform` | `org.jetbrains.kotlin.multiplatform` | `2.4.20` | Declared | `:` | — |
 | `libs.plugins.kotlin.serialization` | `org.jetbrains.kotlin.plugin.serialization` | `2.4.20` | Declared | `:`, `:androidApp`, `:core:data`, `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
-| `libs.plugins.kotlin.compose` | `org.jetbrains.kotlin.plugin.compose` | `2.4.20` | Declared | `:`, `:androidApp`, `:core:designsystem` | TASK-043 |
+| `libs.plugins.kotlin.compose` | `org.jetbrains.kotlin.plugin.compose` | `2.4.20` | Declared | `:`, `:androidApp`, `:core:designsystem`, `:feature:episodes`, `:feature:favorites` | TASK-043 |
 | `libs.plugins.android.application` | `com.android.application` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.android.library` | `com.android.library` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.android.kotlin.multiplatform.library` | `com.android.kotlin.multiplatform.library` | `9.3.1` | Declared | `:` | — |

@@ -28,6 +28,7 @@ import io.github.davidru85.multiverse.feature.characterdetail.navigation.Charact
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
 import io.github.davidru85.multiverse.feature.episodes.navigation.Episodes
 import io.github.davidru85.multiverse.feature.favorites.navigation.Favorites
+import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 
 /**
@@ -46,9 +47,15 @@ import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 @Composable
 public fun MultiverseApp(
     navController: androidx.navigation.NavHostController = rememberNavController(),
+    /** The readiness gate (`TASK-007`); a caller may supply one, and `null` skips the splash. */
+    splashGate: io.github.davidru85.multiverse.app.splash.SplashGate? = null,
 ) {
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
+            // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
+            // (`UI_SPEC.md` §6.1). With no gate supplied the app starts at the destination, which is
+            // how a case or a preview renders a screen directly.
+            val splashVisible = if (splashGate != null) !rememberSplashReady(splashGate) else false
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
             val destinations = topLevelDestinations()
@@ -74,8 +81,23 @@ public fun MultiverseApp(
                         val route = entry.toRoute<CharacterDetail>()
                         SectionPlaceholder(titleKey = "nav_characters", subtitle = route.id)
                     }
-                    composable<Episodes> { SectionPlaceholder(titleKey = "nav_episodes") }
-                    composable<Favorites> { SectionPlaceholder(titleKey = "nav_favorites") }
+                    // Episodes and Favorites render their specified placeholder screens (`TASK-008`);
+                    // both take "Browse characters" as a callback that selects the Characters
+                    // destination without pushing a route (`REQ-FUNC-008`, `DEC-099`).
+                    composable<Episodes> {
+                        io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
+                            onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_play_circle),
+                        )
+                    }
+                    composable<Favorites> {
+                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
+                            onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
+                        )
+                    }
+                    // Characters and Settings render the section title in the Discovery headline
+                    // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
                     composable<Settings> { SectionPlaceholder(titleKey = "nav_settings") }
                 }
                 MultiverseNavigationBar(
@@ -85,8 +107,36 @@ public fun MultiverseApp(
                     onSelect = { key -> navController.selectTopLevel(key) },
                 )
             }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = splashVisible,
+                enter = androidx.compose.animation.fadeIn(),
+                exit =
+                    androidx.compose.animation.fadeOut(
+                        animationSpec =
+                            androidx.compose.animation.core.tween(
+                                io.github.davidru85.multiverse.app.splash.SplashExitCrossfadeMillis,
+                            ),
+                    ),
+            ) {
+                io.github.davidru85.multiverse.app.splash.BrandedSplash()
+            }
         }
     }
+}
+
+/**
+ * Whether the gate has completed, held across recompositions: the splash waits once per process, so a
+ * configuration change does not restart it. The work runs in the composition's scope, which cancels it
+ * with the composition rather than leaking a request.
+ */
+@Composable
+private fun rememberSplashReady(gate: io.github.davidru85.multiverse.app.splash.SplashGate): Boolean {
+    val ready = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(gate) {
+        gate.awaitReady()
+        ready.value = true
+    }
+    return ready.value
 }
 
 /**
