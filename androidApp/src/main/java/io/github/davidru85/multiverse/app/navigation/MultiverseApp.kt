@@ -218,35 +218,3 @@ internal fun androidx.navigation.NavHostController.selectTopLevel(key: String) {
         restoreState = true
     }
 }
-
-/**
- * The section title a destination renders until its screen exists (`DEC-099`): the Discovery
- * headline position, plus the navigation bar the shell always shows.
- */
-@Composable
-internal fun SectionPlaceholder(
-    titleKey: String,
-    subtitle: String? = null,
-) {
-    val title = CopyResolver.copy(titleKey)
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .semantics { contentDescription = title },
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displaySmall,
-            color = MultiverseColors.onSurface,
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MultiverseColors.onSurfaceVariant,
-            )
-        }
-    }
-}
