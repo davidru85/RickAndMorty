@@ -12,6 +12,7 @@ import io.github.davidru85.multiverse.core.domain.model.CharacterPage
 import io.github.davidru85.multiverse.core.domain.model.EpisodeId
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataResult
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.FixtureLoader
 import io.github.davidru85.multiverse.testing.MockHttp
@@ -120,6 +121,7 @@ class RemoteCharacterRepositoryTest {
             scope = backgroundScope,
             random = random,
             logger = logger,
+            cache = bypassedCache(MutableFakeClock(), logger),
         )
     }
 
