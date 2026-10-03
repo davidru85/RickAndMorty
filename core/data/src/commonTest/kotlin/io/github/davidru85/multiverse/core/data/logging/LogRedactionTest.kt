@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.logging
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
@@ -64,7 +65,14 @@ class LogRedactionTest {
                     logger,
                     testScheduler.timeSource,
                 )
-            val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger)
+            val repository =
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    logger,
+                    bypassedCache(MutableFakeClock()),
+                )
             val pager = RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource)
             val filter = CharacterFilter(query = "  $query ", status = StatusFilter.Alive)
 

@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.logging
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
 import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
@@ -77,7 +78,13 @@ class RequestPathLoggingTest {
                 rickAndMortyDefaults()
             }
         val remote = RestCharacterRemoteDataSource(client, dispatcher, MutableFakeClock(), logger, testScheduler.timeSource)
-        return Stack(sink, logger, remote, RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger), served)
+        return Stack(
+            sink,
+            logger,
+            remote,
+            RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, bypassedCache(MutableFakeClock())),
+            served,
+        )
     }
 
     private val Stack.ids get() = sink.records.map { it.catalogueId }

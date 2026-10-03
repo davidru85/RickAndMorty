@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.app.di
 
 import android.content.Context
+import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
@@ -11,8 +12,19 @@ import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.Module
 import java.io.File
 
-/** The DataStore file `SECURITY.md` §3 classifies: favourites only, in the app's private storage. */
+/**
+ * The DataStore file `SECURITY.md` §3 classifies: favourites only, in the app's private storage.
+ */
 public const val FAVORITES_STORE_FILE: String = "favorites.preferences_pb"
+
+/**
+ * The response cache's directory, under the app's private **cache** storage (`TASK-020`).
+ *
+ * It is the cache directory rather than the files directory on purpose: the OS may evict it, and a
+ * missing entry degrades to the offline error state, which is acceptable here and would not be for
+ * favourites (`adr/0005-caching-strategy.md`, `DEC-004`).
+ */
+public const val RESPONSE_CACHE_DIRECTORY: String = "responses"
 
 /**
  * The shell's platform modules (`TASK-044`, `DESIGN.md` §5): every input `coreModule` resolves from
@@ -60,6 +72,7 @@ public fun platformInputs(
                     logger = logger,
                 ),
             ),
+        cacheStorage = FileCacheStorage(File(appContext.cacheDir, RESPONSE_CACHE_DIRECTORY)),
         logger = logger,
     ).asModule()
 

@@ -127,7 +127,7 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations later work inherits:** `TASK-013` and `TASK-060` pass the real resource folders and `CopyKeys.all` to `CopyParity.verify`, and register the feature keys they add in `CopyKeys`; `TASK-044`/`TASK-051` build the favourites store over the app's DataStore file or `NSUserDefaults.standardUserDefaults` and `ObserveFavoriteIds` over its repository (`DESIGN.md` §5); the per-failure error strings stay unenumerated until `UI_SPEC.md` §8 lists them (`ERROR_FLOW.md` §4.1). **B3 closed with the merge of this phase (PR #117, `f1fc88f`).**
 
-## 1.6 B4 Phase 4.1 (2026-10-03) — in review
+
 
 **Phase 4.1 (`TASK-042`, issue #120; `TASK-013`, issue #121; `TASK-035`, issue #122) is implemented on `feat/b4-phase-4-1` and in review; it is not `Done` until the owner merges it** (`DEC-096`). What it delivers:
 
@@ -162,6 +162,20 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 **Defects the phase's own checks and device run found and fixed:** the memo returned a cache hit without refreshing its order; the palette's HSL conversion compressed the chroma so the clamp measured 14.5 % instead of the requested 24 %; the splash gate raced a monotonic clock against the coroutine clock; `MainActivity` never bound the gate, so the branded splash never appeared; the placeholder illustration rendered as a white square; and the Compose compiler ran on the Apple compilations of a KMP feature module, which has no Compose runtime.
 
 **Obligations the later blocks inherit:** B5 replaces the two placeholders (`TASK-006`, `TASK-074`) and the Characters and Settings section titles (`TASK-001`, `TASK-074`); `TASK-009` adds the shared-element transition; the tone-30 accent pairs are already in `TEST-A11Y-002` and the placement of the portraits on the grid joins `TASK-001`/`TASK-002` (`DEC-099`).
+
+## 1.9 B5 Phase 5.1 (2026-10-03) — implemented on `feat/b5-phase-5-1`, awaiting its pull request
+
+**Phase 5.1 (`TASK-020`, issue #133; `TASK-012`, issue #134; `TASK-022`, issue #135; `TASK-011`, issue #136) is implemented and locally verified on `feat/b5-phase-5-1`; it is not `Done` until the owner merges the phase pull request** (`DEC-106`). What it delivers:
+
+- **`TASK-020`:** `IC-012` is implemented as the application-level response cache in `:core:data` — `CacheKeyBuilder` (the complete normalized request identity), `CachePolicy` (24 h fresh / 7 d stale-while-revalidate / 30 d offline fallback, injectable), `ResponseCache` (the read policy of `API_SPECS.md` §7.3, the never-cache write guard, `isStale` and `DataResult.source`), the Android `FileCacheStorage` under the app's private cache directory, the `FakeCacheStorage` and `NoCacheStorage` doubles (`DEC-072`), and the `LOG-005`…`LOG-009` emitters. The shell supplies the store through `CoreGraphInputs.cacheStorage`. `ForceNetwork` bypasses every band, so `IC-014.refresh()` is proved against the production cache.
+- **`TASK-022`:** `IC-017` maps every `ApiFailure` to its own copy key, states the recovery table's automatic-retry answer per class, and closes `GAP-027` with `rateLimitCountdown`: the countdown of `error_message_rate_limited` is an argument of the key rather than interpolated text, so both platforms substitute the same number from their own resource file.
+- **`TASK-012` / `TASK-011`:** their acceptance is evidence over the production cache — a refresh and a retry each reach the network despite a fresh entry, a failed refresh and a failed append keep their items, and a cancellation reaches no state field. No production code was needed for either.
+- **Observed gate:** `./gradlew check buildHealth verifyDocumentedGate` — BUILD SUCCESSFUL. `:core:data` 130 JVM + 133 Android-host tests, `:core:presentation` 25 host tests, all green. Red was observed before each green (9 cases for the cache policy, 4 for the failure map).
+- **Defects the phase's own checks found and fixed:** the offline fallback bypassed `ResponseCache.serveFallback`, so `LOG-007` was never emitted; the new cache suite named the live API host in a fixture URL, which `verifyNoLiveHosts` rejected; a retry case's expected item count was wrong, and the append-versus-page-1 distinction it was meant to assert is now pinned explicitly.
+
+**Obligations phase 5.2 inherits:** the discovery and detail screens consume `IC-012` through `CharacterRepository` and must render `isStale` and `DataResult.source`; `TASK-001` and `TASK-002` own the presentation state holders that map the failure chain to `IC-018`/`IC-019`; `TASK-010` owns the designed empty-results state the filtered `404` reaches.
+
+**Not verified:** the phase pull request's CI run (not opened yet); the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
 
 ## 2. Completed work
 

@@ -1,5 +1,8 @@
 package io.github.davidru85.multiverse.core.data.di
 
+import io.github.davidru85.multiverse.core.data.cache.CachePolicy
+import io.github.davidru85.multiverse.core.data.cache.CacheStorage
+import io.github.davidru85.multiverse.core.data.cache.ResponseCache
 import io.github.davidru85.multiverse.core.data.favorites.FavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.LocalFavoritesRepository
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
@@ -51,12 +54,24 @@ public val coreModule: Module =
             )
         }
 
+        single {
+            ResponseCache(
+                storage = get(),
+                clock = get(),
+                policy = get(),
+                logger = get(),
+            )
+        }
+
+        single<CachePolicy> { CachePolicy() }
+
         single<CharacterRepository> {
             RemoteCharacterRepository(
                 remote = get(),
                 scope = get(),
                 random = get(),
                 logger = get(),
+                cache = get(),
             )
         }
 
@@ -93,6 +108,7 @@ public class CoreGraphInputs(
     public val clock: Clock,
     public val applicationScope: CoroutineScope,
     public val favoritesStore: FavoritesLocalDataSource,
+    public val cacheStorage: CacheStorage,
     public val logger: DomainAppLogger,
 ) {
     /**
@@ -108,6 +124,7 @@ public class CoreGraphInputs(
         val wallClock = clock
         val scope = applicationScope
         val store = favoritesStore
+        val cache = cacheStorage
         val appLogger = logger
         return module {
             single { httpClient }
@@ -115,6 +132,7 @@ public class CoreGraphInputs(
             single { wallClock }
             single<CoroutineScope> { scope }
             single<FavoritesLocalDataSource> { store }
+            single<CacheStorage> { cache }
             single<io.github.davidru85.multiverse.core.domain.logging.AppLogger> { appLogger }
         }
     }

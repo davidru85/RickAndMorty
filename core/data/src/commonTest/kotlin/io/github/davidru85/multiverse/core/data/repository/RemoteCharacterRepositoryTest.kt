@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RemoteResources
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
@@ -120,6 +121,7 @@ class RemoteCharacterRepositoryTest {
             scope = backgroundScope,
             random = random,
             logger = logger,
+            cache = bypassedCache(MutableFakeClock()),
         )
     }
 

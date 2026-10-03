@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.repository
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -8,6 +9,7 @@ import io.github.davidru85.multiverse.core.domain.repository.PageLoadPolicy
 import io.github.davidru85.multiverse.testing.FakeCatalogue
 import io.github.davidru85.multiverse.testing.FakeRemoteSource
 import io.github.davidru85.multiverse.testing.FixedRandom
+import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +51,13 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val repository =
-                RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             val first = async { repository.page(CharacterFilter(query = "Rick"), 1) }
             val second = async { repository.page(CharacterFilter(query = "  Rick "), 1) }
@@ -63,7 +71,13 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val repository =
-                RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             listOf(
                 async { repository.page(CharacterFilter(), 1) },
@@ -86,7 +100,13 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val repository =
-                RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             val leaving = async(start = CoroutineStart.UNDISPATCHED) { repository.page(CharacterFilter(), 1) }
             val staying = async(start = CoroutineStart.UNDISPATCHED) { repository.page(CharacterFilter(), 1) }
@@ -104,7 +124,13 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val repository =
-                RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             val first = async(start = CoroutineStart.UNDISPATCHED) { repository.page(CharacterFilter(), 1) }
             val second = async(start = CoroutineStart.UNDISPATCHED) { repository.page(CharacterFilter(), 1) }
@@ -123,7 +149,13 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val repository =
-                RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             repository.page(CharacterFilter(), 1)
             repository.page(CharacterFilter(), 1)
@@ -136,7 +168,14 @@ class RequestCoalescingTest {
         TestTime.run {
             val remote = remote()
             val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
-            val repository = RemoteCharacterRepository(remote, owner, FixedRandom(0.5), ValidatingAppLogger.forDebug(RecordingLogSink()))
+            val repository =
+                RemoteCharacterRepository(
+                    remote,
+                    owner,
+                    FixedRandom(0.5),
+                    ValidatingAppLogger.forDebug(RecordingLogSink()),
+                    bypassedCache(MutableFakeClock()),
+                )
 
             val waiter = async(start = CoroutineStart.UNDISPATCHED) { repository.page(CharacterFilter(), 1) }
             advanceTimeBy(100)
