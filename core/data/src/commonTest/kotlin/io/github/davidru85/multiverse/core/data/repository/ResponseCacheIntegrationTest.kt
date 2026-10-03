@@ -18,10 +18,13 @@ import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -230,6 +233,85 @@ class ResponseCacheIntegrationTest {
             val state = pager.state.value
             assertEquals(20, state.items.size, "TEST-UNIT-007: a failed refresh keeps the items (AC-REQ-FUNC-012-2)")
             assertEquals(ApiFailure.Offline, state.failure, "and surfaces the failure alongside them")
+        }
+
+    @Test
+    fun `TEST-UNIT-006 given_a_failed_load_over_the_production_cache_when_retry_succeeds_then_a_new_request_is_made_and_the_error_clears`() =
+        TestTime.run {
+            val remote = FakeRemoteSource(catalogue)
+            val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
+            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                repository,
+                this,
+                logger,
+                timeSource = testScheduler.timeSource,
+            )
+
+            // The first load fails outright, so the pager holds a failure and no content.
+            repeat(3) { remote.failNext(ApiFailure.Offline) }
+            pager.setFilter(CharacterFilter())
+            val failed = pager.state.value
+            assertEquals(ApiFailure.Offline, failed.failure, "the failure is reported rather than thrown")
+
+            // The retry is a genuinely fresh attempt: its own three-attempt budget against the network.
+            pager.retry()
+
+            val retried = pager.state.value
+            assertNull(retried.failure, "TEST-UNIT-006: retry clears the error on success (AC-REQ-FUNC-011-1)")
+            assertEquals(20, retried.items.size, "TEST-UNIT-006: and the content arrives")
+            assertEquals(4, remote.calls.size, "TEST-UNIT-006: one failed sequence plus one fresh attempt")
+        }
+
+    @Test
+    fun `TEST-UNIT-006 given_a_retry_over_the_production_cache_when_it_runs_then_the_second_attempt_is_not_served_from_the_cache`() =
+        TestTime.run {
+            val remote = FakeRemoteSource(catalogue)
+            val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
+            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                repository,
+                this,
+                logger,
+                timeSource = testScheduler.timeSource,
+            )
+
+            pager.setFilter(CharacterFilter())
+            // A later append fails; the retry must re-attempt that append, not answer it from the
+            // entry the first page's success stored under its own key.
+            repeat(3) { remote.failNext(ApiFailure.Server(500), FakeRemoteSource.Kind.Page) }
+            pager.next()
+            assertEquals(ApiFailure.Server(500), pager.state.value.failure)
+
+            pager.retry()
+
+            assertNull(pager.state.value.failure, "TEST-UNIT-006: the failed append succeeded on its own retry")
+            assertEquals(
+                30,
+                pager.state.value.items.size,
+                "TEST-UNIT-006: the retry re-attempted the append, so the 30 items of pages 1 and 2 are on screen (20 + 10)",
+            )
+        }
+
+    @Test
+    fun `TEST-UNIT-006 given_a_cancelled_load_when_the_caller_is_cancelled_then_no_failure_reaches_the_state`() =
+        TestTime.run {
+            val remote = FakeRemoteSource(catalogue, latency = kotlin.time.Duration.parse("5m"))
+            val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
+            val pager = io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager(
+                repository,
+                this,
+                logger,
+                timeSource = testScheduler.timeSource,
+            )
+
+            val load = launch { pager.setFilter(CharacterFilter()) }
+            runCurrent()
+            load.cancel()
+            advanceUntilIdle()
+
+            assertNull(
+                pager.state.value.failure,
+                "TEST-UNIT-006: a cancellation is control flow, so no failure reaches the surface (AC-REQ-FUNC-022-2)",
+            )
         }
 
     private companion object {
