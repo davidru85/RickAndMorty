@@ -1,7 +1,7 @@
 # ERROR_FLOW.md - Failure to State to Copy Chain
 
 - **Status:** Active - target state (DEC-046; the Gradle/KMP build skeleton exists as of TASK-014, no error path is implemented yet, see `AGENTS.md` §1)
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-03
 - **Owner:** System Architect (see `AGENTS.md` §3.3)
 - **Authoritative for:** the canonical chain from a remote/transport failure to a domain failure (`ApiFailure`), to a UI-state field, to an on-screen state, to the copy key and the retry affordance. This is the only place where that chain is stated (DEC-021).
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) · [`API_SPECS.md`](API_SPECS.md) §6, §7, §8 · [`DESIGN.md`](DESIGN.md) §4, §7 · [`UI_SPEC.md`](UI_SPEC.md) §8 · [`DECISION_BOARD.md`](DECISION_BOARD.md) · [`TESTING.md`](TESTING.md) · [`OBSERVABILITY.md`](OBSERVABILITY.md) · [`SECURITY.md`](SECURITY.md)
@@ -17,7 +17,7 @@
 | --- | --- |
 | Source-layer error taxonomy | `API-ERR-###` identifiers for every condition that can fail a request, with retryability (§2). |
 | Failure mapping | `ApiFailure` ([`API_SPECS.md`](API_SPECS.md) §6) to `LoadState` (`IC-015`) or a `UiState` field ([`CONTRACTS.md`](CONTRACTS.md) `IC-018`…`IC-023`) to rendered state (§4). |
-| Copy binding | Which canonical copy key each rendered state uses (§4, §9). The key names and the English/Spanish values are owned by the canonical key list in `:core:presentation` (DEC-015, DEC-020); the rendered form of each state is specified in [`UI_SPEC.md`](UI_SPEC.md) §8. This file binds state to key and never redefines either. |
+| Copy binding | Which canonical copy key each rendered state uses (§4, §9). The key names are registered once in the canonical key list, `CopyKeys` in `:core:presentation` (`CONTRACTS.md` `IC-017`, DEC-015, DEC-020); the English and Spanish values are authored in each platform's resource files and held identical per locale by `TEST-UNIT-036` (`DEC-095`); the rendered form of each state is specified in [`UI_SPEC.md`](UI_SPEC.md) §8. This file binds state to key and never redefines either. |
 | Retry affordances and recovery actions | Per failure class, including the fresh-attempt-budget rule (§10). |
 | Non-error outcomes | Filtered `404`, paging `404`, GraphQL empty results, unknown field values (§5). |
 | Cancellation policy | `CancellationException` handling (§6). |
@@ -95,7 +95,7 @@ Chain invariants:
 
 `ApiFailure` members are exhaustive from [`API_SPECS.md`](API_SPECS.md) §6. "Cached content" means a previously decoded successful value for the same cache key exists and is inside the 30-day offline window ([`API_SPECS.md`](API_SPECS.md) §7.3).
 
-| `ApiFailure` | With cached content | Without cached content | Retryable | Copy key and string (owned by the canonical key list, DEC-015/DEC-020; rendered form in `UI_SPEC.md` §8) | Retry affordance | Test coverage |
+| `ApiFailure` | With cached content | Without cached content | Retryable | Copy key (registered in `CopyKeys`, `IC-017`) and approved string (authored in the platform resources, DEC-020/`DEC-095`; rendered form in `UI_SPEC.md` §8) | Retry affordance | Test coverage |
 | --- | --- | --- | --- | --- | --- | --- |
 | `Offline` | `Content` + `isStale = true` + stale banner | `Error` full-surface state | Automatic while transient; otherwise user-initiated | Banner: `state_stale_banner` = "Showing saved results" · Error: `error_title` = "Portal link lost", `error_message_offline`, `action_retry` = "Retry" | Banner Retry · error Retry (`CharacterListIntent.Retry`, `CharacterDetailIntent.Retry`) | `TEST-UNIT-010`, `TEST-UNIT-009`, `TEST-INT-001`, `TEST-UI-011` |
 | `Timeout` | `Content` + `isStale = true` + stale banner | `Error` full-surface state | Yes, bounded automatic | Banner: `state_stale_banner` = "Showing saved results" · Error: `error_title` = "Portal link lost", `error_message_timeout`, `action_retry` = "Retry" | Banner Retry · error Retry | `TEST-UNIT-010`, `TEST-CONTRACT-001` |
@@ -122,7 +122,7 @@ Rendered-state mapping ([`UI_SPEC.md`](UI_SPEC.md) §8 keeps the visuals):
 
 ### 4.1 Copy key register
 
-The key names below are the canonical binding owned by this file; the English and Spanish strings are owned by the canonical key list from `:core:presentation` (DEC-015) with the canonical key list and parity test from DEC-020, rendered per [`UI_SPEC.md`](UI_SPEC.md) §8.
+The key names below are the canonical binding owned by this file, and every one of them is registered in `CopyKeys` (`IC-017`, `TASK-041`); the English and Spanish strings are authored in the platform resource files — never in Kotlin — and the parity test of DEC-020 (`TEST-UNIT-036`) holds the two platforms identical per locale (`DEC-095`). They are rendered per [`UI_SPEC.md`](UI_SPEC.md) §8.
 
 | Key | Source of the string | Status |
 | --- | --- | --- |
@@ -270,3 +270,4 @@ A test identifier is never cited here as evidence for copy wording. The failure-
 | --- | --- | --- |
 | 2026-09-29 | Created: source-layer error taxonomy with `API-ERR-###` ids, the mapping chain, the full `ApiFailure`→state→copy→retry table, non-error outcomes, cancellation, enrichment/refresh/stale behaviour, recovery and retry-budget rules, failure logging and acceptance coverage. | DEC-021, DEC-022, DEC-015, DEC-020 |
 | 2026-09-29 | Module references updated to the feature-per-module layout: `:shared:data` → `:core:data`, `:shared:presentation` → `:core:presentation` (DEC-052, supersedes DEC-019). A `Verification` column was added to every table so each row names the test that covers it (§2, §4 rendered-state mapping, §7, §10, §11), and the copy-wording evidence rule was added. Test coverage corrected to the authoritative `TESTING.md` identifiers (`TEST-UI-011`, `TEST-UI-016`, `TEST-UNIT-022`); `API-CHAR-005` provenance recorded as an open gap. | DEC-052, DEC-021 |
+| 2026-10-03 | §1 and §4.1 state where the copy lives: the key names in `CopyKeys` (`IC-017`), the English and Spanish strings in the platform resource files, held identical by `TEST-UNIT-036`; the earlier wording gave the strings to the key list (`CONF-75`). | `DEC-095`, `TASK-041` |
