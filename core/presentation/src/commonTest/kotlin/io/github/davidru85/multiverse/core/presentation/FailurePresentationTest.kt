@@ -5,6 +5,7 @@ import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * `TEST-UNIT-010`'s formatter half and `GAP-027` — one countdown, one failure message, both platforms.
@@ -86,6 +87,37 @@ class FailurePresentationTest {
         assertEquals(true, DefaultPresentationFormatters.isAutomaticallyRetryable(ApiFailure.Server(500)))
         assertEquals(false, DefaultPresentationFormatters.isAutomaticallyRetryable(ApiFailure.NotFound("character", "1")))
         assertEquals(false, DefaultPresentationFormatters.isAutomaticallyRetryable(ApiFailure.InvalidRequest(null)))
+    }
+
+    @Test
+    fun `TEST-UNIT-010 given_every_failure_the_matrix_names_then_it_has_a_message_and_a_documented_retryability`() {
+        // The rows of ERROR_FLOW.md §4 and §10, as values: every class reaches a message, and the
+        // automatic-retry answer is the one the recovery table states rather than a per-surface choice.
+        val rows =
+            listOf(
+                ApiFailure.Offline to true,
+                ApiFailure.Timeout to true,
+                ApiFailure.NotFound("character", "1") to false,
+                ApiFailure.InvalidRequest(null) to false,
+                ApiFailure.RateLimited(30) to false,
+                ApiFailure.Server(500) to true,
+                ApiFailure.GraphQl(setOf("X"), listOf("m")) to false,
+                ApiFailure.MalformedResponse to false,
+                ApiFailure.EmptyBody to false,
+                ApiFailure.Unknown(null) to false,
+            )
+
+        rows.forEach { (failure, automatic) ->
+            assertEquals(
+                automatic,
+                DefaultPresentationFormatters.isAutomaticallyRetryable(failure),
+                "the automatic-retry answer of $failure follows ERROR_FLOW.md 10",
+            )
+            assertTrue(
+                DefaultPresentationFormatters.failureMessage(failure).key.value.isNotEmpty(),
+                "every failure class reaches a copy key",
+            )
+        }
     }
 
     @Test
