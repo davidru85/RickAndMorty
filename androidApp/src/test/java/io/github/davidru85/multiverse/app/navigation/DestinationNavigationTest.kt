@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.app.navigation
 
+import android.app.Application
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,11 +8,25 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.davidru85.multiverse.app.di.shellModules
+import io.github.davidru85.multiverse.core.data.di.coreModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesViewModelModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsViewModelModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.android.ext.koin.androidContext
 import org.robolectric.annotation.Config
 
 /**
@@ -35,6 +50,31 @@ import org.robolectric.annotation.Config
 class DestinationNavigationTest {
     @get:Rule
     val compose = createComposeRule()
+
+    /**
+     * The graph the destinations resolve from.
+     *
+     * The real Favorites and Settings screens resolve their ViewModels through Koin (`IC-020`,
+     * `IC-023`), so this case starts the same graph the application does. The cases assert
+     * **navigation**, so the stores behind the graph are the real ones — the destinations this case
+     * walks either render from the repository or resolve a ViewModel, and neither has to answer for
+     * the assertion to hold.
+     */
+    @Before
+    fun startGraph() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        startKoin {
+            androidContext(context)
+            modules(coreModule)
+            modules(shellModules(CoroutineScope(Dispatchers.Unconfined), context))
+            modules(favoritesModule, favoritesViewModelModule, settingsModule, settingsViewModelModule)
+        }
+    }
+
+    @After
+    fun stopGraph() {
+        stopKoin()
+    }
 
     private val labels = listOf("Characters", "Episodes", "Favorites", "Settings")
 
