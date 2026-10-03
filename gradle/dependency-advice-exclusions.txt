@@ -12,12 +12,5 @@
 # The `:core:designsystem` rows name the task whose feature screen first consumes the edge
 # (`DEC-081`, C4 of the B4 brief): `TASK-043` builds the design system, but a feature consumes it
 # only with its own screen, so each row points at that feature's task and is removed by it.
-:feature:character-detail|:core:domain|TASK-002
-:feature:character-detail|:core:presentation|TASK-002
-:feature:character-detail|:core:designsystem|TASK-002
-:feature:character-detail|:core:testing|TASK-002
-:feature:discovery|:core:domain|TASK-001
-:feature:discovery|:core:presentation|TASK-001
-:feature:discovery|:core:designsystem|TASK-001
 :feature:discovery|:core:testing|TASK-001
 :feature:episodes|:core:presentation|TASK-008

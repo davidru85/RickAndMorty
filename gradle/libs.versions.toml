@@ -81,8 +81,10 @@ androidx-compose-ui-test = { module = "androidx.compose.ui:ui-test" }
 androidx-compose-ui-text = { module = "androidx.compose.ui:ui-text" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout" }
 androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-unit = { module = "androidx.compose.ui:ui-unit" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-animation = { module = "androidx.compose.animation:animation" }
+androidx-compose-animation-core = { module = "androidx.compose.animation:animation-core" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
@@ -101,10 +103,10 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" 
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 # Testing
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 robolectric-annotations = { module = "org.robolectric:annotations", version.ref = "robolectric" }
 robolectric-shadows-framework = { module = "org.robolectric:shadows-framework", version.ref = "robolectric" }
-androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
