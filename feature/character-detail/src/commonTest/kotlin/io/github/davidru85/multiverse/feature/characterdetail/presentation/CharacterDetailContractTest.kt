@@ -60,7 +60,7 @@ class CharacterDetailContractTest {
                     formatters = formatters,
                 )
 
-            assertEquals(meta.path, kotlin.io.path.Path(served.single().url).toString().substringBefore('?').removePrefix("https://rickandmortyapi.com"), "TEST-CONTRACT-002: the single-resource route the sidecar records")
+            assertEquals(meta.path, io.ktor.http.Url(served.single().url).encodedPath, "TEST-CONTRACT-002: the single-resource route the sidecar records")
             val details = assertIs<DataResult.Success<*>>(result).value as io.github.davidru85.multiverse.core.domain.model.CharacterDetails
             assertNull(details.episodeSummaries, "TEST-CONTRACT-002: the adapter does not enrich; that is the repository's and the use case's job")
             assertEquals(details.episodeIds.size, state.episodeCount, "TEST-CONTRACT-002: the count is the fixture's own episode list")

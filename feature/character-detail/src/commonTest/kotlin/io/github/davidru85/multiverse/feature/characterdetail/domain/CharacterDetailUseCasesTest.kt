@@ -57,8 +57,12 @@ class GetCharacterDetailsTest {
             val success = assertIs<DataResult.Success<CharacterDetails>>(result)
             assertEquals(3, success.value.episodeIds.size, "TEST-UNIT-011: the count comes from the detail response")
             assertEquals(1, success.value.episodeSummaries?.size, "TEST-UNIT-011: the summaries are reconciled by id")
-            assertEquals(1, success.warnings.size, "TEST-UNIT-011: an omitted episode is a warning, not a failure")
-            assertEquals("2", success.warnings.single().detail, "TEST-UNIT-011: the warning names the first missing id")
+            assertEquals(2, success.warnings.size, "TEST-UNIT-011: each omitted episode is a warning, not a failure")
+            assertEquals(
+                listOf("2", "3"),
+                success.warnings.map { it.detail },
+                "TEST-UNIT-011: the warnings name the missing ids in the requested order",
+            )
         }
 
     @Test
