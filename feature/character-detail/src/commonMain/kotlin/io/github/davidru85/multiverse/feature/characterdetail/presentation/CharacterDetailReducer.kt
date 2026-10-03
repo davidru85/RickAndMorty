@@ -28,17 +28,14 @@ import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
  */
 public object CharacterDetailReducer {
     /**
-     * The state for one detail [result], or for the absence of one while [isLoading] holds.
+     * The state for one detail [result], or for the absence of one while the load is still in flight.
      *
-     * `null` [result] with [isLoading] is the pre-response state: the header renders from list data
-     * and nothing else is known. `null` [result] without [isLoading] cannot be produced by the state
-     * holder — a load always ends in a result — so it renders as [LoadState.Loading] rather than
-     * inventing a failure.
+     * A `null` [result] is the pre-response state: the header renders from list data and nothing else
+     * is known. That is the one meaning of `null`, so no separate flag can disagree with it.
      */
     public fun render(
         header: CharacterCardUi?,
         result: DataResult<CharacterDetails>?,
-        isLoading: Boolean,
         isFavorite: Boolean,
         enrichRequested: Boolean,
         formatters: PresentationFormatters,

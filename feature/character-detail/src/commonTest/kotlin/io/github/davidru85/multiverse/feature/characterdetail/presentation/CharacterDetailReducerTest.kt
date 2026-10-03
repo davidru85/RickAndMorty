@@ -1,9 +1,10 @@
 package io.github.davidru85.multiverse.feature.characterdetail.presentation
 
+import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
+import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
-import io.github.davidru85.multiverse.core.domain.model.LocationSummary
-import io.github.davidru85.multiverse.core.domain.result.ApiFailure
+import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.domain.result.DataSource
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -22,20 +23,18 @@ import kotlin.test.assertTrue
  * `TEST-UNIT-002` and `TEST-UNIT-011` — the `IC-019` state mapping (`REQ-FUNC-002`, `REQ-FUNC-023`,
  * `AC-REQ-FUNC-002-1`…`-3`, `AC-REQ-FUNC-023-2`).
  *
- * The mapping is asserted on the pure function, so a case pins one fact about one `DataResult`
- * without a coroutine or a clock in the way. Every display value the state carries is produced by
- * `IC-017` or by `CharacterCardUi.from`; no case asserts an English literal, and the header is the
- * `CharacterCardUi.from` the grid would have produced (`IC-016`).
+ * The mapping is asserted on the pure function, so a case pins one fact about one `DataResult` with
+ * no coroutine or clock in the way. Every display value the state carries comes from `IC-017` or from
+ * `CharacterCardUi.from`; no case asserts an English literal, and a `header` is built the way the
+ * grid builds it (`IC-016`).
  */
 class CharacterDetailReducerTest {
     private val formatters = DefaultPresentationFormatters
 
-    /** The card the list hands over for Rick; the same mapping the grid performs (`IC-016`). */
+    /** The card the list hands over for Rick, mapped the way the grid maps it (`IC-016`). */
     private fun listProvidedCard(): CharacterCardUi =
         CharacterCardUi(
-            id =
-                io.github.davidru85.multiverse.core.domain.model
-                    .CharacterId("1"),
+            id = CharacterId("1"),
             name = "Rick Sanchez",
             species = DisplayText.Data("Human"),
             status = CharacterStatus.Alive,
@@ -50,7 +49,6 @@ class CharacterDetailReducerTest {
             CharacterDetailReducer.render(
                 header = card,
                 result = null,
-                isLoading = true,
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -65,22 +63,17 @@ class CharacterDetailReducerTest {
     @Test
     fun `TEST-UNIT-002 given_a_list_provided_card_when_the_detail_fails_then_the_header_survives_and_the_state_is_error`() {
         val card = listProvidedCard()
-        val failure = ApiFailure.Offline
+        val failure = io.github.davidru85.multiverse.core.domain.result.ApiFailure.Offline
         val state =
             CharacterDetailReducer.render(
                 header = card,
                 result = DataResult.Failure(failure, DataSource.NETWORK),
-                isLoading = false,
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
             )
         assertEquals(card, state.header, "TEST-UNIT-002: a detail failure never clears a non-null header (AC-REQ-FUNC-002-3)")
-        assertEquals(
-            LoadState.Error(failure),
-            state.loadState,
-            "TEST-UNIT-002: the failure is the load state, so the inline retry can offer itself",
-        )
+        assertEquals(LoadState.Error(failure), state.loadState, "TEST-UNIT-002: the failure is the load state, so the inline retry can offer itself")
         assertTrue(state.info.isEmpty(), "TEST-UNIT-002: the inline error replaces the info list, not the header")
     }
 
@@ -92,14 +85,13 @@ class CharacterDetailReducerTest {
                 result =
                     DataResult.Success(
                         details(
-                            origin = LocationSummary(id = null, name = "Earth (C-137)"),
+                            origin = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "Earth (C-137)"),
                             episodeIds = listOf("1", "2", "3"),
                             episodeSummaries = listOf(firstEpisode()),
                         ),
                         DataSource.NETWORK,
                         isStale = false,
                     ),
-                isLoading = false,
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -130,13 +122,7 @@ class CharacterDetailReducerTest {
         val state =
             CharacterDetailReducer.render(
                 header = null,
-                result =
-                    DataResult.Success(
-                        details(episodeIds = listOf("1", "2", "3"), episodeSummaries = null),
-                        DataSource.NETWORK,
-                        isStale = false,
-                    ),
-                isLoading = false,
+                result = DataResult.Success(details(episodeIds = listOf("1", "2", "3"), episodeSummaries = null), DataSource.NETWORK, isStale = false),
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -158,13 +144,7 @@ class CharacterDetailReducerTest {
         val state =
             CharacterDetailReducer.render(
                 header = null,
-                result =
-                    DataResult.Success(
-                        details(episodeIds = emptyList(), episodeSummaries = emptyList()),
-                        DataSource.NETWORK,
-                        isStale = false,
-                    ),
-                isLoading = false,
+                result = DataResult.Success(details(episodeIds = emptyList(), episodeSummaries = emptyList()), DataSource.NETWORK, isStale = false),
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
@@ -186,15 +166,14 @@ class CharacterDetailReducerTest {
                         details(
                             species = "unknown",
                             status = CharacterStatus.Unknown,
-                            origin = LocationSummary(id = null, name = "unknown"),
-                            lastKnownLocation = LocationSummary(id = null, name = "unknown"),
+                            origin = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "unknown"),
+                            lastKnownLocation = io.github.davidru85.multiverse.core.domain.model.LocationSummary(id = null, name = "unknown"),
                             episodeIds = listOf("1"),
                             episodeSummaries = null,
                         ),
                         DataSource.NETWORK,
                         isStale = false,
                     ),
-                isLoading = false,
                 isFavorite = false,
                 enrichRequested = false,
                 formatters = formatters,
@@ -215,7 +194,6 @@ class CharacterDetailReducerTest {
             CharacterDetailReducer.render(
                 header = null,
                 result = DataResult.Success(details(), DataSource.NETWORK, isStale = false),
-                isLoading = false,
                 isFavorite = true,
                 enrichRequested = true,
                 formatters = formatters,
@@ -225,7 +203,6 @@ class CharacterDetailReducerTest {
             CharacterDetailReducer.render(
                 header = null,
                 result = DataResult.Success(details(), DataSource.NETWORK, isStale = false),
-                isLoading = false,
                 isFavorite = false,
                 enrichRequested = true,
                 formatters = formatters,
