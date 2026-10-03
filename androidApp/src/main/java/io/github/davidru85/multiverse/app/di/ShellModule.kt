@@ -33,7 +33,11 @@ public fun shellModules(
 ): List<Module> {
     val appContext = context.applicationContext
     val logger = logging.logger()
-    return listOf(platformInputs(applicationScope, appContext, logger)) + logging.extraModules(logger)
+    val client = androidRickAndMortyHttpClient()
+    return listOf(
+        platformInputs(applicationScope, appContext, logger, client),
+        imageLoaderModule(appContext, client),
+    ) + logging.extraModules(logger)
 }
 
 /** The graph inputs, built once so both variants share every value except the logger. */
@@ -41,9 +45,10 @@ public fun platformInputs(
     applicationScope: CoroutineScope,
     appContext: Context,
     logger: ValidatingAppLogger,
+    client: io.ktor.client.HttpClient = androidRickAndMortyHttpClient(),
 ): Module =
     CoreGraphInputs(
-        client = androidRickAndMortyHttpClient(),
+        client = client,
         decodingDispatcher = Dispatchers.IO,
         clock = kotlin.time.Clock.System,
         applicationScope = applicationScope,
@@ -57,3 +62,18 @@ public fun platformInputs(
             ),
         logger = logger,
     ).asModule()
+
+/** The one Coil image loader (`TASK-021`): the same allow-listed client, so no image bypasses it. */
+public fun imageLoaderModule(
+    context: android.content.Context,
+    client: io.ktor.client.HttpClient,
+): Module =
+    org.koin.dsl.module {
+        single {
+            io.github.davidru85.multiverse.app.image.imageLoader(
+                context = context,
+                client = client,
+                diskCacheDirectory = io.github.davidru85.multiverse.app.image.imageCacheDirectory(context),
+            )
+        }
+    }
