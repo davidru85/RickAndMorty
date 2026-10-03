@@ -34,6 +34,22 @@ internal object ModuleDependencyAllowLists {
     )
 
     /**
+     * The test libraries a `:core:designsystem` **test** source set may additionally declare
+     * (`DEC-106`). They are the tools the design-system suites need — a JUnit runner, the
+     * Robolectric Android environment, and a JSON reader for the `tokens.json` parity test — and
+     * none of them carries image loading, HTTP, a platform UI kit, a DI framework or persistence
+     * code, so the Compose-only production rule is untouched. A library outside this list still
+     * fails `R15`.
+     */
+    val DESIGN_SYSTEM_TEST: Set<String> = setOf(
+        "$KOTLIN:kotlin-test",
+        "$KOTLIN:kotlin-test-junit",
+        "junit:junit",
+        "org.robolectric:robolectric",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json",
+    )
+
+    /**
      * The Compose families `:core:designsystem` may declare. `androidx.compose.*` is Compose by
      * definition; the Kotlin Compose compiler plugin is a Plugin Marker, not a library, so it never
      * reaches this list. `androidx.activity:activity-compose`, `androidx.lifecycle` and
