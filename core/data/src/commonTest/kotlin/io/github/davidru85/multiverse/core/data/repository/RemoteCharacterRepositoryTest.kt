@@ -121,7 +121,7 @@ class RemoteCharacterRepositoryTest {
             scope = backgroundScope,
             random = random,
             logger = logger,
-            cache = bypassedCache(MutableFakeClock(), logger),
+            cache = bypassedCache(MutableFakeClock()),
         )
     }
 

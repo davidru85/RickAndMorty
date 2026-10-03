@@ -82,7 +82,7 @@ class RequestPathLoggingTest {
             sink,
             logger,
             remote,
-            RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, bypassedCache(MutableFakeClock(), logger)),
+            RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, bypassedCache(MutableFakeClock())),
             served,
         )
     }
