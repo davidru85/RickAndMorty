@@ -64,6 +64,63 @@ public sealed interface LogEvent {
         override val level: LogLevel get() = LogLevel.ERROR
     }
 
+    /** `LOG-005`: the response cache answered a read from a stored entry. */
+    public data class CacheHit(
+        public val source: DataSource,
+        public val operation: LogOperation,
+        public val page: Int?,
+        public val isStale: Boolean,
+        public val correlationId: String?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-005"
+        override val level: LogLevel get() = LogLevel.DEBUG
+    }
+
+    /** `LOG-006`: the response cache held no usable entry, so the request went to the network. */
+    public data class CacheMiss(
+        public val operation: LogOperation,
+        public val page: Int?,
+        public val correlationId: String?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-006"
+        override val level: LogLevel get() = LogLevel.DEBUG
+    }
+
+    /**
+     * `LOG-007`: a failed fetch was answered from a stale entry, so content stays on screen
+     * (`AC-REQ-FUNC-020-2`). It is the only cache event at `WARN`.
+     */
+    public data class StaleFallbackServed(
+        public val operation: LogOperation,
+        public val page: Int?,
+        public val errorClass: ErrorClass,
+        public val correlationId: String?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-007"
+        override val level: LogLevel get() = LogLevel.WARN
+    }
+
+    /**
+     * `LOG-008`: the write guard refused an entry — an error, an empty body or a partial response.
+     * [failure] is the refused outcome, absent for a usable-but-partial response.
+     */
+    public data class CacheWriteSkipped(
+        public val outcome: LogOutcome,
+        public val failure: ErrorClass?,
+        public val correlationId: String?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-008"
+        override val level: LogLevel get() = LogLevel.DEBUG
+    }
+
+    /** `LOG-009`: a stored entry could not be decoded and was discarded; the read degrades to a miss. */
+    public data class CacheEntryDiscarded(
+        public val correlationId: String?,
+    ) : LogEvent {
+        override val catalogueId: String get() = "LOG-009"
+        override val level: LogLevel get() = LogLevel.WARN
+    }
+
     /** `LOG-010`: the pager published a list page; the operation is `CHARACTER_LIST`. */
     public data class PageLoaded(
         public val page: Int,

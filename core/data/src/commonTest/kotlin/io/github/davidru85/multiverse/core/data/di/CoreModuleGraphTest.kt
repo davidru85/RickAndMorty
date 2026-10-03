@@ -10,6 +10,7 @@ import io.github.davidru85.multiverse.core.domain.repository.FavoritesRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import io.github.davidru85.multiverse.testing.FakeFavoritesStore
 import io.github.davidru85.multiverse.testing.MockHttp
+import io.github.davidru85.multiverse.testing.NoCacheStorage
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -49,6 +50,7 @@ class CoreModuleGraphTest {
                 clock = Clock.System,
                 applicationScope = CoroutineScope(StandardTestDispatcher(scope.testScheduler)),
                 favoritesStore = FakeFavoritesStore(),
+                cacheStorage = NoCacheStorage,
                 logger = ValidatingAppLogger.forDebug(RecordingLogSink()),
             )
         val koin = startKoin { modules(coreModule, inputs.asModule()) }.koin
