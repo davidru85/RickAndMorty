@@ -5,19 +5,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
+import io.github.davidru85.multiverse.app.splash.SplashGate
+import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
+import kotlinx.coroutines.Dispatchers
+import org.koin.android.ext.android.inject
 
 /**
- * The one activity (`TASK-044`): it installs the system splash, draws edge to edge with light system
- * bars, and composes [MultiverseApp] inside the design system's theme.
+ * The one activity (`TASK-044`, `TASK-007`): it installs the system splash, draws edge to edge with
+ * light system bars, and composes [MultiverseApp] inside the design system's theme.
  *
- * The system splash is handed over here and nothing more: `installSplashScreen()` shows the launcher
- * icon's foreground over the splash theme's background, and the branded rotation, the readiness gate
- * and the crossfade to Characters are `TASK-007`'s (`UI_SPEC.md` §6.1). Keeping the handoff here is
- * what lets phase 4.3 replace the in-app surface without touching the activity.
+ * The system phase is handed over here: `installSplashScreen()` shows the launcher icon's foreground
+ * over the splash theme's background for as long as the process takes to start. The **branded** phase
+ * is the app's own, and it is driven by the [SplashGate] this activity supplies from the graph, so the
+ * splash is a real loading indicator rather than decoration (`UI_SPEC.md` §6.1, `DEC-098`).
  */
 public class MainActivity : ComponentActivity() {
+    private val characterRepository: CharacterRepository by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before `super.onCreate`, as the SplashScreen API requires.
         installSplashScreen()
@@ -27,7 +34,10 @@ public class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(scrim = android.graphics.Color.TRANSPARENT),
         )
         setContent {
-            MultiverseApp()
+            // The gate is built once per composition from the graph's repository, so the splash waits on
+            // the same first page the Discovery screen will render.
+            val gate = remember { SplashGate(characterRepository, Dispatchers.IO) }
+            MultiverseApp(splashGate = gate)
         }
     }
 }

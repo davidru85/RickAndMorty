@@ -8,6 +8,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+/**
+ * The Compose compiler runs for the **Android** compilation only.
+ *
+ * The plugin applies to every Kotlin compilation by default, which includes the Apple targets where no
+ * Compose runtime exists and none is wanted: the composable lives in `androidMain`, so the compiler has
+ * nothing to transform there. `targetKotlinPlatforms` is the plugin's own scoping API, so this is the
+ * supported way to say where Compose is, rather than a workaround.
+ */
+composeCompiler {
+    targetKotlinPlatforms.set(setOf(org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm))
+}
+
 kotlin {
     sourceSets {
         commonMain.dependencies {

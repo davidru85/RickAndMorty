@@ -2,8 +2,6 @@ package io.github.davidru85.multiverse.feature.episodes.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
@@ -24,18 +22,16 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 @Composable
 public fun EpisodesPlaceholder(
     onBrowseCharacters: () -> Unit,
+    illustration: androidx.compose.ui.graphics.painter.Painter,
     modifier: Modifier = Modifier,
 ) {
     EmptyState(
         heading = CopyResolver.copy("episodes_heading"),
         body = CopyResolver.copy("episodes_body"),
-        illustration = SectionGlyphPainter,
+        illustration = illustration,
         actionLabel = CopyResolver.copy("browse_characters"),
         containerColor = MultiverseColors.secondaryContainer,
         onAction = onBrowseCharacters,
         modifier = modifier,
     )
 }
-
-/** The section glyph of `UI_SPEC.md` §6.4: a decorative mark, so a screen reader reads the heading. */
-private val SectionGlyphPainter = ColorPainter(Color(0xFFAEC5AD))

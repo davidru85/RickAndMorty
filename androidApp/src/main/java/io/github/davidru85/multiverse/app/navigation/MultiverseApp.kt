@@ -28,6 +28,7 @@ import io.github.davidru85.multiverse.feature.characterdetail.navigation.Charact
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
 import io.github.davidru85.multiverse.feature.episodes.navigation.Episodes
 import io.github.davidru85.multiverse.feature.favorites.navigation.Favorites
+import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 
 /**
@@ -86,11 +87,13 @@ public fun MultiverseApp(
                     composable<Episodes> {
                         io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_play_circle),
                         )
                     }
                     composable<Favorites> {
                         io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
                         )
                     }
                     // Characters and Settings render the section title in the Discovery headline

@@ -2,8 +2,6 @@ package io.github.davidru85.multiverse.feature.favorites.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
@@ -23,18 +21,16 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 @Composable
 public fun FavoritesEmptyState(
     onBrowseCharacters: () -> Unit,
+    illustration: androidx.compose.ui.graphics.painter.Painter,
     modifier: Modifier = Modifier,
 ) {
     EmptyState(
         heading = CopyResolver.copy("favorites_heading"),
         body = CopyResolver.copy("favorites_body"),
-        illustration = SectionGlyphPainter,
+        illustration = illustration,
         actionLabel = CopyResolver.copy("browse_characters"),
         containerColor = MultiverseColors.primaryContainer,
         onAction = onBrowseCharacters,
         modifier = modifier,
     )
 }
-
-/** The section glyph of `UI_SPEC.md` §6.4: decorative, so the heading carries the meaning. */
-private val SectionGlyphPainter = ColorPainter(Color(0xFFC6FF6B))
