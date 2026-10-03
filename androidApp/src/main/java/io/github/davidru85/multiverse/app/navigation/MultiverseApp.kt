@@ -80,8 +80,21 @@ public fun MultiverseApp(
                         val route = entry.toRoute<CharacterDetail>()
                         SectionPlaceholder(titleKey = "nav_characters", subtitle = route.id)
                     }
-                    composable<Episodes> { SectionPlaceholder(titleKey = "nav_episodes") }
-                    composable<Favorites> { SectionPlaceholder(titleKey = "nav_favorites") }
+                    // Episodes and Favorites render their specified placeholder screens (`TASK-008`);
+                    // both take "Browse characters" as a callback that selects the Characters
+                    // destination without pushing a route (`REQ-FUNC-008`, `DEC-099`).
+                    composable<Episodes> {
+                        io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
+                            onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                        )
+                    }
+                    composable<Favorites> {
+                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
+                            onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                        )
+                    }
+                    // Characters and Settings render the section title in the Discovery headline
+                    // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
                     composable<Settings> { SectionPlaceholder(titleKey = "nav_settings") }
                 }
                 MultiverseNavigationBar(

@@ -11,3 +11,8 @@
 [core/designsystem/**/*.kt]
 ktlint_standard_function-naming = disabled
 ktlint_standard_property-naming = disabled
+
+# A feature's Android UI source sets are composables too:  and the empty states
+# are @Composable factories by the same convention, so the rule is scoped away for those files only.
+[feature/*/src/androidMain/**/*.kt]
+ktlint_standard_function-naming = disabled

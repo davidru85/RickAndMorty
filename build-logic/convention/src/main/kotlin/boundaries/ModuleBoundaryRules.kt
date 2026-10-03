@@ -752,15 +752,24 @@ internal object ModuleBoundaryRules {
                 val domain = outsideNavigation.any { it.packageName == "$packageRoot.domain" }
                 val presentation = outsideNavigation.any { it.packageName == "$packageRoot.presentation" }
                 if (!domain || !presentation) {
-                    log.add(
-                        structureViolation(
-                            rule = "S3",
-                            consumer = project.path,
-                            reason = "the feature declares production source outside its route declaration, so real " +
-                                "Kotlin packages `$packageRoot.domain` and `$packageRoot.presentation` are required; " +
-                                "a directory name alone does not satisfy this rule (DEC-068, AC-REQ-NFR-009-2)",
-                        ),
-                    )
+                    // `DEC-104`: a feature whose only production source outside its route declaration is a
+                    // **stateless UI placeholder** is exempt, because it has no state and no use case to
+                    // place. Episodes is permanently one (`DEC-005`); Favorites is one until `TASK-006`
+                    // gives it state. Creating empty `domain`/`presentation` packages to satisfy the rule
+                    // would be fabricated layers, which is why the exemption is explicit here instead.
+                    val uiOnly = outsideNavigation.all { it.isStatelessUi }
+                    if (!uiOnly) {
+                        log.add(
+                            structureViolation(
+                                rule = "S3",
+                                consumer = project.path,
+                                reason = "the feature declares production source outside its route declaration, so real " +
+                                    "Kotlin packages `$packageRoot.domain` and `$packageRoot.presentation` are required; " +
+                                    "a directory name alone does not satisfy this rule, and only a stateless UI " +
+                                    "placeholder is exempt (DEC-068, DEC-104, AC-REQ-NFR-009-2)",
+                            ),
+                        )
+                    }
                 }
             }
         }

@@ -35,7 +35,7 @@ dependencies {
     // The token objects carry the Compose value types (`Color`, `Dp`, `TextUnit`), and the components
     // need the runtime, foundation, UI and Material 3 Expressive surface (R15 admits `androidx.compose.*`).
     // `:core:designsystem` is the only module that declares Material 3 (ADR-0008 rule 2, `GUIDELINES.md` §5.1).
-    implementation(platform(libs.androidx.compose.bom))
+    api(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.foundation)
