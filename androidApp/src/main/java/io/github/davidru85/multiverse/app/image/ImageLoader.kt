@@ -8,8 +8,6 @@ import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import io.github.davidru85.multiverse.core.designsystem.components.PortraitCrossfadeMillis
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import okio.Path.Companion.toOkioPath
 import io.ktor.client.HttpClient
 
@@ -55,6 +53,3 @@ public fun imageLoader(
 
 /** The directory the image disk cache uses, inside the app's private storage (`SECURITY.md` §3). */
 public fun imageCacheDirectory(context: Context): java.io.File = java.io.File(context.cacheDir, "images")
-
-/** The dispatcher Coil's fetch runs on, so a shell can inject one. */
-public val imageDispatcher: CoroutineDispatcher = Dispatchers.IO

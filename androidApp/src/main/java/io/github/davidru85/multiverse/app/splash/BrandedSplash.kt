@@ -36,10 +36,10 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import androidx.compose.ui.draw.clip
 
 /** The acceleration of `UI_SPEC.md` §7: 360° over 1.2 s on the stated curve. */
-private const val ACCELERATION_MILLIS = 1_200
+internal const val ACCELERATION_MILLIS = 1_200
 
-/** The constant speed the portal keeps once accelerated, in degrees per second. */
-private const val CONSTANT_DEGREES_PER_SECOND = 900f
+/** The prototype cycle of `UI_SPEC.md` §7: 0° → −360° (1.2 s, ease-in) → −1080° (2 s, linear). */
+internal const val CYCLE_MILLIS = 2_000
 
 /** The Reduce Motion pulse of `UI_SPEC.md` §7: opacity 0.6 ↔ 1 over 1.2 s. */
 private const val REDUCE_MOTION_MILLIS = 1_200
@@ -144,25 +144,40 @@ public fun rememberReduceMotion(): Boolean {
 }
 
 /**
- * The portal's angle: it accelerates on the documented curve for the first 1.2 s, then keeps spinning
- * at the speed it reached, which is what tells the user the app is still working.
+ * The portal's angle, as `UI_SPEC.md` §7's prototype keyframes state: 0° → −360° over 1.2 s on the
+ * ease-in cubic, then −360° → −1080° over the next 0.8 s at the constant ≈900°/s the specification
+ * names. One linear progress value drives both phases, so the angle is a pure function of the
+ * elapsed fraction; the second phase ends at −1080°, which is the same image as 0°, so the cycle
+ * restarts with no visible jump and the portal visibly never stops.
  */
 @Composable
 private fun portalRotation(): Float {
     val transition = rememberInfiniteTransition(label = "portal-rotation")
-    val degreesPerCycle = 360f
-    val angle by
+    val progress by
         transition.animateFloat(
             initialValue = 0f,
-            targetValue = degreesPerCycle,
+            targetValue = 1f,
             animationSpec =
                 infiniteRepeatable(
-                    animation = tween(durationMillis = ACCELERATION_MILLIS, easing = PortalAcceleration),
+                    animation = tween(durationMillis = CYCLE_MILLIS, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart,
                 ),
-            label = "portal-angle",
+            label = "portal-progress",
         )
-    return angle
+    return portalAngleAt(progress)
+}
+
+/**
+ * The angle at a cycle fraction [progress] in `0..1`: the ease-in acceleration over the first
+ * `ACCELERATION_MILLIS`, then the constant-speed sweep to −1080° over the remainder.
+ */
+internal fun portalAngleAt(progress: Float): Float {
+    val accelerationFraction = ACCELERATION_MILLIS.toFloat() / CYCLE_MILLIS
+    return if (progress < accelerationFraction) {
+        -360f * PortalAcceleration.transform(progress / accelerationFraction)
+    } else {
+        -360f - (1_080f - 360f) * ((progress - accelerationFraction) / (1f - accelerationFraction))
+    }
 }
 
 /** The Reduce Motion signal: a gentle pulse instead of a spin (`UI_SPEC.md` §7). */

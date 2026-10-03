@@ -126,9 +126,9 @@ class CharacterPortraitTest {
             seam.requests.single().second,
         )
         org.junit.Assert.assertEquals(
-            "the error state never draws a broken-image glyph: the portal mark is supplied by the caller",
-            PortraitErrorMarkAlpha,
-            PortraitErrorMarkAlpha,
+            "the request carries the URL verbatim",
+            "https://example.invalid/avatar/3.jpeg",
+            seam.requests.single().first,
         )
     }
 
