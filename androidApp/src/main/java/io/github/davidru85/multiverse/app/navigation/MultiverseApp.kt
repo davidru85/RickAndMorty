@@ -49,7 +49,14 @@ public fun MultiverseApp(
     navController: androidx.navigation.NavHostController = rememberNavController(),
     /** The readiness gate (`TASK-007`); a caller may supply one, and `null` skips the splash. */
     splashGate: io.github.davidru85.multiverse.app.splash.SplashGate? = null,
+    /** The one image seam every portrait draws through (`DEC-097`); the shell owns the loader. */
+    imageSeam: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam = NO_IMAGE_SEAM,
+    /** The card-to-detail hand-off (`IC-025`); the shell owns the one instance. */
+    detailHandoff: io.github.davidru85.multiverse.core.presentation.DetailHandoff? = null,
 ) {
+    val handoff =
+        detailHandoff
+            ?: androidx.compose.runtime.remember { io.github.davidru85.multiverse.core.presentation.DetailHandoff() }
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
             // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
@@ -76,10 +83,27 @@ public fun MultiverseApp(
                     startDestination = CharacterList,
                     modifier = Modifier.weight(1f),
                 ) {
-                    composable<CharacterList> { SectionPlaceholder(titleKey = "nav_characters") }
+                    composable<CharacterList> {
+                        io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryRoute(
+                            seam = imageSeam,
+                            onOpenDetail = { card ->
+                                // The card travels through `IC-025` before the destination changes, so the
+                                // hero can animate from its bounds and the known fields render at once.
+                                handoff.publish(card)
+                                navController.navigate(CharacterDetail(card.id.value))
+                            },
+                        )
+                    }
                     composable<CharacterDetail> { entry ->
                         val route = entry.toRoute<CharacterDetail>()
-                        SectionPlaceholder(titleKey = "nav_characters", subtitle = route.id)
+                        val id = io.github.davidru85.multiverse.core.domain.model.CharacterId(route.id)
+                        io.github.davidru85.multiverse.feature.characterdetail.ui.CharacterDetailRoute(
+                            id = id,
+                            seam = imageSeam,
+                            header = handoff.consume(id),
+                            onBack = { navController.popBackStack() },
+                            onShare = {},
+                        )
                     }
                     // Episodes and Favorites render their specified placeholder screens (`TASK-008`);
                     // both take "Browse characters" as a callback that selects the Characters
@@ -91,14 +115,18 @@ public fun MultiverseApp(
                         )
                     }
                     composable<Favorites> {
-                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
+                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
+                            seam = imageSeam,
+                            handoff = handoff,
+                            onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
                         )
                     }
                     // Characters and Settings render the section title in the Discovery headline
                     // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
-                    composable<Settings> { SectionPlaceholder(titleKey = "nav_settings") }
+                    // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
+                    composable<Settings> { io.github.davidru85.multiverse.feature.settings.ui.SettingsRoute() }
                 }
                 MultiverseNavigationBar(
                     destinations = destinations,
@@ -153,6 +181,22 @@ internal fun topLevelDestinations(): List<NavigationDestination> =
         NavigationDestination(KEY_SETTINGS, CopyResolver.copy("nav_settings"), MultiverseIcons.Settings, MultiverseIcons.SettingsOutlined),
     )
 
+/**
+ * The seam a destination uses when the caller supplies none: every portrait stays in its placeholder
+ * state. It exists so a preview or a case can compose a screen without a loader, and so no screen has
+ * to branch on whether the shell wired one (`DEC-097`).
+ */
+private val NO_IMAGE_SEAM: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam =
+    object : io.github.davidru85.multiverse.core.designsystem.image.ImageSeam {
+        @androidx.compose.runtime.Composable
+        override fun rememberPainter(
+            url: String,
+            widthPx: Int,
+            heightPx: Int,
+        ): io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult =
+            io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult.Loading
+    }
+
 /** A stable key per top-level destination, so the bar never depends on a route type. */
 internal const val KEY_CHARACTERS: String = "characters"
 internal const val KEY_EPISODES: String = "episodes"
@@ -172,37 +216,5 @@ internal fun androidx.navigation.NavHostController.selectTopLevel(key: String) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
-    }
-}
-
-/**
- * The section title a destination renders until its screen exists (`DEC-099`): the Discovery
- * headline position, plus the navigation bar the shell always shows.
- */
-@Composable
-internal fun SectionPlaceholder(
-    titleKey: String,
-    subtitle: String? = null,
-) {
-    val title = CopyResolver.copy(titleKey)
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .semantics { contentDescription = title },
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displaySmall,
-            color = MultiverseColors.onSurface,
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MultiverseColors.onSurfaceVariant,
-            )
-        }
     }
 }

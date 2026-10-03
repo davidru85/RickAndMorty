@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.app.di
 
 import android.content.Context
 import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
+import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
@@ -25,6 +26,14 @@ public const val FAVORITES_STORE_FILE: String = "favorites.preferences_pb"
  * favourites (`adr/0005-caching-strategy.md`, `DEC-004`).
  */
 public const val RESPONSE_CACHE_DIRECTORY: String = "responses"
+
+/**
+ * The DataStore file the app-settings store owns (`IC-022`, `TASK-074`, `SECURITY.md` §3).
+ *
+ * A file of its own, beside the favourites one: the two stores share the store technology and no
+ * key, so clearing either cannot clear the other, and the settings survive a favourites reset.
+ */
+public const val SETTINGS_STORE_FILE: String = "settings.preferences_pb"
 
 /**
  * The shell's platform modules (`TASK-044`, `DESIGN.md` §5): every input `coreModule` resolves from
@@ -73,10 +82,25 @@ public fun platformInputs(
                 ),
             ),
         cacheStorage = FileCacheStorage(File(appContext.cacheDir, RESPONSE_CACHE_DIRECTORY)),
+        settingsStore =
+            DataStoreAppSettingsLocalDataSource(
+                preferencesDataStore(
+                    file = File(appContext.filesDir, SETTINGS_STORE_FILE),
+                    scope = applicationScope,
+                    logger = logger,
+                ),
+            ),
         logger = logger,
     ).asModule()
 
-/** The one Coil image loader (`TASK-021`): the same allow-listed client, so no image bypasses it. */
+/**
+ * The one Coil image loader (`TASK-021`) and the seam that exposes it to the design system
+ * (`DEC-097`): the same allow-listed client, so no image bypasses the host rule, and the one
+ * `ImageSeam` every surface draws through.
+ *
+ * The loader is a process-lifetime singleton; the seam wraps it, so a screen resolves the port rather
+ * than building a second loader.
+ */
 public fun imageLoaderModule(
     context: android.content.Context,
     client: io.ktor.client.HttpClient,
@@ -87,6 +111,12 @@ public fun imageLoaderModule(
                 context = context,
                 client = client,
                 diskCacheDirectory = io.github.davidru85.multiverse.app.image.imageCacheDirectory(context),
+            )
+        }
+        single<io.github.davidru85.multiverse.core.designsystem.image.ImageSeam> {
+            io.github.davidru85.multiverse.app.image.CoilImageSeam(
+                context = context,
+                imageLoader = get(),
             )
         }
     }

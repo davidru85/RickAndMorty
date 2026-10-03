@@ -54,6 +54,9 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
+    // The shared presentation primitives the shell composes: the card-to-detail hand-off (`IC-025`,
+    // `DESIGN.md` §4.2). It carries no implementation and no platform type, and `R11` admits it.
+    implementation(project(":core:presentation"))
 
     // The diagnostic API is linked from a `debug*` configuration only: `R11` rejects any other
     // configuration, and the release closure never reaches the module (`DEC-088`, ADR-0013).

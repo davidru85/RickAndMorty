@@ -8,6 +8,7 @@ import io.github.davidru85.multiverse.core.data.cache.CachedPayloadMapper
 import io.github.davidru85.multiverse.core.data.cache.ResponseCache
 import io.github.davidru85.multiverse.core.data.logging.filterNames
 import io.github.davidru85.multiverse.core.data.remote.CharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.RemoteProtocolSource
 import io.github.davidru85.multiverse.core.data.remote.RemoteWarnings
 import io.github.davidru85.multiverse.core.domain.logging.AppLogger
 import io.github.davidru85.multiverse.core.domain.logging.LogEvent
@@ -67,13 +68,41 @@ import kotlin.random.Random
  * *names* only, and retries as `LOG-013`. [scope] owns the shared work; closing it cancels that work.
  */
 public class RemoteCharacterRepository(
-    private val remote: CharacterRemoteDataSource,
+    private val rest: CharacterRemoteDataSource,
+    private val graphQl: CharacterRemoteDataSource,
     private val scope: CoroutineScope,
     random: Random,
     private val logger: AppLogger,
     private val cache: ResponseCache,
-    private val protocol: RemoteProtocol = RemoteProtocol.Rest,
+    private val protocols: RemoteProtocolSource = RemoteProtocolSource.Rest,
 ) : CharacterRepository {
+    /**
+     * The REST-only shape of `TASK-038`, kept so the suites that predate the switch keep compiling.
+     * Both adapters are then the same source, and the protocol stays REST (`AC-REQ-FUNC-034-1`).
+     */
+    public constructor(
+        remote: CharacterRemoteDataSource,
+        scope: CoroutineScope,
+        random: Random,
+        logger: AppLogger,
+        cache: ResponseCache,
+        protocol: RemoteProtocol = RemoteProtocol.Rest,
+    ) : this(remote, remote, scope, random, logger, cache, RemoteProtocolSource.Rest)
+
+    /**
+     * The adapter a request must use. It is resolved once per request, from the protocol that request's
+     * identity was built with, so a change of preference cannot move a request mid-flight onto another
+     * adapter (`AC-REQ-FUNC-034-2`).
+     */
+    private fun adapterFor(protocol: RemoteProtocol): CharacterRemoteDataSource =
+        when (protocol) {
+            RemoteProtocol.Rest -> rest
+            RemoteProtocol.GraphQl -> graphQl
+        }
+
+    /** The protocol this request is served under; part of its identity and of its cache key. */
+    private suspend fun protocol(): RemoteProtocol = protocols.current()
+
     private val retry = RetryPolicy(random, logger)
     private val pages =
         SingleFlight<PageIdentity, DataResult<CharacterPage>>(scope) { identity, correlationId ->
@@ -117,17 +146,24 @@ public class RemoteCharacterRepository(
         policy: PageLoadPolicy,
     ): DataResult<CharacterPage> {
         // The adapter trims the query and sends nothing for a blank one, so the identity does too.
+        // The active protocol is read once per request and is part of the identity, so a switch can
+        // never be satisfied by work already in flight for the other protocol (DEC-086, ADR-0011).
+        val protocol = protocol()
         val identity = PageIdentity(protocol, page, filter.query.trim(), filter.status, policy)
-        return pages.run(identity) { loadPage(filter, page, policy) }
+        return pages.run(identity) { loadPage(protocol, filter, page, policy) }
     }
 
     override suspend fun details(
         id: CharacterId,
         enrich: Boolean,
-    ): DataResult<CharacterDetails> = details.run(DetailsIdentity(protocol, id, enrich)) { loadDetails(id, enrich) }
+    ): DataResult<CharacterDetails> {
+        val protocol = protocol()
+        return details.run(DetailsIdentity(protocol, id, enrich)) { loadDetails(protocol, id, enrich) }
+    }
 
     /** One page request through the cache's read policy, or straight to the network under `ForceNetwork`. */
     private suspend fun loadPage(
+        protocol: RemoteProtocol,
         filter: CharacterFilter,
         page: Int,
         policy: PageLoadPolicy,
@@ -140,7 +176,7 @@ public class RemoteCharacterRepository(
                 CacheFreshness.FRESH ->
                     return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = false)
                 CacheFreshness.STALE -> {
-                    revalidatePage(key, filter, page)
+                    revalidatePage(protocol, key, filter, page)
                     return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = true)
                 }
                 CacheFreshness.OFFLINE_FALLBACK -> Unit // Keep it; the network answers first.
@@ -148,7 +184,7 @@ public class RemoteCharacterRepository(
             }
         }
         cache.miss(LogOperation.CHARACTER_LIST, page)
-        val outcome = retry.run(LogOperation.CHARACTER_LIST) { remote.characterPage(filter, page) }
+        val outcome = retry.run(LogOperation.CHARACTER_LIST) { adapterFor(protocol).characterPage(filter, page) }
         return when (outcome) {
             is DataResult.Success -> {
                 admitPage(outcome, page)?.let { cache.store(key, it) }
@@ -162,6 +198,7 @@ public class RemoteCharacterRepository(
     }
 
     private suspend fun loadDetails(
+        protocol: RemoteProtocol,
         id: CharacterId,
         enrich: Boolean,
     ): DataResult<CharacterDetails> {
@@ -173,7 +210,7 @@ public class RemoteCharacterRepository(
                 CacheFreshness.FRESH ->
                     return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = false)
                 CacheFreshness.STALE -> {
-                    revalidateDetails(key, id, enrich)
+                    revalidateDetails(protocol, key, id, enrich)
                     return DataResult.Success(cached, DataSource.DISK_CACHE, isStale = true)
                 }
                 CacheFreshness.OFFLINE_FALLBACK -> Unit
@@ -181,7 +218,7 @@ public class RemoteCharacterRepository(
             }
         }
         cache.miss(LogOperation.CHARACTER_DETAIL, null)
-        val detail = retry.run(LogOperation.CHARACTER_DETAIL) { remote.characterDetails(id) }
+        val detail = retry.run(LogOperation.CHARACTER_DETAIL) { adapterFor(protocol).characterDetails(id) }
         if (detail !is DataResult.Success) {
             if (detail is DataResult.Failure) {
                 cache.refuse(LogOutcome.FAILURE, detail.failure)
@@ -193,7 +230,7 @@ public class RemoteCharacterRepository(
             admitDetails(detail)?.let { cache.store(key, it) }
             return detail
         }
-        return when (val episodes = retry.run(LogOperation.EPISODE_BATCH) { remote.episodes(detail.value.episodeIds) }) {
+        return when (val episodes = retry.run(LogOperation.EPISODE_BATCH) { adapterFor(protocol).episodes(detail.value.episodeIds) }) {
             is DataResult.Success -> {
                 val enriched =
                     detail.copy(
@@ -223,6 +260,7 @@ public class RemoteCharacterRepository(
      * runs in [scope], so closing it cancels the revalidation with every other shared call.
      */
     private suspend fun revalidatePage(
+        protocol: RemoteProtocol,
         key: CacheKey,
         filter: CharacterFilter,
         page: Int,
@@ -230,7 +268,7 @@ public class RemoteCharacterRepository(
         if (!beginRevalidation(key)) return
         scope.launch {
             try {
-                val outcome = retry.run(LogOperation.CHARACTER_LIST) { remote.characterPage(filter, page) }
+                val outcome = retry.run(LogOperation.CHARACTER_LIST) { adapterFor(protocol).characterPage(filter, page) }
                 if (outcome is DataResult.Success) {
                     admitPage(outcome, page)?.let { cache.store(key, it) }
                 } else if (outcome is DataResult.Failure) {
@@ -245,6 +283,7 @@ public class RemoteCharacterRepository(
     }
 
     private suspend fun revalidateDetails(
+        protocol: RemoteProtocol,
         key: CacheKey,
         id: CharacterId,
         enrich: Boolean,
@@ -252,7 +291,7 @@ public class RemoteCharacterRepository(
         if (!beginRevalidation(key)) return
         scope.launch {
             try {
-                val outcome = retry.run(LogOperation.CHARACTER_DETAIL) { remote.characterDetails(id) }
+                val outcome = retry.run(LogOperation.CHARACTER_DETAIL) { adapterFor(protocol).characterDetails(id) }
                 if (outcome is DataResult.Success && !enrich) {
                     admitDetails(outcome)?.let { cache.store(key, it) }
                 }

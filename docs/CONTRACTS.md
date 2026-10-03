@@ -129,6 +129,7 @@ CacheStorage, CacheKey, CacheEntry       CONTRACTS.md IC-012       :core:data   
 FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data    commonMain
 CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain  commonMain (implemented in :core:data)
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
+DetailHandoff                            CONTRACTS.md IC-025       :core:presentation  commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -749,6 +750,26 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `failureTitle()` and `retryAction()` return the shared full-surface title and the retry affordance, so the two keys are named once instead of per surface.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-022`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
 
+### IC-025 — `DetailHandoff`
+
+- **Declaration** (`:core:presentation`, `commonMain`):
+
+```kotlin
+class DetailHandoff {
+    fun publish(card: CharacterCardUi)
+    fun consume(id: CharacterId): CharacterCardUi?
+    fun clear()
+}
+```
+
+- **Semantics:** the card-to-detail hand-off (`DESIGN.md` §4.2). The detail screen must render the card the user tapped **before the network responds**, so the hero animates from the card's bounds and the known fields are on screen immediately (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`). Neither feature may name the other (ADR-0001), so the payload travels through this port: Discovery publishes one `CharacterCardUi`, Detail consumes the one matching the id it was routed with, and the composition root owns the single instance.
+- **Invariants**
+  - It holds at most one card, and never a list, a page or any network state: a screen reads it once on entry.
+  - `consume` returns the held card only when its id equals the requested one; a deep link or a process restart consumes nothing, which is why the detail screen renders from its own state in that case.
+  - It is not a cache: the card a consumer receives is the one that was published, and `clear` drops it rather than retaining it.
+  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`), which is the only composition-root edge to it beyond the shared copy keys.
+- **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-009`, `DESIGN.md` §4.2, `DEC-013`.
+
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 
 - **Declarations** (`:feature:discovery`, `presentation` package, `commonMain`):
@@ -849,7 +870,7 @@ sealed interface FavoritesIntent {
   - `loadState == Empty` while the stored set is empty; the designed empty state is shown only in that condition (`REQ-FUNC-006`, `AC-REQ-FUNC-006-3`, `UI_SPEC.md` §6.4).
   - `loadState == Content` iff at least one favourite is displayable; there is no network load in this feature, so `Loading` appears only while the first store emission is awaited and `Error` only when the store read failed.
   - The items' order `MUST` be deterministic and stable across re-observation; the concrete order is not fixed by any requirement (§10 assumption).
-  - The feature issues no remote request and holds no detail data; it renders cards from `IC-016` and resolves a card to its detail screen through the shared navigation hand-off.
+  - The feature issues no **detail** request and holds no detail data: it renders cards from `IC-016` and resolves a card to its detail screen through the shared navigation hand-off (`IC-025`). It resolves each favourite **id** through `IC-007`'s cached single-id read, because the store holds ids only (`IC-008`, `IC-013`) and this state's `items` are cards; the earlier wording forbade the request its own declared state type requires (`CONF-79`, `DESIGN.md` §4.5).
 - **Traceability:** `REQ-FUNC-006`, `REQ-FUNC-008`, `DEC-004`, `UI_SPEC.md` §6.4.
 
 ### IC-023 — `SettingsUiState` and `SettingsIntent`

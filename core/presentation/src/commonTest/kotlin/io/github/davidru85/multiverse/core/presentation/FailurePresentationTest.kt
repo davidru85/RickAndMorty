@@ -124,6 +124,15 @@ class FailurePresentationTest {
     }
 
     @Test
+    fun `TEST-UNIT-001 given_the_server_total_when_it_is_rendered_then_both_platforms_format_the_same_number`() {
+        // The count line's number comes from `info.count` and is formatted once, here, so the two
+        // platforms cannot render it differently and no total is hardcoded (AC-REQ-FUNC-001-3).
+        assertEquals("826", DefaultPresentationFormatters.charactersCount(826))
+        assertEquals("1", DefaultPresentationFormatters.charactersCount(1))
+        assertEquals("0", DefaultPresentationFormatters.charactersCount(0), "an established zero is a zero, not an absent value")
+    }
+
+    @Test
     fun `TEST-UNIT-010 given_an_unknown_value_when_a_status_is_labelled_then_it_keeps_the_shared_unknown_treatment`() {
         assertEquals(CopyKeys.STATUS_ALIVE, DefaultPresentationFormatters.statusKey(CharacterStatus.Alive))
         assertEquals(CopyKeys.STATUS_DEAD, DefaultPresentationFormatters.statusKey(CharacterStatus.Dead))

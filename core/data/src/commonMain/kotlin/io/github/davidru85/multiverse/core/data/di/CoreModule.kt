@@ -7,15 +7,22 @@ import io.github.davidru85.multiverse.core.data.favorites.FavoritesLocalDataSour
 import io.github.davidru85.multiverse.core.data.favorites.LocalFavoritesRepository
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.CharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.RemoteProtocolSource
+import io.github.davidru85.multiverse.core.data.remote.graphql.GraphQlCharacterRemoteDataSource
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.settingsProtocolSource
 import io.github.davidru85.multiverse.core.data.repository.RemoteCharacterRepository
+import io.github.davidru85.multiverse.core.data.settings.AppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.data.settings.LocalAppSettingsRepository
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
+import io.github.davidru85.multiverse.core.domain.repository.AppSettingsRepository
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.repository.FavoritesRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -45,6 +52,10 @@ public val coreModule: Module =
         single<Random> { Random.Default }
         single<TimeSource> { TimeSource.Monotonic }
 
+        // The un-named `IC-011` key stays the default protocol's adapter, REST
+        // (`AC-REQ-FUNC-034-1`), so a caller that asks for "the" adapter is unchanged; the GraphQL
+        // adapter is bound under its own qualifier beside it, and the repository resolves both
+        // (`TASK-075`, ADR-0011).
         single<CharacterRemoteDataSource> {
             RestCharacterRemoteDataSource(
                 client = get(),
@@ -53,6 +64,17 @@ public val coreModule: Module =
                 logger = get(),
             )
         }
+
+        single<CharacterRemoteDataSource>(named(GRAPH_QL_ADAPTER)) {
+            GraphQlCharacterRemoteDataSource(
+                client = get(),
+                decodingDispatcher = get(),
+                clock = get(),
+                logger = get(),
+            )
+        }
+
+        single<RemoteProtocolSource> { settingsProtocolSource(settings = get()) }
 
         single {
             ResponseCache(
@@ -67,11 +89,13 @@ public val coreModule: Module =
 
         single<CharacterRepository> {
             RemoteCharacterRepository(
-                remote = get(),
+                rest = get(),
+                graphQl = get(named(GRAPH_QL_ADAPTER)),
                 scope = get(),
                 random = get(),
                 logger = get(),
                 cache = get(),
+                protocols = get(),
             )
         }
 
@@ -83,6 +107,13 @@ public val coreModule: Module =
 
         single { ObserveFavoriteIds(repository = get()) }
 
+        // The settings store of `IC-022` is a platform input, like the favourites store: the shell
+        // supplies the DataStore or the `UserDefaults` instance, and the repository above it is
+        // `IC-021`'s only implementation (`TASK-074`).
+        single<AppSettingsLocalDataSource> { get() }
+
+        single<AppSettingsRepository> { LocalAppSettingsRepository(local = get()) }
+
         /** One pager per state-holder scope; the caller supplies its scope (`IC-014`). */
         factory<CharacterPager> { (scope: CoroutineScope) ->
             RepositoryCharacterPager(
@@ -90,9 +121,13 @@ public val coreModule: Module =
                 scope = scope,
                 logger = get(),
                 timeSource = get(),
+                protocolChanges = get<RemoteProtocolSource>().changes(),
             )
         }
     }
+
+/** The qualifier of the GraphQL adapter, so the default binding stays REST (`AC-REQ-FUNC-034-1`). */
+private const val GRAPH_QL_ADAPTER: String = "graphQlCharacterRemoteDataSource"
 
 /**
  * The platform inputs `coreModule` resolves from the graph. A shell registers one of each; the
@@ -109,6 +144,7 @@ public class CoreGraphInputs(
     public val applicationScope: CoroutineScope,
     public val favoritesStore: FavoritesLocalDataSource,
     public val cacheStorage: CacheStorage,
+    public val settingsStore: AppSettingsLocalDataSource,
     public val logger: DomainAppLogger,
 ) {
     /**
@@ -125,6 +161,7 @@ public class CoreGraphInputs(
         val scope = applicationScope
         val store = favoritesStore
         val cache = cacheStorage
+        val settings = settingsStore
         val appLogger = logger
         return module {
             single { httpClient }
@@ -133,6 +170,7 @@ public class CoreGraphInputs(
             single<CoroutineScope> { scope }
             single<FavoritesLocalDataSource> { store }
             single<CacheStorage> { cache }
+            single<AppSettingsLocalDataSource> { settings }
             single<io.github.davidru85.multiverse.core.domain.logging.AppLogger> { appLogger }
         }
     }

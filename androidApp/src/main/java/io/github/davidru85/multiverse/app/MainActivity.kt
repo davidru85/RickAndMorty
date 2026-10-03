@@ -7,9 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import io.github.davidru85.multiverse.app.image.CoilImageSeam
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
 import io.github.davidru85.multiverse.app.splash.SplashGate
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
+import io.github.davidru85.multiverse.core.presentation.DetailHandoff
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.android.inject
 
@@ -25,6 +27,12 @@ import org.koin.android.ext.android.inject
 public class MainActivity : ComponentActivity() {
     private val characterRepository: CharacterRepository by inject()
 
+    /** The one image seam (`DEC-097`): the app's Coil loader, adapted to the design system's port. */
+    private val imageSeam: CoilImageSeam by inject()
+
+    /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
+    private val detailHandoff: DetailHandoff = DetailHandoff()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before `super.onCreate`, as the SplashScreen API requires.
         installSplashScreen()
@@ -37,7 +45,7 @@ public class MainActivity : ComponentActivity() {
             // The gate is built once per composition from the graph's repository, so the splash waits on
             // the same first page the Discovery screen will render.
             val gate = remember { SplashGate(characterRepository, Dispatchers.IO) }
-            MultiverseApp(splashGate = gate)
+            MultiverseApp(splashGate = gate, imageSeam = imageSeam, detailHandoff = detailHandoff)
         }
     }
 }

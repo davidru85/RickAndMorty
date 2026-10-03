@@ -37,6 +37,14 @@ public interface PresentationFormatters {
      */
     public fun rateLimitCountdown(retryAfterSeconds: Long?): String?
 
+    /**
+     * The number `characters_count` substitutes (`UI_SPEC.md` §6.2, `AC-REQ-FUNC-001-3`).
+     *
+     * It is the one place the total becomes text, so both platforms render the same number in the
+     * same template; the total comes from `info.count` and is never a hardcoded constant.
+     */
+    public fun charactersCount(count: Int): String
+
     /** The message of [failure] (`ERROR_FLOW.md` §4), with the values its wording substitutes. */
     public fun failureMessage(failure: ApiFailure): FailureMessage
 
@@ -88,6 +96,8 @@ public object DefaultPresentationFormatters : PresentationFormatters {
     }
 
     override fun rateLimitCountdown(retryAfterSeconds: Long?): String? = retryAfterSeconds?.takeIf { it >= 0 }?.toString()
+
+    override fun charactersCount(count: Int): String = count.toString()
 
     override fun failureMessage(failure: ApiFailure): FailureMessage =
         when (failure) {
