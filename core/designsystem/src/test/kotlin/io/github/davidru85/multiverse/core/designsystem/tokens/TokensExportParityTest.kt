@@ -1,4 +1,4 @@
-package io.github.davidru85.multiverse.designsystem.tokens
+package io.github.davidru85.multiverse.core.designsystem.tokens
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

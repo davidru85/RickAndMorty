@@ -46,6 +46,24 @@ public object CopyKeys {
     public val STATUS_DEAD: CopyKey = key("status_dead")
     public val VALUE_UNKNOWN: CopyKey = key("value_unknown")
 
+    // The B4 surfaces (`TASK-013`, `DEC-100`, `DEC-101`): the app name, the splash, the navigation
+    // and the two placeholder screens. Each key's English string is canonical in `UI_SPEC.md`
+    // §6.1/§6.4 and is carried by the one Android copy set in `:core:designsystem`.
+    public val APP_NAME: CopyKey = key("app_name")
+    public val SPLASH_WORDMARK: CopyKey = key("splash_wordmark")
+    public val SPLASH_WORDMARK_SUB: CopyKey = key("splash_wordmark_sub")
+    public val SPLASH_TAGLINE: CopyKey = key("splash_tagline")
+    public val SPLASH_LOADING: CopyKey = key("splash_loading")
+    public val NAV_CHARACTERS: CopyKey = key("nav_characters")
+    public val NAV_EPISODES: CopyKey = key("nav_episodes")
+    public val NAV_FAVORITES: CopyKey = key("nav_favorites")
+    public val NAV_SETTINGS: CopyKey = key("nav_settings")
+    public val EPISODES_HEADING: CopyKey = key("episodes_heading")
+    public val EPISODES_BODY: CopyKey = key("episodes_body")
+    public val FAVORITES_HEADING: CopyKey = key("favorites_heading")
+    public val FAVORITES_BODY: CopyKey = key("favorites_body")
+    public val BROWSE_CHARACTERS: CopyKey = key("browse_characters")
+
     /** Every registered key, in registration order. Declared last, so it sees every key above. */
     public val all: Set<CopyKey> = registered.toSet()
 }

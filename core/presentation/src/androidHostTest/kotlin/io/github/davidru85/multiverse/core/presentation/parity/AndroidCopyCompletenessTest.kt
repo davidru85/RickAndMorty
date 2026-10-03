@@ -22,7 +22,7 @@ class AndroidCopyCompletenessTest {
     fun `TEST-UNIT-036 given_the_shipped_android_copy_set_when_verified_then_every_canonical_key_resolves_in_both_locales`() {
         val issues = CopyParity.verifyAndroid(
             canonical = CopyKeys.all.map { it.value }.toSet(),
-            androidResources = File(androidResourcesRoot(), "res"),
+            androidResources = androidResourcesRoot(),
         )
         assertEquals(
             emptyList(),
@@ -33,15 +33,15 @@ class AndroidCopyCompletenessTest {
 
     @Test
     fun `TEST-UNIT-036 given_the_shipped_copy_set_when_the_locales_are_read_then_english_and_spanish_both_exist`() {
-        val root = File(androidResourcesRoot(), "res")
+        val root = androidResourcesRoot()
         assertEquals(true, File(root, "values/strings.xml").isFile, "the English resource folder must exist")
         assertEquals(true, File(root, "values-es/strings.xml").isFile, "the Spanish resource folder must exist")
     }
 
     /**
-     * The design system module that owns the one Android copy set (`DEC-100`). The repository root
-     * is located from the working directory, so the test reads the shipped file rather than a
-     * fixture.
+     * The design system's resource root: the module that owns the one Android copy set
+     * (`DEC-100`). The repository root is located from the working directory, so the test reads
+     * the shipped file rather than a fixture.
      */
     private fun androidResourcesRoot(): File {
         var directory: File? = File(".").absoluteFile
@@ -49,6 +49,6 @@ class AndroidCopyCompletenessTest {
             directory = directory.parentFile
         }
         val root = requireNotNull(directory) { "the repository root could not be located" }
-        return File(root, "core/designsystem")
+        return File(root, "core/designsystem/src/main/res")
     }
 }

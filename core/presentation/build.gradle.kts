@@ -20,3 +20,14 @@ kotlin {
         }
     }
 }
+
+// `TEST-UNIT-036`'s real-resource case reads the one Android copy set that ships in
+// `:core:designsystem` (`DEC-100`). The folder is declared as an input of the host test so a copy
+// change cannot be masked by an up-to-date test run; without this the check would pass on a stale
+// snapshot of the resources.
+tasks.matching { it.name == "testAndroidHostTest" }.configureEach {
+    inputs
+        .dir(layout.projectDirectory.dir("../designsystem/src/main/res"))
+        .withPropertyName("androidCopySet")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
