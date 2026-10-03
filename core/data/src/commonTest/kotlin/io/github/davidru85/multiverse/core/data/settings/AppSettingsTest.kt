@@ -49,14 +49,13 @@ class AppSettingsTest {
 
             repository.update { it }
 
-            assertEquals(1L, storage.writes.toLong(), "an equal value is neither written nor emitted (IC-021)")
+            assertEquals(0L, storage.writes.toLong(), "an equal value is neither written nor emitted (IC-021)")
         }
 
     @Test
     fun `TEST-UNIT-046 given_an_unknown_stored_protocol_when_it_is_read_then_it_is_rest`() =
         TestTime.run {
-            storage.sounds = true
-            storage.protocol = "quux"
+            storage.seed(soundsEnabled = true, remoteProtocol = "quux")
 
             assertEquals(
                 AppSettings(soundsEnabled = true, remoteProtocol = RemoteProtocol.Rest),
