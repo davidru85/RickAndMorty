@@ -1,10 +1,10 @@
 package io.github.davidru85.multiverse.core.designsystem.copy
 
-import java.io.File
-import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * `TEST-UNIT-036`, the resolver-half (`DEC-100`, `REQ-FUNC-013`): the compile-checked name → resource
@@ -15,7 +15,6 @@ import org.junit.Test
  * actually ships.
  */
 class CopyResolverTableTest {
-
     @Test
     fun `TEST-UNIT-036 given_the_resolver_table_when_it_is_read_then_it_matches_the_shipped_resource_names`() {
         val english = resourceNames(File(resRoot(), "values/strings.xml"))
@@ -33,8 +32,20 @@ class CopyResolverTableTest {
                 setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
                 isExpandEntityReferences = false
             }
-        val strings = factory.newDocumentBuilder().parse(file).documentElement.getElementsByTagName("string")
-        return (0 until strings.length).map { strings.item(it).attributes.getNamedItem("name").nodeValue }.toSet()
+        val strings =
+            factory
+                .newDocumentBuilder()
+                .parse(file)
+                .documentElement
+                .getElementsByTagName("string")
+        return (0 until strings.length)
+            .map {
+                strings
+                    .item(it)
+                    .attributes
+                    .getNamedItem("name")
+                    .nodeValue
+            }.toSet()
     }
 
     private fun resRoot(): File {

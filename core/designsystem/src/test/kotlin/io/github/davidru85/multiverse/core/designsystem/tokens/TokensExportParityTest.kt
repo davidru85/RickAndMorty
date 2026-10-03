@@ -1,16 +1,14 @@
 package io.github.davidru85.multiverse.core.designsystem.tokens
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 /**
  * `TEST-UNIT-035` — the committed Figma export and the Kotlin token objects agree in both
@@ -22,12 +20,12 @@ import org.junit.Test
  * so a variable added in Figma cannot be silently ignored.
  */
 class TokensExportParityTest {
-
-    private val export: JsonObject = run {
-        val file = File(repoRoot(), EXPORT_PATH)
-        assertTrue("the committed export must exist at $EXPORT_PATH", file.isFile)
-        Json.parseToJsonElement(file.readText()).jsonObject
-    }
+    private val export: JsonObject =
+        run {
+            val file = File(repoRoot(), EXPORT_PATH)
+            assertTrue("the committed export must exist at $EXPORT_PATH", file.isFile)
+            Json.parseToJsonElement(file.readText()).jsonObject
+        }
 
     @Test
     fun `TEST-UNIT-035 given_the_committed_export_when_every_exported_variable_is_read_then_it_is_mapped_or_explicitly_excluded`() {
@@ -52,10 +50,11 @@ class TokensExportParityTest {
         val mappedValues = MultiverseTokens.entries()
         assertTrue("the token objects must not be empty", mappedValues.isNotEmpty())
 
-        val drift = mappedValues.filter { (name, value) ->
-            val expected = exported[name]
-            expected == null || expected != value
-        }
+        val drift =
+            mappedValues.filter { (name, value) ->
+                val expected = exported[name]
+                expected == null || expected != value
+            }
         assertEquals(
             "a Kotlin token must equal its export entry (Figma wins for values)",
             emptyMap<String, String>(),
@@ -95,21 +94,22 @@ class TokensExportParityTest {
          * renders. A variable leaves this list only when a token maps it, and an entry that stops
          * existing in the export fails the test above.
          */
-        val REVIEWED_EXCLUSIONS: Set<String> = setOf(
-            // iOS-only glass and label tokens (UI_SPEC.md §3.2, TASK-052).
-            "Glass/Fill",
-            "Glass/Fill Strong",
-            "Glass/Stroke Highlight",
-            "Glass/Stroke Edge",
-            "Glass/Tint Green",
-            "Glass/Tint Violet",
-            "Glass/Shadow",
-            "Label/Primary",
-            "Label/Secondary",
-            "Label/Tertiary",
-            "Radius/Glass Control",
-            "Radius/Glass Card",
-            "Radius/Glass Panel",
-        )
+        val REVIEWED_EXCLUSIONS: Set<String> =
+            setOf(
+                // iOS-only glass and label tokens (UI_SPEC.md §3.2, TASK-052).
+                "Glass/Fill",
+                "Glass/Fill Strong",
+                "Glass/Stroke Highlight",
+                "Glass/Stroke Edge",
+                "Glass/Tint Green",
+                "Glass/Tint Violet",
+                "Glass/Shadow",
+                "Label/Primary",
+                "Label/Secondary",
+                "Label/Tertiary",
+                "Radius/Glass Control",
+                "Radius/Glass Card",
+                "Radius/Glass Panel",
+            )
     }
 }

@@ -14,6 +14,8 @@ Committed exports fix that: the reviewer sees the design in the repository, the 
 
 ## Expected export set
 
+Every frame of `UI_SPEC.md` §1.1 (screens) **and** §1.2 (local components) has a committed PNG, named after its frame (`TASK-035`, `UI_SPEC.md` §1.2):
+
 | File | Source frame | Node |
 | --- | --- | --- |
 | `01-splash-android.png` | 01 · Splash (Android) | `20:1620` |
@@ -28,8 +30,24 @@ Committed exports fix that: the reviewer sees the design in the repository, the 
 | `06-favorites-android.png` · `06-favorites-ios.png` | 06 · Favorites empty state | `101:637` · `102:375` |
 | `10-launcher-android.png` | Android launcher icon board | `59:240` |
 | `10-appicon-ios.png` | iOS app icon board | `59:930` |
+| `11-portal-logo.png` | `Brand/Portal logo` (§1.2) | `16:13` |
+| `12-status-badge-android.png` | `Android/Status badge` (§1.2) | `16:23` |
+| `13-character-card-android.png` | `Android/Character card` (§1.2) | `16:40` |
+| `14-info-list-item-android.png` | `Android/Info list item` (§1.2) | `16:41` |
+| `15-stat-tile-android.png` | `Android/Stat tile` (§1.2) | `16:48` |
+| `16-nav-bar-android.png` | `Android/Navigation bar` (§1.2) | `117:887` |
+| `17-empty-state-android.png` | `Android/Empty state` (§1.2) | `101:483` |
+| `18-glass-card-ios.png` | `iOS/Glass character card` (§1.2) | `22:264` |
+| `19-glass-info-row-ios.png` | `iOS/Glass info row` (§1.2) | `22:265` |
+| `20-glass-segmented-ios.png` | `iOS/Glass segmented control` (§1.2) | `22:271` |
+| `21-glass-search-ios.png` | `iOS/Glass search field` (§1.2) | `22:281` |
+| `22-glass-icon-button-ios.png` | `iOS/Glass icon button` (§1.2) | `25:287` |
+| `23-glass-tab-bar-ios.png` | `iOS/Glass tab bar` (§1.2) | `102:255` |
+| `24-glass-tab-item-ios.png` | `iOS/Glass tab item` (§1.2) | `117:1369` |
+| `25-glass-text-button-ios.png` | `iOS/Glass text button` (§1.2) | `102:197` |
+| `26-empty-state-ios.png` | `iOS/Empty state` (§1.2) | `102:256` |
 
-Naming follows the screen numbering in `UI_SPEC.md` §1.1 and §10. Export at 2× the frame size, with the frame background included, so the files are directly comparable with the Android and iOS screenshot baselines described in `TESTING.md`.
+Naming follows the screen numbering in `UI_SPEC.md` §1.1/§1.2 and §10. Export at 2× the frame size, with the frame background included, so the files are directly comparable with the Android and iOS screenshot baselines described in `TESTING.md`. `tokens.json` (the variable export, `DEC-102`) lives in this directory too and has its own schema in `DESIGN.md` §4.3.
 
 ## Export procedure
 

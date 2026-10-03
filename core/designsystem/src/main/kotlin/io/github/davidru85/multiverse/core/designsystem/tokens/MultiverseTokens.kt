@@ -2,22 +2,20 @@ package io.github.davidru85.multiverse.core.designsystem.tokens
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.TextUnit
 
-/**
- * The design system's token objects (`DEC-022`, `DEC-102`).
- *
- * Every value below is the committed export of `docs/figma/tokens.json`, which `TEST-UNIT-035`
- * compares in both directions: a Kotlin value that drifts from the export fails, and an export
- * variable that no token maps (and is not in the test's reviewed exclusion) fails too. Figma wins
- * for values (`UI_SPEC.md`), so a divergence is settled by re-exporting, never by editing a literal
- * here alone.
- *
- * No component may carry an ad-hoc literal for a value this file names (`DESIGN.md` §3.4,
- * `GUIDELINES.md` §5.2).
- */
+// The design system's token objects (`DEC-022`, `DEC-102`).
+//
+// Every value below is the committed export of `docs/figma/tokens.json`, which `TEST-UNIT-035`
+// compares in both directions: a Kotlin value that drifts from the export fails, and an export
+// variable that no token maps (and is not in the test's reviewed exclusion) fails too. Figma wins
+// for values (`UI_SPEC.md`), so a divergence is settled by re-exporting, never by editing a literal
+// here alone.
+//
+// No component may carry an ad-hoc literal for a value this file names (`DESIGN.md` §3.4,
+// `GUIDELINES.md` §5.2).
 
 /** The single `Multiverse · M3 Scheme` appearance: the roles `UI_SPEC.md` §3.1 uses. */
 public object MultiverseColors {
@@ -145,84 +143,86 @@ public object MultiverseType {
  * committed export are compared, so a new token must be added here in the same change.
  */
 public object MultiverseTokens {
-    private val colors: Map<String, Color> = mapOf(
-        "Schemes/Primary" to MultiverseColors.primary,
-        "Schemes/On Primary" to MultiverseColors.onPrimary,
-        "Schemes/Primary Container" to MultiverseColors.primaryContainer,
-        "Schemes/On Primary Container" to MultiverseColors.onPrimaryContainer,
-        "Schemes/Secondary" to MultiverseColors.secondary,
-        "Schemes/On Secondary" to MultiverseColors.onSecondary,
-        "Schemes/Secondary Container" to MultiverseColors.secondaryContainer,
-        "Schemes/On Secondary Container" to MultiverseColors.onSecondaryContainer,
-        "Schemes/Tertiary" to MultiverseColors.tertiary,
-        "Schemes/On Tertiary" to MultiverseColors.onTertiary,
-        "Schemes/Tertiary Container" to MultiverseColors.tertiaryContainer,
-        "Schemes/On Tertiary Container" to MultiverseColors.onTertiaryContainer,
-        "Schemes/Error" to MultiverseColors.error,
-        "Schemes/On Error" to MultiverseColors.onError,
-        "Schemes/Error Container" to MultiverseColors.errorContainer,
-        "Schemes/On Error Container" to MultiverseColors.onErrorContainer,
-        "Schemes/Surface" to MultiverseColors.surface,
-        "Schemes/On Surface" to MultiverseColors.onSurface,
-        "Schemes/Surface Variant" to MultiverseColors.surfaceVariant,
-        "Schemes/On Surface Variant" to MultiverseColors.onSurfaceVariant,
-        "Schemes/Surface Container Lowest" to MultiverseColors.surfaceContainerLowest,
-        "Schemes/Surface Container Low" to MultiverseColors.surfaceContainerLow,
-        "Schemes/Surface Container" to MultiverseColors.surfaceContainer,
-        "Schemes/Surface Container High" to MultiverseColors.surfaceContainerHigh,
-        "Schemes/Surface Container Highest" to MultiverseColors.surfaceContainerHighest,
-        "Schemes/Surface Dim" to MultiverseColors.surfaceDim,
-        "Schemes/Surface Bright" to MultiverseColors.surfaceBright,
-        "Schemes/Inverse Surface" to MultiverseColors.inverseSurface,
-        "Schemes/Inverse On Surface" to MultiverseColors.inverseOnSurface,
-        "Schemes/Inverse Primary" to MultiverseColors.inversePrimary,
-        "Schemes/Outline" to MultiverseColors.outline,
-        "Schemes/Outline Variant" to MultiverseColors.outlineVariant,
-        "Schemes/Background" to MultiverseColors.background,
-        "Schemes/On Background" to MultiverseColors.onBackground,
-        "Schemes/Shadow" to MultiverseColors.shadow,
-        "Schemes/Scrim" to MultiverseColors.scrim,
-        "Schemes/Surface Tint" to MultiverseColors.surfaceTint,
-        "Schemes/Primary Fixed" to MultiverseColors.primaryFixed,
-        "Schemes/Primary Fixed Dim" to MultiverseColors.primaryFixedDim,
-        "Schemes/On Primary Fixed" to MultiverseColors.onPrimaryFixed,
-        "Schemes/On Primary Fixed Variant" to MultiverseColors.onPrimaryFixedVariant,
-        "Schemes/Secondary Fixed" to MultiverseColors.secondaryFixed,
-        "Schemes/Secondary Fixed Dim" to MultiverseColors.secondaryFixedDim,
-        "Schemes/On Secondary Fixed" to MultiverseColors.onSecondaryFixed,
-        "Schemes/On Secondary Fixed Variant" to MultiverseColors.onSecondaryFixedVariant,
-        "Schemes/Tertiary Fixed" to MultiverseColors.tertiaryFixed,
-        "Schemes/Tertiary Fixed Dim" to MultiverseColors.tertiaryFixedDim,
-        "Schemes/On Tertiary Fixed" to MultiverseColors.onTertiaryFixed,
-        "Schemes/On Tertiary Fixed Variant" to MultiverseColors.onTertiaryFixedVariant,
-        "Brand/Portal Green" to MultiverseBrandColors.portalGreen,
-        "Brand/Portal Glow" to MultiverseBrandColors.portalGlow,
-        "Brand/Cosmic Violet" to MultiverseBrandColors.cosmicViolet,
-        "Brand/Nebula Violet" to MultiverseBrandColors.nebulaViolet,
-        "Brand/Space Black" to MultiverseBrandColors.spaceBlack,
-        "Status/Alive" to MultiverseBrandColors.statusAlive,
-        "Status/Dead" to MultiverseBrandColors.statusDead,
-        "Status/Unknown" to MultiverseBrandColors.statusUnknown,
-    )
+    private val colors: Map<String, Color> =
+        mapOf(
+            "Schemes/Primary" to MultiverseColors.primary,
+            "Schemes/On Primary" to MultiverseColors.onPrimary,
+            "Schemes/Primary Container" to MultiverseColors.primaryContainer,
+            "Schemes/On Primary Container" to MultiverseColors.onPrimaryContainer,
+            "Schemes/Secondary" to MultiverseColors.secondary,
+            "Schemes/On Secondary" to MultiverseColors.onSecondary,
+            "Schemes/Secondary Container" to MultiverseColors.secondaryContainer,
+            "Schemes/On Secondary Container" to MultiverseColors.onSecondaryContainer,
+            "Schemes/Tertiary" to MultiverseColors.tertiary,
+            "Schemes/On Tertiary" to MultiverseColors.onTertiary,
+            "Schemes/Tertiary Container" to MultiverseColors.tertiaryContainer,
+            "Schemes/On Tertiary Container" to MultiverseColors.onTertiaryContainer,
+            "Schemes/Error" to MultiverseColors.error,
+            "Schemes/On Error" to MultiverseColors.onError,
+            "Schemes/Error Container" to MultiverseColors.errorContainer,
+            "Schemes/On Error Container" to MultiverseColors.onErrorContainer,
+            "Schemes/Surface" to MultiverseColors.surface,
+            "Schemes/On Surface" to MultiverseColors.onSurface,
+            "Schemes/Surface Variant" to MultiverseColors.surfaceVariant,
+            "Schemes/On Surface Variant" to MultiverseColors.onSurfaceVariant,
+            "Schemes/Surface Container Lowest" to MultiverseColors.surfaceContainerLowest,
+            "Schemes/Surface Container Low" to MultiverseColors.surfaceContainerLow,
+            "Schemes/Surface Container" to MultiverseColors.surfaceContainer,
+            "Schemes/Surface Container High" to MultiverseColors.surfaceContainerHigh,
+            "Schemes/Surface Container Highest" to MultiverseColors.surfaceContainerHighest,
+            "Schemes/Surface Dim" to MultiverseColors.surfaceDim,
+            "Schemes/Surface Bright" to MultiverseColors.surfaceBright,
+            "Schemes/Inverse Surface" to MultiverseColors.inverseSurface,
+            "Schemes/Inverse On Surface" to MultiverseColors.inverseOnSurface,
+            "Schemes/Inverse Primary" to MultiverseColors.inversePrimary,
+            "Schemes/Outline" to MultiverseColors.outline,
+            "Schemes/Outline Variant" to MultiverseColors.outlineVariant,
+            "Schemes/Background" to MultiverseColors.background,
+            "Schemes/On Background" to MultiverseColors.onBackground,
+            "Schemes/Shadow" to MultiverseColors.shadow,
+            "Schemes/Scrim" to MultiverseColors.scrim,
+            "Schemes/Surface Tint" to MultiverseColors.surfaceTint,
+            "Schemes/Primary Fixed" to MultiverseColors.primaryFixed,
+            "Schemes/Primary Fixed Dim" to MultiverseColors.primaryFixedDim,
+            "Schemes/On Primary Fixed" to MultiverseColors.onPrimaryFixed,
+            "Schemes/On Primary Fixed Variant" to MultiverseColors.onPrimaryFixedVariant,
+            "Schemes/Secondary Fixed" to MultiverseColors.secondaryFixed,
+            "Schemes/Secondary Fixed Dim" to MultiverseColors.secondaryFixedDim,
+            "Schemes/On Secondary Fixed" to MultiverseColors.onSecondaryFixed,
+            "Schemes/On Secondary Fixed Variant" to MultiverseColors.onSecondaryFixedVariant,
+            "Schemes/Tertiary Fixed" to MultiverseColors.tertiaryFixed,
+            "Schemes/Tertiary Fixed Dim" to MultiverseColors.tertiaryFixedDim,
+            "Schemes/On Tertiary Fixed" to MultiverseColors.onTertiaryFixed,
+            "Schemes/On Tertiary Fixed Variant" to MultiverseColors.onTertiaryFixedVariant,
+            "Brand/Portal Green" to MultiverseBrandColors.portalGreen,
+            "Brand/Portal Glow" to MultiverseBrandColors.portalGlow,
+            "Brand/Cosmic Violet" to MultiverseBrandColors.cosmicViolet,
+            "Brand/Nebula Violet" to MultiverseBrandColors.nebulaViolet,
+            "Brand/Space Black" to MultiverseBrandColors.spaceBlack,
+            "Status/Alive" to MultiverseBrandColors.statusAlive,
+            "Status/Dead" to MultiverseBrandColors.statusDead,
+            "Status/Unknown" to MultiverseBrandColors.statusUnknown,
+        )
 
-    private val floats: Map<String, Float> = mapOf(
-        "Space/XS" to 4f,
-        "Space/S" to 8f,
-        "Space/M" to 12f,
-        "Space/L" to 16f,
-        "Space/XL" to 24f,
-        "Space/2XL" to 32f,
-        "Space/3XL" to 48f,
-        "Shape/Corner Extra Small" to 4f,
-        "Shape/Corner Small" to 8f,
-        "Shape/Corner Medium" to 12f,
-        "Shape/Corner Large" to 16f,
-        "Shape/Corner Large Increased" to 20f,
-        "Shape/Corner Extra Large" to 28f,
-        "Shape/Corner Extra Large Increased" to 32f,
-        "Shape/Corner Extra Extra Large" to 48f,
-        "Shape/Corner Full" to 999f,
-    )
+    private val floats: Map<String, Float> =
+        mapOf(
+            "Space/XS" to 4f,
+            "Space/S" to 8f,
+            "Space/M" to 12f,
+            "Space/L" to 16f,
+            "Space/XL" to 24f,
+            "Space/2XL" to 32f,
+            "Space/3XL" to 48f,
+            "Shape/Corner Extra Small" to 4f,
+            "Shape/Corner Small" to 8f,
+            "Shape/Corner Medium" to 12f,
+            "Shape/Corner Large" to 16f,
+            "Shape/Corner Large Increased" to 20f,
+            "Shape/Corner Extra Large" to 28f,
+            "Shape/Corner Extra Large Increased" to 32f,
+            "Shape/Corner Extra Extra Large" to 48f,
+            "Shape/Corner Full" to 999f,
+        )
 
     /** Every mapped token, keyed by its export variable name, with its value in export form. */
     public fun entries(): Map<String, String> =
@@ -241,6 +241,5 @@ public object MultiverseTokens {
         return if (alpha == 255) base else base + "%02X".format(alpha)
     }
 
-    private fun Float.toExportNumber(): String =
-        if (this == toInt().toFloat()) toInt().toString() else toString()
+    private fun Float.toExportNumber(): String = if (this == toInt().toFloat()) toInt().toString() else toString()
 }
