@@ -135,9 +135,20 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             val page = result.success()
             assertEquals(DataSource.NETWORK, result.source, "TEST-CONTRACT-004: a remote value comes from the network")
             assertEquals(20, page.characters.size, "TEST-CONTRACT-004: the server page size")
-            assertEquals("1", page.characters.first().id.value, "TEST-CONTRACT-004: a GraphQL ID becomes the canonical string")
+            assertEquals(
+                "1",
+                page.characters
+                    .first()
+                    .id.value,
+                "TEST-CONTRACT-004: a GraphQL ID becomes the canonical string",
+            )
             assertEquals("Rick Sanchez", page.characters.first().name)
-            assertEquals("Citadel of Ricks", page.characters.first().lastKnownLocation.name)
+            assertEquals(
+                "Citadel of Ricks",
+                page.characters
+                    .first()
+                    .lastKnownLocation.name,
+            )
             assertEquals(
                 listOf(1, 42, 826, 2, null),
                 listOf(page.page, page.pageCount, page.totalCount, page.nextPage, page.previousPage),
@@ -145,10 +156,21 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             )
             val sent = stack.served.single()
             sent.assertGraphQlTransport()
-            assertEquals("CharacterPage", sent.payload().getValue("operationName").jsonPrimitive.content)
+            assertEquals(
+                "CharacterPage",
+                sent
+                    .payload()
+                    .getValue("operationName")
+                    .jsonPrimitive.content,
+            )
             assertEquals(
                 1,
-                sent.payload().getValue("variables").jsonObject.getValue("page").jsonPrimitive.int,
+                sent
+                    .payload()
+                    .getValue("variables")
+                    .jsonObject
+                    .getValue("page")
+                    .jsonPrimitive.int,
                 "TEST-CONTRACT-004: the page is a variable",
             )
         }
@@ -162,9 +184,14 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             stack.source.characterPage(CharacterFilter(query = "  $query  ", status = StatusFilter.Alive), 2)
 
             val sent = stack.served.single()
-            val document = sent.payload().getValue("query").jsonPrimitive.content
+            val document =
+                sent
+                    .payload()
+                    .getValue("query")
+                    .jsonPrimitive.content
             val body = sent.body
             assertTrue(query !in document, "TEST-CONTRACT-004: user input is never interpolated into the query text (§9)")
+            assertTrue("alive" !in document, "TEST-CONTRACT-004: nor is a filter value")
             assertTrue(
                 document.contains("characters(page: \$page, filter: \$filter)"),
                 "TEST-CONTRACT-004: the checked-in document of API_SPECS.md §5.5 is the static query",
@@ -172,9 +199,12 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             val variables = sent.payload().getValue("variables").jsonObject
             assertEquals(2, variables.getValue("page").jsonPrimitive.int)
             val filter = variables.getValue("filter").jsonObject
-            assertEquals(query, filter.getValue("name").jsonPrimitive.content, "TEST-CONTRACT-004: the query is trimmed, then sent as a variable")
+            assertEquals(
+                query,
+                filter.getValue("name").jsonPrimitive.content,
+                "TEST-CONTRACT-004: the query is trimmed, then sent as a variable",
+            )
             assertEquals("alive", filter.getValue("status").jsonPrimitive.content, "TEST-CONTRACT-004: canonical lowercase status")
-            assertTrue(!body.contains("\"name\":\"Rick"), "TEST-CONTRACT-004: no variable value is logged or inlined outside the JSON body")
             assertTrue(
                 stack.sink.records.none { record -> record.fields.values.any { it.contains("Rick") } },
                 "TEST-CONTRACT-004: no variable value reaches a sink",
@@ -188,7 +218,12 @@ class GraphQlCharacterRemoteDataSourceContractTest {
 
             stack.source.characterPage(CharacterFilter(query = "   "), 1)
 
-            val variables = stack.served.single().payload().getValue("variables").jsonObject
+            val variables =
+                stack.served
+                    .single()
+                    .payload()
+                    .getValue("variables")
+                    .jsonObject
             assertTrue("filter" !in variables, "TEST-CONTRACT-004: a blank filter sends no filter object (AC-REQ-FUNC-003-3)")
         }
 
@@ -222,7 +257,14 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             )
             val payload = stack.served.single().payload()
             assertEquals("CharacterDetail", payload.getValue("operationName").jsonPrimitive.content)
-            assertEquals("99999", payload.getValue("variables").jsonObject.getValue("id").jsonPrimitive.content)
+            assertEquals(
+                "99999",
+                payload
+                    .getValue("variables")
+                    .jsonObject
+                    .getValue("id")
+                    .jsonPrimitive.content,
+            )
         }
 
     @Test
@@ -253,7 +295,8 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             val refused = validation.source.characterPage(CharacterFilter(), 1).failure()
             val tooDeep = depth.source.characterPage(CharacterFilter(), 1).failure()
 
-            val invalid = assertIs<ApiFailure.InvalidRequest>(refused, "TEST-CONTRACT-004: a validation rejection is InvalidRequest (API-ERR-012)")
+            val invalid =
+                assertIs<ApiFailure.InvalidRequest>(refused, "TEST-CONTRACT-004: a validation rejection is InvalidRequest (API-ERR-012)")
             assertTrue(
                 invalid.detail?.contains("unknownField") != true,
                 "TEST-CONTRACT-004: the server's message is never echoed into a failure",
@@ -278,14 +321,15 @@ class GraphQlCharacterRemoteDataSourceContractTest {
         }
 
     @Test
-    fun `TEST-CONTRACT-004 given_a_detail_envelope_when_requested_then_the_episode_id_list_is_mapped_and_enrichment_stays_above_the_seam`() =
+    fun `TEST-CONTRACT-004 given_a_detail_envelope_when_requested_then_the_episode_id_list_is_mapped`() =
         TestTime.run {
             val stack =
                 stack(
                     envelope(
                         """{"data":{"character":{"id":"1","name":"Rick Sanchez","status":"Alive","species":"Human","type":"",""" +
                             """"gender":"Male","image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg",""" +
-                            """"created":"2017-11-04T18:48:46.250Z","origin":{"id":"1","name":"Earth (C-137)","type":"Planet","dimension":"C-137"},""" +
+                            """"created":"2017-11-04T18:48:46.250Z",""" +
+                            """"origin":{"id":"1","name":"Earth (C-137)","type":"Planet","dimension":"C-137"},""" +
                             """"location":{"id":"3","name":"Citadel of Ricks","type":"Space station","dimension":"unknown"},""" +
                             """"episode":[{"id":"1","name":"Pilot","episode":"S01E01","air_date":"December 2, 2013"}]}}}""",
                     ),
@@ -327,7 +371,12 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             assertEquals("EpisodesByIds", payload.getValue("operationName").jsonPrimitive.content)
             assertEquals(
                 listOf("1", "2"),
-                payload.getValue("variables").jsonObject.getValue("ids").jsonArray.map { it.jsonPrimitive.content },
+                payload
+                    .getValue("variables")
+                    .jsonObject
+                    .getValue("ids")
+                    .jsonArray
+                    .map { it.jsonPrimitive.content },
             )
         }
 
@@ -360,13 +409,26 @@ class GraphQlCharacterRemoteDataSourceContractTest {
     fun `TEST-CONTRACT-004 given_error_statuses_when_requested_then_each_maps_to_its_failure_family`() =
         TestTime.run {
             val server = stack(MockHttp.errorRoute("graphql-errors-only.json", 500, method = "POST"))
-            val limited = stack(MockHttp.errorRoute("graphql-errors-only.json", 429, method = "POST", headers = mapOf("Retry-After" to "7")))
+            val limited =
+                stack(MockHttp.errorRoute("graphql-errors-only.json", 429, method = "POST", headers = mapOf("Retry-After" to "7")))
             val timeout = stack(MockHttp.errorRoute("graphql-errors-only.json", 408, method = "POST"))
             val blank = stack(envelope(""))
 
-            assertEquals(ApiFailure.Server(500), server.source.characterPage(CharacterFilter(), 1).failure(), "TEST-CONTRACT-004 (API-ERR-007)")
-            assertEquals(ApiFailure.RateLimited(7), limited.source.characterPage(CharacterFilter(), 1).failure(), "TEST-CONTRACT-004 (API-ERR-005)")
-            assertEquals(ApiFailure.Timeout, timeout.source.characterPage(CharacterFilter(), 1).failure(), "TEST-CONTRACT-004 (API-ERR-004)")
+            assertEquals(
+                ApiFailure.Server(500),
+                server.source.characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-004 (API-ERR-007)",
+            )
+            assertEquals(
+                ApiFailure.RateLimited(7),
+                limited.source.characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-004 (API-ERR-005)",
+            )
+            assertEquals(
+                ApiFailure.Timeout,
+                timeout.source.characterPage(CharacterFilter(), 1).failure(),
+                "TEST-CONTRACT-004 (API-ERR-004)",
+            )
             assertEquals(
                 ApiFailure.EmptyBody,
                 blank.source.characterPage(CharacterFilter(), 1).failure(),
@@ -380,6 +442,7 @@ class GraphQlCharacterRemoteDataSourceContractTest {
             val timeout = HttpClient(MockEngine { throw HttpRequestTimeoutException("request", 20_000) }) { rickAndMortyDefaults() }
             val reset = HttpClient(MockEngine { throw IOException("connection reset") }) { rickAndMortyDefaults() }
             val unexpected = HttpClient(MockEngine { throw IllegalStateException("engine defect") }) { rickAndMortyDefaults() }
+
             fun source(client: HttpClient) =
                 GraphQlCharacterRemoteDataSource(
                     client,

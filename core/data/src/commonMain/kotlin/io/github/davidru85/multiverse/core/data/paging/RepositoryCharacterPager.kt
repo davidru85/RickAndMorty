@@ -8,6 +8,7 @@ import io.github.davidru85.multiverse.core.domain.logging.LogOutcome
 import io.github.davidru85.multiverse.core.domain.logging.log
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterPage
+import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.paging.PagerState
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
@@ -17,9 +18,11 @@ import io.github.davidru85.multiverse.core.domain.result.DataResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -51,6 +54,7 @@ public class RepositoryCharacterPager(
     private val logger: AppLogger,
     initialFilter: CharacterFilter = CharacterFilter(),
     private val timeSource: TimeSource = TimeSource.Monotonic,
+    protocolChanges: Flow<RemoteProtocol> = emptyFlow(),
 ) : CharacterPager {
     private val mutableState =
         MutableStateFlow(
@@ -71,6 +75,31 @@ public class RepositoryCharacterPager(
     private var nextPage: Int? = FIRST_PAGE
     private var inFlight: Job? = null
     private var failedLoad: Load? = null
+
+    /**
+     * A change of the active protocol is a change of identity (`AC-REQ-FUNC-034-2`): the load in flight
+     * is cancelled, the pager resets to page 1 and reloads through the newly selected adapter, and no
+     * item of the previous protocol is ever published. The reset is the one a filter change performs,
+     * because it is the same kind of change (`adr/0011-runtime-remote-protocol.md`, ADR-0009 rule 4).
+     *
+     * The collector runs in [scope], so it ends with the owner of the pager like every load it starts.
+     * A source that never changes — the default — emits nothing and costs one suspended collector.
+     */
+    private val protocolChanges: Job =
+        scope.launch {
+            protocolChanges.collect { switchProtocol() }
+        }
+
+    /** Resets to page 1 of the current filter and reloads, cancelling the superseded load. */
+    private suspend fun switchProtocol() {
+        val load =
+            lock.withLock {
+                startGeneration()
+                nextPage = FIRST_PAGE
+                start(Load(FIRST_PAGE, PageLoadPolicy.Default))
+            }
+        load.join()
+    }
 
     /** One page request: page 1 replaces the collection, any later page appends to it. */
     private data class Load(

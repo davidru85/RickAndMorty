@@ -26,7 +26,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -68,7 +67,11 @@ class ProtocolSwitchTest {
 
     private fun cache(storage: FakeCacheStorage) = ResponseCache(storage, MutableFakeClock(), CachePolicy(), logger())
 
-    private fun repository(
+    /**
+     * The repository under the test's own scope and virtual dispatcher: the shared work must run in the
+     * test scheduler's time, or a latency the case reasons about elapses on a real thread.
+     */
+    private fun TestScope.repository(
         rest: FakeRemoteSource,
         graphQl: FakeRemoteSource,
         protocols: MutableStateFlow<RemoteProtocol>,
@@ -76,7 +79,7 @@ class ProtocolSwitchTest {
     ) = RemoteCharacterRepository(
         rest = rest,
         graphQl = graphQl,
-        scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+        scope = this,
         random = FixedRandom(0.5),
         logger = logger(),
         cache = cache(storage),
@@ -125,7 +128,10 @@ class ProtocolSwitchTest {
             val source = settingsProtocolSource(settings = FakeRepository(store))
 
             assertEquals(RemoteProtocol.Rest, source.current(), "TEST-UNIT-034: a fresh install reads REST (AC-REQ-FUNC-034-1)")
-            store.write(io.github.davidru85.multiverse.core.domain.model.AppSettings(remoteProtocol = RemoteProtocol.GraphQl))
+            store.write(
+                io.github.davidru85.multiverse.core.domain.model
+                    .AppSettings(remoteProtocol = RemoteProtocol.GraphQl),
+            )
             assertEquals(
                 RemoteProtocol.GraphQl,
                 source.current(),
@@ -151,8 +157,18 @@ class ProtocolSwitchTest {
             assertEquals(1, rest.cancellations, "TEST-UNIT-048: the switch cancels the load in flight (AC-REQ-FUNC-034-2)")
             assertEquals(
                 listOf(1 to all, 1 to all),
-                listOf(rest.calls.single().page().let { it.page to it.filter }) +
-                    listOf(graphQl.calls.single().page().let { it.page to it.filter }),
+                listOf(
+                    rest.calls
+                        .single()
+                        .page()
+                        .let { it.page to it.filter },
+                ) +
+                    listOf(
+                        graphQl.calls
+                            .single()
+                            .page()
+                            .let { it.page to it.filter },
+                    ),
                 "TEST-UNIT-048: page 1 of the same filter is reloaded through the newly selected adapter",
             )
             assertTrue(
@@ -160,7 +176,11 @@ class ProtocolSwitchTest {
                 "TEST-UNIT-048: no item fetched through the previous protocol is ever emitted",
             )
             assertTrue(states.none { it.failure != null }, "TEST-UNIT-048: a cancellation is never a failure (API-ERR-017)")
-            assertEquals((1..20).map { "GraphQl $it" }, pager.state.value.items.map { it.name })
+            assertEquals(
+                (1..20).map { "GraphQl $it" },
+                pager.state.value.items
+                    .map { it.name },
+            )
             assertEquals(all, pager.state.value.filter, "TEST-UNIT-048: the filter is kept; only the identity changed")
             assertFalse(pager.state.value.isStale)
         }
@@ -183,7 +203,8 @@ class ProtocolSwitchTest {
 
             assertEquals(
                 (1..20).map { "GraphQl $it" },
-                pager.state.value.items.map { it.name },
+                pager.state.value.items
+                    .map { it.name },
                 "TEST-UNIT-048: a switch resets to page 1 rather than appending to the other protocol's pages",
             )
             assertFalse(pager.state.value.isEndReached)
@@ -196,7 +217,10 @@ class ProtocolSwitchTest {
             val graphQl = CacheKeyBuilder.page(RemoteProtocol.GraphQl, all, 1).value
 
             assertTrue(rest.startsWith("rest|GET|/api/character|"), "TEST-UNIT-049: the REST identity is the GET of the list route")
-            assertTrue(graphQl.startsWith("graphql|POST|/graphql|"), "TEST-UNIT-049: the GraphQL identity is the POST of /graphql (ADR-0011)")
+            assertTrue(
+                graphQl.startsWith("graphql|POST|/graphql|"),
+                "TEST-UNIT-049: the GraphQL identity is the POST of /graphql (ADR-0011)",
+            )
             assertTrue(rest != graphQl, "TEST-UNIT-049: the protocol is part of the identity (AC-REQ-FUNC-034-4)")
         }
 
@@ -245,7 +269,14 @@ class ProtocolSwitchTest {
                 served.source,
                 "TEST-UNIT-049: the REST entry was never evicted by the switch (AC-REQ-FUNC-034-4)",
             )
-            assertEquals("Rest 1", served.value().characters.first().name)
+            assertEquals(
+                "Rest 1",
+                served
+                    .value()
+                    .characters
+                    .first()
+                    .name,
+            )
             assertEquals(1, rest.calls.size, "TEST-UNIT-049: and the cached page is not fetched again")
         }
 
@@ -253,10 +284,13 @@ class ProtocolSwitchTest {
     private class FakeRepository(
         private val store: FakeAppSettingsStore,
     ) : AppSettingsRepository {
-        override fun observe(): Flow<io.github.davidru85.multiverse.core.domain.model.AppSettings> =
-            MutableStateFlow(store.value)
+        override fun observe(): Flow<io.github.davidru85.multiverse.core.domain.model.AppSettings> = MutableStateFlow(store.value)
 
-        override suspend fun update(change: (io.github.davidru85.multiverse.core.domain.model.AppSettings) -> io.github.davidru85.multiverse.core.domain.model.AppSettings) {
+        override suspend fun update(
+            change: (
+                io.github.davidru85.multiverse.core.domain.model.AppSettings,
+            ) -> io.github.davidru85.multiverse.core.domain.model.AppSettings,
+        ) {
             store.write(change(store.value))
         }
     }
