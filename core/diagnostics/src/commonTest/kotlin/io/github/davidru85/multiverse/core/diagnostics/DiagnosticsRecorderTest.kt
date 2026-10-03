@@ -1,5 +1,7 @@
 package io.github.davidru85.multiverse.core.diagnostics
 
+import io.github.davidru85.multiverse.core.data.cache.CachePolicy
+import io.github.davidru85.multiverse.core.data.cache.ResponseCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
@@ -12,6 +14,7 @@ import io.github.davidru85.multiverse.core.domain.result.DataSource
 import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
+import io.github.davidru85.multiverse.testing.NoCacheStorage
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -50,7 +53,16 @@ class DiagnosticsRecorderTest {
                 logger,
                 testScheduler.timeSource,
             )
-        val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger)
+        // A store that retains nothing: this suite is about the records a request produces, and a real
+        // store would stop a repeat load from reaching the network at all.
+        val repository =
+            RemoteCharacterRepository(
+                remote,
+                backgroundScope,
+                FixedRandom(0.5),
+                logger,
+                ResponseCache(NoCacheStorage, MutableFakeClock(), CachePolicy(), logger),
+            )
         return Stack(recorder, RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource), served)
     }
 
