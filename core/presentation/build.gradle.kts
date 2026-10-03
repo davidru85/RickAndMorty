@@ -8,7 +8,8 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core:domain"))
+            // `LoadState`, `CharacterCardUi` and the formatters carry domain types in their signatures.
+            api(project(":core:domain"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

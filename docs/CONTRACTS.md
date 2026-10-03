@@ -131,7 +131,8 @@ CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain 
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
-CopyKey, PresentationFormatters          CONTRACTS.md IC-017       :core:presentation  commonMain
+CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
+  PresentationFormatters
 CharacterListUiState, CharacterListIntent CONTRACTS.md IC-018      :feature:discovery  presentation package
 CharacterDetailUiState, InfoRowUi,       CONTRACTS.md IC-019       :feature:character-detail  presentation package
   InfoRowKind, CharacterDetailIntent
@@ -648,6 +649,7 @@ sealed interface LoadState {
   - `Loading` `MUST NOT` replace `Content` without an explicit reset (a new filter, a new query or a first load). Stale content stays `Content` with a stale flag (`ERROR_FLOW.md` §3 invariant 2).
   - Failure selection is owned by `ERROR_FLOW.md` (DEC-021): a state object carries `LoadState`; it does not derive copy from it.
   - Adding a variant to this hierarchy is a breaking change for the Swift consumer (§8).
+- **Status:** implemented by `TASK-041` in B3 Phase 3.3.
 - **Traceability:** `REQ-UX-009`, `DEC-021`, `ERROR_FLOW.md` §3, `UI_SPEC.md` §8.
 
 ### IC-016 — `CharacterCardUi`
@@ -658,19 +660,26 @@ sealed interface LoadState {
 data class CharacterCardUi(
     val id: CharacterId,
     val name: String,
-    val species: String,
-    val status: CharacterStatus,
+    val species: DisplayText,        // IC-017: data, or the unknown key
+    val status: CharacterStatus,     // drives the badge's colour and semantics
+    val statusLabel: CopyKey,        // the badge's text, from IC-017 statusKey
     val imageUrl: String,
-)
+) {
+    companion object {
+        fun from(summary: CharacterSummary, formatters: PresentationFormatters): CharacterCardUi
+    }
+}
 ```
 
 - **Why `:core:presentation`:** the card is rendered by more than one feature (discovery grid, favourites list, the detail header) and is the payload of the shared navigation hand-off (`DESIGN.md` §4.2), so it is a cross-feature presentation primitive, not a discovery-local model.
 - **Invariants**
   - `imageUrl` is the API image URL verbatim; it is simultaneously the image cache key, so it `MUST NOT` be rewritten, resized or decorated by a state mapper (`REQ-FUNC-005`, `UI_SPEC.md` §5.1, `API_SPECS.md` §7.4).
-  - `species` carries the API `species` value with unknown values already normalised for display (`REQ-FUNC-002`, `UI_SPEC.md` §6.2); `type` is never substituted for it.
+  - `species` is the API `species` value as `DisplayText.Data`, or the unknown key as `DisplayText.Copy` when the value is absent, blank or `"unknown"` — normalised through `IC-017`'s `valueText`, so no raw `"unknown"` and no English literal reaches a platform (`REQ-FUNC-002`, `UI_SPEC.md` §6.2); `type` is never substituted for it. Amended 2026-10-03 from `String` (`CONF-74`).
+  - `statusLabel` is `statusKey(status)`, so a card component renders its text without calling a formatter; `status` stays for colour and semantics.
   - The four displayed items (photo, name, status, species) are complete in this type: a platform component `MUST NOT` require a fetch or a second model to render a card.
   - The type is immutable and contains no platform and no wire type; a design-system component consumes its primitives only (`DESIGN.md` §3).
   - Adding a required field is a contract change (§8) because both platforms construct and read this type.
+- **Status:** implemented by `TASK-041` in B3 Phase 3.3, with `from` as the one mapping from `CharacterSummary`.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-005`, `UI_SPEC.md` §6.2, `DESIGN.md` §4.2.
 
 ### IC-017 — `CopyKey` and `PresentationFormatters`
@@ -681,15 +690,32 @@ data class CharacterCardUi(
 @JvmInline
 value class CopyKey(val value: String)
 
+/** The one canonical key list: every key a shared contract binds, each once. */
+object CopyKeys {
+    val ERROR_TITLE: CopyKey            // … every key of ERROR_FLOW.md §4.1 …
+    val STATUS_ALIVE: CopyKey           // "status_alive"
+    val STATUS_DEAD: CopyKey            // "status_dead"
+    val VALUE_UNKNOWN: CopyKey          // "value_unknown", the one "Unknown"
+    val all: Set<CopyKey>
+}
+
+sealed interface DisplayText {
+    data class Data(val value: String) : DisplayText    // data-derived, shown unchanged
+    data class Copy(val key: CopyKey) : DisplayText     // resolved by the platform
+}
+
 interface PresentationFormatters {
     fun statusKey(status: CharacterStatus): CopyKey
     fun unknownKey(): CopyKey
+    fun valueText(raw: String?): DisplayText
     fun dimensionText(origin: LocationSummary, enrichRequested: Boolean): String?
     fun firstSeenText(summaries: List<EpisodeSummary>?): String?
 }
+
+object DefaultPresentationFormatters : PresentationFormatters
 ```
 
-- **Semantics:** `CopyKey` names a user-visible string; the string itself lives in the platform resource files, and the canonical key list is fixed by `DEC-015`/`DEC-020` and rendered in `UI_SPEC.md` §8. The formatters are pure functions over `IC-002` types.
+- **Semantics:** `CopyKey` names a user-visible string. The canonical key list is `CopyKeys` (`DEC-015`, `DEC-020`): it registers the keys the failure chain binds (`ERROR_FLOW.md` §4.1) and the keys the formatters return, allocated here — `status_alive`, `status_dead` and `value_unknown`, whose approved English copy is `UI_SPEC.md` §6.2's "Alive", "Dead" and "Unknown". A feature registers its own keys with the resources that carry them (`TASK-013`, `TASK-060`). The English and Spanish strings are authored in each platform's resource files (`strings.xml`, `Localizable.strings`; `GUIDELINES.md` §7.2), never in Kotlin, and `TEST-UNIT-036` holds every key present on both platforms with identical values per locale. The formatters are pure functions over `IC-002` types.
 - **Invariants**
   - Every user-visible literal is a `CopyKey`; a formatter `MUST NOT` embed English copy. Only data-derived text (proper nouns, episode codes, numeric values) is returned as `String`.
   - The formatters are pure and platform-free: no clock, no network, no `Locale`-dependent formatting beyond what the platform resource layer applies, and no platform type in a signature.
@@ -697,7 +723,9 @@ interface PresentationFormatters {
   - `statusKey(CharacterStatus.Unsupported(raw))` returns `unknownKey()`; an unrecognised status never renders as an internal value (`REQ-NFR-004`, `AC-REQ-NFR-004-2`).
   - A formatter returns `null` to mean "hide this row/tile" and `MUST NOT` return an empty or placeholder string (`UI_SPEC.md` §6.3).
   - `dimensionText` derives the value from `origin` and returns `null` when the origin carries neither a dimension nor a parenthesised designation; it `MUST NOT` invent a value (`UI_SPEC.md` §6.3).
-  - `firstSeenText(null)` returns `null`; the "first seen in" row is therefore absent exactly when enrichment was not requested (`AC-REQ-FUNC-023-2`).
+  - `firstSeenText(null)` returns `null`; the "first seen in" row is therefore absent exactly when enrichment was not requested (`AC-REQ-FUNC-023-2`). An enrichment that found no episode is `null` as well; otherwise the value is the first episode's "name · code" (`UI_SPEC.md` §6.3).
+  - `valueText(raw)` is `DisplayText.Copy(unknownKey())` for an absent, blank or `"unknown"` value (any case) and `DisplayText.Data(raw)`, unchanged, otherwise.
+  - `dimensionText` prefers the enriched `origin.dimension` when enrichment was requested, then the designation in parentheses at the end of `origin.name` ("Earth (C-137)" → "C-137"); an unknown value is not a dimension.
   - Every `CopyKey` value produced by these formatters `MUST` exist in both the Android resource file and the iOS resource file; the parity test fails on a missing or extra key (`REQ-UX-008`, `AC-REQ-UX-008-1`, `DEC-020`).
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
 
@@ -991,6 +1019,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-03 | B3 Phase 3.3 (`TASK-041`): `IC-015`…`IC-017` are implemented. `IC-016`'s `species` becomes `DisplayText` and gains `statusLabel` and the `from` mapping, because a `String` could not carry "Unknown" through `IC-017`'s key without an English literal (`CONF-74`); `IC-017` gains the `CopyKeys` registry, `DisplayText`, `valueText` and `DefaultPresentationFormatters`, and states where the strings live. No consumer existed, so nothing breaks (§8). | `TASK-041`, `DEC-015`, `DEC-020` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-040`): `IC-013` states its two platform implementations, their keys and the read-failure degradation. | `TASK-040`, `DEC-017` |
 | 2026-10-02 | B3 Phase 3.3 (`TASK-040`): `IC-008` states its implementation and its failure semantics (a write the store cannot complete is logged, not thrown); `IC-009`'s `ObserveFavoriteIds` is implemented; `IC-013` names its package and how the `expect/actual` split is realised; `IC-024` gains `LOG-018`/`LOG-019` and the `LogComponent` set with their emitter. | `TASK-040`, `DEC-017`, `DEC-090` |
 | 2026-10-02 | B3 Phase 3.2: `IC-024` states its implemented members — the ten `LogEvent` classes with emitters, their value sets, `LogField`, the `ValidatingAppLogger` factories, the correlation id and the emitters — and its status; `IC-007` and `IC-014` record their implementations (`TASK-038`, `TASK-039`) and `IC-014.retry()` re-attempts a failed refresh as a refresh; §2's map places `LogSink`/`LogRecord` in `:core:domain`, as `DEC-093` decided, and the diagnostic API as implemented. | `TASK-038`, `TASK-039`, `TASK-047`, `DEC-092`, `DEC-093` |

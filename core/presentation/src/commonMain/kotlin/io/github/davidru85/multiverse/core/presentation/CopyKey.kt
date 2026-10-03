@@ -1,0 +1,51 @@
+package io.github.davidru85.multiverse.core.presentation
+
+import kotlin.jvm.JvmInline
+
+/**
+ * The name of a user-visible string (`IC-017`). The string itself lives in each platform's resource
+ * files, in English and Spanish, and `TEST-UNIT-036` holds the two platforms identical per locale.
+ */
+@JvmInline
+public value class CopyKey(
+    public val value: String,
+)
+
+/**
+ * The one canonical key list (`IC-017`, `DEC-015`, `DEC-020`). It registers the keys the shared
+ * contracts bind — the failure chain of `ERROR_FLOW.md` §4.1 and the keys the formatters return — and
+ * a feature registers its own keys here with the resources that carry them (`TASK-013`, `TASK-060`).
+ * Platform resource files follow this list; no platform keeps a list of its own.
+ */
+public object CopyKeys {
+    private val registered = mutableListOf<CopyKey>()
+
+    private fun key(name: String): CopyKey = CopyKey(name).also { registered += it }
+
+    // The failure chain (`ERROR_FLOW.md` §4.1).
+    public val ERROR_TITLE: CopyKey = key("error_title")
+    public val ACTION_RETRY: CopyKey = key("action_retry")
+    public val STATE_STALE_BANNER: CopyKey = key("state_stale_banner")
+    public val EMPTY_SEARCH_MESSAGE: CopyKey = key("empty_search_message")
+    public val ACTION_CLEAR_FILTERS: CopyKey = key("action_clear_filters")
+    public val ACTION_BACK: CopyKey = key("action_back")
+    public val ERROR_MESSAGE_OFFLINE: CopyKey = key("error_message_offline")
+    public val ERROR_MESSAGE_TIMEOUT: CopyKey = key("error_message_timeout")
+    public val ERROR_MESSAGE_NOT_FOUND: CopyKey = key("error_message_not_found")
+    public val ERROR_MESSAGE_INVALID_REQUEST: CopyKey = key("error_message_invalid_request")
+    public val ERROR_MESSAGE_RATE_LIMITED: CopyKey = key("error_message_rate_limited")
+    public val ERROR_MESSAGE_SERVER: CopyKey = key("error_message_server")
+    public val ERROR_MESSAGE_GRAPHQL: CopyKey = key("error_message_graphql")
+    public val ERROR_MESSAGE_MALFORMED: CopyKey = key("error_message_malformed")
+    public val ERROR_MESSAGE_EMPTY_BODY: CopyKey = key("error_message_empty_body")
+    public val ERROR_MESSAGE_UNKNOWN: CopyKey = key("error_message_unknown")
+    public val DETAIL_ERROR_INLINE: CopyKey = key("detail_error_inline")
+
+    // The formatters (`IC-017`): the status labels and the one "Unknown" presentation.
+    public val STATUS_ALIVE: CopyKey = key("status_alive")
+    public val STATUS_DEAD: CopyKey = key("status_dead")
+    public val VALUE_UNKNOWN: CopyKey = key("value_unknown")
+
+    /** Every registered key, in registration order. Declared last, so it sees every key above. */
+    public val all: Set<CopyKey> = registered.toSet()
+}
