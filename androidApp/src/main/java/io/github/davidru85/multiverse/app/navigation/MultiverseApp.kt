@@ -49,7 +49,16 @@ public fun MultiverseApp(
     navController: androidx.navigation.NavHostController = rememberNavController(),
     /** The readiness gate (`TASK-007`); a caller may supply one, and `null` skips the splash. */
     splashGate: io.github.davidru85.multiverse.app.splash.SplashGate? = null,
+    /** The one image seam every portrait draws through (`DEC-097`); the shell owns the loader. */
+    imageSeam: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam = NO_IMAGE_SEAM,
+    /** The card-to-detail hand-off (`IC-025`); the shell owns the one instance. */
+    detailHandoff: io.github.davidru85.multiverse.core.presentation.DetailHandoff? = null,
 ) {
+    // One hand-off for the process, held across recompositions: a `null` is a preview or a case that
+    // renders a destination directly, and it gets its own so the composable needs no branch later.
+    val handoff =
+        detailHandoff
+            ?: androidx.compose.runtime.remember { io.github.davidru85.multiverse.core.presentation.DetailHandoff() }
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
             // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
@@ -90,15 +99,19 @@ public fun MultiverseApp(
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_play_circle),
                         )
                     }
+                    // The real Favorites section (`TASK-006`): the same cards as Discovery, its own
+                    // empty state, and the card-to-detail hand-off the destination below consumes.
                     composable<Favorites> {
-                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
+                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
+                            seam = imageSeam,
+                            handoff = handoff,
+                            onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
                         )
                     }
-                    // Characters and Settings render the section title in the Discovery headline
-                    // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
-                    composable<Settings> { SectionPlaceholder(titleKey = "nav_settings") }
+                    // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
+                    composable<Settings> { io.github.davidru85.multiverse.feature.settings.ui.SettingsRoute() }
                 }
                 MultiverseNavigationBar(
                     destinations = destinations,
@@ -152,6 +165,22 @@ internal fun topLevelDestinations(): List<NavigationDestination> =
         NavigationDestination(KEY_FAVORITES, CopyResolver.copy("nav_favorites"), MultiverseIcons.Favorite, MultiverseIcons.FavoriteOutlined),
         NavigationDestination(KEY_SETTINGS, CopyResolver.copy("nav_settings"), MultiverseIcons.Settings, MultiverseIcons.SettingsOutlined),
     )
+
+/**
+ * The seam a destination uses when the caller supplies none: every portrait stays in its placeholder
+ * state. It exists so a preview or a case can compose a screen without a loader, and so no screen has
+ * to branch on whether the shell wired one (`DEC-097`).
+ */
+private val NO_IMAGE_SEAM: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam =
+    object : io.github.davidru85.multiverse.core.designsystem.image.ImageSeam {
+        @androidx.compose.runtime.Composable
+        override fun rememberPainter(
+            url: String,
+            widthPx: Int,
+            heightPx: Int,
+        ): io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult =
+            io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult.Loading
+    }
 
 /** A stable key per top-level destination, so the bar never depends on a route type. */
 internal const val KEY_CHARACTERS: String = "characters"

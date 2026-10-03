@@ -426,6 +426,15 @@ class ModuleBoundaryRulesTest {
         )
         assertEquals(emptyList(), only(compositionRoot, "R11").map { it.render() }, "DEC-091: the composition root")
 
+        // DESIGN.md §4.2: the shell owns the card-to-detail hand-off, which lives in
+        // `:core:presentation`; it is a shared production primitive, so the production edge is allowed.
+        val handoff = ModuleBoundaryRules.evaluate(
+            complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:presentation")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(handoff, "R11").map { it.render() }, "IC-025: the shell owns the hand-off")
+
+        // `:core:domain` is neither: a feature reaches it, the shell reaches it through the features.
         val rejected = ModuleBoundaryRules.evaluate(
             complete(project(":androidApp", edges = listOf(edge(":androidApp", ":core:domain")))),
             emptyMap(),

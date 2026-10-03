@@ -69,6 +69,10 @@ kotlin {
             api(libs.androidx.compose.runtime)
             api(libs.androidx.compose.ui)
             api(libs.androidx.lifecycle.viewmodel)
+            // `SettingsRoute` resolves its ViewModel with `koinViewModel()`, and the module binds it
+            // with Koin's `viewModel` DSL, so both surfaces are the module's own (DESIGN.md §5).
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
         }
         commonTest.dependencies {
             implementation(project(":core:testing"))

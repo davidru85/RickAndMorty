@@ -4,6 +4,10 @@ import android.app.Application
 import io.github.davidru85.multiverse.app.di.ShellLogging
 import io.github.davidru85.multiverse.app.di.shellModules
 import io.github.davidru85.multiverse.core.data.di.coreModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesViewModelModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsViewModelModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,6 +48,11 @@ public open class MultiverseApplication : Application() {
             androidContext(this@MultiverseApplication)
             modules(coreModule)
             modules(shellModules(applicationScope, this@MultiverseApplication, logging()))
+            // The feature modules of the destinations this phase wires (`DESIGN.md` §5): the shell
+            // loads every feature's own graph, so no feature names an implementation and none has to
+            // know which other features ship. A destination whose module is absent here can still be
+            // reached; it simply resolves no ViewModel, which is what a placeholder screen does.
+            modules(favoritesModule, favoritesViewModelModule, settingsModule, settingsViewModelModule)
         }
     }
 

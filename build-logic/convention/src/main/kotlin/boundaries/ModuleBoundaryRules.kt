@@ -69,6 +69,9 @@ internal object ModuleBoundaryRules {
      */
     private val APPROVED_APP_TEST_MODULES = setOf(":core:testing", ":core:presentation")
 
+    /** The shared presentation primitives, which the composition root also composes (`IC-025`). */
+    private val PRESENTATION_MODULE = ":core:presentation"
+
     /**
      * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
      * production core modules and the five accepted feature modules, never `:core:designsystem`
@@ -536,7 +539,14 @@ internal object ModuleBoundaryRules {
      * its origin is reported (`GAP-012`).
      */
     private fun androidApp(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
-        val allowed = snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() + ":core:designsystem" + IMPLEMENTATION_MODULE
+        // `:core:presentation` is a shared production primitive, not a test-only one: `DESIGN.md` §4.2
+        // places the card-to-detail hand-off (`IC-025`) there and gives it to the composition root,
+        // which is the only module that knows both destinations exist. It carries no implementation
+        // and no platform type, so admitting it does not weaken `DEC-091`'s rule that a feature reaches
+        // `:core:data` only through the graph.
+        val allowed =
+            snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() +
+                ":core:designsystem" + IMPLEMENTATION_MODULE + PRESENTATION_MODULE
         snapshot.byKind(ModuleKind.ANDROID_APP).forEach { project ->
             project.edges.filterNot { it.producer in allowed }.forEach { edge ->
                 if (edge.producer in APPROVED_APP_TEST_MODULES && edge.kind == SourceSetKind.TEST) {
