@@ -80,7 +80,7 @@ A block is a working set, not a single merge. The members share a working set an
 | B1 | Definition and Governance | M0 | Establish architecture rules, versioning and normative documentation. | `TASK-017`, `TASK-018`, `TASK-019`, `TASK-032`, `TASK-033`, `TASK-034`, `TASK-072` |
 | B2 | Quality Infrastructure and CI | M0 | Set up the test harness, the CI/CD pipelines and the linting. | `TASK-024`, `TASK-025`, `TASK-026`, `TASK-027`, `TASK-028`, `TASK-029`, `TASK-030`, `TASK-031`, `TASK-073` |
 | B3 | Shared Core and Data Layer | M1 | Implement domain logic, networking, persistence and the shared UI-state contracts. | `TASK-036`, `TASK-037`, `TASK-038`, `TASK-039`, `TASK-040`, `TASK-041`, `TASK-047` |
-| B4 | Design System and Android Shell | M1 | Materialise the visual identity, the UI components and the Android app shell. | `TASK-042`, `TASK-043`, `TASK-044`, `TASK-005`, `TASK-021`, `TASK-007`, `TASK-008`, `TASK-013`, `TASK-035` |
+| B4 | Design System and Android Shell | M1 | Materialise the visual identity, the UI components and the Android app shell. Delivered in three phase pull requests (`DEC-096`, the B4 packaging exception below). | `TASK-042`, `TASK-043`, `TASK-044`, `TASK-005`, `TASK-021`, `TASK-007`, `TASK-008`, `TASK-013`, `TASK-035` |
 | B5 | Android Feature Implementation | M1 | Full implementation of the Android MVP screens and flows. | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-006`, `TASK-009`, `TASK-010`, `TASK-011`, `TASK-020`, `TASK-012`, `TASK-022`, `TASK-023`, `TASK-074`, `TASK-075`, `TASK-076` |
 | B6 | Android Validation and Release | M1 | Security audit, accessibility, performance verification and the M1 release. | `TASK-045`, `TASK-046`, `TASK-048`, `TASK-049`, `TASK-050` |
 | B7 | iOS Infrastructure and Shell | M2 | Kotlin framework export, Swift package setup and the iOS app shell. | `TASK-078`, `TASK-051`, `TASK-108`, `TASK-052`, `TASK-053`, `TASK-054`, `TASK-060` |
@@ -99,7 +99,7 @@ All three reconciliations stay inside their milestone (two in M1 and one in M0),
 
 Within a block, rows are worked in dependency order; the `Dependencies` column is the intra-block sequence. Blocks execute in numeric order, and `TASK-014`…`TASK-016` are already merged.
 
-**B3 packaging exception (`DEC-082`, owner directive 2026-10-02).** B3 alone is delivered in three sequential phase pull requests instead of one per task, because the project deadline is approaching (no calendar date was supplied). The grouping is fixed:
+**B3 packaging exception (`DEC-082`, owner directive 2026-10-02).** B3 is delivered in three sequential phase pull requests instead of one per task, because the project deadline is approaching (no calendar date was supplied). The grouping is fixed:
 
 | Phase | Tasks, in execution order | Branch | Prerequisite |
 | --- | --- | --- | --- |
@@ -107,7 +107,17 @@ Within a block, rows are worked in dependency order; the `Dependencies` column i
 | 3.2 — Reliability, pager and observability | `TASK-038`, `TASK-039`, `TASK-047` | `feat/b3-phase-3-2` | Phase 3.1 merged by the owner |
 | 3.3 — Persistence and presentation | `TASK-040`, `TASK-041` | `feat/b3-phase-3-3` | Phase 3.2 merged by the owner |
 
-Every member keeps its own row, issue, acceptance criteria and red/green evidence; the phase pull request lists each member with its own evidence row, and closes or advances the members together. Each phase starts from merged `main`, never from the previous phase branch. No separate prerequisite, documentation, CI, fake or task-level pull request is opened for B3 work: a correction a phase needs lands inside that phase, and an unrelated defect stays separate backlog work. A phase whose member remains blocked stays incomplete and is not split without a new owner instruction. Every other block keeps the one-pull-request-per-task rule of `DEC-063`.
+Every member keeps its own row, issue, acceptance criteria and red/green evidence; the phase pull request lists each member with its own evidence row, and closes or advances the members together. Each phase starts from merged `main`, never from the previous phase branch. No separate prerequisite, documentation, CI, fake or task-level pull request is opened for B3 work: a correction a phase needs lands inside that phase, and an unrelated defect stays separate backlog work. A phase whose member remains blocked stays incomplete and is not split without a new owner instruction.
+
+**B4 packaging exception (`DEC-096`, owner directive 2026-10-03).** B4 is delivered in three sequential phase pull requests instead of one per task. The grouping is fixed:
+
+| Phase | Tasks, in execution order | Branch | Prerequisite |
+| --- | --- | --- | --- |
+| 4.1 — Parity-verified resources | `TASK-042`, `TASK-013`, `TASK-035` | `feat/b4-phase-4-1` | The integrated B1–B3 baseline |
+| 4.2 — Design system and shell | `TASK-043`, `TASK-044` | `feat/b4-phase-4-2` | Phase 4.1 merged by the owner |
+| 4.3 — Image-first product surface | `TASK-005`, `TASK-021`, `TASK-007`, `TASK-008` | `feat/b4-phase-4-3` | Phase 4.2 merged by the owner |
+
+Every member's `Dependencies` entry points into B1–B3, into an earlier phase, or to a member earlier in its own phase, so no phase creates a forward edge, and each phase leaves `main` in a consistent state: 4.1 the design tokens and the localised resources under parity verification, 4.2 an installable Android shell (`:core:designsystem` and `:androidApp`), 4.3 the block's user-visible behaviour. Every member keeps its own row, issue, acceptance criteria and red/green evidence; the phase pull request lists each member with its own evidence row. Each phase starts from merged `main`, never from the previous phase branch. `TASK-035` remains blocked until Figma project access is granted (`CON-005`); if it is still blocked when Phase 4.1 runs, Phase 4.1 stays incomplete and is not split further without a new owner instruction. Every block other than B3 and B4 keeps the one-pull-request-per-task rule of `DEC-063`.
 
 ## 3. M0 — Repository and documentation baseline
 
@@ -353,6 +363,7 @@ The audit's open items are `CONF-50` and `CONF-54` and the open `GAP-*` rows of 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-03 | §2.6 records the B4 packaging exception: three sequential phase pull requests 4.1–4.3 with a fixed membership, noted beside the B4 row; the B3 paragraph no longer says B3 is the only exception. No task row, dependency or status changes. | `DEC-096`, `DEC-063` |
 | 2026-10-03 | Owner decision on the two B3 follow-ups: `TASK-044` authors `coreModule` with its first consumer (`GAP-026`), and `TASK-022` adds the rate-limit countdown formatter to `IC-017` (`GAP-027`); both rows' acceptance now says so. | `GAP-026`, `GAP-027`, `DEC-091` |
 | 2026-10-03 | B3 Phase 3.2 integrated: `TASK-038`, `TASK-039` and `TASK-047` are `Done` (PR #114, merged as `b38766a`, `android` green on its head under the `DEC-083` suspension). Phase 3.3 opens `TASK-040` (#115) and `TASK-041` (#116), both in review on `feat/b3-phase-3-3`. | `DEC-082`, `DEC-083` |
 | 2026-10-02 | B3 Phase 3.2: `TASK-038`, `TASK-039` and `TASK-047` are in review on `feat/b3-phase-3-2`; `TASK-020` inherits the production-cache half of the refresh bypass and the cache events. | `DEC-082`, `DEC-086`, `DEC-087` |
