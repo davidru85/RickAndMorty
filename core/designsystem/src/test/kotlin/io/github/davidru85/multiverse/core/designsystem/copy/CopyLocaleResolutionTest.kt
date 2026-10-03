@@ -81,8 +81,10 @@ class CopyLocaleResolutionTest {
     private companion object {
         /**
          * Keys whose value is deliberately identical in both locales: the brand marks and the app
-         * name are proper nouns the product keeps in every language (`UI_SPEC.md` §6.1).
+         * name are proper nouns the product keeps in every language (`UI_SPEC.md` §6.1), and
+         * `settings_data_graphql` is a technology's own name, which `UI_SPEC.md` §6.5 spells the same
+         * way in both copies.
          */
-        val BRAND_MARKS = setOf("app_name", "splash_wordmark", "splash_wordmark_sub")
+        val BRAND_MARKS = setOf("app_name", "splash_wordmark", "splash_wordmark_sub", "settings_data_graphql")
     }
 }

@@ -22,6 +22,31 @@
     <string name="search_characters">Search characters</string>
     <string name="filter_all">All</string>
 
+    <!-- Character detail (UI_SPEC.md §6.3, TASK-002/TASK-023) -->
+    <string name="detail_action_favorite">Favorite</string>
+    <string name="action_share">Share</string>
+    <string name="detail_stat_episodes">Episodes</string>
+    <string name="detail_stat_dimension">Dimension</string>
+    <string name="detail_stat_species">Species</string>
+    <string name="detail_info_origin">Origin</string>
+    <string name="detail_info_last_known_location">Last known location</string>
+    <string name="detail_info_first_seen_in">First seen in</string>
+
+    <!-- Settings (UI_SPEC.md §6.5, TASK-074/TASK-076) -->
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_sound_title">Sounds</string>
+    <string name="settings_sound_body">Play sound effects in the app</string>
+    <string name="settings_data_source_title">Data source</string>
+    <string name="settings_data_rest">REST API</string>
+    <string name="settings_data_graphql">GraphQL</string>
+    <string name="settings_delete_action">Delete favorites</string>
+    <string name="settings_delete_explanation">Remove every character you\'ve saved. This can\'t be undone.</string>
+    <string name="settings_delete_confirm_title">Delete all favorites?</string>
+    <string name="settings_delete_confirm_message">This removes every character from Favorites. You can\'t undo this.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+
     <!-- Navigation (UI_SPEC.md §4.1) -->
     <string name="nav_characters">Characters</string>
     <string name="nav_episodes">Episodes</string>

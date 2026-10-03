@@ -18,6 +18,31 @@
     <string name="search_characters">Buscar personajes</string>
     <string name="filter_all">Todos</string>
 
+    <!-- Character detail (UI_SPEC.md §6.3, TASK-002/TASK-023) -->
+    <string name="detail_action_favorite">Favorito</string>
+    <string name="action_share">Compartir</string>
+    <string name="detail_stat_episodes">Episodios</string>
+    <string name="detail_stat_dimension">Dimensión</string>
+    <string name="detail_stat_species">Especie</string>
+    <string name="detail_info_origin">Origen</string>
+    <string name="detail_info_last_known_location">Última ubicación conocida</string>
+    <string name="detail_info_first_seen_in">Aparece por primera vez en</string>
+
+    <!-- Settings (UI_SPEC.md §6.5, TASK-074/TASK-076) -->
+    <string name="settings_section_preferences">Preferencias</string>
+    <string name="settings_section_data">Datos</string>
+    <string name="settings_sound_title">Sonidos</string>
+    <string name="settings_sound_body">Reproducir efectos de sonido en la app</string>
+    <string name="settings_data_source_title">Fuente de datos</string>
+    <string name="settings_data_rest">API REST</string>
+    <string name="settings_data_graphql">GraphQL</string>
+    <string name="settings_delete_action">Borrar favoritos</string>
+    <string name="settings_delete_explanation">Elimina todos los personajes que has guardado. No se puede deshacer.</string>
+    <string name="settings_delete_confirm_title">¿Borrar todos los favoritos?</string>
+    <string name="settings_delete_confirm_message">Esto elimina todos los personajes de Favoritos. No se puede deshacer.</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Borrar</string>
+
     <!-- Navigation (UI_SPEC.md §4.1) -->
     <string name="nav_characters">Personajes</string>
     <string name="nav_episodes">Episodios</string>

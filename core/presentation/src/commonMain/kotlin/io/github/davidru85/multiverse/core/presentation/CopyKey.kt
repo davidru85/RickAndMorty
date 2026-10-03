@@ -72,6 +72,34 @@ public object CopyKeys {
     public val SEARCH_CHARACTERS: CopyKey = key("search_characters")
     public val FILTER_ALL: CopyKey = key("filter_all")
 
+    // The detail surface (`TASK-002`, `TASK-023`, `UI_SPEC.md` §6.3): the favourite action, the share
+    // control, the three stat tiles and the three info-row labels.
+    public val DETAIL_ACTION_FAVORITE: CopyKey = key("detail_action_favorite")
+    public val ACTION_SHARE: CopyKey = key("action_share")
+    public val DETAIL_STAT_EPISODES: CopyKey = key("detail_stat_episodes")
+    public val DETAIL_STAT_DIMENSION: CopyKey = key("detail_stat_dimension")
+    public val DETAIL_STAT_SPECIES: CopyKey = key("detail_stat_species")
+    public val DETAIL_INFO_ORIGIN: CopyKey = key("detail_info_origin")
+    public val DETAIL_INFO_LAST_KNOWN_LOCATION: CopyKey = key("detail_info_last_known_location")
+    public val DETAIL_INFO_FIRST_SEEN_IN: CopyKey = key("detail_info_first_seen_in")
+
+    // The settings surface (`TASK-074`, `TASK-076`, `UI_SPEC.md` §6.5). The screen title reuses
+    // `nav_settings`, the Favorites section header reuses `nav_favorites`, and the "Delete favorites"
+    // disabled state reuses the button's own key.
+    public val SETTINGS_SECTION_PREFERENCES: CopyKey = key("settings_section_preferences")
+    public val SETTINGS_SECTION_DATA: CopyKey = key("settings_section_data")
+    public val SETTINGS_SOUND_TITLE: CopyKey = key("settings_sound_title")
+    public val SETTINGS_SOUND_BODY: CopyKey = key("settings_sound_body")
+    public val SETTINGS_DATA_SOURCE_TITLE: CopyKey = key("settings_data_source_title")
+    public val SETTINGS_DATA_REST: CopyKey = key("settings_data_rest")
+    public val SETTINGS_DATA_GRAPHQL: CopyKey = key("settings_data_graphql")
+    public val SETTINGS_DELETE_ACTION: CopyKey = key("settings_delete_action")
+    public val SETTINGS_DELETE_EXPLANATION: CopyKey = key("settings_delete_explanation")
+    public val SETTINGS_DELETE_CONFIRM_TITLE: CopyKey = key("settings_delete_confirm_title")
+    public val SETTINGS_DELETE_CONFIRM_MESSAGE: CopyKey = key("settings_delete_confirm_message")
+    public val ACTION_CANCEL: CopyKey = key("action_cancel")
+    public val ACTION_DELETE: CopyKey = key("action_delete")
+
     /** Every registered key, in registration order. Declared last, so it sees every key above. */
     public val all: Set<CopyKey> = registered.toSet()
 }
