@@ -36,7 +36,7 @@ class CharacterDetailReducerTest {
             species = DisplayText.Data("Human"),
             status = CharacterStatus.Alive,
             statusLabel = CopyKeys.STATUS_ALIVE,
-            imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+            imageUrl = "https://example.invalid/avatar/1.jpeg",
         )
 
     @Test

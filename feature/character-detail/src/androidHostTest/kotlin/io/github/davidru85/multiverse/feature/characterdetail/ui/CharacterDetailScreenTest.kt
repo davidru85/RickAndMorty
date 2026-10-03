@@ -70,7 +70,7 @@ class CharacterDetailScreenTest {
             species = DisplayText.Data("Human"),
             status = io.github.davidru85.multiverse.core.domain.model.CharacterStatus.Alive,
             statusLabel = CopyKeys.STATUS_ALIVE,
-            imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+            imageUrl = "https://example.invalid/avatar/1.jpeg",
         )
 
     private fun show(

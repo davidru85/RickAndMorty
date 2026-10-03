@@ -29,7 +29,7 @@ internal fun details(
         gender = gender,
         origin = origin,
         lastKnownLocation = lastKnownLocation,
-        imageUrl = "https://rickandmortyapi.com/api/character/avatar/$id.jpeg",
+        imageUrl = "https://example.invalid/avatar/$id.jpeg",
         episodeIds = episodeIds.map(::EpisodeId),
         episodeSummaries = episodeSummaries,
         createdAt = null,
