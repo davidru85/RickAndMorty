@@ -374,25 +374,64 @@ Figma variables are the source of truth. There are three collections:
 Code syntax is already set on each variable (`MaterialTheme.colorScheme.primary`, `Color.portalGreen`, …).
 
 For the MVP, the tokens are hand-written:
-- Android: `MultiverseTheme.kt`
+- Android: `MultiverseTokens.kt` in `:core:designsystem` (the colour, dimension and type-scale objects)
 - iOS: `Color+Multiverse.swift`, `Font+Multiverse.swift`
 
-A unit test compares them with a committed `tokens.json` export of the Figma variables, so drift fails CI. Code generation from `tokens.json` can replace the manual step later without changing any call sites.
+#### Committed export (`DEC-022`, `DEC-102`)
 
-### 4.4 Portrait accent colour (Android)
+The hand-written tokens are checked against a committed export of the Figma variables, so drift fails. The export lives at `docs/figma/tokens.json` — beside the rendered PNG exports, and readable by both platforms (`TASK-052` reads the same file) — and its schema is:
 
-The M3 brief asks for card containers tinted from each character's portrait (`UI_SPEC.md` §5.4). This is a UI concern, so it lives in `:feature:discovery` (Android UI source set):
-
-```kotlin
-interface CharacterAccentResolver {
-    /** Tone-30 container colour derived from the portrait, or null. */
-    suspend fun accentFor(imageUrl: String): Color?
+```json
+{
+  "schemaVersion": 1,
+  "source": {
+    "fileKey": "nFQdxd23Kk4rNI7G4iHDUr",
+    "fileName": "Rick & Morty",
+    "fileUrl": "https://www.figma.com/design/…",
+    "exportedAt": "YYYY-MM-DD",
+    "exportedBy": "…",
+    "method": "…",
+    "variableCount": 86
+  },
+  "collections": [
+    {
+      "name": "Multiverse · M3 Scheme",
+      "mode": "Multiverse",
+      "variableCount": 49,
+      "variables": [
+        { "name": "Schemes/Primary", "type": "COLOR", "value": "#A4D661" },
+        { "name": "Space/XS", "type": "FLOAT", "value": "4" }
+      ]
+    }
+  ]
 }
 ```
 
-- The implementation reuses Coil's cached image (a software bitmap is required for pixel access). It quantizes and scores the image with `material-color-utilities` on `Dispatchers.Default`.
-- Results are memoized in an LRU keyed by image URL, so extraction runs at most once per character per process.
+- `collections[].variables[].name` is the Figma variable name verbatim; it is unique across the whole file, which the parity test asserts.
+- `type` is the variable's resolved type (`COLOR` or `FLOAT`); `value` is a string, an uppercase `#RRGGBB` or `#RRGGBBAA` for a colour and the number's decimal form for a dimension.
+- The export is produced by a **read-only** enumeration of the three local collections through the authenticated Figma connector (`figma.variables.getLocalVariableCollectionsAsync` plus `getVariableByIdAsync`), with alias chains resolved to their final value. It is never hand-typed: a hand-typed file is not an export and would satisfy no parity claim. The export date and method are recorded here and in the `docs/figma/README.md` export log.
+
+`TEST-UNIT-035` compares `docs/figma/tokens.json` with the Kotlin token objects in both directions: a token whose value drifts fails, and an exported variable that no token maps fails unless it sits in the test's reviewed exclusion (the iOS-only glass and label families, which `TASK-052` consumes). Figma wins for values, so a divergence is settled by re-exporting and reconciling `UI_SPEC.md` §3, never by editing one side silently.
+
+Code generation from `tokens.json` can replace the manual step later without changing any call sites.
+
+### 4.4 Portrait accent colour (Android)
+
+The M3 brief asks for card containers tinted from each character's portrait (`UI_SPEC.md` §5.4). Three surfaces render the same card, so the accent is a **design-system** concern, not a discovery-feature one (`DEC-097`, [ADR-0015](adr/0015-image-pipeline-and-accent-placement.md)). `:core:designsystem` owns it:
+
+```kotlin
+interface CharacterAccentPolicy {
+    /** Tone-30 container colour derived from the pixels, or the Portal Green fallback. */
+    suspend fun accentFor(imageUrl: String): Color
+}
+```
+
+- The policy takes an injectable **pixel source** (`TESTING.md` §7), so a test drives it with synthetic pixels and never touches the network or the filesystem.
+- The quantize/score/palette step is a **vendored Apache-2.0 subset of `material-color-utilities`** (`QuantizerCelebi`, `Score`, `TonalPalette`) with its license headers and a `NOTICE`; no first-party artifact exists (`CONF-50`, `TASK-083`). The container is tone 30 with the chroma clamped to `[24.0, 48.0]`, falling back to Portal Green.
+- It runs on a caller-supplied dispatcher (`Dispatchers.Default` in production), never on the main thread, and memoizes one result per URL in an LRU, so extraction runs at most once per URL per process.
 - Cards render Surface Container High until the accent resolves, then animate the colour.
+
+The **transport** stays in the composition root: `:androidApp` owns Coil and the `ImageLoader`, and implements the Compose-only image seam `:core:designsystem` declares (URL, requested pixel size, dispatcher in; painter or state out). A software bitmap is requested only for extraction, and the fetcher uses a Ktor client built with `rickAndMortyDefaults()`, so an image URL that fails the host allow-list issues no transport call (`SECURITY.md` §5). Favorites renders the same design-system card, so no feature-to-feature edge is needed.
 
 iOS needs no equivalent: its glass surfaces take colour from the portrait by refraction.
 
