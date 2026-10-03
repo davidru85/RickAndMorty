@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -30,7 +31,19 @@ public class LocalAppSettingsRepository(
     private val writes = Mutex()
     private val cache = MutableStateFlow<AppSettings?>(null)
 
-    override fun observe(): Flow<AppSettings> = cache.filterNotNull().distinctUntilChanged()
+    /**
+     * The persisted value to a new collector first, then each distinct change (`IC-021`).
+     *
+     * The snapshot is seeded on first collection, so a cold consumer — the per-request protocol
+     * selection, or the Settings screen on first open — receives the stored value instead of waiting
+     * for the first write. Seeding is idempotent: `stored()` keeps the value, so a later collector
+     * neither re-reads the store nor re-emits an unchanged one.
+     */
+    override fun observe(): Flow<AppSettings> =
+        cache
+            .filterNotNull()
+            .onStart { stored() }
+            .distinctUntilChanged()
 
     override suspend fun update(change: (AppSettings) -> AppSettings) {
         writes.withLock {
