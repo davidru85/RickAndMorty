@@ -76,7 +76,7 @@ public class FakeRemoteSource(
         failure: ApiFailure,
         kind: Kind? = null,
     ) {
-        queuedFailures.addLast(Queued(failure, kind))
+        queuedFailures += Queued(failure, kind)
     }
 
     /** The failure reserved for [kind], consumed in queue order, or `null` when none waits. */

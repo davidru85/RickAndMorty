@@ -8,9 +8,9 @@ import kotlin.time.Instant
  *
  * It stores bytes and the metadata needed to revalidate, and nothing else: freshness, staleness and
  * write admission are the policy of [ResponseCache] above it, evaluated against an injected clock.
+ * The complete normalized request identity (`REQ-REL-001`) is [CacheKey]; only [CacheKeyBuilder]
+ * builds one.
  */
-
-/** The complete normalized request identity (`REQ-REL-001`); built only by [CacheKeyBuilder]. */
 @JvmInline
 public value class CacheKey(
     public val value: String,

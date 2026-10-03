@@ -114,7 +114,10 @@ class FailurePresentationTest {
                 "the automatic-retry answer of $failure follows ERROR_FLOW.md 10",
             )
             assertTrue(
-                DefaultPresentationFormatters.failureMessage(failure).key.value.isNotEmpty(),
+                DefaultPresentationFormatters
+                    .failureMessage(failure)
+                    .key.value
+                    .isNotEmpty(),
                 "every failure class reaches a copy key",
             )
         }

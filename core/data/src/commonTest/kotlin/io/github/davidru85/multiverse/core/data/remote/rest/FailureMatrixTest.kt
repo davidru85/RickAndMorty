@@ -9,10 +9,10 @@ import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -85,7 +85,12 @@ class FailureMatrixTest {
     @Test
     fun `TEST-UNIT-010 given_a_429_advising_an_http_date_when_it_is_parsed_then_the_countdown_is_measured_on_the_injected_clock`() =
         TestTime.run {
-            val clock = MutableFakeClock(kotlin.time.Instant.parse("2026-10-03T12:00:00Z").toEpochMilliseconds())
+            val clock =
+                MutableFakeClock(
+                    kotlin.time.Instant
+                        .parse("2026-10-03T12:00:00Z")
+                        .toEpochMilliseconds(),
+                )
             val (client, _) =
                 MockHttp.client(
                     MockHttp.errorRoute(
@@ -102,7 +107,12 @@ class FailureMatrixTest {
     @Test
     fun `TEST-UNIT-010 given_a_429_with_a_past_date_when_it_is_parsed_then_the_countdown_is_zero_not_negative`() =
         TestTime.run {
-            val clock = MutableFakeClock(kotlin.time.Instant.parse("2026-10-03T12:00:00Z").toEpochMilliseconds())
+            val clock =
+                MutableFakeClock(
+                    kotlin.time.Instant
+                        .parse("2026-10-03T12:00:00Z")
+                        .toEpochMilliseconds(),
+                )
             val (client, _) =
                 MockHttp.client(
                     MockHttp.errorRoute(
@@ -137,6 +147,8 @@ class FailureMatrixTest {
         }
 
     private companion object {
-        val ID = io.github.davidru85.multiverse.core.domain.model.CharacterId("1")
+        val ID =
+            io.github.davidru85.multiverse.core.domain.model
+                .CharacterId("1")
     }
 }

@@ -409,6 +409,10 @@ interface CacheStorage {
   - Image bytes are never stored here: image caching is independent of response caching (`REQ-FUNC-021`, `AC-REQ-FUNC-021-2`).
   - No method reads the wall clock; an entry's age is computed by the caller from `storedAt` and the injected clock, so a device clock change cannot alter freshness evaluation (`REQ-REL-004`, `AC-REQ-REL-004-1`).
   - `evictAll` clears response payloads only and `MUST NOT` touch the favourites store (`IC-013`) or the preferences store (`IC-022`). A protocol switch `MUST NOT` call it.
+- **Implementation (`TASK-020`):** the policy above the seam is `ResponseCache` in `:core:data` (`commonMain`), over a `CacheStorage` the composition root supplies. `CacheKeyBuilder` is the one builder of a key: the complete normalized request identity, `protocol|method|pathTemplate|canonicalQuery`, with the query's parameters in a fixed alphabetical order, blank values omitted and the case the wire contract fixes preserved. The freshness bands are `CachePolicy` — 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback — injectable, and an age is computed only from the injected clock. A negative age (a device clock moved backwards) classifies as fresh rather than expired.
+  - The read policy is `API_SPECS.md` §7.3: a fresh entry answers without a network call; a stale entry is served at once with `isStale = true` and revalidated behind the caller; an offline-fallback entry is kept as the answer to a failed request; an expired entry is evicted. `PageLoadPolicy.ForceNetwork` bypasses every band (`DEC-086`).
+  - The write guard is the never-cache rule: only a complete decoded success with no warnings is written. A failed enrichment produces a warning and is refused, so a partial detail can never hide the rows it omits (`ERROR_FLOW.md` §7).
+  - A store that cannot read, a store that cannot write and an undecodable record each degrade to a miss; none reaches a screen as a failure.
 - **Traceability:** `REQ-FUNC-020`, `REQ-FUNC-021`, `REQ-REL-001`, `REQ-REL-004`, `DEC-012`, `DEC-018`.
 
 ### IC-013 — `FavoritesLocalDataSource`
@@ -713,7 +717,15 @@ interface PresentationFormatters {
     fun valueText(raw: String?): DisplayText
     fun dimensionText(origin: LocationSummary, enrichRequested: Boolean): String?
     fun firstSeenText(summaries: List<EpisodeSummary>?): String?
+    fun rateLimitCountdown(retryAfterSeconds: Long?): String?          // TASK-022, GAP-027
+    fun failureMessage(failure: ApiFailure): FailureMessage            // TASK-022
+    fun failureTitle(): CopyKey                                        // TASK-022
+    fun retryAction(): CopyKey                                         // TASK-022
+    fun isAutomaticallyRetryable(failure: ApiFailure): Boolean          // TASK-022
 }
+
+/** The copy of one failure: the key, plus the values its wording substitutes (GAP-027). */
+data class FailureMessage(val key: CopyKey, val arguments: List<String> = emptyList())
 
 object DefaultPresentationFormatters : PresentationFormatters
 ```
@@ -731,7 +743,11 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `valueText(raw)` is `DisplayText.Copy(unknownKey())` for an absent, blank or `"unknown"` value (any case) and `DisplayText.Data(raw)`, unchanged, otherwise.
   - `dimensionText` prefers the enriched `origin.dimension` when enrichment was requested, then the designation in parentheses at the end of `origin.name` ("Earth (C-137)" → "C-137"); an unknown value is not a dimension.
   - Every `CopyKey` value produced by these formatters `MUST` exist in both the Android resource file and the iOS resource file; the parity test fails on a missing or extra key (`REQ-UX-008`, `AC-REQ-UX-008-1`, `DEC-020`).
-- **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
+  - `failureMessage(failure)` maps every `ApiFailure` of `ERROR_FLOW.md` §4 to its own key, so a failure class can never render another class's copy (`REQ-FUNC-022`, `AC-REQ-FUNC-022-1`). The rate-limit message carries its countdown as an **argument** rather than interpolated text, because the wording and its placeholder live in the platform resource file (`GAP-027`).
+  - `rateLimitCountdown(retryAfterSeconds)` is the one formatter for the number in `error_message_rate_limited`: the advised seconds, or `null` when the advice is absent or negative. It `MUST NOT` invent a value, and it is the only place the number is turned into text, so both platforms render the same countdown (`ERROR_FLOW.md` §4.1, `GAP-027`).
+  - `isAutomaticallyRetryable(failure)` states the recovery table's answer rather than a per-surface choice: `Offline`, `Timeout` and `Server` are retried within the bounded budget, and TLS (`Unknown`), another `4xx` (`InvalidRequest`), `NotFound`, `RateLimited`, `GraphQl`, `MalformedResponse` and `EmptyBody` are not retried automatically (`ERROR_FLOW.md` §10, `API_SPECS.md` §6.3, `DEC-084`). A user-initiated retry stays available for every class.
+  - `failureTitle()` and `retryAction()` return the shared full-surface title and the retry affordance, so the two keys are named once instead of per surface.
+- **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-022`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
 
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 

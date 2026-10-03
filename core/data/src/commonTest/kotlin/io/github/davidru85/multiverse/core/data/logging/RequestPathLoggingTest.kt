@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.logging
 
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.core.data.paging.RepositoryCharacterPager
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
 import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
@@ -9,7 +10,6 @@ import io.github.davidru85.multiverse.core.domain.logging.LogLevel
 import io.github.davidru85.multiverse.core.domain.logging.LogRecord
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
-import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
