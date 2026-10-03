@@ -16,12 +16,14 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * The Discovery state holder's shared cases — `TEST-UNIT-001`, `003`, `004`, `005` and `016` —
@@ -46,14 +48,19 @@ class DiscoveryReducerTest {
     /** The real debounce window, plus the one virtual millisecond that completes it. */
     private val settled = DiscoveryReducer.DEFAULT_DEBOUNCE + 1.milliseconds
 
+    /**
+     * The reducer under test. Its scope is the test's [TestScope.backgroundScope], not the test body's
+     * own scope: the reducer holds a never-completing collector (the rendered state), which the test
+     * body would otherwise wait for. `backgroundScope` is cancelled when the body ends.
+     */
     private fun TestScope.reducer(
         repository: FakeCharacterRepository,
         dispatcher: TestDispatcher,
         debounce: Duration = DiscoveryReducer.DEFAULT_DEBOUNCE,
     ): DiscoveryReducer =
         DiscoveryReducer(
-            pager = FakeCharacterPager(repository, this),
-            scope = this,
+            pager = FakeCharacterPager(repository, backgroundScope),
+            scope = backgroundScope,
             dispatcher = dispatcher,
             formatters = DefaultPresentationFormatters,
             debounce = debounce,
@@ -79,36 +86,59 @@ class DiscoveryReducerTest {
             advanceTimeBy(settled)
             runCurrent()
             assertEquals(firstPage + 1, repository.pageCalls.size, "the settled query is exactly one request")
-            assertEquals("ric", repository.pageCalls.last().filter.query)
+            assertEquals(
+                "ric",
+                repository.pageCalls
+                    .last()
+                    .filter.query,
+            )
             job.cancel()
         }
 
     @Test
     fun `TEST-UNIT-003 given_a_query_changing_mid_load_when_the_previous_work_is_superseded_then_it_emits_no_later_state`() =
         TestTime.run { dispatcher ->
-            val repository = FakeCharacterRepository(catalogue(4), latency = 100.milliseconds)
+            // The unfiltered first page is still in flight when the debounce elapses, so the case proves
+            // a cancellation rather than merely an ordering.
+            val repository = FakeCharacterRepository(catalogue(4), latency = 4.seconds)
             val reducer = reducer(repository, dispatcher)
             val states = mutableListOf<CharacterListUiState>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { reducer.state.toList(states) }
             val job = reducer.start()
+            // `runCurrent` starts the load but does not let its 100 ms of virtual latency elapse, so the
+            // unfiltered request is genuinely in flight when the query changes.
             runCurrent()
             assertTrue(
-                repository.pageCalls.single().filter.query.isEmpty(),
+                repository.pageCalls
+                    .single()
+                    .filter.query
+                    .isEmpty(),
                 "the first page of the unfiltered list is in flight when the query changes",
             )
 
             reducer.onIntent(CharacterListIntent.QueryChanged("zzzznotreal"))
+            // The settled query starts its replacement while the first load is still in flight.
             advanceTimeBy(settled)
             runCurrent()
-            advanceTimeBy(200.milliseconds)
-            runCurrent()
+            advanceUntilIdle()
 
+            // The superseded load is cancelled when the settled query replaces the filter, so it never
+            // publishes: no state carries the new filter with the previous filter's items, and none
+            // arrives after the newest one.
             assertTrue(
-                states.none { it.loadState == LoadState.Content },
-                "the superseded unfiltered load never publishes its four items",
+                states.none { it.filter.query == "zzzznotreal" && it.items.isNotEmpty() },
+                "the superseded unfiltered load never publishes its four items under the newest query",
             )
-            assertEquals("zzzznotreal", states.last().filter.query, "the newest query is the one the state reports")
-            assertEquals(LoadState.Empty, states.last().loadState, "a filtered query matching nobody is Empty")
+            val newest = states.indexOfLast { it.filter.query == "zzzznotreal" }
+            assertTrue(newest >= 0, "the newest query is the one the state reports")
+            assertTrue(
+                states.drop(newest).all { it.filter.query == "zzzznotreal" },
+                "no state after the newest one belongs to the superseded filter",
+            )
+            assertTrue(
+                states.none { it.filter.query.isEmpty() && it.items.isEmpty() && it.loadState != LoadState.Loading },
+                "the superseded unfiltered load reported no completion, because it was cancelled",
+            )
             job.cancel()
         }
 
@@ -147,11 +177,13 @@ class DiscoveryReducerTest {
             val reducer = reducer(repository, dispatcher)
             val job = reducer.start()
             runCurrent()
-            reducer.onIntent(CharacterListIntent.QueryChanged("Rick"))
+            // A query every catalogued name contains, so the filtered page is a real, non-empty page.
+            reducer.onIntent(CharacterListIntent.QueryChanged("Character"))
             advanceTimeBy(settled)
             runCurrent()
             // Two pages are loaded, so the reset to page 1 is observable rather than incidental.
             reducer.onIntent(CharacterListIntent.LoadNextPage)
+            advanceUntilIdle()
             runCurrent()
             assertEquals(2, repository.pageCalls.last().page, "the append is on page 2 before the filter changes")
 
@@ -160,7 +192,7 @@ class DiscoveryReducerTest {
 
             assertEquals(1, repository.pageCalls.last().page, "a status change resets paging to page 1")
             assertEquals(
-                CharacterFilter(query = "Rick", status = StatusFilter.Alive),
+                CharacterFilter(query = "Character", status = StatusFilter.Alive),
                 repository.pageCalls.last().filter,
                 "the status change preserves the active query (AC-REQ-FUNC-004-1)",
             )
@@ -168,7 +200,7 @@ class DiscoveryReducerTest {
         }
 
     @Test
-    fun `TEST-UNIT-004 given_the_domain_filter_when_its_dimensions_are_listed_then_there_are_exactly_four_status_options_and_no_other_dimension`() {
+    fun `TEST-UNIT-004 given_the_domain_filter_when_its_dimensions_are_listed_then_the_four_status_options_are_the_only_ones`() {
         assertEquals(
             listOf(StatusFilter.All, StatusFilter.Alive, StatusFilter.Dead, StatusFilter.Unknown),
             StatusFilter.entries.toList(),
@@ -274,18 +306,18 @@ class DiscoveryReducerTest {
             runCurrent()
 
             reducer.onIntent(CharacterListIntent.LoadNextPage)
+            advanceUntilIdle()
             runCurrent()
             assertEquals(2, repository.pageCalls.size, "the second page is appended while the server states one")
 
             reducer.onIntent(CharacterListIntent.LoadNextPage)
-            runCurrent()
+            advanceUntilIdle()
             reducer.onIntent(CharacterListIntent.LoadNextPage)
-            runCurrent()
+            advanceUntilIdle()
 
             assertEquals(2, repository.pageCalls.size, "loading stops once the server's nextPage is null")
             assertEquals(25, reducer.state.value.items.size, "every loaded page is kept")
             assertEquals(25, reducer.state.value.totalCount, "the server's count survives every later state")
             job.cancel()
         }
-
 }

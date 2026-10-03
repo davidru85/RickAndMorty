@@ -1,7 +1,6 @@
 package io.github.davidru85.multiverse.feature.discovery.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -112,5 +111,4 @@ class DiscoveryScreenTest {
             sent.any { it is CharacterListIntent.QueryChanged && it.query.isEmpty() },
         )
     }
-
 }
