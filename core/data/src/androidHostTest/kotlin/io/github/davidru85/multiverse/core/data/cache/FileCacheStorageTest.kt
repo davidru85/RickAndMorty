@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.data.cache
 
+import kotlinx.coroutines.test.runTest
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.AfterTest
@@ -10,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-import kotlinx.coroutines.test.runTest
 
 /**
  * `TEST-INT-001`'s store half and `TEST-INT-004` — the Android response-cache store.
