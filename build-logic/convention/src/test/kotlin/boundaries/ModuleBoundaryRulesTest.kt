@@ -218,6 +218,68 @@ class ModuleBoundaryRulesTest {
     }
 
     @Test
+    fun `R15 admits the approved test libraries of the design system and rejects every other`() {
+        val designSystem = ":core:designsystem"
+
+        // DEC-106: the design-system suites need JUnit, Robolectric and a JSON reader for the
+        // tokens.json parity test; they carry no image, HTTP, DI or persistence code.
+        val approved = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    designSystem,
+                    externals = listOf(
+                        external(designSystem, "junit:junit", "testImplementation", "test", SourceSetKind.TEST),
+                        external(designSystem, "org.robolectric:robolectric", "testImplementation", "test", SourceSetKind.TEST),
+                        external(
+                            designSystem,
+                            "org.jetbrains.kotlinx:kotlinx-serialization-json",
+                            "testImplementation",
+                            "test",
+                            SourceSetKind.TEST,
+                        ),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(approved, "R15").map { it.render() }, "DEC-106 approves these test libraries")
+
+        // The same coordinates in a production source set stay rejected: the allowance is test-only.
+        val production = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    designSystem,
+                    externals = listOf(
+                        external(
+                            designSystem,
+                            "org.jetbrains.kotlinx:kotlinx-serialization-json",
+                            "implementation",
+                            "main",
+                            SourceSetKind.PRODUCTION,
+                        ),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(production, "R15").size, "the allowance never reaches a production source set")
+
+        // An unapproved test library still fails: the allow-list is closed.
+        val unapproved = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    designSystem,
+                    externals = listOf(
+                        external(designSystem, "io.ktor:ktor-client-core", "testImplementation", "test", SourceSetKind.TEST),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(unapproved, "R15").size, "a test library outside DEC-106 is rejected")
+    }
+
+    @Test
     fun `R5 bounds core testing dependencies and R6 keeps it out of production`() {
         val testing = ":core:testing"
         val allowed = ModuleBoundaryRules.evaluate(
@@ -369,6 +431,47 @@ class ModuleBoundaryRulesTest {
             emptyMap(),
         )
         assertEquals(1, only(rejected, "R11").size)
+    }
+
+    @Test
+    fun `R11 admits only the approved shell test modules from a test source set`() {
+        // DEC-106: the shell's tests resolve the graph with the shared harness and drive the copy
+        // keys of :core:presentation; neither may reach a production or release configuration.
+        val harness = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":androidApp",
+                    edges = listOf(
+                        edge(":androidApp", ":core:testing", "testImplementation", "test", SourceSetKind.TEST),
+                        edge(":androidApp", ":core:presentation", "testImplementation", "test", SourceSetKind.TEST),
+                    ),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(harness, "R11").map { it.render() }, "DEC-106 approves these test modules")
+
+        val production = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":androidApp",
+                    edges = listOf(edge(":androidApp", ":core:testing", "implementation", "main", SourceSetKind.PRODUCTION)),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(production, "R11").size, "a production edge to the harness stays rejected")
+
+        val otherCore = ModuleBoundaryRules.evaluate(
+            complete(
+                project(
+                    ":androidApp",
+                    edges = listOf(edge(":androidApp", ":core:domain", "testImplementation", "test", SourceSetKind.TEST)),
+                ),
+            ),
+            emptyMap(),
+        )
+        assertEquals(1, only(otherCore, "R11").size, "a core module outside DEC-106 stays rejected")
     }
 
     @Test
