@@ -20,44 +20,42 @@ import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
  * `"10"` precedes `"2"` — which is deterministic, repeatable and independent of which character was
  * marked first.
  *
+ * **The precedence**, which `IC-020` states in words and `IC-018` — its sibling over the same
+ * `LoadState` primitive — pins as an evaluation order. Applied in order:
+ *
+ * 1. no store emission yet → `Loading`, the one state that is not a claim about the stored set;
+ * 2. a non-empty stored set with at least one displayable card → `Content`, **even when the newest
+ *    read also failed**: the cards a user can see outrank the failure, which is what
+ *    `AC-REQ-FUNC-006-1` means by reflecting the stored state, and what stops a partial read from
+ *    blanking a section that has content;
+ * 3. a failed read with nothing displayable → `Error`, the only way `Error` is reachable;
+ * 4. an empty stored set → `Empty`, the designed empty state, shown only then
+ *    (`AC-REQ-FUNC-006-3`);
+ * 5. otherwise (a non-empty set whose cards have not landed, or none of whose ids the read could
+ *    resolve) → `Loading`, because nothing is displayable yet.
+ *
  * **The three inputs, and why each is separate.** [ids] is `null` until the store's first emission
- * arrives: that is the one meaning of "nothing is known about the stored set yet", so `Loading` appears
- * exactly while it holds. [summaries] holds the characters resolved for the current ids through the
- * cached path (`CONF-79`, `DESIGN.md` §4.5). [failure] is the one failure of the newest read, or `null`.
+ * arrives, so a `Loading` that means "nothing is known about the set" is distinguishable from one that
+ * means "the cards are still coming". [summaries] holds the characters resolved for those ids through
+ * the cached path (`CONF-79`, `DESIGN.md` §4.5). [failure] is the one failure of the newest read, or
+ * `null`.
  */
 public object FavoritesReducer {
-    /**
-     * The state for one store emission and the resolution of it.
-     *
-     * A [failure] wins over everything else: the section has no content to keep alongside it, because
-     * a favourite with no resolvable summary has no card to render.
-     */
+    /** The state for one store emission and the resolution of it. */
     public fun render(
         ids: Set<CharacterId>?,
         summaries: Map<CharacterId, CharacterSummary>,
         failure: ApiFailure?,
         formatters: PresentationFormatters,
     ): FavoritesUiState {
-        if (failure != null) {
-            return FavoritesUiState(items = emptyList(), loadState = LoadState.Error(failure))
-        }
-        if (ids == null) {
-            return FavoritesUiState()
-        }
-        if (ids.isEmpty()) {
-            // The designed empty state shows while the stored set is empty, and only then
-            // (`AC-REQ-FUNC-006-3`); an empty resolution of a non-empty set is not this condition.
-            return FavoritesUiState(items = emptyList(), loadState = LoadState.Empty)
-        }
+        if (ids == null) return FavoritesUiState()
         val items =
             ids
                 .sortedBy { it.value }
                 .mapNotNull { id -> summaries[id]?.let { summary -> CharacterCardUi.from(summary, formatters) } }
-        // `Content` iff at least one favourite is displayable: a set whose cards have not landed yet
-        // is still loading, and a set none of whose ids the read could resolve is not an empty set.
-        if (items.isEmpty()) {
-            return FavoritesUiState()
-        }
-        return FavoritesUiState(items = items, loadState = LoadState.Content)
+        if (items.isNotEmpty()) return FavoritesUiState(items = items, loadState = LoadState.Content)
+        if (failure != null) return FavoritesUiState(loadState = LoadState.Error(failure))
+        if (ids.isEmpty()) return FavoritesUiState(loadState = LoadState.Empty)
+        return FavoritesUiState()
     }
 }

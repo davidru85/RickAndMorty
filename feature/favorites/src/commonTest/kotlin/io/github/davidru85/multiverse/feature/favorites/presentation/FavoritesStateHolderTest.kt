@@ -39,9 +39,25 @@ class FavoritesStateHolderTest {
     private fun TestScope.holder(
         store: FakeFavoritesStore,
         repository: FakeCharacterRepository = FakeCharacterRepository(catalogue),
+        latency: kotlin.time.Duration = kotlin.time.Duration.ZERO,
     ) = FavoritesStateHolder(
         observeFavoriteIds = ObserveFavoriteIds(favorites(store)),
         resolveFavoriteCards = ResolveFavoriteCards(repository, dispatcher = StandardTestDispatcher(testScheduler)),
+        scope = backgroundScope,
+        dispatcher = StandardTestDispatcher(testScheduler),
+    )
+
+    /** The same holder, with a repository whose reads take [latency] so a test can observe mid-flight. */
+    private fun TestScope.slowHolder(
+        store: FakeFavoritesStore,
+        latency: kotlin.time.Duration,
+    ) = FavoritesStateHolder(
+        observeFavoriteIds = ObserveFavoriteIds(favorites(store)),
+        resolveFavoriteCards =
+            ResolveFavoriteCards(
+                FakeCharacterRepository(catalogue, latency = latency),
+                dispatcher = StandardTestDispatcher(testScheduler),
+            ),
         scope = backgroundScope,
         dispatcher = StandardTestDispatcher(testScheduler),
     )
@@ -148,13 +164,14 @@ class FavoritesStateHolderTest {
             val store = FakeFavoritesStore()
             val favorites = favorites(store)
             favorites.toggle(CharacterId("1"))
-            val holder = holder(store)
+            val holder = slowHolder(store, latency = 20.milliseconds)
 
             holder.start()
             advanceTimeBy(100.milliseconds)
             assertEquals(
                 listOf(CharacterId("1")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-040: the first favourite renders",
             )
 
@@ -169,14 +186,16 @@ class FavoritesStateHolderTest {
             )
             assertEquals(
                 listOf(CharacterId("1")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-040: and the card that is already displayable is not dropped",
             )
 
             advanceTimeBy(100.milliseconds)
             assertEquals(
                 listOf(CharacterId("1"), CharacterId("2")),
-                holder.state.value.items.map { it.id },
+                holder.state.value.items
+                    .map { it.id },
                 "TEST-UNIT-040: the new card joins it once its read lands",
             )
         }

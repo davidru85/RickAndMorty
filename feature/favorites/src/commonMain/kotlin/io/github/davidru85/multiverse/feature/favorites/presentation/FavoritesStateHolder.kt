@@ -99,15 +99,26 @@ public class FavoritesStateHolder(
      * superseded resolution that still returns cannot publish over the newer set. An empty set costs
      * **no read at all** — the designed empty state shows then, and it is the one state that is a
      * statement about the store rather than about a read (`AC-REQ-FUNC-006-3`).
+     *
+     * A non-empty [target] **inherits the summaries already resolved** for it and clears only the
+     * failure. That is `IC-020`'s precedence at the holder's level: a set that gains an id whose read has
+     * not landed yet is still `Content` with the cards a user can already see, rather than blanking the
+     * section to `Loading` on every store emission. The summaries that came from ids no longer in
+     * [target] are dropped, so the map never accumulates stale cards.
      */
     private fun resolve(target: Set<CharacterId>) {
         run?.cancel()
         val mine = ++generation
-        resolution.value = null
         if (target.isEmpty()) {
             resolution.value = FavoriteCards()
             return
         }
+        val carried =
+            resolution.value
+                ?.summaries
+                .orEmpty()
+                .filterKeys { it in target }
+        resolution.value = FavoriteCards(summaries = carried)
         run =
             scope.launch(dispatcher) {
                 val resolved = resolveFavoriteCards(target)
