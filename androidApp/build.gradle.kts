@@ -81,6 +81,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":core:testing"))
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    // The Compose rule hosts its content in a provided activity; the artifact supplies it to the test
+    // manifest, so a UI case needs no activity of the app's own.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.androidx.compose.ui.test.manifest)
 
     // `TEST-UNIT-033` inspects the real release artifact, so the check runs against what ships.

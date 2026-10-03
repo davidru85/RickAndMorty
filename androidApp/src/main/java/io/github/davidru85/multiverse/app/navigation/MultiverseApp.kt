@@ -46,9 +46,15 @@ import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 @Composable
 public fun MultiverseApp(
     navController: androidx.navigation.NavHostController = rememberNavController(),
+    /** The readiness gate (`TASK-007`); a caller may supply one, and `null` skips the splash. */
+    splashGate: io.github.davidru85.multiverse.app.splash.SplashGate? = null,
 ) {
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
+            // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
+            // (`UI_SPEC.md` §6.1). With no gate supplied the app starts at the destination, which is
+            // how a case or a preview renders a screen directly.
+            val splashVisible = if (splashGate != null) !rememberSplashReady(splashGate) else false
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
             val destinations = topLevelDestinations()
@@ -85,8 +91,36 @@ public fun MultiverseApp(
                     onSelect = { key -> navController.selectTopLevel(key) },
                 )
             }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = splashVisible,
+                enter = androidx.compose.animation.fadeIn(),
+                exit =
+                    androidx.compose.animation.fadeOut(
+                        animationSpec =
+                            androidx.compose.animation.core.tween(
+                                io.github.davidru85.multiverse.app.splash.SplashExitCrossfadeMillis,
+                            ),
+                    ),
+            ) {
+                io.github.davidru85.multiverse.app.splash.BrandedSplash()
+            }
         }
     }
+}
+
+/**
+ * Whether the gate has completed, held across recompositions: the splash waits once per process, so a
+ * configuration change does not restart it. The work runs in the composition's scope, which cancels it
+ * with the composition rather than leaking a request.
+ */
+@Composable
+private fun rememberSplashReady(gate: io.github.davidru85.multiverse.app.splash.SplashGate): Boolean {
+    val ready = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(gate) {
+        gate.awaitReady()
+        ready.value = true
+    }
+    return ready.value
 }
 
 /**
