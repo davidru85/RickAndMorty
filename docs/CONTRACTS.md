@@ -696,6 +696,9 @@ object CopyKeys {
     val STATUS_ALIVE: CopyKey           // "status_alive"
     val STATUS_DEAD: CopyKey            // "status_dead"
     val VALUE_UNKNOWN: CopyKey          // "value_unknown", the one "Unknown"
+    val APP_NAME: CopyKey               // "app_name", the launcher label
+    // … the B4 surface keys: the splash, the four navigation labels, the two placeholder screens,
+    // each registered by TASK-013 with the resources that carry it (DEC-101) …
     val all: Set<CopyKey>
 }
 
@@ -718,6 +721,7 @@ object DefaultPresentationFormatters : PresentationFormatters
 - **Semantics:** `CopyKey` names a user-visible string. The canonical key list is `CopyKeys` (`DEC-015`, `DEC-020`): it registers the keys the failure chain binds (`ERROR_FLOW.md` §4.1) and the keys the formatters return, allocated here — `status_alive`, `status_dead` and `value_unknown`, whose approved English copy is `UI_SPEC.md` §6.2's "Alive", "Dead" and "Unknown". A feature registers its own keys with the resources that carry them (`TASK-013`, `TASK-060`). The English and Spanish strings are authored in each platform's resource files (`strings.xml`, `Localizable.strings`; `GUIDELINES.md` §7.2), never in Kotlin, and `TEST-UNIT-036` holds every key present on both platforms with identical values per locale. The formatters are pure functions over `IC-002` types.
 - **Invariants**
   - Every user-visible literal is a `CopyKey`; a formatter `MUST NOT` embed English copy. Only data-derived text (proper nouns, episode codes, numeric values) is returned as `String`.
+  - The Android copy set lives in `:core:designsystem` (`core/designsystem/src/main/res/values{,-es}/strings.xml`) and a component resolves a key **by its name** through that module's compile-checked resolver table; `:core:designsystem` therefore names no presentation type and keeps its Compose-only build (`DEC-100`). The iOS set lives in the Apple resources (`TASK-060`).
   - The formatters are pure and platform-free: no clock, no network, no `Locale`-dependent formatting beyond what the platform resource layer applies, and no platform type in a signature.
   - `unknownKey()` is the single source of the "Unknown" presentation: a raw API value that is absent, blank or `"unknown"` is rendered through it and `MUST NOT` be displayed raw (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`).
   - `statusKey(CharacterStatus.Unsupported(raw))` returns `unknownKey()`; an unrecognised status never renders as an internal value (`REQ-NFR-004`, `AC-REQ-NFR-004-2`).

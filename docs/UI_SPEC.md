@@ -103,7 +103,7 @@ The scheme was generated with Google's `material-color-utilities` (DynamicScheme
 | Neutral | Cosmic Violet hue | 5 |
 | Neutral variant | Cosmic Violet hue | 9 |
 
-The slightly violet neutral hue gives the "Space Black" surfaces. There are 50 roles in total; the roles used by the designs are:
+The slightly violet neutral hue gives the "Space Black" surfaces. The collection holds 49 roles, all mapped by `:core:designsystem`; the roles used by the designs are:
 
 | Role | Value | Used for |
 | --- | --- | --- |
@@ -111,6 +111,8 @@ The slightly violet neutral hue gives the "Space Black" surfaces. There are 50 r
 | On Primary | `#2C4800` | FAB label/icon |
 | Primary Container | `#497401` | Splash cookie shape, launcher icon foreground, "Episodes" stat tile |
 | On Primary Container | `#FFFFFF` | Text on primary container |
+| Secondary | `#B5CDB4` | Navigation bar selected label (`UI_SPEC.md` §4.1) |
+| On Secondary | `#314532` | Text on Secondary |
 | Secondary Container | `#2C402E` | Selected chip, list-item icon container, loading indicator container |
 | On Secondary Container | `#AEC5AD` | Icons on secondary container |
 | Secondary Fixed Dim | `#C3DBC1` | "Species" stat tile |
@@ -322,7 +324,7 @@ On iOS, glass surfaces do not need an accent: the glass picks up the portrait's 
 | --- | --- | --- |
 | Background | Surface, violet (Tertiary) and green (Primary) radial nebula glows, sparse starfield | Space Black, three aurora orbs (Cosmic Violet, Portal Green, Nebula Violet), starfield |
 | Mark | Portal logo (160 dp) on an M3 Expressive **Cookie-9** shape (240 dp, Primary Container), Portal Glow | Portal logo (176 pt) seen through a 212 pt **Liquid Glass lens** (continuous corner 60, `Liquid Glass/Clear`) that refracts it |
-| Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
+| Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline "Every Rick. Every Morty. Every dimension." (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
 | Loading indicator | The rotating portal: it starts very slowly, accelerates, then spins at a constant speed until the data has loaded (§7). No other progress UI | Same: the portal rotates behind the glass lens (§7). No other progress UI |
 | Implementation | `installSplashScreen()` for the system icon phase (it shows the launcher icon's foreground, see §10.1), then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
 
@@ -532,10 +534,38 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 | Detail load failure | Keep list data (name, image, status) and show inline retry in place of the info list | Same, inside the frosted panel |
 | Settings: no favorites | "Delete favorites" button in the M3 disabled colours; the explanation stays | `Row - Button` `Disabled` value (`.disabled(true)`); the footer stays |
 
+#### Canonical failure-chain copy (`DEC-101`)
+
+The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but unenumerated; these are the approved English strings. They are canonical here and carried by the platform resource files (`CopyKeys` registers the names, never the values). The rate-limit message takes the countdown as a number.
+
+| Key | English string |
+| --- | --- |
+| `error_title` | Portal link lost |
+| `action_retry` | Retry |
+| `action_back` | Back |
+| `state_stale_banner` | Showing saved results |
+| `empty_search_message` | No one in this dimension matches “%s” |
+| `action_clear_filters` | Clear filters |
+| `error_message_offline` | You're offline. Reconnect to continue exploring the multiverse. |
+| `error_message_timeout` | The portal took too long to answer. Give it another try. |
+| `error_message_not_found` | That character isn't in this dimension. |
+| `error_message_invalid_request` | That request doesn't fit this dimension. Adjust it and try again. |
+| `error_message_rate_limited` | Too many jumps. Try again in %d s. |
+| `error_message_server` | The portal is glitching on its side. Try again shortly. |
+| `error_message_graphql` | The portal didn't understand that request. Try again. |
+| `error_message_malformed` | The portal sent back something unreadable. Try again. |
+| `error_message_empty_body` | The portal answered with nothing. Try again. |
+| `error_message_unknown` | Something went wrong on the way to this dimension. Try again. |
+| `detail_error_inline` | Couldn't load these details. Retry. |
+| `status_alive` · `status_dead` · `value_unknown` | Alive · Dead · Unknown |
+
+The app name (`app_name`) is canonical too and reads "Multiverse Explorer". Spanish values live in each platform's Spanish resources; the Android set ships them and the phase pull request lists them for owner review.
+
 ## 9. Accessibility
 
 - **Splash loading:** the spinning portal is exposed as an indeterminate progress indicator labelled "Loading characters". On Android use `Modifier.semantics { progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate }`; on iOS use `.accessibilityLabel` with the `.updatesFrequently` trait.
 - **Contrast:** body text is at least 4.5:1 (checked on dynamic tints at tone 30 and on Surface). Large display text is at least 3:1. On iOS glass over imagery, rely on the text shadow and dim layer. With **Reduce Transparency**, swap glass for an opaque `.thickMaterial` (iOS) / Surface Container (Android).
+  - The measured record is `TEST-A11Y-002`, whose pair list is the single owner of the list and lives beside the tokens in `:core:designsystem` (`ContrastRecordTest`). A new surface adds its pair there in the same change; this section names the thresholds, not a second list. The tone-30 dynamic accent pairs join that record with `TASK-005`.
 - **Touch targets:** 48 dp (Android) / 44 pt (iOS) minimum. Glass buttons are 50 pt.
 - **Status:** always a text label with the dot, announced as "Status: Alive".
 - **Voice search:** deferred with the feature (`DEC-002`). When implemented, the mic buttons are labelled "Search by voice" and announce when listening starts and stops.

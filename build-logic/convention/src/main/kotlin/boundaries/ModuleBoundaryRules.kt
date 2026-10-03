@@ -62,6 +62,14 @@ internal object ModuleBoundaryRules {
     private val DIAGNOSTICS_TEST_CORE = setOf(":core:domain", ":core:testing", ":core:data")
 
     /**
+     * What an `:androidApp` **test** source set may additionally reach (`DEC-106`): the shared
+     * harness for its fakes and virtual time, and `:core:presentation` for the copy keys and the
+     * parity verifier the copy-completeness test drives. The production edges are unchanged —
+     * a release graph never gains these modules (`R11` release closure).
+     */
+    private val APPROVED_APP_TEST_MODULES = setOf(":core:testing", ":core:presentation")
+
+    /**
      * What `:core:ios` may depend on if it is introduced (ADR-0012, R12): the three shared
      * production core modules and the five accepted feature modules, never `:core:designsystem`
      * (Android-only) and never `:core:testing` (test-only). The allow-list names the accepted
@@ -531,6 +539,9 @@ internal object ModuleBoundaryRules {
         val allowed = snapshot.byKind(ModuleKind.FEATURE).map { it.path }.toSet() + ":core:designsystem" + IMPLEMENTATION_MODULE
         snapshot.byKind(ModuleKind.ANDROID_APP).forEach { project ->
             project.edges.filterNot { it.producer in allowed }.forEach { edge ->
+                if (edge.producer in APPROVED_APP_TEST_MODULES && edge.kind == SourceSetKind.TEST) {
+                    return@forEach
+                }
                 if (edge.producer == DIAGNOSTICS_MODULE) {
                     if (!edge.isDebugOnly()) {
                         log.add(
@@ -681,12 +692,20 @@ internal object ModuleBoundaryRules {
      * R15 — `:core:designsystem` may declare Compose only (ADR-0001, `DESIGN.md` §3.4 rule 4).
      * The rule covers **effective** externals, so a non-Compose library inherited from a custom
      * configuration fails exactly like a direct one (`GAP-012`).
+     *
+     * A **test** source set may also declare the approved test libraries (`DEC-106`), the
+     * `DEC-089` reading applied to this module: the production restriction is unchanged and the
+     * test allow-list is closed.
      */
     private fun designSystemComposeOnly(snapshot: ModuleGraphSnapshot, log: BoundaryViolationLog) {
         snapshot.byKind(ModuleKind.CORE_DESIGN_SYSTEM).forEach { project ->
             project.externalDependencies
                 .filterNot { ModuleDependencyAllowLists.isToolchainImplicit(it.coordinates) }
                 .filterNot { ModuleDependencyAllowLists.isDesignSystemAllowed(it.coordinates) }
+                .filterNot { dependency ->
+                    dependency.kind == SourceSetKind.TEST &&
+                        dependency.coordinates in ModuleDependencyAllowLists.DESIGN_SYSTEM_TEST
+                }
                 .forEach { dependency ->
                     log.add(
                         violation(

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The Spanish half of the one Android copy set (DEC-100). Same keys, same placeholder kinds as
+  values/strings.xml; the parity verifier compares key sets and placeholder shapes, never the
+  translated text with the English.
+-->
+<resources>
+    <string name="app_name">Multiverse Explorer</string>
+
+    <!-- Splash (UI_SPEC.md §6.1) -->
+    <string name="splash_wordmark">Multiverse</string>
+    <string name="splash_wordmark_sub">EXPLORER</string>
+    <string name="splash_tagline">Cada Rick. Cada Morty. Cada dimensión.</string>
+    <string name="splash_loading">Cargando personajes</string>
+
+    <!-- Navigation (UI_SPEC.md §4.1) -->
+    <string name="nav_characters">Personajes</string>
+    <string name="nav_episodes">Episodios</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Placeholders (UI_SPEC.md §6.4) -->
+    <string name="episodes_heading">Los episodios están en camino</string>
+    <string name="episodes_body">Pronto podrás explorar todos los episodios, desde el piloto hasta la última temporada.</string>
+    <string name="favorites_heading">Aún no hay favoritos</string>
+    <string name="favorites_body">Toca el corazón en la página de un personaje para guardarlo aquí.</string>
+    <string name="browse_characters">Explorar personajes</string>
+
+    <!-- Failure chain (ERROR_FLOW.md §4.1) -->
+    <string name="error_title">Se perdió el enlace con el portal</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="state_stale_banner">Mostrando resultados guardados</string>
+    <string name="empty_search_message">Nadie en esta dimensión coincide con “%s”</string>
+    <string name="action_clear_filters">Borrar filtros</string>
+    <string name="action_back">Atrás</string>
+    <string name="error_message_offline">Estás sin conexión. Reconéctate para seguir explorando el multiverso.</string>
+    <string name="error_message_timeout">El portal tardó demasiado en responder. Inténtalo de nuevo.</string>
+    <string name="error_message_not_found">Ese personaje no está en esta dimensión.</string>
+    <string name="error_message_invalid_request">Esa petición no encaja en esta dimensión. Ajústala e inténtalo de nuevo.</string>
+    <string name="error_message_rate_limited">Demasiados saltos. Inténtalo de nuevo en %d s.</string>
+    <string name="error_message_server">El portal está fallando en su lado. Inténtalo de nuevo en un momento.</string>
+    <string name="error_message_graphql">El portal no entendió esa petición. Inténtalo de nuevo.</string>
+    <string name="error_message_malformed">El portal devolvió algo ilegible. Inténtalo de nuevo.</string>
+    <string name="error_message_empty_body">El portal respondió con nada. Inténtalo de nuevo.</string>
+    <string name="error_message_unknown">Algo falló de camino a esta dimensión. Inténtalo de nuevo.</string>
+    <string name="detail_error_inline">No se pudieron cargar estos detalles. Reintentar.</string>
+
+    <!-- Status and value presentation (IC-017) -->
+    <string name="status_alive">Vivo</string>
+    <string name="status_dead">Muerto</string>
+    <string name="value_unknown">Desconocido</string>
+</resources>

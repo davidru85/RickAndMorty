@@ -393,7 +393,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 | CON-002 | Only one 300×300 image per character is published. | No higher-resolution assets may be requested or implied (`API_SPECS.md` §4.7, `UI_SPEC.md` §5.1). |
 | CON-003 | `assessment.md` is authoritative and partially truncated (l.4, l.10); its intent is recorded in §4. | Interpretation MUST be cited rather than assumed. |
 | CON-004 | One toolchain component is alpha-only: Material 3 Expressive `1.5.0-alpha29` (with Compose BOM 2026.09.00). Multiplatform DataStore `1.3.0-alpha11` and `androidx.lifecycle` KMP `2.12.0-alpha04` are explicitly **not** adopted: DEC-017 keeps the data layer alpha-free and DEC-013 removes shared ViewModels. | The project accepts exactly one pinned-alpha risk on the Android UI path (DEC-010, `adr/0008-alpha-dependencies.md`); any second alpha requires a new decision. |
-| CON-005 | The Figma source file requires project access and returns 403 to anonymous clients. | Rendered PNG exports MUST be committed under `docs/figma/` (DEC-045). |
+| CON-005 | The Figma source file requires project access and returns 403 to anonymous clients. | Satisfied: rendered PNG exports of every `UI_SPEC.md` §1.1/§1.2 frame are committed under `docs/figma/` (`TASK-035`, 2026-10-03, `DEC-045`). The file itself still requires access; the exports are the reviewer-visible evidence. |
 | CON-006 | Repository documentation language is English; `README.es.md` mirrors the README. | Other documents MUST NOT be duplicated per language (DEC-047). |
 
 ## 13. Risks
@@ -407,7 +407,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 | RISK-005 | The API marks filtered `404` responses cacheable for 90 days. | Certain | High | App-level cache never stores error outcomes; `API_SPECS.md` §7.1 requires `no-store` hardening and a test. | AA |
 | RISK-006 | Published totals (`826`/`42`) are quoted as constants and go stale. | Medium | Low | Requirement `AC-REQ-FUNC-001-3` forbids hardcoding; figures appear only as dated observations. | DOC |
 | RISK-007 | Liquid Glass fallback path diverges visually from the glass path. | Medium | Low | Both paths screenshot-tested; fallback documented in `UI_SPEC.md` §4.2. | UX |
-| RISK-008 | The Figma file is unreachable for a reviewer, making `UI_SPEC.md` references unverifiable. | High | Medium | Committed PNG exports (DEC-045) plus in-app screenshots in `README.md`. | DOC |
+| RISK-008 | The Figma file is unreachable for a reviewer, making `UI_SPEC.md` references unverifiable. | High | Low | Committed PNG exports (DEC-045) plus in-app screenshots in `README.md`. Mitigated 2026-10-03: every §1.1/§1.2 frame is committed and dimension-verified (`TASK-035`); the in-app screenshots remain open (`GAP-008`). | DOC |
 | RISK-009 | Reviewer perceives scope as exceeding the assignment ("deliver something"). | Medium | Medium | `REQUIREMENTS.md` §1 fixes MVP boundaries; `TECHNICAL_PLAN.md` sequences a releasable M1 early. | PM |
 
 ## 14. Open questions

@@ -132,8 +132,17 @@ The key names below are the canonical binding owned by this file, and every one 
 | `empty_search_message` | [`UI_SPEC.md`](UI_SPEC.md) §8: "No one in this dimension matches “query”" | Fixed; `query` is substituted from the active filter |
 | `action_clear_filters` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Clear filters" | Fixed |
 | `action_back` | Platform navigation affordance | Fixed at the key level; the label is the platform back control |
-| `error_message_offline`, `error_message_timeout`, `error_message_not_found`, `error_message_invalid_request`, `error_message_rate_limited`, `error_message_server`, `error_message_graphql`, `error_message_malformed`, `error_message_empty_body`, `error_message_unknown` | [`UI_SPEC.md`](UI_SPEC.md) §8 ("an `ApiFailure`-specific message") | Keys reserved here; per-failure English strings are not yet enumerated in `UI_SPEC.md` §8. Recorded as a documentation gap (owner: UI/UX Designer) and tracked in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md). Until it is closed, no implementation may invent these strings. |
-| `detail_error_inline` | [`UI_SPEC.md`](UI_SPEC.md) §8 ("show inline retry") | Key reserved; string not yet enumerated (same gap as above) |
+| `error_message_offline` | [`UI_SPEC.md`](UI_SPEC.md) §8: "You're offline. Reconnect to continue exploring the multiverse." | Fixed |
+| `error_message_timeout` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal took too long to answer. Give it another try." | Fixed |
+| `error_message_not_found` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That character isn't in this dimension." | Fixed |
+| `error_message_invalid_request` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That request doesn't fit this dimension. Adjust it and try again." | Fixed |
+| `error_message_rate_limited` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again in %d s." (number substituted by the countdown formatter, `IC-017`) | Fixed |
+| `error_message_server` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal is glitching on its side. Try again shortly." | Fixed |
+| `error_message_graphql` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal didn't understand that request. Try again." | Fixed |
+| `error_message_malformed` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal sent back something unreadable. Try again." | Fixed |
+| `error_message_empty_body` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal answered with nothing. Try again." | Fixed |
+| `error_message_unknown` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Something went wrong on the way to this dimension. Try again." | Fixed |
+| `detail_error_inline` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Couldn't load these details. Retry." | Fixed |
 
 Rules for this register:
 

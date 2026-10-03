@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one Android copy set (DEC-100), owned by :core:designsystem because a library module
+  cannot reference the app module's R and the design system is the module every surface already
+  depends on. The key names are the canonical list of CopyKeys (IC-017); the English values are
+  canonical in UI_SPEC.md §6.1/§6.4 and the failure chain's in ERROR_FLOW.md §4.1.
+
+  No user-visible string literal belongs anywhere else (REQ-FUNC-013); a key added to CopyKeys
+  without its strings here fails TEST-UNIT-036.
+-->
+<resources>
+    <string name="app_name">Multiverse Explorer</string>
+
+    <!-- Splash (UI_SPEC.md §6.1, DEC-101) -->
+    <string name="splash_wordmark">Multiverse</string>
+    <string name="splash_wordmark_sub">EXPLORER</string>
+    <string name="splash_tagline">Every Rick. Every Morty. Every dimension.</string>
+    <string name="splash_loading">Loading characters</string>
+
+    <!-- Navigation (UI_SPEC.md §4.1) -->
+    <string name="nav_characters">Characters</string>
+    <string name="nav_episodes">Episodes</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Placeholders (UI_SPEC.md §6.4) -->
+    <string name="episodes_heading">Episodes are on their way</string>
+    <string name="episodes_body">Soon you\'ll be able to browse every episode, from the Pilot to the latest season.</string>
+    <string name="favorites_heading">No favorites yet</string>
+    <string name="favorites_body">Tap the heart on a character\'s page to keep them here.</string>
+    <string name="browse_characters">Browse characters</string>
+
+    <!-- Failure chain (ERROR_FLOW.md §4.1) -->
+    <string name="error_title">Portal link lost</string>
+    <string name="action_retry">Retry</string>
+    <string name="state_stale_banner">Showing saved results</string>
+    <string name="empty_search_message">No one in this dimension matches “%s”</string>
+    <string name="action_clear_filters">Clear filters</string>
+    <string name="action_back">Back</string>
+    <string name="error_message_offline">You\'re offline. Reconnect to continue exploring the multiverse.</string>
+    <string name="error_message_timeout">The portal took too long to answer. Give it another try.</string>
+    <string name="error_message_not_found">That character isn\'t in this dimension.</string>
+    <string name="error_message_invalid_request">That request doesn\'t fit this dimension. Adjust it and try again.</string>
+    <string name="error_message_rate_limited">Too many jumps. Try again in %d s.</string>
+    <string name="error_message_server">The portal is glitching on its side. Try again shortly.</string>
+    <string name="error_message_graphql">The portal didn\'t understand that request. Try again.</string>
+    <string name="error_message_malformed">The portal sent back something unreadable. Try again.</string>
+    <string name="error_message_empty_body">The portal answered with nothing. Try again.</string>
+    <string name="error_message_unknown">Something went wrong on the way to this dimension. Try again.</string>
+    <string name="detail_error_inline">Couldn\'t load these details. Retry.</string>
+
+    <!-- Status and value presentation (IC-017) -->
+    <string name="status_alive">Alive</string>
+    <string name="status_dead">Dead</string>
+    <string name="value_unknown">Unknown</string>
+</resources>

@@ -72,10 +72,13 @@ Solo teléfono en vertical; tablet, plegable y horizontal quedan fuera de alcanc
 
 La especificación visual es [`docs/UI_SPEC.md`](docs/UI_SPEC.md). Define siete pantallas por plataforma (Splash, Discovery, Detail, la pantalla provisional de Episodes, el estado vacío de Favorites, Settings y la confirmación de borrar favoritos) y enlaza cada componente con su nodo de Figma.
 
-Las capturas **aún no están incluidas**. Hay dos conjuntos pendientes, registrados en [`docs/BACKLOG.md`](docs/BACKLOG.md):
+Las exportaciones de diseño ya están incluidas en [`docs/figma/`](docs/figma/README.md): todas las pantallas de `UI_SPEC.md` §1.1 y todos los componentes de §1.2, renderizados desde los fotogramas reales de Figma a 2× (ver el registro de exportación de ese directorio). El archivo de Figma sigue requiriendo acceso, así que estas exportaciones son la evidencia de diseño que cualquier revisor puede abrir.
 
-- exportaciones PNG de las pantallas de Figma en `docs/figma/` (el archivo de Figma requiere acceso);
-- capturas de las aplicaciones en ejecución, que se añadirán a este README al verificar cada hito.
+| Android | iOS |
+| --- | --- |
+| ![Splash](docs/figma/01-splash-android.png) | ![Splash](docs/figma/01-splash-ios.png) |
+
+Las capturas de las aplicaciones en ejecución siguen pendientes: el primer hito ejecutable es el shell de Android (`TASK-044`), y se añadirán a esta sección cuando haya una ejecución verificada.
 
 ## 4. Arquitectura en breve
 
@@ -243,14 +246,14 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | Especificación visual | Completa, pendiente de dos pantallas de Figma (estados de error) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
 | Documentación de proceso | Completa — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
 | Esqueleto de build | Hecho — TASK-014, fusionado en el PR #6 el 2026-09-30: los 11 módulos compilan y la app Android se ensambla sin que exista `iosApp/`; ver `docs/PROJECT_LOG.md` LOG-0026 |
-| Implementación | En curso — la fase 3.1 de B3 (`TASK-036`, `TASK-037`) está fusionada en el PR #110: el modelo y las interfaces de `:core:domain`, el adaptador REST con sus tests de contrato sobre fixtures y los dobles de comportamiento. La fase 3.2 (`TASK-038`, `TASK-039`, `TASK-047`) está fusionada en el PR #114: el repositorio con agrupación de peticiones concurrentes, la política de reintentos acotada y la lista de hosts permitidos, el paginador compartido, el contrato de logging con su redacción y la API de diagnóstico solo de depuración. La fase 3.3 (`TASK-040`, `TASK-041`) está en revisión: el almacén de favoritos sobre DataStore y `UserDefaults`, y las primitivas de presentación con el verificador de paridad de textos. Aún no existe ninguna feature ni pantalla — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.5 y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
+| Implementación | En curso — la fase 3.1 de B3 (`TASK-036`, `TASK-037`) está fusionada en el PR #110: el modelo y las interfaces de `:core:domain`, el adaptador REST con sus tests de contrato sobre fixtures y los dobles de comportamiento. La fase 3.2 (`TASK-038`, `TASK-039`, `TASK-047`) está fusionada en el PR #114: el repositorio con agrupación de peticiones concurrentes, la política de reintentos acotada y la lista de hosts permitidos, el paginador compartido, el contrato de logging con su redacción y la API de diagnóstico solo de depuración. La fase 3.3 (`TASK-040`, `TASK-041`) está fusionada en el PR #117: el almacén de favoritos sobre DataStore y `UserDefaults`, y las primitivas de presentación con el verificador de paridad de textos, de modo que **B3 está completa**. Aún no existe ninguna feature ni pantalla — ver [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.5 y [`docs/BACKLOG.md`](docs/BACKLOG.md) |
 | Catálogo de versiones | Hecho — TASK-015, fusionado en el PR #10 el 2026-09-30: el catálogo fija todo el inventario previsto, `DESIGN.md` §3.5 recoge la justificación y la §15 siguiente el inventario, y `verifyDependencyPolicy` hace cumplir ambos |
 | `VERSION` | Hecho — TASK-018, fusionado en el PR #34 el 2026-10-01: un único fichero `VERSION` (`0.1.0`) es la fuente única de versión; el `versionName` de Android es ese valor literal y `verifyDependencyPins` rechaza un segundo literal. El `CFBundleShortVersionString` real de iOS llega con `TASK-051` (`DEC-067`) |
 | CI | Activo — TASK-025, PR #52: `.github/workflows/pull-request.yml` controla cada pull request y cada push a `main`. El job `ios` está suspendido por `DEC-083` hasta que `TASK-051` introduzca la app iOS; mientras tanto el job `android` sostiene el gate |
 | `.gitignore` | Hecho — TASK-016, fusionado en el PR #13 el 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set, todos los blobs alcanzables y todas las rutas históricas únicas, dentro de `check` y `build` (ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
 | Contratos | Aceptados — TASK-019, fusionado en el PR #31 el 2026-10-01: `docs/CONTRACTS.md` es la base `IC-###` |
 | Documentos de proceso | Reconciliados — TASK-034, fusionado en el PR #32 el 2026-10-01: auditoría DOC1–DOC8 registrada |
-| Capturas (Figma y de la app) | No iniciado |
+| Capturas | Exportaciones de Figma incluidas (32 PNG en `docs/figma/`, `TASK-035`); capturas de la app pendientes del primer hito ejecutable (`TASK-044`) |
 
 ## 15. Inventario de dependencias
 
@@ -275,7 +278,7 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.ktlint.gradle` | `org.jlleitschuh.gradle:ktlint-gradle` | `14.2.0` | Declared | `:build-logic:convention` | TASK-029 |
 | `libs.snakeyaml.engine` | `org.snakeyaml:snakeyaml-engine` | `2.10` | Declared | `:build-logic:convention` | TASK-098 |
 | `libs.kotlinx.serialization.core` | `org.jetbrains.kotlinx:kotlinx-serialization-core` | `1.11.0` | Declared | `:core:data`, `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
-| `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Declared | `:core:data` | TASK-027, TASK-037 |
+| `libs.kotlinx.serialization.json` | `org.jetbrains.kotlinx:kotlinx-serialization-json` | `1.11.0` | Declared | `:core:data`, `:core:designsystem` | TASK-027, TASK-037, TASK-042 |
 | `libs.kotlinx.coroutines.core` | `org.jetbrains.kotlinx:kotlinx-coroutines-core` | `1.11.0` | Declared | `:core:data`, `:core:diagnostics`, `:core:domain`, `:core:testing` | TASK-036 (CONF-47) |
 | `libs.kotlinx.coroutines.test` | `org.jetbrains.kotlinx:kotlinx-coroutines-test` | `1.11.0` | Declared | `:core:data`, `:core:diagnostics`, `:core:testing` | TASK-024 |
 | `libs.kotlin.test` | `org.jetbrains.kotlin:kotlin-test` | `2.4.20` | Declared | `:build-logic:convention`, `:core:data`, `:core:diagnostics`, `:core:domain`, `:core:presentation`, `:core:testing` | TASK-024, TASK-091 |
@@ -290,9 +293,9 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.koin.core` | `io.insert-koin:koin-core` | `4.2.2` | Pinned | — | TASK-044 |
 | `libs.koin.android` | `io.insert-koin:koin-android` | `4.2.2` | Pinned | — | TASK-044 |
 | `libs.koin.androidx.compose` | `io.insert-koin:koin-androidx-compose` | `4.2.2` | Pinned | — | TASK-044 |
-| `libs.androidx.compose.bom` | `androidx.compose:compose-bom` | `2026.09.00` | Pinned | — | TASK-043, TASK-044 |
+| `libs.androidx.compose.bom` | `androidx.compose:compose-bom` | `2026.09.00` | Declared | `:core:designsystem` | TASK-043, TASK-044 |
 | `libs.androidx.compose.runtime` | `androidx.compose.runtime:runtime` | `2026.09.00` (BOM) | Pinned | — | TASK-043, TASK-044 |
-| `libs.androidx.compose.ui` | `androidx.compose.ui:ui` | `2026.09.00` (BOM) | Pinned | — | TASK-043, TASK-044 |
+| `libs.androidx.compose.ui` | `androidx.compose.ui:ui` | `2026.09.00` (BOM) | Declared | `:core:designsystem` | TASK-042, TASK-043, TASK-044 |
 | `libs.androidx.compose.foundation` | `androidx.compose.foundation:foundation` | `2026.09.00` (BOM) | Pinned | — | TASK-001, TASK-043 |
 | `libs.androidx.compose.animation` | `androidx.compose.animation:animation` | `2026.09.00` (BOM) | Pinned | — | TASK-009 |
 | `libs.androidx.compose.ui.tooling.preview` | `androidx.compose.ui:ui-tooling-preview` | `2026.09.00` (BOM) | Pinned | — | TASK-043 |
@@ -307,14 +310,14 @@ La justificación de cada entrada — la necesidad que cubre, la alternativa que
 | `libs.androidx.datastore.preferences` | `androidx.datastore:datastore-preferences` | `1.2.1` | Declared | `:core:data` | TASK-040, TASK-074 |
 | `libs.coil.compose` | `io.coil-kt.coil3:coil-compose` | `3.6.3` | Pinned | — | TASK-005, TASK-021 |
 | `libs.coil.network.ktor3` | `io.coil-kt.coil3:coil-network-ktor3` | `3.6.3` | Pinned | — | TASK-021, TASK-044 |
-| `libs.junit4` | `junit:junit` | `4.13.2` | Declared | `:build-logic:convention` | TASK-024, TASK-045, TASK-091 |
-| `libs.robolectric` | `org.robolectric:robolectric` | `4.17` | Pinned | — | TASK-045 |
+| `libs.junit4` | `junit:junit` | `4.13.2` | Declared | `:build-logic:convention`, `:core:designsystem` | TASK-024, TASK-042, TASK-045, TASK-091 |
+| `libs.robolectric` | `org.robolectric:robolectric` | `4.17` | Declared | `:core:designsystem` | TASK-042, TASK-043, TASK-045, TASK-046 |
 | `libs.roborazzi` | `io.github.takahirom.roborazzi:roborazzi` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.roborazzi.compose` | `io.github.takahirom.roborazzi:roborazzi-compose` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.roborazzi.junit.rule` | `io.github.takahirom.roborazzi:roborazzi-junit-rule` | `1.76.0` | Pinned | — | TASK-029, TASK-045 |
 | `libs.plugins.kotlin.multiplatform` | `org.jetbrains.kotlin.multiplatform` | `2.4.20` | Declared | `:` | — |
 | `libs.plugins.kotlin.serialization` | `org.jetbrains.kotlin.plugin.serialization` | `2.4.20` | Declared | `:`, `:core:data`, `:feature:character-detail`, `:feature:discovery`, `:feature:episodes`, `:feature:favorites`, `:feature:settings` | — |
-| `libs.plugins.kotlin.compose` | `org.jetbrains.kotlin.plugin.compose` | `2.4.20` | Pinned | — | TASK-043 |
+| `libs.plugins.kotlin.compose` | `org.jetbrains.kotlin.plugin.compose` | `2.4.20` | Declared | `:` | TASK-043 |
 | `libs.plugins.android.application` | `com.android.application` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.android.library` | `com.android.library` | `9.3.1` | Declared | `:` | — |
 | `libs.plugins.android.kotlin.multiplatform.library` | `com.android.kotlin.multiplatform.library` | `9.3.1` | Declared | `:` | — |
