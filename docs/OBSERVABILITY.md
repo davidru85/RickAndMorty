@@ -111,11 +111,11 @@ Legend for the **Visibility** column: `D` = debug builds only, `R` = present in 
 | `LOG-002` | Request completed | `INFO` | `operation`, `pathTemplate`, `page`, `statusFamily`, `durationMs`, `correlationId`, `outcome` | `:core:data`, HTTP client layer | D |
 | `LOG-003` | Request failed | `ERROR` | `operation`, `pathTemplate`, `page`, `statusFamily`, `errorClass`, `durationMs`, `correlationId`, `outcome=FAILURE` | `:core:data`, failure mapper before repository return | R |
 | `LOG-004` | Foreign host rejected | `ERROR` | `operation`, `errorClass=INVALID_REQUEST`, `screen`, `correlationId` | `:core:data`, URL allow-list guard (`SECURITY.md` §5.1) | R |
-| `LOG-005` | Cache hit | `DEBUG` | `cacheSource` (`MEMORY_CACHE` or `DISK_CACHE`), `operation`, `page`, `isStale`, `correlationId` | `:core:data`, response cache read | D |
-| `LOG-006` | Cache miss | `DEBUG` | `cacheSource=NONE`, `operation`, `page`, `correlationId` | `:core:data`, response cache read | D |
-| `LOG-007` | Stale fallback served | `WARN` | `cacheSource=DISK_CACHE`, `isStale=true`, `operation`, `page`, `errorClass`, `correlationId` | `:core:data`, cache read when a fetch fails with data available | D |
-| `LOG-008` | Cache write skipped | `DEBUG` | `component=RESPONSE_CACHE`, `outcome`, `errorClass`, `correlationId` | `:core:data`, cache write guard (`AC-REQ-FUNC-020-3`) | D |
-| `LOG-009` | Cache entry discarded | `WARN` | `component=RESPONSE_CACHE`, `errorClass=MALFORMED_RESPONSE`, `correlationId` | `:core:data`, cache decode guard | D |
+| `LOG-005` | Cache hit | `DEBUG` | `cacheSource` (`MEMORY_CACHE` or `DISK_CACHE`), `operation`, `page`, `isStale`, `correlationId` | `:core:data`, response cache read (`TASK-020`) | D |
+| `LOG-006` | Cache miss | `DEBUG` | `cacheSource=NONE`, `operation`, `page`, `correlationId` | `:core:data`, response cache read (`TASK-020`) | D |
+| `LOG-007` | Stale fallback served | `WARN` | `cacheSource=DISK_CACHE`, `isStale=true`, `operation`, `page`, `errorClass`, `correlationId` | `:core:data`, cache read when a fetch fails with data available (`TASK-020`) | D |
+| `LOG-008` | Cache write skipped | `DEBUG` | `component=RESPONSE_CACHE`, `outcome`, `errorClass`, `correlationId` | `:core:data`, cache write guard (`AC-REQ-FUNC-020-3`, `TASK-020`) | D |
+| `LOG-009` | Cache entry discarded | `WARN` | `component=RESPONSE_CACHE`, `errorClass=MALFORMED_RESPONSE`, `correlationId` | `:core:data`, cache decode guard (`TASK-020`) | D |
 | `LOG-010` | Page loaded | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome`, `durationMs`, `cacheSource`, `correlationId` | `:core:data` shared pager (`IC-014`, `DEC-091`), for a load it publishes | D |
 | `LOG-011` | Pagination exhausted | `DEBUG` | `operation=CHARACTER_LIST`, `page`, `outcome=SUCCESS` | `:core:data` shared pager, when `info.next == null` or a paging `404` ends the list | D |
 | `LOG-012` | Duplicate request deduplicated | `DEBUG` | `operation`, `page`, `filterNames`, `correlationId` | `:core:data`, single-flight/dedupe guard (`REQ-REL-002`) | D |
