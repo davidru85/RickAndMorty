@@ -43,7 +43,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * `TEST-UNIT-034`, `TEST-UNIT-048` and `TEST-UNIT-049` — the runtime protocol switch of `REQ-FUNC-034`
+ * `TEST-UNIT-060`, `TEST-UNIT-048` and `TEST-UNIT-049` — the runtime protocol switch of `REQ-FUNC-034`
  * (`AC-REQ-FUNC-034-1`…`AC-REQ-FUNC-034-4`, `DEC-056`, `adr/0011-runtime-remote-protocol.md`).
  *
  * The active protocol is a per-request decision: the repository asks its [RemoteProtocolSource], and the
@@ -142,7 +142,7 @@ class ProtocolSwitchTest {
     private fun FakeRemoteSource.Call.page() = this as FakeRemoteSource.Call.Page
 
     @Test
-    fun `TEST-UNIT-034 given_a_fresh_install_when_a_page_loads_then_the_rest_adapter_answers`() =
+    fun `TEST-UNIT-060 given_a_fresh_install_when_a_page_loads_then_the_rest_adapter_answers`() =
         TestTime.run {
             // `AC-REQ-FUNC-034-1`: `AppSettings.remoteProtocol` defaults to REST, and the source resolves
             // the default without a settings read.
@@ -152,24 +152,24 @@ class ProtocolSwitchTest {
             owned { owner ->
                 val page = repository(owner, rest, graphQl, MutableStateFlow(RemoteProtocol.Rest)).page(all, 1).value()
 
-                assertEquals("Rest 1", page.characters.first().name, "TEST-UNIT-034: the default protocol is REST")
+                assertEquals("Rest 1", page.characters.first().name, "TEST-UNIT-060: the default protocol is REST")
                 assertEquals(1, rest.calls.size)
-                assertTrue(graphQl.calls.isEmpty(), "TEST-UNIT-034: the unselected adapter is never called")
+                assertTrue(graphQl.calls.isEmpty(), "TEST-UNIT-060: the unselected adapter is never called")
             }
         }
 
     @Test
-    fun `TEST-UNIT-034 given_the_settings_store_when_the_protocol_is_read_then_it_is_the_persisted_choice`() =
+    fun `TEST-UNIT-060 given_the_settings_store_when_the_protocol_is_read_then_it_is_the_persisted_choice`() =
         TestTime.run {
             val store = FakeAppSettingsStore()
             val source = settingsProtocolSource(settings = FakeRepository(store))
 
-            assertEquals(RemoteProtocol.Rest, source.current(), "TEST-UNIT-034: a fresh install reads REST (AC-REQ-FUNC-034-1)")
+            assertEquals(RemoteProtocol.Rest, source.current(), "TEST-UNIT-060: a fresh install reads REST (AC-REQ-FUNC-034-1)")
             store.write(AppSettings(remoteProtocol = RemoteProtocol.GraphQl))
             assertEquals(
                 RemoteProtocol.GraphQl,
                 source.current(),
-                "TEST-UNIT-034: the next request sees the stored choice (IC-021)",
+                "TEST-UNIT-060: the next request sees the stored choice (IC-021)",
             )
         }
 
