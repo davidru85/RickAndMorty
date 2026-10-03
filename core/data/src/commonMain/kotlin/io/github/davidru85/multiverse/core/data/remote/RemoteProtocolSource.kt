@@ -4,6 +4,7 @@ import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
 import io.github.davidru85.multiverse.core.domain.repository.AppSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -25,7 +26,13 @@ public interface RemoteProtocolSource {
     /** The protocol the next request must use. Suspends because reading the preference may. */
     public suspend fun current(): RemoteProtocol
 
-    /** Every change of the active protocol, in order; the default never changes. */
+    /**
+     * Every **transition** of the active protocol, in order — never the value the source already holds.
+     *
+     * The distinction is load-bearing: a consumer that resets on this flow (`IC-014`'s pager) must not
+     * reset on subscription. A source built over a hot, seeded flow therefore drops the first emission,
+     * which is the current value rather than a change.
+     */
     public fun changes(): Flow<RemoteProtocol>
 
     public companion object {
@@ -56,4 +63,8 @@ public fun settingsProtocolSource(settings: AppSettingsRepository): RemoteProtoc
                 .observe()
                 .map { it.remoteProtocol }
                 .distinctUntilChanged()
+                // `IC-021.observe()` is seeded with the persisted value, so its first emission is the
+                // current protocol and not a switch; dropping it is what keeps `changes()` a stream of
+                // transitions (see the interface).
+                .drop(1)
     }

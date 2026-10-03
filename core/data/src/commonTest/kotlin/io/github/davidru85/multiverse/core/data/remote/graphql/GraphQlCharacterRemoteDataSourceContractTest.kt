@@ -327,7 +327,7 @@ class GraphQlCharacterRemoteDataSourceContractTest {
                 stack(
                     envelope(
                         """{"data":{"character":{"id":"1","name":"Rick Sanchez","status":"Alive","species":"Human","type":"",""" +
-                            """"gender":"Male","image":"https://rickandmortyapi.com/api/character/avatar/1.jpeg",""" +
+                            """"gender":"Male","image":"https://example.invalid/api/character/avatar/1.jpeg",""" +
                             """"created":"2017-11-04T18:48:46.250Z",""" +
                             """"origin":{"id":"1","name":"Earth (C-137)","type":"Planet","dimension":"C-137"},""" +
                             """"location":{"id":"3","name":"Citadel of Ricks","type":"Space station","dimension":"unknown"},""" +

@@ -82,13 +82,13 @@ public class RepositoryCharacterPager(
      * item of the previous protocol is ever published. The reset is the one a filter change performs,
      * because it is the same kind of change (`adr/0011-runtime-remote-protocol.md`, ADR-0009 rule 4).
      *
-     * The collector runs in [scope], so it ends with the owner of the pager like every load it starts.
-     * A source that never changes — the default — emits nothing and costs one suspended collector.
+     * The observer runs in its own child of [scope] — not as a child of any one load, which would die
+     * with it — so it outlives every load it supersedes and ends only with the owner. Its job is held
+     * here rather than exposed: a source that never changes, the default, leaves it suspended for the
+     * owner's lifetime and costs nothing.
      */
-    private val protocolChanges: Job =
-        scope.launch {
-            protocolChanges.collect { switchProtocol() }
-        }
+    private val protocolObserver: Job =
+        scope.launch { protocolChanges.collect { switchProtocol() } }
 
     /** Resets to page 1 of the current filter and reloads, cancelling the superseded load. */
     private suspend fun switchProtocol() {
