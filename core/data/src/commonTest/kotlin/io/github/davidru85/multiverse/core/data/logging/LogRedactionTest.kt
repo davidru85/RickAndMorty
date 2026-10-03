@@ -71,7 +71,7 @@ class LogRedactionTest {
                     backgroundScope,
                     FixedRandom(0.5),
                     logger,
-                    bypassedCache(MutableFakeClock(), logger),
+                    bypassedCache(MutableFakeClock()),
                 )
             val pager = RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource)
             val filter = CharacterFilter(query = "  $query ", status = StatusFilter.Alive)
