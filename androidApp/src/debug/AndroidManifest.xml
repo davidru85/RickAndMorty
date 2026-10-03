@@ -11,10 +11,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application
-        android:name=".debug.DebugMultiverseApplication"
+        android:name="io.github.davidru85.multiverse.app.debug.DebugMultiverseApplication"
         tools:replace="android:name">
         <activity
-            android:name=".debug.DiagnosticsActivity"
+            android:name="io.github.davidru85.multiverse.app.debug.DiagnosticsActivity"
             android:exported="true"
             android:label="Multiverse diagnostics"
             android:excludeFromRecents="true">
