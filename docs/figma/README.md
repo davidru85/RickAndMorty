@@ -61,7 +61,7 @@ Naming follows the screen numbering in `UI_SPEC.md` §1.1/§1.2 and §10. Export
 
 | Date | Exported by | Files | Figma version note |
 | --- | --- | --- | --- |
-| — | — | none yet | The exports have not been produced. The Figma file requires access this environment does not have. |
+| 2026-10-03 | Implementation Engineer (Android), through the authenticated Figma connector | 32 PNGs: the 12 screen frames of §1.1 (both platforms) and the 20 component frames of §1.2, plus `tokens.json` (`DEC-102`) | Rendered by the Figma Dev Mode asset API from the actual frames (`defaultFormat=png`, `defaultScale=2`); every file's PNG IHDR was verified against 2× the frame box, and four component frames (20–21, 25–26) render their visual overflow beyond the layout box, so their verified size is 2× the scale-1 export, not 2× the layout box |
 
 ## Current state and fallback
 
