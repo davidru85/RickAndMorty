@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.app.di
 
 import android.content.Context
 import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
+import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
@@ -25,6 +26,14 @@ public const val FAVORITES_STORE_FILE: String = "favorites.preferences_pb"
  * favourites (`adr/0005-caching-strategy.md`, `DEC-004`).
  */
 public const val RESPONSE_CACHE_DIRECTORY: String = "responses"
+
+/**
+ * The DataStore file the app-settings store owns (`IC-022`, `TASK-074`, `SECURITY.md` §3).
+ *
+ * A file of its own, beside the favourites one: the two stores share the store technology and no
+ * key, so clearing either cannot clear the other, and the settings survive a favourites reset.
+ */
+public const val SETTINGS_STORE_FILE: String = "settings.preferences_pb"
 
 /**
  * The shell's platform modules (`TASK-044`, `DESIGN.md` §5): every input `coreModule` resolves from
@@ -73,6 +82,14 @@ public fun platformInputs(
                 ),
             ),
         cacheStorage = FileCacheStorage(File(appContext.cacheDir, RESPONSE_CACHE_DIRECTORY)),
+        settingsStore =
+            DataStoreAppSettingsLocalDataSource(
+                preferencesDataStore(
+                    file = File(appContext.filesDir, SETTINGS_STORE_FILE),
+                    scope = applicationScope,
+                    logger = logger,
+                ),
+            ),
         logger = logger,
     ).asModule()
 
