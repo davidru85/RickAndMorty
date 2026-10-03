@@ -2,13 +2,13 @@ package io.github.davidru85.multiverse.core.designsystem.copy
 
 import android.content.Context
 import android.content.res.Configuration
-import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.util.Locale
 
 /**
  * `TEST-UNIT-008` — every canonical copy key resolves in `en` and `es` and follows the device
@@ -21,7 +21,6 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 class CopyLocaleResolutionTest {
-
     @Test
     @Config(qualifiers = "en")
     fun `TEST-UNIT-008 given_the_english_locale_when_a_key_resolves_then_it_returns_the_english_string`() {
@@ -46,7 +45,8 @@ class CopyLocaleResolutionTest {
         // product's identity in every locale (`UI_SPEC.md` §6.1) — and the app name is a proper
         // noun. Every other key must differ from its English value.
         val untranslated =
-            CopyResolver.names()
+            CopyResolver
+                .names()
                 .filterNot { it in BRAND_MARKS }
                 .filter { key -> resolve(key).isBlank() || resolve(key) == resolveInLocale(key, "en") }
         assertEquals("every non-brand key must be translated in Spanish", emptyList<String>(), untranslated.sorted())
