@@ -1,0 +1,27 @@
+The files in this package are a Kotlin port of a subset of
+material-color-utilities, vendored under the Apache License 2.0 (see LICENSE
+beside this NOTICE).
+
+Upstream: https://github.com/material-foundation/material-color-utilities
+Copyright 2021 Google LLC
+Ported: 2026-10-03 (DEC-097, ADR-0015)
+
+Why vendored: the upstream project publishes no first-party Maven artifact on
+Maven Central or Google Maven — probed 2026-09-30 (CONF-50) — and the accent
+policy of UI_SPEC.md §5.4 needs exactly three of its algorithms:
+QuantizerCelebi (a Wu quantizer refined by k-means), Score (the population and
+chroma ranking) and TonalPalette (hue/chroma to a tone-30 container). The port
+follows those algorithms; deviations are listed here.
+
+Ports and simplifications, one per line:
+- The colour maths is the same sRGB -> XYZ -> CAM16 -> HCT pipeline upstream
+  uses, and `tone` is the CIE L* value it defines.
+- QuantizerCelebi keeps upstream's two stages: the Wu quantizer produces the
+  starting palette, then the k-means refinement runs the same twelve iterations.
+- Score keeps upstream's weights (target chroma 48, proportion 0.7, above 0.3,
+  below 0.1, cutoff chroma 5).
+- The inverse mapping (hue/chroma/tone -> sRGB) searches the gamut rather than
+  inverting CAM16 analytically, which is what upstream's HctSolver does; the
+  search is deterministic and documented at its call site.
+
+No other file in this repository is derived from upstream.
