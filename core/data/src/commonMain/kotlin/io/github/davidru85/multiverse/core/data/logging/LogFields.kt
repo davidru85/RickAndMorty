@@ -55,6 +55,38 @@ internal fun LogEvent.fields(): Map<LogField, String> =
                 event.screen?.let { put(LogField.SCREEN, it.name) }
                 putCorrelation(event.correlationId)
             }
+            is LogEvent.CacheHit -> {
+                put(LogField.CACHE_SOURCE, event.source.name)
+                put(LogField.OPERATION, event.operation.name)
+                putPage(event.page)
+                put(LogField.IS_STALE, event.isStale.toString())
+                putCorrelation(event.correlationId)
+            }
+            is LogEvent.CacheMiss -> {
+                put(LogField.CACHE_SOURCE, NO_CACHE_SOURCE)
+                put(LogField.OPERATION, event.operation.name)
+                putPage(event.page)
+                putCorrelation(event.correlationId)
+            }
+            is LogEvent.StaleFallbackServed -> {
+                put(LogField.CACHE_SOURCE, DataSource.DISK_CACHE.name)
+                put(LogField.IS_STALE, "true")
+                put(LogField.OPERATION, event.operation.name)
+                putPage(event.page)
+                put(LogField.ERROR_CLASS, event.errorClass.name)
+                putCorrelation(event.correlationId)
+            }
+            is LogEvent.CacheWriteSkipped -> {
+                put(LogField.COMPONENT, LogComponent.RESPONSE_CACHE.name)
+                put(LogField.OUTCOME, event.outcome.name)
+                event.failure?.let { put(LogField.ERROR_CLASS, it.name) }
+                putCorrelation(event.correlationId)
+            }
+            is LogEvent.CacheEntryDiscarded -> {
+                put(LogField.COMPONENT, LogComponent.RESPONSE_CACHE.name)
+                put(LogField.ERROR_CLASS, ErrorClass.MALFORMED_RESPONSE.name)
+                putCorrelation(event.correlationId)
+            }
             is LogEvent.PageLoaded -> {
                 put(LogField.OPERATION, LogOperation.CHARACTER_LIST.name)
                 putPage(event.page)
@@ -149,6 +181,7 @@ internal object LogFieldRules {
             LogField.COMPONENT -> LogComponent.entries.any { it.name == value }
             LogField.APP_VERSION, LogField.PLATFORM, LogField.BUILD_TYPE, LogField.CAUSE -> false
         }
-
-    private const val NO_CACHE_SOURCE = "NONE"
 }
+
+/** The `cacheSource` a miss carries (`OBSERVABILITY.md` §2.2): no entry answered the read. */
+private const val NO_CACHE_SOURCE = "NONE"

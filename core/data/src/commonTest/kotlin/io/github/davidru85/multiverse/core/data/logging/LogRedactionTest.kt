@@ -8,6 +8,7 @@ import io.github.davidru85.multiverse.core.data.repository.RemoteCharacterReposi
 import io.github.davidru85.multiverse.core.domain.logging.LogLevel
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
+import io.github.davidru85.multiverse.core.data.cache.bypassedCache
 import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MockHttp
 import io.github.davidru85.multiverse.testing.MutableFakeClock
@@ -64,7 +65,14 @@ class LogRedactionTest {
                     logger,
                     testScheduler.timeSource,
                 )
-            val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger)
+            val repository =
+                RemoteCharacterRepository(
+                    remote,
+                    backgroundScope,
+                    FixedRandom(0.5),
+                    logger,
+                    bypassedCache(MutableFakeClock(), logger),
+                )
             val pager = RepositoryCharacterPager(repository, this, logger, timeSource = testScheduler.timeSource)
             val filter = CharacterFilter(query = "  $query ", status = StatusFilter.Alive)
 
