@@ -56,7 +56,7 @@ A work item may not be started until every mandatory item below is checkable. Ea
 | R6 | Test intent is known — the `TEST-*` family that will carry the behaviour and, where the id is not yet allocated, the acceptance criterion each planned test maps to | `TESTING.md`, `REQUIREMENTS.md` | Yes |
 | R7 | No unresolved blocking decision — every decision whose status board row marks the affected artifact as its blocking impact is `Accepted` | `DECISION_BOARD.md` §2 | Yes |
 | R8 | The work is not a `Deferred` or `Could have` item — or an accepted decision has re-admitted it | `DECISION_BOARD.md` §4, `REQUIREMENTS.md` §1.3 | Yes |
-| R9 | For UI work: a Figma frame reference or a committed PNG export exists for every surface the task renders | `UI_SPEC.md` §1 (Figma file map), `docs/figma/` | Yes for UI work |
+| R9 | For UI work: a Figma frame reference or a committed PNG export exists for every surface the task renders. The exports were committed on 2026-10-03 (`TASK-035`), so both routes exist now | `UI_SPEC.md` §1 (Figma file map), `docs/figma/` | Yes for UI work |
 | R10 | For data or contract work: the internal contract (`IC-###`) or the remote contract (`API-*`) the implementation will honour is already defined | `CONTRACTS.md`, `API_SPECS.md` | Yes for data/contract work |
 | R11 | For behaviour work: the first failing test is expressible — the observable behaviour that will be asserted, and the point in the code where the assertion will be made, are known before implementation starts (DEC-053) | The task's test intent (`TESTING.md`, `REQUIREMENTS.md`) | Yes for behaviour work; not applicable to the documentation, build/CI and tooling exception classes named in D4 |
 

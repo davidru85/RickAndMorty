@@ -72,10 +72,13 @@ Solo teléfono en vertical; tablet, plegable y horizontal quedan fuera de alcanc
 
 La especificación visual es [`docs/UI_SPEC.md`](docs/UI_SPEC.md). Define siete pantallas por plataforma (Splash, Discovery, Detail, la pantalla provisional de Episodes, el estado vacío de Favorites, Settings y la confirmación de borrar favoritos) y enlaza cada componente con su nodo de Figma.
 
-Las capturas **aún no están incluidas**. Hay dos conjuntos pendientes, registrados en [`docs/BACKLOG.md`](docs/BACKLOG.md):
+Las exportaciones de diseño ya están incluidas en [`docs/figma/`](docs/figma/README.md): todas las pantallas de `UI_SPEC.md` §1.1 y todos los componentes de §1.2, renderizados desde los fotogramas reales de Figma a 2× (ver el registro de exportación de ese directorio). El archivo de Figma sigue requiriendo acceso, así que estas exportaciones son la evidencia de diseño que cualquier revisor puede abrir.
 
-- exportaciones PNG de las pantallas de Figma en `docs/figma/` (el archivo de Figma requiere acceso);
-- capturas de las aplicaciones en ejecución, que se añadirán a este README al verificar cada hito.
+| Android | iOS |
+| --- | --- |
+| ![Splash](docs/figma/01-splash-android.png) | ![Splash](docs/figma/01-splash-ios.png) |
+
+Las capturas de las aplicaciones en ejecución siguen pendientes: el primer hito ejecutable es el shell de Android (`TASK-044`), y se añadirán a esta sección cuando haya una ejecución verificada.
 
 ## 4. Arquitectura en breve
 
@@ -250,7 +253,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue con GitH
 | `.gitignore` | Hecho — TASK-016, fusionado en el PR #13 el 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) escanea el working set, todos los blobs alcanzables y todas las rutas históricas únicas, dentro de `check` y `build` (ver [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
 | Contratos | Aceptados — TASK-019, fusionado en el PR #31 el 2026-10-01: `docs/CONTRACTS.md` es la base `IC-###` |
 | Documentos de proceso | Reconciliados — TASK-034, fusionado en el PR #32 el 2026-10-01: auditoría DOC1–DOC8 registrada |
-| Capturas (Figma y de la app) | No iniciado |
+| Capturas | Exportaciones de Figma incluidas (32 PNG en `docs/figma/`, `TASK-035`); capturas de la app pendientes del primer hito ejecutable (`TASK-044`) |
 
 ## 15. Inventario de dependencias
 

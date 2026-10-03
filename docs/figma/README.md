@@ -1,7 +1,7 @@
 # docs/figma/ — Rendered design exports
 
-- **Status:** Active (directory established; exports pending)
-- **Last verified:** 2026-09-29
+- **Status:** Active (exports committed 2026-10-03; see the export log)
+- **Last verified:** 2026-10-03
 - **Owner:** UI/UX Designer
 - **Authoritative for:** nothing. This directory holds rendered PNG exports of the Figma source so that reviewers can see the design without a Figma account.
 - **Inputs:** the Figma file [Rick & Morty](https://www.figma.com/design/nFQdxd23Kk4rNI7G4iHDUr/Rick---Morty)
@@ -63,13 +63,13 @@ Naming follows the screen numbering in `UI_SPEC.md` §1.1/§1.2 and §10. Export
 | --- | --- | --- | --- |
 | 2026-10-03 | Implementation Engineer (Android), through the authenticated Figma connector | 32 PNGs: the 12 screen frames of §1.1 (both platforms) and the 20 component frames of §1.2, plus `tokens.json` (`DEC-102`) | Rendered by the Figma Dev Mode asset API from the actual frames (`defaultFormat=png`, `defaultScale=2`); every file's PNG IHDR was verified against 2× the frame box, and four component frames (20–21, 25–26) render their visual overflow beyond the layout box, so their verified size is 2× the scale-1 export, not 2× the layout box |
 
-## Current state and fallback
+## Current state
 
-This directory is intentionally empty of images. Until the exports exist:
+The export set is committed: 32 PNGs covering every §1.1 screen frame and every §1.2 component frame, plus `tokens.json` (`DEC-102`). They are the design evidence a reviewer without Figma access can open, and the directory's export log records when and how each was produced.
 
-- `README.md` §3 states that screenshots are pending and must not be read as already present;
-- `UI_SPEC.md` §1.1 remains the textual reference, with Figma node ids that a reader with access can open;
-- the Android and iOS screenshot baselines required by `TESTING.md` are recorded from the running apps once the implementation exists, and are compared with Figma manually at review (DEC-024) — they do not depend on this directory;
-- the pending export task is tracked in `BACKLOG.md` and recorded as an open gap in `DOCUMENTATION_AUDIT.md`.
+Still open, and not satisfied by this directory:
+
+- in-app screenshots of the running apps join `README.md` once the first runnable milestone is verified (`GAP-008`, `TASK-044`);
+- the Android and iOS **screenshot baselines** of `TESTING.md` are recorded from the running apps (Roborazzi/swift-snapshot-testing, `TASK-045`/`TASK-059`) and do not depend on this directory.
 
 Do not substitute downloaded mock portraits or generated imagery for the exports: the screens must be rendered from the actual Figma frames, or the comparison claim becomes false.

@@ -72,10 +72,13 @@ Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`do
 
 The visual specification is [`docs/UI_SPEC.md`](docs/UI_SPEC.md). It defines seven frames per platform (Splash, Discovery, Detail, Episodes placeholder, Favorites empty state, Settings, and the Delete favorites confirmation) and cross-links every component to its Figma node.
 
-Screenshots are **not committed yet**. Two sets are pending and tracked in [`docs/BACKLOG.md`](docs/BACKLOG.md):
+The rendered design exports are committed under [`docs/figma/`](docs/figma/README.md): every screen frame of `UI_SPEC.md` §1.1 and every component frame of §1.2, rendered from the actual Figma frames at 2× (see that directory's export log). The Figma source itself still requires project access, so these exports are the design evidence a reviewer can open.
 
-- rendered PNG exports of the Figma screens under `docs/figma/` (the Figma source requires project access);
-- in-app screenshots of the running apps, added to this README once the corresponding milestone is verified.
+| Android | iOS |
+| --- | --- |
+| ![Splash](docs/figma/01-splash-android.png) | ![Splash](docs/figma/01-splash-ios.png) |
+
+In-app screenshots of the running apps are still pending: the first runnable milestone is the Android shell (`TASK-044`), and they join this section once a run is verified.
 
 ## 4. Architecture in brief
 
@@ -281,7 +284,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
 | Contracts | Accepted — TASK-019, merged in PR #31 on 2026-10-01: `docs/CONTRACTS.md` is the `IC-###` baseline |
 | Process documents | Reconciled — TASK-034, merged in PR #32 on 2026-10-01: DOC1–DOC8 audit recorded |
-| Screenshots (Figma exports and in-app) | Not started |
+| Screenshots | Figma exports committed (32 PNGs under `docs/figma/`, `TASK-035`); in-app screenshots pending the first runnable milestone (`TASK-044`) |
 
 ## 15. Dependency inventory
 
