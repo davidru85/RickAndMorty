@@ -457,6 +457,7 @@ Preferences (Sounds, remote protocol) are exposed by `AppSettingsRepository` in 
 | `RestCharacterRemoteDataSource` | `IC-011` | Character list, detail and episode batch over `GET /api/...` | `remoteProtocol == Rest` (default) |
 | `GraphQlCharacterRemoteDataSource` | `IC-011` | The same domain results over `POST /graphql` with the checked-in operations | `remoteProtocol == GraphQl` |
 | `AppSettingsLocalDataSource` | `IC-022` | Persists the Settings values, including the choice that selects the two adapters above | n/a — it is the store, not a selectable source |
+| `ResponseCache` | `IC-012` | The application-level response cache: identity, the freshness bands and the never-cache rule, over a platform `CacheStorage` the composition root supplies (`TASK-020`) | n/a — it answers a request before the adapters above are reached |
 
 The two remote sources return equal domain values for the same logical request; a protocol switch is an identity change for the pager and the cache, never a mixed-protocol page (`AC-REQ-FUNC-034-2`, `AC-REQ-FUNC-034-4`).
 
@@ -597,6 +598,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-03 | B5 Phase 5.1: §4.6 lists `ResponseCache` in the data-source inventory — the application-level response cache of `IC-012`, with the freshness policy and the never-cache rule that `DEC-012`/`DEC-018` decide (`TASK-020`). | `TASK-020`, `DEC-012`, `DEC-018` |
 | 2026-10-03 | B3 Phase 3.3: §3.1 describes `:core:presentation` as implemented (`DEC-095`); §3.5's DataStore row records the dependency-analysis bundle; §5 states how a composition root builds the favourites store on each platform. | `TASK-040`, `TASK-041`, `DEC-095` |
 | 2026-10-02 | B3 Phase 3.2: §3.1 lists `:core:diagnostics` and the validating logger in `:core:data`; §3 draws the debug-only edge; §3.4 rule 11 states `R18` and the release closure of `R11` that make the module's exclusion executable (`DEC-094`); §5 states how a composition root picks the logger by build variant and creates a pager per state holder. | `TASK-039`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-02 | §3.5 states the exclusion register's lifecycle as the owner decided it (`DEC-081`): per-edge consumption, read from the build model, with a missing package fact a diagnostic rather than an assumption. The JVM bytecode rule now covers every eligible opt-in compilation, so none inherits the daemon level (`DEC-080`). | `TASK-101`, `TASK-105`, `DEC-080`, `DEC-081` |
