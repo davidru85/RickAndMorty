@@ -30,13 +30,7 @@ public class MainActivity : ComponentActivity() {
     /** The one image seam (`DEC-097`): the app's Coil loader, adapted to the design system's port. */
     private val imageSeam: CoilImageSeam by inject()
 
-    /**
-     * The one card-to-detail hand-off (`IC-025`).
-     *
-     * Held by the composition root for the process, because it is the shell — not a feature — that
-     * knows both destinations exist; Discovery publishes into it and Detail consumes from it
-     * (`DESIGN.md` §4.2).
-     */
+    /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,11 +45,7 @@ public class MainActivity : ComponentActivity() {
             // The gate is built once per composition from the graph's repository, so the splash waits on
             // the same first page the Discovery screen will render.
             val gate = remember { SplashGate(characterRepository, Dispatchers.IO) }
-            MultiverseApp(
-                splashGate = gate,
-                imageSeam = imageSeam,
-                detailHandoff = detailHandoff,
-            )
+            MultiverseApp(splashGate = gate, imageSeam = imageSeam, detailHandoff = detailHandoff)
         }
     }
 }

@@ -12,21 +12,21 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.davidru85.multiverse.app.di.shellModules
 import io.github.davidru85.multiverse.core.data.di.coreModule
-import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
-import io.github.davidru85.multiverse.feature.favorites.di.favoritesViewModelModule
-import io.github.davidru85.multiverse.feature.settings.di.settingsModule
-import io.github.davidru85.multiverse.feature.settings.di.settingsViewModelModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailViewModelModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryViewModelModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.android.ext.koin.androidContext
 import org.robolectric.annotation.Config
 
 /**
@@ -52,13 +52,9 @@ class DestinationNavigationTest {
     val compose = createComposeRule()
 
     /**
-     * The graph the destinations resolve from.
-     *
-     * The real Favorites and Settings screens resolve their ViewModels through Koin (`IC-020`,
-     * `IC-023`), so this case starts the same graph the application does. The cases assert
-     * **navigation**, so the stores behind the graph are the real ones — the destinations this case
-     * walks either render from the repository or resolve a ViewModel, and neither has to answer for
-     * the assertion to hold.
+     * The graph the destinations resolve from. The real Discovery and Detail screens resolve their
+     * ViewModels through Koin, so this case starts the same graph the application does; the
+     * assertions below are about navigation and are untouched.
      */
     @Before
     fun startGraph() {
@@ -67,7 +63,12 @@ class DestinationNavigationTest {
             androidContext(context)
             modules(coreModule)
             modules(shellModules(CoroutineScope(Dispatchers.Unconfined), context))
-            modules(favoritesModule, favoritesViewModelModule, settingsModule, settingsViewModelModule)
+            modules(
+                discoveryModule,
+                discoveryViewModelModule,
+                characterDetailModule,
+                characterDetailViewModelModule,
+            )
         }
     }
 

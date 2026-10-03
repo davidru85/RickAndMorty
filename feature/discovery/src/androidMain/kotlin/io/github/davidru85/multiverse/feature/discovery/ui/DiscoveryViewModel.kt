@@ -23,13 +23,17 @@ import kotlinx.coroutines.flow.StateFlow
  * closing the scope cancels every load (`GUIDELINES.md` §2.7).
  */
 public class DiscoveryViewModel(
-    pager: CharacterPager,
+    /**
+     * The pager for **this** screen, built here rather than injected: `IC-014` gives one pager to one
+     * state-holder scope, and the scope is `viewModelScope`, which no graph can supply.
+     */
+    pagerFor: (kotlinx.coroutines.CoroutineScope) -> CharacterPager,
     dispatcher: CoroutineDispatcher,
     formatters: PresentationFormatters = DefaultPresentationFormatters,
 ) : ViewModel() {
     private val reducer =
         DiscoveryReducer(
-            pager = pager,
+            pager = pagerFor(viewModelScope),
             scope = viewModelScope,
             dispatcher = dispatcher,
             formatters = formatters,

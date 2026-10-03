@@ -54,8 +54,6 @@ public fun MultiverseApp(
     /** The card-to-detail hand-off (`IC-025`); the shell owns the one instance. */
     detailHandoff: io.github.davidru85.multiverse.core.presentation.DetailHandoff? = null,
 ) {
-    // One hand-off for the process, held across recompositions: a `null` is a preview or a case that
-    // renders a destination directly, and it gets its own so the composable needs no branch later.
     val handoff =
         detailHandoff
             ?: androidx.compose.runtime.remember { io.github.davidru85.multiverse.core.presentation.DetailHandoff() }
@@ -85,10 +83,27 @@ public fun MultiverseApp(
                     startDestination = CharacterList,
                     modifier = Modifier.weight(1f),
                 ) {
-                    composable<CharacterList> { SectionPlaceholder(titleKey = "nav_characters") }
+                    composable<CharacterList> {
+                        io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryRoute(
+                            seam = imageSeam,
+                            onOpenDetail = { card ->
+                                // The card travels through `IC-025` before the destination changes, so the
+                                // hero can animate from its bounds and the known fields render at once.
+                                handoff.publish(card)
+                                navController.navigate(CharacterDetail(card.id.value))
+                            },
+                        )
+                    }
                     composable<CharacterDetail> { entry ->
                         val route = entry.toRoute<CharacterDetail>()
-                        SectionPlaceholder(titleKey = "nav_characters", subtitle = route.id)
+                        val id = io.github.davidru85.multiverse.core.domain.model.CharacterId(route.id)
+                        io.github.davidru85.multiverse.feature.characterdetail.ui.CharacterDetailRoute(
+                            id = id,
+                            seam = imageSeam,
+                            header = handoff.consume(id),
+                            onBack = { navController.popBackStack() },
+                            onShare = {},
+                        )
                     }
                     // Episodes and Favorites render their specified placeholder screens (`TASK-008`);
                     // both take "Browse characters" as a callback that selects the Characters
@@ -99,8 +114,6 @@ public fun MultiverseApp(
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_play_circle),
                         )
                     }
-                    // The real Favorites section (`TASK-006`): the same cards as Discovery, its own
-                    // empty state, and the card-to-detail hand-off the destination below consumes.
                     composable<Favorites> {
                         io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
                             seam = imageSeam,
@@ -110,6 +123,8 @@ public fun MultiverseApp(
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
                         )
                     }
+                    // Characters and Settings render the section title in the Discovery headline
+                    // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
                     // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
                     composable<Settings> { io.github.davidru85.multiverse.feature.settings.ui.SettingsRoute() }
                 }
