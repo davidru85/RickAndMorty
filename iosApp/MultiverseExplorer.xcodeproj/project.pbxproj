@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */; };
+		08EB182477F63FE3D9F79CDB /* en.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 5536017E77F302F6EB967132 /* en.lproj */; };
 		1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */; };
 		2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */; };
 		267BC68D43A11C59F00068F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */; };
@@ -19,6 +20,7 @@
 		575F388BD1BAE8C4EA7902EE /* GlassCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */; };
 		578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */; };
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
+		7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */; };
 		A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */; };
 		C12B109F91909463515EB506 /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148069F4158CE9125230726C /* EmptyState.swift */; };
 		C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */; };
@@ -44,6 +46,8 @@
 		27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryStateHolder.swift; sourceTree = "<group>"; };
 		351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponentRenderingTests.swift; sourceTree = "<group>"; };
 		3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFramework.swift; sourceTree = "<group>"; };
+		3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */ = {isa = PBXFileReference; path = es.lproj; sourceTree = "<group>"; };
+		5536017E77F302F6EB967132 /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
 		65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseTokensParityTests.swift; sourceTree = "<group>"; };
 		7AEB402259234D6DC93CA08F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7FB00588E2E25299609BD647 /* GlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
@@ -81,6 +85,7 @@
 				3F611A42BC2099E751C58561 /* App */,
 				39B1EAE7FFCD651F750AAECC /* DesignSystem */,
 				3E297FDC5E379D61FD7A9746 /* Features */,
+				5A7BDB3959A7B2C01597975A /* Resources */,
 				726559611B824AB4EAE11FA9 /* Tests */,
 				867C569BBF7C2E839F40C996 /* Products */,
 			);
@@ -121,6 +126,15 @@
 				0654B4D228F19F8CCCD54CD8 /* Version.xcconfig */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		5A7BDB3959A7B2C01597975A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5536017E77F302F6EB967132 /* en.lproj */,
+				3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		726559611B824AB4EAE11FA9 /* Tests */ = {
@@ -184,6 +198,7 @@
 			buildPhases = (
 				21D52DE63CD5933EB9F41FDB /* Build the shared Kotlin framework */,
 				038FC193306884572EBC0A46 /* Sources */,
+				72AF8E8B2FCBD5DA70C1886D /* Resources */,
 			);
 			buildRules = (
 			);
@@ -226,6 +241,18 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		72AF8E8B2FCBD5DA70C1886D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08EB182477F63FE3D9F79CDB /* en.lproj in Resources */,
+				7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		21D52DE63CD5933EB9F41FDB /* Build the shared Kotlin framework */ = {

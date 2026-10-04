@@ -33,6 +33,18 @@ targets:
       - path: App
       - path: Features
       - path: DesignSystem
+        # `README.md` documents the components; it is not a bundle resource, and a non-code file in
+        # the app bundle breaks code signing.
+        excludes:
+          - "README.md"
+      # The committed copy files (`TASK-060`): `en.lproj`/`es.lproj` are copied into the bundle root
+      # as localised resources, so the strings the parity test compares are the ones the app loads.
+      # Each locale folder is a separate group: a single `folder` source would nest them under
+      # `Resources/`, where iOS does not look for a localisation.
+      - path: Resources/en.lproj
+        buildPhase: resources
+      - path: Resources/es.lproj
+        buildPhase: resources
     # The framework search path is where `:core:ios` writes the Kotlin framework (ADR-0012). The
     # app links exactly one; a second would be the duplicate-runtime failure the ADR forbids.
     settings:
