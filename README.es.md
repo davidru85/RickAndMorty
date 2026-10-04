@@ -207,9 +207,9 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 3. **La búsqueda por voz no está implementada.** Está aplazada y no se solicita permiso de micrófono ni de voz (`DEC-002`).
 4. **Solo teléfono en vertical.** Sin tablet, plegable ni horizontal (`DEC-027`).
 5. **Sin analítica.** No hay SDK de analítica, seguimiento ni publicidad (`REQ-OBS-003`).
-6. **Solo un artefacto está fijado en una versión preliminar.** Material 3 Expressive `1.5.0-alpha29` está fijado en el catálogo de versiones y ningún módulo lo declara todavía; el riesgo aceptado y el plan de vuelta atrás están en [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). Los otros dos componentes solo-alpha no se adoptan.
+6. **Solo un artefacto preliminar se distribuye.** Material 3 Expressive `1.5.0-alpha29` está fijado en el catálogo de versiones y lo declaran `:core:designsystem` y cuatro módulos de feature (`:feature:character-detail`, `:feature:discovery`, `:feature:favorites`, `:feature:settings`), así que la app Android lo contiene. El riesgo aceptado y el plan de vuelta atrás están en [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md), cuya regla de que solo el sistema de diseño lo declare aún no cumplen los cuatro módulos de feature (`CONF-84`). Los otros dos componentes solo-alpha no se adoptan.
 7. **La API no está versionada.** Su forma puede cambiar sin aviso, por lo que los tests de contrato se ejecutan fuera del gate de merge (`DEC-029`).
-8. **El dispositivo de referencia para rendimiento aún no está fijado.** Los presupuestos y el método de medición existen; el dispositivo concreto está registrado como suposición pendiente en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+8. **El dispositivo de referencia para rendimiento aún no está fijado.** Los presupuestos y el método de medición existen; el dispositivo concreto está registrado como suposición pendiente en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), así que todavía no se ha medido ningún presupuesto de rendimiento. Solo la aserción de cero peticiones de red sobre una página en caché se ejecuta en el gate de merge (`DEC-115`).
 
 ## 12. Índice de documentación
 
