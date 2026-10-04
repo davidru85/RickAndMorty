@@ -1,44 +1,43 @@
 package io.github.davidru85.multiverse.core.ios
 
-import io.github.davidru85.multiverse.core.domain.model.CharacterId
-import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
-import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
-import io.github.davidru85.multiverse.feature.characterdetail.navigation.CharacterDetail
-import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
 import io.github.davidru85.multiverse.core.data.cache.NsFileCacheStorage
 import io.github.davidru85.multiverse.core.data.cache.iosResponseCacheDirectory
-import io.github.davidru85.multiverse.core.data.favorites.UserDefaultsFavoritesLocalDataSource
-import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
-import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.di.coreModule
-import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
-import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
-import platform.Foundation.NSUserDefaults
+import io.github.davidru85.multiverse.core.data.favorites.UserDefaultsFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.logging.OsLogSink
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
+import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
+import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.domain.model.CharacterId
+import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
+import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
+import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
+import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
 import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavorite
+import io.github.davidru85.multiverse.feature.characterdetail.navigation.CharacterDetail
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
 import io.github.davidru85.multiverse.feature.favorites.domain.ResolveFavoriteCards
+import io.github.davidru85.multiverse.feature.settings.di.settingsModule
 import io.github.davidru85.multiverse.feature.settings.domain.ClearFavorites
 import io.github.davidru85.multiverse.feature.settings.domain.ObserveAppSettings
 import io.github.davidru85.multiverse.feature.settings.domain.UpdateAppSettings
-import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
-import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
-import io.github.davidru85.multiverse.feature.settings.di.settingsModule
 import kotlinx.coroutines.CoroutineDispatcher
-import org.koin.core.Koin
-import org.koin.mp.KoinPlatformTools
-import org.koin.core.context.startKoin
-import org.koin.core.module.Module
-import org.koin.core.parameter.parametersOf
-import org.koin.dsl.module
-import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import org.koin.core.Koin
+import org.koin.core.context.startKoin
+import org.koin.core.module.Module
+import org.koin.core.parameter.parametersOf
+import org.koin.mp.KoinPlatformTools
+import platform.Foundation.NSUserDefaults
+import kotlin.time.Clock
 
 /**
  * The `:core:ios` bootstrap (`ADR-0012`, `TASK-078`).
@@ -88,9 +87,13 @@ public object MultiverseBootstrap {
         CharacterCardUi(
             id = CharacterId(id),
             name = name,
-            species = io.github.davidru85.multiverse.core.presentation.DisplayText.Data(species),
+            species =
+                io.github.davidru85.multiverse.core.presentation.DisplayText
+                    .Data(species),
             status = io.github.davidru85.multiverse.core.domain.model.CharacterStatus.Unknown,
-            statusLabel = io.github.davidru85.multiverse.core.presentation.CopyKey(statusLabelKey),
+            statusLabel =
+                io.github.davidru85.multiverse.core.presentation
+                    .CopyKey(statusLabelKey),
             imageUrl = imageUrl,
         )
 
@@ -134,8 +137,7 @@ public object MultiverseBootstrap {
      * root — exposes the resolved value: `:core:ios` starts the graph from the same modules the
      * Android shell loads, and this function is how the Swift side receives a dependency.
      */
-    public fun characterPager(scope: CoroutineScope): CharacterPager =
-        iOSGraph.koin.get { parametersOf(scope) }
+    public fun characterPager(scope: CoroutineScope): CharacterPager = IosGraph.koin.get { parametersOf(scope) }
 
     /**
      * The Detail screen's dependencies (`IC-019`, `TASK-055`).
@@ -146,16 +148,16 @@ public object MultiverseBootstrap {
      */
     public fun characterDetailDependencies(): CharacterDetailDependencies =
         CharacterDetailDependencies(
-            getDetails = iOSGraph.koin.get(),
-            toggleFavorite = iOSGraph.koin.get(),
-            observeFavoriteIds = iOSGraph.koin.get(),
+            getDetails = IosGraph.koin.get(),
+            toggleFavorite = IosGraph.koin.get(),
+            observeFavoriteIds = IosGraph.koin.get(),
         )
 
     /** The Favorites section's dependencies (`IC-020`, `TASK-055`). */
     public fun favoritesDependencies(): FavoritesDependencies =
         FavoritesDependencies(
-            observeFavoriteIds = iOSGraph.koin.get(),
-            resolveFavoriteCards = iOSGraph.koin.get(),
+            observeFavoriteIds = IosGraph.koin.get(),
+            resolveFavoriteCards = IosGraph.koin.get(),
         )
 
     /**
@@ -166,10 +168,10 @@ public object MultiverseBootstrap {
      */
     public fun settingsDependencies(): SettingsDependencies =
         SettingsDependencies(
-            observeAppSettings = iOSGraph.koin.get(),
-            updateAppSettings = iOSGraph.koin.get(),
-            clearFavorites = iOSGraph.koin.get(),
-            observeFavoriteIds = iOSGraph.koin.get(),
+            observeAppSettings = IosGraph.koin.get(),
+            updateAppSettings = IosGraph.koin.get(),
+            clearFavorites = IosGraph.koin.get(),
+            observeFavoriteIds = IosGraph.koin.get(),
         )
 }
 
@@ -194,7 +196,6 @@ public class SettingsDependencies(
     public val observeFavoriteIds: ObserveFavoriteIds,
 )
 
-
 /**
  * The iOS composition root (`DESIGN.md` §5, `DEC-091`, ADR-0014, `TASK-055`).
  *
@@ -207,7 +208,7 @@ public class SettingsDependencies(
  * Swift side reaches the graph through [MultiverseBootstrap]'s functions instead of resolving
  * dependencies itself.
  */
-public object iOSGraph {
+public object IosGraph {
     private var started = false
 
     /** The graph, started on first use. */
