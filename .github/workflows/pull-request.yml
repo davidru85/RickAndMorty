@@ -295,7 +295,11 @@ jobs:
 
   ios:
     name: ios
-    runs-on: macos-latest
+    # The `xcode-27` image carries the toolchain `tools/swift-tools.lock` pins (`macos-latest`
+    # ships Xcode 26.x, whose swift-format is not the locked one). Verified against the runner-image
+    # toolset listing on 2026-10-04; the job fails closed, naming the available toolchains, if the
+    # locked Xcode is absent.
+    runs-on: xcode-27
     timeout-minutes: 40
     steps:
       - name: Check out the same revision
@@ -318,6 +322,22 @@ jobs:
         run: ./gradlew :core:data:contractTestReplayIosSimulator --stacktrace
       # The pinned Swift toolchain, then the formatting and lint row (`DEC-076`, `TASK-051`). The
       # script verifies the lock's SHA-256 before it runs either tool and fails closed otherwise.
+      # `macos-latest` selects its own Xcode (26.6 at the time of writing) while `swift-tools.lock`
+      # pins swift-format to the Xcode the project verified, so the job selects that toolchain
+      # explicitly. Without this the quality gate fails closed — correctly — on a runner whose
+      # default Xcode is not the locked one.
+      - name: Select the pinned Xcode
+        run: |
+          LOCKED="$(awk '$1 == "swift-format" { print $2 }' tools/swift-tools.lock | sed "s/@Xcode-//")"
+          echo "tools/swift-tools.lock pins Xcode $LOCKED"
+          if [ -d "/Applications/Xcode_$LOCKED.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode_$LOCKED.app"
+          else
+            echo "WARNING: /Applications/Xcode_$LOCKED.app is not installed on this runner; the available toolchains are:"
+            ls -d /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          xcodebuild -version
       - name: Set up the Swift tools
         run: bash tools/swift-tools-setup.sh
       - name: Swift formatting and lint
