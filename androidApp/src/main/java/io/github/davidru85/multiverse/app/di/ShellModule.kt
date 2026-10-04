@@ -93,7 +93,14 @@ public fun platformInputs(
         logger = logger,
     ).asModule()
 
-/** The one Coil image loader (`TASK-021`): the same allow-listed client, so no image bypasses it. */
+/**
+ * The one Coil image loader (`TASK-021`) and the seam that exposes it to the design system
+ * (`DEC-097`): the same allow-listed client, so no image bypasses the host rule, and the one
+ * `ImageSeam` every surface draws through.
+ *
+ * The loader is a process-lifetime singleton; the seam wraps it, so a screen resolves the port rather
+ * than building a second loader.
+ */
 public fun imageLoaderModule(
     context: android.content.Context,
     client: io.ktor.client.HttpClient,

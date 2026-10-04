@@ -9,7 +9,13 @@
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
 
-### PR #145 CI decomposition — 2026-10-04
+### PR #150 branch update — 2026-10-04
+
+PR #145 is merged: GH CLI observed merge commit `22cea4cc3c720caf7302becec73af3b44c89efdf` on `main`. The owner explicitly requested rebasing PR #150 onto that base (`DEC-113`). The original phase 5.3 head `3e987fa997b447dbe336155b76b528e1dbfa8164` is retained locally as `chore/pr150-rebase-backup-3e987fa`. `git rebase --rebase-merges origin/main` preserved the original individual TDD commits and resolved one conflict in `DOCUMENTATION_AUDIT.md`: retain `main`'s verified `GAP-028` closure and phase 5.3's `CONF-79` record. The resulting production, test, build and workflow files match Git's independently computed merge tree. PR #150 inherits the modular CI and Linux stall fixes of `DEC-112`.
+
+Local integration evidence is recorded in `PROJECT_LOG.md` LOG-0101. Publication uses an exact lease against the original remote head; the final PR-head `android` result must pass before human review and merge. This branch update does not resolve the pre-existing product-contract question `CONF-79`.
+
+### PR #145 CI decomposition — 2026-10-04 (historical pre-merge evidence)
 
 The owner authorised `TASK-110` / `DEC-112` on `feat/b5-phase-5-2`, covering `.github/workflows/pull-request.yml`, `.github/scripts/`, the workflow guard and its regressions in `build-logic/convention/`, and the affected documents. The workflow contains 17 independent worker checks and the required `android` result. Module scopes use explicit Android/JVM tasks; app tests and APK inspection are separate, and contract replay has its own invocation. Native CI stays suspended under `DEC-083`; settings and merge remain human-controlled.
 
@@ -171,6 +177,15 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 
 **Obligations the later blocks inherit:** B5 replaces the two placeholders (`TASK-006`, `TASK-074`) and the Characters and Settings section titles (`TASK-001`, `TASK-074`); `TASK-009` adds the shared-element transition; the tone-30 accent pairs are already in `TEST-A11Y-002` and the placement of the portraits on the grid joins `TASK-001`/`TASK-002` (`DEC-099`).
 
+## 1.11 B5 Phase 5.3 — in review in PR #150
+**Phase 5.3 (`TASK-006`, #146; `TASK-074`, #147; `TASK-075`, #148; `TASK-076`, #149) is implemented and locally verified on `feat/b5-phase-5-3`, rebased onto merged `main` after PR #145 on 2026-10-04** (`DEC-106`, `DEC-113`). What it delivers:
+- **`TASK-006` — Favorites:** `IC-020`'s declarations, the shared reducer and state holder, and the section that renders the same cards as Discovery. It resolves each favourite id through `IC-007`'s cached single-id read with bounded concurrency, which is the reading `DESIGN.md` §4.5 gives and `CONF-79` records against `IC-020`'s "no remote request" sentence.
+- **`TASK-074` — Settings:** `IC-021` over `IC-022` on both platforms, with a DataStore store on Android, a `UserDefaults` store on Apple, one contract proved once, and the `§6.5` screen with its three settings and its confirmation dialog.
+- **`TASK-075` — the protocol switch:** the third `IC-011` adapter posts the checked-in documents to `/graphql` with every user input as a variable, and the repository resolves its adapter **per request** from `IC-021`, so the protocol joins the request identity and the cache key; the pager observes a change as a new generation. No Apollo artifact resolves.
+- **`TASK-076` — Delete favorites:** the confirmation with Cancel and a destructive Delete, one clear that empties Favorites and Detail without a refresh, disabled when there are no favourites.
+- **The shell:** `startKoin` loads the feature modules, `MainActivity` builds the one `ImageSeam` and the one `DetailHandoff`, and the Favorites and Settings routes replace their placeholders.
+- **Observed gate:** `./gradlew check buildHealth verifyDependencyPolicy verifyDependencyInventory verifyDependencyPins` — BUILD SUCCESSFUL. `:core:data` 161 JVM / 182 Android-host, `:feature:favorites` 27, `:feature:settings` 18, `:androidApp` 26, all green.
+**B5 is complete when this phase merges:** all fifteen of its members are then `Done`, and B6 (Android validation and release) is the next block.
 ## 1.10 B5 Phase 5.2 (2026-10-03) — implemented on `feat/b5-phase-5-2`, awaiting its pull request
 **Phase 5.2 (`TASK-001`, #138; `TASK-002`, #139; `TASK-003`, #140; `TASK-004`, #141; `TASK-023`, #142; `TASK-009`, #143; `TASK-010`, #144) is implemented and locally verified on `feat/b5-phase-5-2`; it is not `Done` until the owner merges the phase pull request** (`DEC-106`). What it delivers:
 - **`TASK-001`/`TASK-003`/`TASK-004`/`TASK-010` — Discovery:** `IC-018`'s state and intents, a shared reducer that owns the 300 ms debounce, `distinctUntilChanged`, the cancellation of superseded work and the page-1 reset, and the `§6.2` screen: the search field, the count line formatted once through `IC-017.charactersCount`, four filter chips, a two-column staggered grid of the design system's cards, six skeletons while loading, the paging indicator, the stale banner and both the error surface and the designed empty-results state.

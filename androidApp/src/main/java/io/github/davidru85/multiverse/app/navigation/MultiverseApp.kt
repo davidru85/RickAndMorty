@@ -115,14 +115,18 @@ public fun MultiverseApp(
                         )
                     }
                     composable<Favorites> {
-                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesEmptyState(
+                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
+                            seam = imageSeam,
+                            handoff = handoff,
+                            onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
                             illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
                         )
                     }
                     // Characters and Settings render the section title in the Discovery headline
                     // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
-                    composable<Settings> { SectionPlaceholder(titleKey = "nav_settings") }
+                    // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
+                    composable<Settings> { io.github.davidru85.multiverse.feature.settings.ui.SettingsRoute() }
                 }
                 MultiverseNavigationBar(
                     destinations = destinations,
@@ -212,37 +216,5 @@ internal fun androidx.navigation.NavHostController.selectTopLevel(key: String) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
-    }
-}
-
-/**
- * The section title a destination renders until its screen exists (`DEC-099`): the Discovery
- * headline position, plus the navigation bar the shell always shows.
- */
-@Composable
-internal fun SectionPlaceholder(
-    titleKey: String,
-    subtitle: String? = null,
-) {
-    val title = CopyResolver.copy(titleKey)
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .semantics { contentDescription = title },
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displaySmall,
-            color = MultiverseColors.onSurface,
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MultiverseColors.onSurfaceVariant,
-            )
-        }
     }
 }

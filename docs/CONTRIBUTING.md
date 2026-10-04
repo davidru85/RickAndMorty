@@ -65,6 +65,8 @@ Development is **trunk-based** (DEC-041, retained after DEC-053). Branches are s
 | Direct commits | No direct commits or pushes to `main`. Every change arrives through a pull request (§5). |
 | Deletion | Delete the branch after merge; the phase commits (§3) remain in `main`'s history. |
 
+The owner-authorised PR #150-only exception to the branch-update rule is recorded in [`DECISION_BOARD.md`](DECISION_BOARD.md) `DEC-113`; its execution evidence is `PROJECT_LOG.md` LOG-0101.
+
 The repository owner (human) may create branches and pull requests; an agent may open a pull request on a branch it created (DEC-049, `../AGENTS.md` §4.3). Branch protection on `main` is a repository setting and therefore a human-only action (`../AGENTS.md` §4.2).
 
 ## 3. Commit protocol and messages

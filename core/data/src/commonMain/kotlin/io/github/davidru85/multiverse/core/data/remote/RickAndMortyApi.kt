@@ -17,6 +17,9 @@ public object RickAndMortyApi {
     internal const val LOCATION: String = "location"
     internal const val EPISODE: String = "episode"
 
+    /** The GraphQL path segment (`API_SPECS.md` §5.1); the endpoint is `POST https://[HOST]/graphql`. */
+    internal const val GRAPHQL: String = "graphql"
+
     /**
      * An HTTPS URL on [HOST] for `/api/<segments>`. The segments are already encoded: callers pass
      * fixed resource names and validated decimal ids, which need no escaping.
@@ -30,6 +33,12 @@ public object RickAndMortyApi {
                 encodedPathSegments = listOf(API) + segments
                 parameters.forEach { (name, value) -> this.parameters.append(name, value) }
             }.build()
+
+    /** The one GraphQL endpoint, `POST` to the same allow-listed host (`API_SPECS.md` §5.1). */
+    internal fun graphQl(): Url =
+        URLBuilder(protocol = URLProtocol.HTTPS, host = HOST)
+            .apply { encodedPathSegments = listOf(GRAPHQL) }
+            .build()
 
     /** Whether [url] may be trusted as a relation or pagination link: HTTPS on [HOST], default port. */
     internal fun isAllowListed(url: Url): Boolean =
@@ -47,6 +56,13 @@ public object RemoteResources {
 public object RemoteWarnings {
     /** A requested resource the response omitted; the warning's detail is the missing id. */
     public const val MISSING_RESOURCE: String = "missing-resource"
+
+    /**
+     * A usable GraphQL response that arrived with `errors` (`API_SPECS.md` §6.2 step 5, `API-ERR-011`).
+     * The data renders, and the warning keeps the partial response out of every cache
+     * (`AC-REQ-FUNC-020-3`).
+     */
+    public const val PARTIAL_RESPONSE: String = "partial-response"
 
     /**
      * A detail whose requested enrichment failed: it renders without the dependent rows and is never

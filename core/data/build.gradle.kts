@@ -26,10 +26,16 @@ kotlin {
             // The opt-in JVM target (`DEC-079`) is analysed on its own, and dependency analysis asks for
             // the domain edge to be stated for it as well; it is the same edge as `commonMain`'s.
             api(project(":core:domain"))
+            // The OkHttp engine reaches `io.ktor.utils` types the adapter uses, so the artifact is
+            // declared where it is used rather than reached transitively (`DEC-077`).
+            implementation(libs.ktor.utils)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.okhttp)
+            // The OkHttp engine reaches `io.ktor.utils` types the adapter uses, so the artifact is
+            // declared where it is used rather than reached transitively (`DEC-077`).
+            implementation(libs.ktor.utils)
             // The favourites store of `IC-013` on Android is a stable Preferences DataStore (ADR-0007,
             // `DEC-017`); the composition root hands the store its `DataStore`, so the type is part of
             // the surface.
