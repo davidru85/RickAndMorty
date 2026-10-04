@@ -1,7 +1,7 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-10-03 (**B3 complete**: Phase 3.3 merged in PR #117); must be updated on every handoff (`AGENTS.md` §5 step 7).
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
@@ -181,6 +181,13 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 **Obligations phase 5.2 inherits:** the discovery and detail screens consume `IC-012` through `CharacterRepository` and must render `isStale` and `DataResult.source`; `TASK-001` and `TASK-002` own the presentation state holders that map the failure chain to `IC-018`/`IC-019`; `TASK-010` owns the designed empty-results state the filtered `404` reaches.
 
 **Not verified:** the phase pull request's CI run (not opened yet); the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
+
+## 1.12 PR #145's gate fix (2026-10-04) — implemented on PR #145's head, awaiting CI
+**`GAP-028`/`DEC-111` (`TASK-109`) is implemented on PR #145's head** (`ci/pr145-gate-fit` branched from `1191b33d`) and **not `Done` under D2 until the run it triggers is observed green**. What it changes:
+- **`.github/workflows/pull-request.yml`:** the `android` job runs `./gradlew check -x iosSimulatorArm64Test`, and its `timeout-minutes` rises 45 → 60. The exclusion removes no check that could run: KMP **disables** the suite on Linux and the dependency chain it carried was the whole Kotlin/Native download plus the Apple compiles.
+- **`WorkflowGateGuard`:** a new `HOST_DISABLED_EXCLUSIONS` allow-list (the `android` job may exclude `iosSimulatorArm64Test`, the `ios` job may exclude nothing), enforced per job and per step, so the fix cannot be widened into a general `-x`; the existing execution filter now strips the sanctioned exclusion before deciding a step still executes its other commands.
+- **Observed locally:** red first — 3 guard-test failures against the unfixed guard; green after — the 40-test `WorkflowGateGuardTest` class and `:build-logic:convention:check ktlintCheck` all pass. `check --dry-run`: 1158 → 982 tasks, 30 → 0 Kotlin/Native tasks, with every Linux-executable step unchanged.
+**Obligation this change inherits:** its own pull-request run must be observed, and `GAP-028` is closed only on that evidence (`LOG-0097`).
 
 ## 2. Completed work
 

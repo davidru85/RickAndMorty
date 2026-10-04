@@ -1,7 +1,7 @@
 # TECHNICAL_PLAN.md — Milestones, Sequencing and Gates
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3)
 - **Authoritative for:** milestone phasing and objectives, build order, sequencing and prerequisite constraints, the phase plan, risk-sequencing consequences, the release readiness checklist and release mechanics, and the milestone → requirement coverage matrix.
 - **Inputs:** [`assessment.md`](../assessment.md), [`REQUIREMENTS.md`](REQUIREMENTS.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), [`DEFINITION.md`](DEFINITION.md), [`TESTING.md`](TESTING.md), [`DESIGN.md`](DESIGN.md), [`API_SPECS.md`](API_SPECS.md), [`UI_SPEC.md`](UI_SPEC.md), [`CONTRACTS.md`](CONTRACTS.md), [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md)
@@ -174,7 +174,7 @@ The risk statement, likelihood, impact and owner are owned by `REQUIREMENTS.md` 
 | Risk | Mitigation action this plan imposes | Sequencing consequence | Owner | Milestone |
 | --- | --- | --- | --- | --- |
 | `RISK-001` | Build the mitigation surfaces — scrims and the progressive-blur treatment — with the design-system work, and treat the source resolution as a stated limit rather than a defect to be fixed later | P4 and P9 land before the hero work in P5 and P10, so no hero is built without its mitigation | UX | M1, M2 |
-| `RISK-002` | Pin every version in the version catalog and require the full check set green before any version moves | Versions are pinned in P0 and enforced from P2 onward; no phase may advance an alpha dependency without that evidence | IE | M0, M3 |
+| `RISK-002` | Pin every version in the version catalog and require the full check set green before any version moves; keep that pinned toolchain fitting the runner that pins it — the `android` job used to pay the Kotlin/Native download for a suite the Linux host cannot execute, which no green run could satisfy (`GAP-028`, `DEC-111`) | Versions are pinned in P0 and enforced from P2 onward; no phase may advance an alpha dependency without that evidence, and the host-disabled task stays excluded by name and is re-measured before each block that adds KMP modules | IE | M0, M3 |
 | `RISK-003` | Keep every M1 gate independent of the iOS app, and verify the shared core once for both consumers | M1 closes with no iOS app artifact (S11); DEC-054 makes the shared iOS suites a pull-request cost from M0 rather than an end-of-M2 cost | PM | M1 |
 | `RISK-004` | Commit fixtures with sidecars and run the contract suite twice: fixture/replay inside the gate, live in the scheduled signal job | Fixtures land in P3 (S3); the scheduled job reports drift without blocking merges | QA | M0, M1 |
 | `RISK-005` | Never persist an error outcome, and prove the negative-caching case before the cache has consumers | The regression evidence is part of P3, before any screen consumes the cache (S4) | AA | M1 |
@@ -248,6 +248,7 @@ The coverage rules are owned by `REQUIREMENTS.md` §15 and audited in `DOCUMENTA
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-04 | §7 records the runner-fit consequence of a pinned toolchain: the `android` gate excludes the KMP-disabled native suite and takes a 60-minute ceiling (`DEC-111`, `GAP-028`); no milestone objective, exit criterion or required check changes. | `DEC-111`, `GAP-028`, `TASK-109` |
 | 2026-10-03 | §9 records the B5–B9 three-phase packaging as block exceptions (`DEC-106`…`DEC-110`); all remaining blocks are packaged in three phases each, while milestone objectives, exit criteria and the T0–T8 ordering are unchanged. | `DEC-106`, `DEC-107`, `DEC-108`, `DEC-109`, `DEC-110` |
 | 2026-10-03 | §9 records the B4 three-phase packaging as the second block exception after B3; the milestone objectives, exit criteria and the T0–T8 ordering are unchanged. | `DEC-096` |
 | 2026-10-02 | §9 records the B3-only three-phase packaging and the resulting order `TASK-047` before `TASK-041`; the milestone objectives, exit criteria and the T0–T8 ordering are unchanged. | `DEC-082`, `DEC-087` |
