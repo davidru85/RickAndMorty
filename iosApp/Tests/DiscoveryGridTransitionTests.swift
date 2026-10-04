@@ -37,56 +37,8 @@ final class DiscoveryGridTransitionTests: XCTestCase {
     private func brightPixels(rendering states: [CharacterListUiState]) throws -> Int {
         let driver = StateDriver(state: try XCTUnwrap(states.first))
         let host = UIHostingController(rootView: DrivenDiscoveryScreen(driver: driver))
-        // A window draws only inside a scene; the test host app provides one.
-        let scene = try XCTUnwrap(
-            UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
-            "the test host must provide a window scene"
-        )
-        let window = UIWindow(windowScene: scene)
-        window.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
-        window.rootViewController = host
-        window.makeKeyAndVisible()
-        settle(host)
-        for next in states.dropFirst() {
-            driver.state = next
-            settle(host)
-        }
-        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
-            _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-        }
-        window.isHidden = true
-        return try countNearWhitePixels(in: image)
-    }
-
-    private func settle(_ host: UIViewController) {
-        host.view.setNeedsLayout()
-        host.view.layoutIfNeeded()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
-    }
-
-    private func countNearWhitePixels(in image: UIImage) throws -> Int {
-        let cgImage = try XCTUnwrap(image.cgImage)
-        let width = cgImage.width
-        let height = cgImage.height
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
-        let context = try XCTUnwrap(
-            CGContext(
-                data: &pixels,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: width * 4,
-                space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            )
-        )
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        var bright = 0
-        for index in stride(from: 0, to: pixels.count, by: 4)
-        where pixels[index] > 200 && pixels[index + 1] > 200 && pixels[index + 2] > 200 {
-            bright += 1
-        }
-        return bright
+        let steps: [() -> Void] = states.dropFirst().map { next in { driver.state = next } }
+        return try HostedRendering.nearWhitePixels(in: HostedRendering.render(host, steps: steps))
     }
 
     // MARK: - States
