@@ -37,7 +37,7 @@ import java.io.File
  *
  * **Temporary iOS suspension (`DEC-083`).** The `ios` job and its native checks are required only
  * once [IosAppTripwire] finds an `iosApp` application target; until then the gate is the `android`
- * job, which must carry every Android check and the host contract replay. Every rule above applies
+ * context; under DEC-112, ModularWorkflowGate validates its independent workers and their result. Every rule above applies
  * to an `ios` job that is present anyway, and nothing about the `android` job is relaxed.
  *
  * Diagnostics carry the file and the line of the YAML node they concern, so a reviewer can act on
@@ -191,7 +191,11 @@ internal object WorkflowGateGuard {
 
         val iosApplications = IosAppTripwire.applicationProjects(root)
         scanTriggers(documents, root, findings, iosApplications)
-        scanJobs(documents, root, findings, iosApplications.isNotEmpty())
+        val modularDocuments = documents.filter { ModularWorkflowGate.matches(it) }
+        modularDocuments.forEach { document ->
+            findings += ModularWorkflowGate.scan(document, root, iosApplications.isNotEmpty())
+        }
+        scanJobs(documents - modularDocuments.toSet(), root, findings, iosApplications.isNotEmpty())
 
         // TEST-UNIT-044: live mode must be unreachable from the merge gate, under any trigger
         // spelling. The trigger set is decided from the parsed `on:` node, not from a regex.

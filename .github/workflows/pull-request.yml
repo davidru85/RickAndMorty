@@ -1,140 +1,303 @@
-# Pull-request gate (TASK-025, DEC-054 as amended by DEC-071 and DEC-083).
-#
-# The required-check set is owned by docs/TESTING.md §14 and its names by
-# docs/CONTRIBUTING.md §5.3. Every job below runs on every pull request and is required;
-# none may be skipped. Under DEC-071 the set is activated in stages: a row becomes
-# mandatory and non-empty in the same change that introduces its harness. This workflow
-# therefore runs, as blocking checks, exactly the suites that exist today:
-#
-#   - the shared suites (commonTest) on the JVM via the Android host-test target;
-#   - the contract suite in fixture/replay mode on the Android host target
-#     (`:core:data:contractTestReplayAndroidHost`, TASK-037, DEC-073, DEC-090);
-#   - the build-logic regression suite, which runs inside the root `check`;
-#   - every policy task: module boundaries, dependency pins/rationale/inventory,
-#     repository hygiene, the live-host guard and this workflow's own guard;
-#   - the Android assemble.
-#
-# Temporary iOS suspension (DEC-083, owner directive 2026-10-02): the `ios` job — the shared
-# suites on Kotlin/Native, the Apple compiles and the native contract replay — is suspended
-# until the pull request that introduces the buildable `iosApp` application target (TASK-051).
-# `verifyWorkflowGate` reads the real Xcode project metadata and fails that pull request until
-# it restores the job here, with `iosSimulatorArm64Test` and
-# `:core:data:contractTestReplayIosSimulator`; the `ios` required context is restored in the
-# ruleset in the same change. The Kotlin/Native targets stay configured, and native validation
-# runs locally on macOS meanwhile; it is never reported as CI evidence.
-#
-# Rows whose harness does not exist yet (Roborazzi snapshots, the accessibility suites, the iOS
-# app suites) are recorded against their activation tasks in docs/TESTING.md §14.2 and MUST NOT
-# be faked here by an empty or always-green job: an absent check is a missing check, not a pass.
-#
-# Security: every action is pinned by full commit SHA, never by a moving tag (SECURITY.md
-# §9, DEC-037). A floating tag could change the code that executes with this repository's
-# token.
-
+# DEC-112 / TASK-110: independent checks, with the existing required android result.
+# The active coverage is owned by docs/TESTING.md 14.2. Workers run on the same revision,
+# without path filters or dependencies on one another. Only the final result waits.
+# DEC-083 keeps native CI suspended until TASK-051; the workflow guard retains its tripwire.
 name: pull-request
 
 on:
   pull_request:
     branches: [main]
-  # `main` is gated too: AC-REQ-FUNC-014-1 requires that `main` builds at every commit, and a
-  # post-merge run is the evidence for the merged head rather than for the pull request that
-  # produced it.
   push:
     branches: [main]
   workflow_dispatch:
 
-# A newer push supersedes an in-flight run on the same pull request. The gate still
-# evaluates the final state of the pull request (TESTING.md §14.1), so cancelling an
-# obsolete run is safe and saves minutes.
 concurrency:
-  group: pr-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 env:
-  # The daemon JVM is declared by the repository (gradle/gradle-daemon-jvm.properties);
-  # this is the toolchain the wrapper provisions and the version both runners install.
   JAVA_VERSION: "25"
+  PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
-  # The Linux runner: shared suites on the JVM, the contract fixtures, the build-logic suite,
-  # every policy task and the Android assemble. Covers the `shared-tests`, `contract-fixture`,
-  # `static-analysis` (the parts that exist), `dependency-analysis`, `repository-hygiene`,
-  # `android-assemble` and `milestone-independence` rows of TESTING.md §14.2.
-  android:
-    name: android
+  module-checks:
+    name: module / ${{ matrix.name }}
     runs-on: ubuntu-latest
-    # The ceiling covers the gate the block phases run, not a cold-cache worst case that repeats
-    # the Kotlin/Native download (`GAP-028`). Measured on the B5 phase runs: the whole job took
-    # 16 min on phase 5.1 (run 37142102522) only because `check` reached the disabled native
-    # suite; with that subtree pruned the local gate is minutes, and the remaining steps are
-    # small. 60 leaves headroom for a slower runner without letting a genuinely stuck gate
-    # occupy a runner for an hour.
-    timeout-minutes: 60
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: core-domain
+            module: :core:domain
+            tasks: :core:domain:compileAndroidMain :core:domain:testAndroidHostTest :core:domain:ktlintCheck :core:domain:jvmTest
+          - name: core-data
+            module: :core:data
+            tasks: :core:data:compileAndroidMain :core:data:testAndroidHostTest :core:data:ktlintCheck :core:data:jvmTest
+          - name: core-presentation
+            module: :core:presentation
+            tasks: :core:presentation:compileAndroidMain :core:presentation:testAndroidHostTest :core:presentation:ktlintCheck
+          - name: core-testing
+            module: :core:testing
+            tasks: :core:testing:compileAndroidMain :core:testing:testAndroidHostTest :core:testing:ktlintCheck :core:testing:jvmTest
+          - name: core-diagnostics
+            module: :core:diagnostics
+            tasks: :core:diagnostics:compileAndroidMain :core:diagnostics:testAndroidHostTest :core:diagnostics:ktlintCheck
+          - name: feature-discovery
+            module: :feature:discovery
+            tasks: :feature:discovery:compileAndroidMain :feature:discovery:testAndroidHostTest :feature:discovery:ktlintCheck
+          - name: feature-character-detail
+            module: :feature:character-detail
+            tasks: :feature:character-detail:compileAndroidMain :feature:character-detail:testAndroidHostTest :feature:character-detail:ktlintCheck
+          - name: feature-favorites
+            module: :feature:favorites
+            tasks: :feature:favorites:compileAndroidMain :feature:favorites:testAndroidHostTest :feature:favorites:ktlintCheck
+          - name: feature-episodes
+            module: :feature:episodes
+            tasks: :feature:episodes:compileAndroidMain :feature:episodes:testAndroidHostTest :feature:episodes:ktlintCheck
+          - name: feature-settings
+            module: :feature:settings
+            tasks: :feature:settings:compileAndroidMain :feature:settings:testAndroidHostTest :feature:settings:ktlintCheck
+    env:
+      GRADLE_TASKS: ${{ matrix.tasks }}
     steps:
-      - name: Check out the pull request
+      - name: Check out the same revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The hygiene check scans every blob reachable from all local refs and fails closed
-          # on a shallow clone, so the full history is required (TESTING.md §14.2, DEC-062).
           fetch-depth: 0
-
       - name: Set up the JDK
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-
-      # `-x iosSimulatorArm64Test` is not a narrowed gate: the KMP plugin DISABLES that task on a
-      # non-Apple host ("Native task 'iosSimulatorArm64Test' is disabled / cannot run on the
-      # current host (linux-x86_64)"), so the Linux runner never executes it. What it did do was
-      # drag the whole Kotlin/Native chain into the job as a dependency — `downloadKotlin
-      # NativeDistribution` (13-15 min, measured) and `compileKotlinIosSimulatorArm64` for every
-      # KMP module — for a task that can never run, which is what exhausted the job's ceiling
-      # (`GAP-028`). Excluding it by name prunes that subtree (measured: 1158 -> 982 tasks, 30
-      # native tasks -> 0) and leaves every check that can actually execute untouched. The
-      # Apple-side suites are run by the macOS `ios` job when `DEC-083`'s suspension ends and by
-      # the local macOS supplement meanwhile; the guard is unchanged, so the moment an
-      # `iosApp` application target exists it demands the `ios` job and its native suites back
-      # (`TASK-051`), and this exclusion no longer has a job to sit in.
-      - name: Run the local gate
-        run: ./gradlew check -x iosSimulatorArm64Test --stacktrace
-
-      # TASK-029: the quality toolchain is part of the gate, not a local convention.
-      # ktlint, Android Lint and the dependency policy run inside `check`; `buildHealth`
-      # and the documented-gate check are separate tasks and are visible as named steps.
-      - name: Verify dependency health
-        run: ./gradlew buildHealth --stacktrace
-
-      - name: Verify the documented gate
-        run: ./gradlew verifyDocumentedGate --stacktrace
-
-      # The policy checks run inside `check` too; they are named here because the `ios` job that
-      # used to carry them is suspended (DEC-083) and the guard binds each one to an executable step.
-      - name: Run the policy checks
-        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate --stacktrace
-
-      # TASK-037 (DEC-073, DEC-090): exactly the TEST-CONTRACT-* cases on the Android host target,
-      # failing when none executes. A separate invocation, so `check` above keeps every case.
-      - name: Replay the contract fixtures
-        run: ./gradlew :core:data:contractTestReplayAndroidHost --stacktrace
-
-      - name: Assemble the Android application
-        run: ./gradlew :androidApp:assembleDebug --stacktrace
-
-      - name: Upload the test reports
+      - name: Compile, test and format this module
+        run: ./gradlew $GRADLE_TASKS --stacktrace
+      - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: android-test-reports
+          name: module-${{ matrix.name }}-reports
           path: |
             **/build/reports/tests/**
             **/build/test-results/**
-            build-logic/convention/build/reports/tests/**
+            **/build/reports/ktlint/**
+          if-no-files-found: ignore
+
+  designsystem:
+    name: module / core-designsystem
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew :core:designsystem:check --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: designsystem-reports
+          path: |
+            core/designsystem/build/reports/**
+            core/designsystem/build/test-results/**
+          if-no-files-found: ignore
+
+  app-tests:
+    name: module / androidApp tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew :androidApp:testDebugUnitTest :androidApp:lint --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: app-tests-reports
+          path: |
+            androidApp/build/reports/**
+            androidApp/build/test-results/**
+          if-no-files-found: ignore
+
+  app-artifacts:
+    name: module / androidApp artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: app-artifacts-reports
+          path: |
+            androidApp/build/reports/verifyReleaseArtifact/**
+            androidApp/build/reports/verifySdkLevels/**
+            androidApp/build/outputs/apk/**/*.apk
+          if-no-files-found: ignore
+
+  build-logic:
+    name: build-logic
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Verify failure propagation
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+      - name: Run this verification scope
+        run: ./gradlew :build-logic:convention:check --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-logic-reports
+          path: |
+            build-logic/convention/build/reports/**
             build-logic/convention/build/test-results/**
           if-no-files-found: ignore
+
+  policies:
+    name: repository policies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: policies-reports
+          path: |
+            build/reports/**
+          if-no-files-found: ignore
+
+  dependency-health:
+    name: dependency health
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew buildHealth --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dependency-health-reports
+          path: |
+            **/build/reports/dependency-analysis/**
+          if-no-files-found: ignore
+
+  contract-replay:
+    name: contract fixtures / Android host
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Run this verification scope
+        run: ./gradlew :core:data:contractTestReplayAndroidHost --stacktrace
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: contract-replay-reports
+          path: |
+            core/data/build/reports/tests/**
+            core/data/build/test-results/**
+          if-no-files-found: ignore
+
+  android:
+    name: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ always() }}
+    needs: [module-checks, designsystem, app-tests, app-artifacts, build-logic, policies, dependency-health, contract-replay]
+    env:
+      CI_JOB_RESULTS: ${{ toJSON(needs) }}
+      CI_REQUIRE_IOS: "false"
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Require every independent check to succeed
+        run: python3 .github/scripts/verify-ci-results.py

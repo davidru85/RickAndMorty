@@ -69,7 +69,8 @@ class WorkflowGateReproductionTest {
         val findings =
             findingsAfter { text ->
                 // Every required job carries `if: ${{ false }}`: the rollup is green and nothing ran.
-                text.replace("    runs-on: ubuntu-latest", "    if: \${{ false }}\n    runs-on: ubuntu-latest")
+                text.replace("    if: \${{ always() }}\n", "")
+                    .replace("    runs-on: ubuntu-latest", "    if: \${{ false }}\n    runs-on: ubuntu-latest")
                     .replace("    runs-on: macos-latest", "    if: \${{ false }}\n    runs-on: macos-latest")
             }
         assertTrue(
