@@ -1076,3 +1076,19 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **Four detection classes proved with seeds, then restored:** a duplicated `TASK-048` definition (`DOC4`), an unfinished-item marker appended to `TESTING.md` (`DOC8`), a link rewritten to `NO_SUCH_FILE.md` (`DOC2`) and `Last verified:` renamed in `ERROR_FLOW.md`'s header (`DOC1`) each failed the gate with the expected message; all four were reverted and the gate returned to 0 findings.
 - **`TASK-066` and `TASK-069` remain** in this phase and are unaffected.
 - **Affected documents:** `docs/BACKLOG.md` (the duplicated M1 table), `PROJECT_LOG.md` (this entry).
+
+### LOG-0115 · 2026-10-04 · B9 Phase 9.2 (continued): the release-note generator
+
+- **Event:** `TASK-066` (Phase 9.2 of `DEC-110`).
+- **Deliverable:** `tools/release-notes.sh` renders the notes for a tag range or for the whole history, and the `releaseNotes` Gradle task writes `build/releases/notes.md` for the current `VERSION`. There is no hand-written changelog, so nothing can drift from history. The Conventional Commit type maps to a section (the TDD phase prefixes included), sections print in a fixed order so the notes do not depend on commit order, and a type outside the set is not a release note at all. Verified: `--all` renders 387 entries across seven sections; `HEAD~5 HEAD` renders the range; a missing argument exits 2 with its usage.
+- **One implementation defect of my own, corrected:** the first three drafts passed a `\t` through three quoting layers and silently produced **nothing**, with exit 0 — the worst failure shape for a generator. The rewrite moves the whole mapping into one `awk` program so the shell adds no delimiter, and the subject list is captured as a task `@Input` rather than run from a captured `providers.exec` inside the action, which had made the task incompatible with the configuration cache the build enables.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0116 · 2026-10-04 · B9 Phase 9.2 (continued): the traceability index verified
+
+- **Event:** `TASK-069` (Phase 9.2 of `DEC-110`).
+- **`TASK-069`'s criterion is `AC-REQ-NFR-005-2`:** every Must-have requirement maps to at least one test id, and the coverage index in `BACKLOG.md` §8 lists every requirement against the task that delivers it. Both halves are now verified by reading the documents rather than by inspection:
+  - **The index is complete for every Must/Should requirement.** `REQUIREMENTS.md` declares priority by subsection (`§5.1 Must have`, `§5.2 Should have`, `§5.3 Could have`), and every requirement in a Must or Should subsection appears in `BACKLOG.md` §8's coverage index. The 21 Must/Should requirements of §5 have no gap, and the index additionally carries the platform, reliability, security, observability and UX families.
+  - **Every requirement row names its tests.** `REQUIREMENTS.md`'s detail sections carry a `Tests:` line per requirement, and `TESTING.md` §16 holds the inverse requirement→test map; the two agree on the ids the audit sampled.
+- **What this does not claim:** the index is a document, so its completeness is checked by reading it, not by a build task. The machine-checked half of `DEFINITION.md` §6 is `verifyDocumentedCompleteness`, added by `TASK-068` in this same phase; `DOC5` (requirements → task → test) needs the judgement that an id maps to a *suitable* task and test, which stays with the review and is reported there rather than approximated.
+- **Affected documents:** `PROJECT_LOG.md` (this entry), `BACKLOG.md` (`TASK-069` row).
