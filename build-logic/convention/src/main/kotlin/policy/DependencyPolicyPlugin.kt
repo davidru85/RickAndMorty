@@ -202,6 +202,32 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 target.layout.projectDirectory.file("README.es.md"),
             )
         }
+        // DEFINITION.md §6, TASK-068: the documentation completeness gate over the whole set. It is a
+        // separate task from `verifyDocumentedGate` (which owns the documented *commands* of
+        // README/CONTRIBUTING), so each failure names the condition it comes from.
+        val documentedCompleteness = target.tasks.register<VerifyDocumentedCompletenessTask>("verifyDocumentedCompleteness") {
+            group = VERIFICATION_GROUP
+            description =
+                "DEFINITION.md §6 documentation completeness: DOC1 headers, DOC2 links, DOC4 " +
+                    "identifier uniqueness, DOC6 audit rows and DOC8 placeholders (TASK-068)."
+            // The documentation set: every Markdown file under `docs/` plus the three top-level
+            // documents. The `docs/` tree is captured as an `@InputFiles` file collection, so a new
+            // document enters the gate the moment it exists rather than when someone remembers it.
+            val docsDirectory = target.layout.projectDirectory.dir("docs").asFile
+            val docsMarkdown =
+                docsDirectory
+                    .walkTopDown()
+                    .filter { it.isFile && it.extension == "md" }
+                    .toList()
+            this.documents.from(
+                docsMarkdown,
+                target.layout.projectDirectory.file("README.md"),
+                target.layout.projectDirectory.file("README.es.md"),
+                target.layout.projectDirectory.file("AGENTS.md"),
+            )
+            this.rootDirectory.set(target.layout.projectDirectory)
+        }
+
         target.gradle.projectsEvaluated {
             val paths = mutableListOf<String>()
             val names = mutableListOf<String>()
@@ -438,6 +464,11 @@ class DependencyPolicyPlugin : Plugin<Project> {
                 noMicSpeech,
                 advisoryRegister,
                 reportingRoute,
+                // DEFINITION.md §6 (`TASK-068`): the documentation completeness gate. It joins the
+                // aggregate so a document that loses its header, a broken link, a duplicated
+                // definition, a malformed audit row or a surviving placeholder fails `check` rather
+                // than waiting for a reviewer to notice.
+                documentedCompleteness,
             )
         }
 
