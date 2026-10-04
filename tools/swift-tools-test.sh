@@ -81,6 +81,41 @@ run_lint "the pinned versions pass" 0 \
     "SWIFT_FORMAT=$WORK/xcode/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-format" \
     "SWIFTLINT=$FAKE/swiftlint-ok"
 
+# The `xcode-27` runner installs `Xcode_27.0.app` as a **symlink** to `Xcode_27.app`, so
+# `xcode-select -s /Applications/Xcode_27.0.app` records the link while `xcrun --find` reports the
+# physical path. A membership test naming only the selected spelling rejected the runner's own
+# formatter, which failed the `ios` job on every B7-B9 head (observed 2026-10-04). The fake
+# toolchain below reproduces the condition exactly: `DEVELOPER_DIR` is the symlink, and the fake
+# `xcrun` resolves it before printing, as the real one does.
+SYMLINKED="$WORK/xcode-symlink"
+mkdir -p "$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin" \
+    "$SYMLINKED/Xcode_27.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+ln -sfn "$SYMLINKED/Xcode_27.app" "$SYMLINKED/Xcode_27.0.app"
+cat > "$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin/xcodebuild" <<'XCB'
+#!/usr/bin/env bash
+printf '%s\n' "Xcode 27.0" "Build version 27A266a"
+XCB
+cat > "$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin/xcrun" <<'XCRUN'
+#!/usr/bin/env bash
+# `--find <tool>` in the active developer dir, resolved to its physical path first.
+if [ "${1:-}" = "--find" ]; then
+    _resolved="$(cd "${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}" && pwd -P)"
+    _candidate="$_resolved/Toolchains/XcodeDefault.xctoolchain/usr/bin/${2:-}"
+    [ -x "$_candidate" ] || exit 1
+    printf '%s\n' "$_candidate"
+    exit 0
+fi
+exit 1
+XCRUN
+chmod +x "$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin/xcodebuild" \
+    "$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin/xcrun"
+fake_tool "$SYMLINKED/Xcode_27.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-format" "main"
+( cd "$ROOT_DIR" && env "DEVELOPER_DIR=$SYMLINKED/Xcode_27.0.app/Contents/Developer" \
+    "SWIFTLINT=$FAKE/swiftlint-ok" "SWIFT_TOOLS_CACHE=$WORK/cache-symlink" \
+    "PATH=$SYMLINKED/Xcode_27.app/Contents/Developer/usr/bin:$PATH" \
+    bash "$LINT" "$SRC" >/dev/null 2>&1 )
+check "a symlinked toolchain spelling is accepted as the locked one" 0 "$?"
+
 # A violation reported by a tool must be a failure of the gate. The tool that reports it is a
 # fake whose lint invocation exits 1; `--version` still answers the pinned version.
 cat > "$FAKE/swiftlint-violating" <<'EOF'
