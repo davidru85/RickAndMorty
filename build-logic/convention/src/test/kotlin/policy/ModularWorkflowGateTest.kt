@@ -17,7 +17,7 @@ class ModularWorkflowGateTest {
             "./gradlew :androidApp:testDebugUnitTest :androidApp:lint :androidApp:verifyRoborazziDebug " +
             ":feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest " +
             ":feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest",
-        "app-artifacts" to "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels",
+        "app-artifacts" to "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels :androidApp:verifyShippedPermissions",
         "build-logic" to "./gradlew :build-logic:convention:check",
         "policies" to "./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate",
         "dependency-health" to "./gradlew buildHealth",

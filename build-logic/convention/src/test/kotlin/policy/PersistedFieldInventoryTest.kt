@@ -190,4 +190,104 @@ class PersistedFieldInventoryTest {
 
         assertTrue(findings.any { it.reason.contains("separate") }, findings.map { it.toString() }.toString())
     }
+
+    // The inventory above only reads the stores it was told about. A store added anywhere else would
+    // persist a field §3 never classifies while the check stays green, so every shipped source is
+    // also searched for a persistence primitive outside the inventoried stores.
+
+    private val bootstrap =
+        doc(
+            "package store",
+            "",
+            "import platform.Foundation.NSUserDefaults",
+            "",
+            "// Hands the platform store to the inventoried data sources; it writes nothing itself.",
+            "val favorites = UserDefaultsFavoritesLocalDataSource(NSUserDefaults.standardUserDefaults)",
+        )
+
+    /** Builds a source tree from the inventoried stores plus [extra], and scans every file in it. */
+    private fun scanSites(extra: Map<String, String> = emptyMap()): List<Violation> {
+        val root = kotlin.io.path.createTempDirectory("persistence-sites").toFile()
+        val files = (defaults - securityPath - contractsPath + ("core/ios/src/commonMain/kotlin/store/Bootstrap.kt" to bootstrap) + extra)
+        files.forEach { (path, content) -> File(root, path).apply { parentFile.mkdirs(); writeText(content) } }
+        val stores = paths.mapValues { (_, path) -> File(root, path) }
+        return PersistedFieldInventory.scanPersistenceSites(files.keys.map { File(root, it) }, stores, root)
+    }
+
+    @Test
+    fun `TEST-UNIT-027 the inventoried stores and a store-free bootstrap pass the persistence-site scan`() {
+        assertEquals(emptyList(), scanSites().map { it.toString() })
+    }
+
+    @Test
+    fun `TEST-UNIT-027 a preferences key declared outside the inventoried stores is reported`() {
+        val path = "feature/discovery/src/androidMain/kotlin/store/RecentSearches.kt"
+        val findings = scanSites(mapOf(path to doc("package store", "", "val RECENT = stringSetPreferencesKey(\"recent_searches\")")))
+
+        assertTrue(
+            findings.any { it.location.startsWith(path) && it.reason.contains("outside the inventoried stores") },
+            findings.map { it.toString() }.toString(),
+        )
+    }
+
+    @Test
+    fun `TEST-UNIT-027 a user-defaults write outside the inventoried stores is reported`() {
+        val path = "core/data/src/iosMain/kotlin/store/Onboarding.kt"
+        val findings =
+            scanSites(
+                mapOf(
+                    path to
+                        doc(
+                            "package store",
+                            "",
+                            "import platform.Foundation.NSUserDefaults",
+                            "",
+                            "fun markSeen(defaults: NSUserDefaults) = defaults.setBool(true, \"multiverse.onboarding.seen\")",
+                        ),
+                ),
+            )
+
+        assertTrue(findings.any { it.location.startsWith(path) }, findings.map { it.toString() }.toString())
+    }
+
+    @Test
+    fun `TEST-UNIT-027 a shared-preferences store anywhere in shipped code is reported`() {
+        val path = "androidApp/src/main/java/store/Legacy.kt"
+        val findings =
+            scanSites(mapOf(path to doc("package store", "", "fun open(context: Context) = context.getSharedPreferences(\"legacy\", 0)")))
+
+        assertTrue(findings.any { it.location.startsWith(path) }, findings.map { it.toString() }.toString())
+    }
+
+    @Test
+    fun `TEST-UNIT-027 a Swift app-storage property in the iOS app is reported`() {
+        val path = "iosApp/App/SettingsView.swift"
+        val findings = scanSites(mapOf(path to doc("import SwiftUI", "", "struct SettingsView { @AppStorage(\"seen\") var seen = false }")))
+
+        assertTrue(findings.any { it.location.startsWith(path) }, findings.map { it.toString() }.toString())
+    }
+
+    @Test
+    fun `TEST-UNIT-027 test sources and comments are not shipped persistence sites`() {
+        val findings =
+            scanSites(
+                mapOf(
+                    "core/data/src/androidHostTest/kotlin/store/StoreTest.kt" to
+                        doc("package store", "", "val PROBE = stringPreferencesKey(\"probe\")"),
+                    "core/data/src/commonMain/kotlin/store/Notes.kt" to
+                        doc("package store", "", "// The Android store is a stringSetPreferencesKey(\"favorite_ids\") in DataStore."),
+                    "iosApp/Tests/SettingsTests.swift" to doc("import XCTest", "", "let defaults = UserDefaults(suiteName: \"test\")"),
+                ),
+            )
+
+        assertEquals(emptyList(), findings.map { it.toString() })
+    }
+
+    @Test
+    fun `TEST-UNIT-027 an empty shipped source set fails closed`() {
+        val root = kotlin.io.path.createTempDirectory("persistence-empty").toFile()
+        val findings = PersistedFieldInventory.scanPersistenceSites(emptyList(), emptyMap(), root)
+
+        assertTrue(findings.any { it.reason.contains("fails closed") }, findings.map { it.toString() }.toString())
+    }
 }
