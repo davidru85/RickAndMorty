@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
@@ -62,6 +63,26 @@ import org.robolectric.annotation.GraphicsMode
 class AccessibilityVerificationTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun `TEST-A11Y-005 given_long_empty_copy_at_maximum_text_when_space_is_limited_then_the_action_remains_reachable`() {
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                MultiverseTheme {
+                    Box(Modifier.size(width = 380.dp, height = 300.dp)) {
+                        EmptyState(
+                            heading = "No one in this dimension matches a very long search query",
+                            body = "",
+                            illustration = ColorPainter(Color.White),
+                            actionLabel = "Clear filters",
+                            onAction = {},
+                        )
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("Clear filters").performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+    }
 
     private fun seam(result: ImageSeamResult = ImageSeamResult.Loading) =
         object : ImageSeam {
