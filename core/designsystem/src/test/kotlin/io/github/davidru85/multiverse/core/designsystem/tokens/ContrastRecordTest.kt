@@ -3,6 +3,7 @@ package io.github.davidru85.multiverse.core.designsystem.tokens
 import androidx.compose.ui.graphics.Color
 import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.math.max
 import kotlin.math.min
@@ -45,6 +46,11 @@ class ContrastRecordTest {
                 pair.minimum == 4.5 || pair.minimum == 3.0,
             )
         }
+    }
+
+    @Test
+    fun `TEST-A11Y-002 given_transparent_text_when_contrast_is_measured_then_only_the_background_contributes`() {
+        assertEquals(1.0, contrastRatio(Color.White.copy(alpha = 0f), Color.Black), 0.0)
     }
 
     private fun contrastRatio(
