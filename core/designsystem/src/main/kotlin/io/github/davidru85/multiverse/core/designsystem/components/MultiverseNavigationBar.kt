@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.core.designsystem.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 
@@ -64,36 +67,41 @@ public fun MultiverseNavigationBar(
                     barDescription?.let { contentDescription = it }
                 },
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            destinations.forEach { destination ->
-                val selected = destination.key == selectedKey
-                NavigationBarItem(
-                    selected = selected,
-                    onClick = { onSelect(destination.key) },
-                    icon = {
-                        Icon(
-                            imageVector = if (selected) destination.icon else destination.unselectedIcon,
-                            contentDescription = null,
+        val rows = if (MultiverseGrid.columnsFor(LocalDensity.current.fontScale) == 1) destinations.chunked(2) else listOf(destinations)
+        Column {
+            rows.forEach { rowDestinations ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    rowDestinations.forEach { destination ->
+                        val selected = destination.key == selectedKey
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = { onSelect(destination.key) },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) destination.icon else destination.unselectedIcon,
+                                    contentDescription = null,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = destination.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            },
+                            colors =
+                                NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MultiverseColors.onSecondaryContainer,
+                                    selectedTextColor = MultiverseColors.secondary,
+                                    indicatorColor = MultiverseColors.secondaryContainer,
+                                    unselectedIconColor = MultiverseColors.onSurfaceVariant,
+                                    unselectedTextColor = MultiverseColors.onSurfaceVariant,
+                                ),
                         )
-                    },
-                    label = {
-                        Text(
-                            text = destination.label,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = MultiverseColors.onSecondaryContainer,
-                            selectedTextColor = MultiverseColors.secondary,
-                            indicatorColor = MultiverseColors.secondaryContainer,
-                            unselectedIconColor = MultiverseColors.onSurfaceVariant,
-                            unselectedTextColor = MultiverseColors.onSurfaceVariant,
-                        ),
-                )
+                    }
+                }
             }
         }
     }

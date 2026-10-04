@@ -56,6 +56,22 @@ internal object PersistedFieldInventory {
     private const val RESPONSE_CACHE_ROW = "Response cache"
     private const val IMAGE_CACHE_ROW = "Image cache"
 
+    /** A DataStore preference-key factory call (`stringPreferencesKey(`, `booleanPreferencesKey(`, …). */
+    private val KEY_FACTORY = Regex("""\b[a-z][A-Za-z]*PreferencesKey\s*\(""")
+
+    /** An `NSUserDefaults` write, as Kotlin/Native spells the setters. */
+    private val USER_DEFAULTS_WRITE = Regex("""\.set(?:Object|Bool|Integer|Double|Float|URL|Value)\s*\(""")
+
+    /** Stores no inventoried source uses, so any occurrence in shipped Kotlin is an unclassified store. */
+    private val UNINVENTORIED_KOTLIN_STORE =
+        Regex("""\bget(?:Default)?SharedPreferences\s*\(|\bRoomDatabase\b|\bSqlDriver\b""")
+
+    /** The Swift persistence primitives: the iOS app persists only through the shared `:core:data` stores. */
+    private val SWIFT_STORE = Regex("""@AppStorage\b|@SceneStorage\b|\bUserDefaults\b""")
+
+    /** Source trees that are never shipped: the build's own logic and the shared test harness (`DEC-072`). */
+    private val UNSHIPPED_ROOTS = listOf("build-logic/", "core/testing/")
+
     /**
      * @param security the `SECURITY.md` whose §3 is the classification authority.
      * @param contracts the `CONTRACTS.md` whose `IC-021` owns the preference field names.
@@ -178,6 +194,83 @@ internal object PersistedFieldInventory {
                     "the response cache and the image cache share the directory `$responseDirectory`; `REQ-FUNC-021` keeps them separate",
                 ),
             )
+        }
+    }
+
+    /**
+     * The persistence sites outside the inventoried stores.
+     *
+     * [scan] proves the declared stores and §3 agree, but it can only read the stores it is given: a
+     * key persisted from any other file would never reach it. This pass searches every **shipped**
+     * source for a persistence primitive — a DataStore key factory or an `NSUserDefaults` write
+     * outside the four store sources, any `SharedPreferences`/database store, and any Swift
+     * `UserDefaults`/`@AppStorage`/`@SceneStorage` — so a new store fails until it joins the inventory
+     * and §3 classifies it. Comments are masked, test source sets and the unshipped trees are skipped,
+     * and an empty shipped set fails closed rather than passing on nothing.
+     *
+     * @param sources the candidate Kotlin and Swift files; the unshipped ones among them are ignored.
+     * @param stores the inventoried store sources, keyed as for [scan].
+     */
+    fun scanPersistenceSites(sources: Collection<File>, stores: Map<String, File>, root: File): List<Violation> =
+        buildList {
+            val shipped = sources.filter { it.isFile && isShipped(it.location(root)) }.sortedBy { it.location(root) }
+            if (shipped.isEmpty()) {
+                add(
+                    Violation(
+                        TEST_ID,
+                        root.name,
+                        "no shipped Kotlin or Swift source was scanned for persistence sites; the check fails closed",
+                    ),
+                )
+                return@buildList
+            }
+            val keyStores = setOfNotNull(stores[FAVORITES_ANDROID], stores[SETTINGS_ANDROID]).map { it.canonicalFile }.toSet()
+            val defaultsStores = setOfNotNull(stores[FAVORITES_APPLE], stores[SETTINGS_APPLE]).map { it.canonicalFile }.toSet()
+            shipped.forEach { file ->
+                val code = KotlinSourceMask.mask(file.readText(), maskStrings = false)
+                val primitives =
+                    if (file.extension == "swift") {
+                        listOf(SWIFT_STORE)
+                    } else {
+                        listOfNotNull(
+                            KEY_FACTORY.takeIf { file.canonicalFile !in keyStores },
+                            USER_DEFAULTS_WRITE.takeIf { file.canonicalFile !in defaultsStores && "NSUserDefaults" in code },
+                            UNINVENTORIED_KOTLIN_STORE,
+                        )
+                    }
+                primitives.forEach { primitive ->
+                    primitive.findAll(code).forEach { match ->
+                        val line = code.substring(0, match.range.first).count { it == '\n' } + 1
+                        add(
+                            Violation(
+                                TEST_ID,
+                                "${file.location(root)}:$line",
+                                "`${match.value.trim()}` persists a field outside the inventoried stores; add the store to " +
+                                    "the inventory and classify the field in `SECURITY.md` §3 first",
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+    /**
+     * Whether a repository-relative path is shipped code: a Kotlin file in a production source set
+     * (`main`, `debug`, `release` or a `…Main` KMP set) or a Swift file of the iOS app outside its
+     * test targets.
+     */
+    private fun isShipped(path: String): Boolean {
+        if (UNSHIPPED_ROOTS.any { path.startsWith(it) } || "/build/" in "/$path") return false
+        val segments = path.split('/')
+        return when {
+            path.endsWith(".swift") ->
+                path.startsWith("iosApp/") && segments.dropLast(1).none { it.endsWith("Tests") }
+            path.endsWith(".kt") -> {
+                val src = segments.indexOf("src")
+                val sourceSet = segments.getOrNull(src + 1)?.takeIf { src >= 0 }
+                sourceSet != null && (sourceSet in setOf("main", "debug", "release") || sourceSet.endsWith("Main"))
+            }
+            else -> false
         }
     }
 

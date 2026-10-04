@@ -1,0 +1,132 @@
+[
+  {
+    "step": 0,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2544 640 2784",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorites"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 2,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "No favorites yet",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "190 1202 1091 1355",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "No favorites yet"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "Tap the heart on a character's page to keep them here.",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 1391 1232 1594",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Tap the heart on a character's page to keep them here."
+    ]
+  },
+  {
+    "step": 5,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "271 1631 1009 1775",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Browse characters"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2304 640 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Characters"
+    ]
+  },
+  {
+    "step": 7,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2304 1268 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Episodes"
+    ]
+  },
+  {
+    "step": 8,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2544 640 2784",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorites"
+    ]
+  },
+  {
+    "step": 9,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  }
+]
