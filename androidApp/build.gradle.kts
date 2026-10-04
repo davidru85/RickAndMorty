@@ -121,6 +121,22 @@ val verifyReleaseArtifact by tasks.registering(io.github.davidru85.multiverse.bu
 tasks.named("check") { dependsOn(verifyReleaseArtifact) }
 
 /**
+ * `TEST-UNIT-028`, the artifact half (`AC-REQ-SEC-004-1`, `TASK-048`): the **release APK's** merged
+ * permission table carries no `RECORD_AUDIO`. The root `verifyNoMicSpeechPermission` reads the source
+ * manifests, which cannot show a permission a library manifest merges in; this reads what ships.
+ */
+val verifyShippedPermissions =
+    tasks.register<io.github.davidru85.multiverse.buildlogic.policy.VerifyShippedPermissionsTask>("verifyShippedPermissions") {
+        apk.set(layout.buildDirectory.file("outputs/apk/release/androidApp-release-unsigned.apk"))
+        report.set(layout.buildDirectory.file("reports/verifyShippedPermissions/permissions.txt"))
+        sdkDirectory.set(rootProject.layout.dir(provider { resolveAndroidSdk(rootProject) }))
+        rootDirectory.set(rootProject.layout.projectDirectory)
+        dependsOn("assembleRelease")
+    }
+
+tasks.named("check") { dependsOn(verifyShippedPermissions) }
+
+/**
  * `TEST-UNIT-018` (`AC-REQ-PLAT-002-1`): the SDK levels the **artifact** declares. Reading the APK's
  * binary manifest is what catches a merger result or an overlay that contradicts the build script,
  * which a DSL-only assertion cannot.
