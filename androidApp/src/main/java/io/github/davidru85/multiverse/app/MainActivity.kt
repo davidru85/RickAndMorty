@@ -7,9 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.github.davidru85.multiverse.app.image.CoilImageSeam
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
 import io.github.davidru85.multiverse.app.splash.SplashGate
+import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.DetailHandoff
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +28,7 @@ public class MainActivity : ComponentActivity() {
     private val characterRepository: CharacterRepository by inject()
 
     /** The one image seam (`DEC-097`): the app's Coil loader, adapted to the design system's port. */
-    private val imageSeam: CoilImageSeam by inject()
+    private val imageSeam: ImageSeam by inject()
 
     /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()
