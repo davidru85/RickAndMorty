@@ -119,6 +119,13 @@ accept_tool() {
 # (`--version` prints `main`), so membership of the validated toolchain is the check: the resolved
 # path must live under the toolchain of the Xcode whose version the lock records. An override is
 # accepted for routing (a different build of the same toolchain) but must still be executable.
+#
+# Both the selected and the resolved spelling of the toolchain directory are accepted. The runner
+# installs `Xcode_27.0.app` as a **symlink** to `Xcode_27.app` (`xcode-27` image, observed
+# 2026-10-04), so `xcode-select -s /Applications/Xcode_27.0.app` records the link while
+# `xcrun --find` reports the physical path `/Applications/Xcode_27.app/…`. Comparing one spelling
+# against the other rejected the runner's own formatter — the same toolchain, twice named
+# (`TEST-UNIT-046`, the fail-closed check in `tools/swift-lint.sh`'s own case list).
 TOOLCHAIN_DIR="$(developer_dir)/Toolchains/XcodeDefault.xctoolchain"
 
 SWIFT_FORMAT_PATH="${SWIFT_FORMAT:-}"
@@ -129,8 +136,13 @@ else
     SWIFT_FORMAT="$(xcrun --find swift-format 2>/dev/null || true)"
     [ -n "$SWIFT_FORMAT" ] && [ -x "$SWIFT_FORMAT" ] ||
         fail "swift-format from the Xcode $LOCK_XCODE toolchain is missing or not executable; the formatting half cannot run"
+    # The selected directory, and the physical directory it resolves to. `xcode-select -s` records
+    # the spelling the caller passed (a symlink on the `xcode-27` image), while `xcrun --find`
+    # reports the resolved path, so a membership test that names only one spelling rejects the
+    # runner's own toolchain.
+    RESOLVED_TOOLCHAIN_DIR="$(cd "$TOOLCHAIN_DIR" 2>/dev/null && pwd -P || printf '%s' "$TOOLCHAIN_DIR")"
     case "$SWIFT_FORMAT" in
-        "$TOOLCHAIN_DIR"/*) : ;;
+        "$TOOLCHAIN_DIR"/* | "$RESOLVED_TOOLCHAIN_DIR"/*) : ;;
         *) fail "swift-format resolved to $SWIFT_FORMAT, which is outside the validated Xcode $LOCK_XCODE toolchain ($TOOLCHAIN_DIR)" ;;
     esac
 fi

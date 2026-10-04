@@ -318,6 +318,12 @@ jobs:
       # `DEC-083` ended with the `iosApp` application target the tripwire detects).
       - name: Run the shared suites on the Apple target
         run: ./gradlew iosSimulatorArm64Test --stacktrace
+      # `TASK-070`: `:core:ios` has no Android target, so it is deliberately absent from the
+      # `module-checks` matrix. Its formatter therefore ran in no job, and `./gradlew check` failed
+      # locally on a file no CI job checked. It is a Kotlin module like the others, so its formatter
+      # belongs beside the Apple suites rather than nowhere.
+      - name: Check the framework module's Kotlin formatting
+        run: ./gradlew :core:ios:ktlintCheck --stacktrace
       - name: Replay the contract suite on the Apple target
         run: ./gradlew :core:data:contractTestReplayIosSimulator --stacktrace
       # The pinned Swift toolchain, then the formatting and lint row (`DEC-076`, `TASK-051`). The
@@ -353,6 +359,11 @@ jobs:
           xcodebuild -version
       - name: Set up the Swift tools
         run: bash tools/swift-tools-setup.sh
+      # `TEST-UNIT-046` covers these scripts themselves, and nothing ran them: the suite that proves
+      # the Swift gate fails closed was itself unchecked by any job, so a defect in it would surface
+      # only as a red `ios` job. It needs no simulator and no network.
+      - name: Prove the Swift quality scripts fail closed
+        run: bash tools/swift-tools-test.sh
       - name: Swift formatting and lint
         run: bash tools/swift-lint.sh iosApp
       - name: Upload verification evidence
