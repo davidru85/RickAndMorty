@@ -73,10 +73,14 @@ enum SplashTiming {
 /// Discovery, Favorites and Settings host their feature screens; Episodes is the designed placeholder
 /// of `UI_SPEC.md` §6.4 until `DEF-002` re-admits the real screen. Each destination keeps its own
 /// title and copy, so a tab never borrows another's words.
-struct DestinationView: View {
+struct DestinationView<Detail: View>: View {
     let destination: ShellDestination
     @ObservedObject var navigation: ShellNavigation
     @Binding var opened: CharacterCardUi?
+
+    /// The detail destination for an opened card. The shell passes `DetailHost`; a test passes a probe,
+    /// because the real host starts the shared graph and its network client.
+    let detail: (CharacterCardUi) -> Detail
 
     var body: some View {
         NavigationStack {
@@ -99,8 +103,15 @@ struct DestinationView: View {
         .navigationDestination(item: $opened) { card in
             // The detail destination renders from the card the list already had, so its header is
             // present in the first frame (`AC-REQ-FUNC-002-1`).
-            DetailHost(card: card)
+            detail(card)
         }
     }
 
+}
+
+extension DestinationView where Detail == DetailHost {
+    /// The shell's destination, whose detail is the real `DetailHost`.
+    init(destination: ShellDestination, navigation: ShellNavigation, opened: Binding<CharacterCardUi?>) {
+        self.init(destination: destination, navigation: navigation, opened: opened, detail: { DetailHost(card: $0) })
+    }
 }

@@ -11,6 +11,7 @@
 		03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */; };
 		08EB182477F63FE3D9F79CDB /* en.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 5536017E77F302F6EB967132 /* en.lproj */; };
 		1207E27026C88F6251CA02B1 /* designSystemBaselines.empty-state-material.png in Resources */ = {isa = PBXBuildFile; fileRef = 4307F4D6C748FC0AC06E9B8B /* designSystemBaselines.empty-state-material.png */; };
+		1663768FC46470905A7162A7 /* DetailNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E96B53A066AA718E69A5683 /* DetailNavigationTests.swift */; };
 		1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */; };
 		1CED832869CBE9B4E3A52998 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A3553DE5934E611A9121C26 /* SettingsSection.swift */; };
 		2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */; };
@@ -100,6 +101,7 @@
 		6D99A7F79684261BC65A16A7 /* DiscoveryScreenStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryScreenStateTests.swift; sourceTree = "<group>"; };
 		7AEB402259234D6DC93CA08F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7BF257D78DA054EEB2E2EFDF /* FavoritesScreenStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesScreenStateTests.swift; sourceTree = "<group>"; };
+		7E96B53A066AA718E69A5683 /* DetailNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailNavigationTests.swift; sourceTree = "<group>"; };
 		7FB00588E2E25299609BD647 /* GlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
 		837132E6AA12B68565764C17 /* DiscoveryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryScreen.swift; sourceTree = "<group>"; };
 		8849400E0EEC3D6C57DCD3B0 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 				F217F29258E9937278C812DC /* CardNameRenderTests.swift */,
 				24FF4D9A7EBDABB12D9C6588 /* CharacterDetailScreenStateTests.swift */,
 				A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */,
+				7E96B53A066AA718E69A5683 /* DetailNavigationTests.swift */,
 				2D710C46D4C4A463600F539C /* DiscoveryGridTransitionTests.swift */,
 				6D99A7F79684261BC65A16A7 /* DiscoveryScreenStateTests.swift */,
 				45AA43D5184905279B496215 /* DiscoveryStateHolderTests.swift */,
@@ -478,6 +481,7 @@
 				D234ED5A0CC85BE7DDCCA2BA /* CardNameRenderTests.swift in Sources */,
 				E9D37ED185F65C1CDAB30C6C /* CharacterDetailScreenStateTests.swift in Sources */,
 				66EF93F7FF10BC67A507A479 /* DesignSystemSnapshotTests.swift in Sources */,
+				1663768FC46470905A7162A7 /* DetailNavigationTests.swift in Sources */,
 				351E2537B554E56261C3D52A /* DiscoveryGridTransitionTests.swift in Sources */,
 				2F2DFABD6BB86D420667FCDD /* DiscoveryScreenStateTests.swift in Sources */,
 				E685EF6CFE6B93135BD3DC4B /* DiscoveryStateHolderTests.swift in Sources */,
