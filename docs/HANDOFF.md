@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. The current PR #156 branch update is recorded in §1.14; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. The current PR #156 review is recorded in §1.15; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -224,6 +224,12 @@ The owner merged PR #153 as `f77f333` on 2026-10-04; TASK-045/TASK-046 are Done 
 GH CLI confirms PR #153 was merged by the owner as `f77f333349599a0d1698ffac8306991545ed90fb`. The owner explicitly requested resolving PR #156's conflicts next. The branch update merges that main commit into the existing Phase 6.2 head `197a20014b8ab3621297aaa4b309d23a25f8da5f`, preserving both histories. `CONF-83` records the two documentation resolutions: keep both log entries, the zero-network test activation and the corrected 96-pair contrast coverage. Product, test, build and workflow files combine without content conflicts.
 
 The branch-update verification commands and observed results are recorded in `PROJECT_LOG.md` LOG-0126 and the PR description. This compatibility update does not measure the remaining performance budgets: `DEC-115` and TASK-049 retain that limitation. Review and merge PR #156 before starting PR #158. No emulator or simulator is needed for this conflict-resolution work.
+
+## 1.15 PR #156 sequential review (2026-10-04)
+
+PR #156 was reviewed against `main` containing the PR #153 merge. Two security checks were narrower than their criteria and are now fixed with red-then-green commits: `TEST-UNIT-027` also searches every shipped source for a persistence site outside the inventoried stores, and `TEST-UNIT-028` gains `:androidApp:verifyShippedPermissions`, which reads the release APK's merged permission table and is pinned in the `app-artifacts` worker. A stray `iosApp/` Xcode workspace file was removed, and the README baseline count, the `PERFORMANCE.md` result register and `TESTING.md` §17 now match the code. `PROJECT_LOG.md` LOG-0127 has the commits and the observed verification.
+
+`TASK-048` and `TASK-049` stay In review until the owner merges. `TASK-049`'s device budgets remain unmeasured under `DEC-115`: the owner must name the reference device (A-PERF-1) and decide the harness module (PERF-Q1) before `M1-4` can be evidenced. Next is PR #158, reviewed against `main` containing the #156 merge. **When PR #161 merges `main`, it must keep `iosApp/MultiverseExplorer.xcodeproj/project.xcworkspace/contents.xcworkspacedata`:** Git drops it silently because that branch inherited it from `197a200` without modifying it.
 
 ## 2. Completed work
 
