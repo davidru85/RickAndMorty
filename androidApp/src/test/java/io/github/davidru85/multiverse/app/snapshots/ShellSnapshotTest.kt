@@ -6,6 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
+import android.provider.Settings
+import androidx.compose.ui.MotionDurationScale
+import org.junit.Assert.assertEquals
+import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -69,7 +75,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36], application = android.app.Application::class)
 class ShellSnapshotTest {
     @get:Rule
-    val compose = createComposeRule()
+    val compose = createComposeRule(effectContext = object : MotionDurationScale { override val scaleFactor = 1f })
 
     private val baselineDir = File("src/test/snapshots")
 
@@ -77,7 +83,7 @@ class ShellSnapshotTest {
      * The `splash-still`/`splash-spin` and `shell-characters` subjects, in capture order. `TEST-UI-012`
      * walks this list, so a subject can never be added without its byte-identity proof.
      */
-    private val subjects = listOf("splash-still", "splash-spin", "shell-characters")
+    private val subjects = listOf("splash-still", "splash-spin", "shell-characters", "shell-episodes")
 
     /**
      * Starts the shell's graph with the deterministic substitutes. The real shell module still builds
@@ -122,10 +128,15 @@ class ShellSnapshotTest {
     /** Composes [content] and captures it to `baselineDir` under [name]. */
     private fun capture(
         name: String,
+        selectEpisodes: Boolean = false,
         content: @Composable () -> Unit,
     ) {
         compose.setContent { content() }
         compose.waitForIdle()
+        if (selectEpisodes) {
+            compose.onNodeWithText("Episodes").performClick()
+            compose.waitForIdle()
+        }
         compose.onRoot().captureRoboImage(File(baselineDir, "$name.png"))
     }
 
@@ -185,6 +196,33 @@ class ShellSnapshotTest {
     @Config(qualifiers = "en-night")
     fun `TEST-UI-012 given_the_system_in_dark when the shell renders then the characters destination is snapshotted`() {
         capture("shell-characters-dark") { shell() }
+    }
+
+    @Test
+    @Config(qualifiers = "en-notnight")
+    fun `TEST-UI-016 given_the_system_in_light_when_episodes_is_selected_then_the_destination_is_snapshotted`() {
+        capture("shell-episodes-light", selectEpisodes = true) { shell() }
+    }
+
+    @Test
+    @Config(qualifiers = "en-night")
+    fun `TEST-UI-016 given_the_system_in_dark_when_episodes_is_selected_then_the_destination_is_snapshotted`() {
+        capture("shell-episodes-dark", selectEpisodes = true) { shell() }
+    }
+
+    @Test
+    @Config(qualifiers = "en-notnight")
+    fun `TEST-A11Y-006 given_reduce_motion_when_a_destination_changes_then_the_old_screen_leaves_after_the_crossfade`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        Settings.Global.putFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
+        compose.mainClock.autoAdvance = false
+        compose.setContent { shell() }
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onNodeWithText("Episodes").performClick()
+        compose.mainClock.advanceTimeBy(350)
+        compose.waitForIdle()
+        assertEquals("after the 300 ms reduced-motion crossfade only the navigation label remains", 1, compose.onAllNodesWithText("Characters").fetchSemanticsNodes().size)
     }
 
     @Test
