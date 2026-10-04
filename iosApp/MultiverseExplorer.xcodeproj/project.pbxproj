@@ -27,7 +27,9 @@
 		575F388BD1BAE8C4EA7902EE /* GlassCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */; };
 		578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */; };
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
+		66EF93F7FF10BC67A507A479 /* DesignSystemSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */; };
 		75828753B0CCE9DFEBE7DFEF /* LocalizedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BED588860D71840131E473 /* LocalizedCopy.swift */; };
+		75F7F3FE6642A28FD1DA2ECE /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 1DA21591685648C4F848DD12 /* SnapshotTesting */; };
 		7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */; };
 		7E3E6F296423DCCAFBBA1071 /* PortraitImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32157C82EBF1E4B04E8458C0 /* PortraitImagePipeline.swift */; };
 		9D9588F75BA35A86DCC9D383 /* CharacterPortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B3AF55CC6ECEB008BC5865 /* CharacterPortrait.swift */; };
@@ -83,6 +85,7 @@
 		837132E6AA12B68565764C17 /* DiscoveryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryScreen.swift; sourceTree = "<group>"; };
 		94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCards.swift; sourceTree = "<group>"; };
 		9739581C43EEFA27FB213EC3 /* MultiverseExplorer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MultiverseExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemSnapshotTests.swift; sourceTree = "<group>"; };
 		A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtons.swift; sourceTree = "<group>"; };
 		AD1AFE1EEBB5398C60FBB7AC /* BrandedSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandedSplashView.swift; sourceTree = "<group>"; };
 		B54C460E27588DBDEF1A64F0 /* ShellNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigationTests.swift; sourceTree = "<group>"; };
@@ -97,6 +100,17 @@
 		F5BED588860D71840131E473 /* LocalizedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedCopy.swift; sourceTree = "<group>"; };
 		FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStateHolder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CB5522486C6FDD0DE35BE03E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75F7F3FE6642A28FD1DA2ECE /* SnapshotTesting in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1CDF8AE67A05619CB6558F59 /* Discovery */ = {
@@ -196,6 +210,7 @@
 			children = (
 				F217F29258E9937278C812DC /* CardNameRenderTests.swift */,
 				24FF4D9A7EBDABB12D9C6588 /* CharacterDetailScreenStateTests.swift */,
+				A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */,
 				6D99A7F79684261BC65A16A7 /* DiscoveryScreenStateTests.swift */,
 				7BF257D78DA054EEB2E2EFDF /* FavoritesScreenStateTests.swift */,
 				351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */,
@@ -241,6 +256,7 @@
 			buildConfigurationList = AE9F769AF8246AE7865DEC86 /* Build configuration list for PBXNativeTarget "MultiverseExplorerTests" */;
 			buildPhases = (
 				ACF0DC25CD2899636D71E314 /* Sources */,
+				CB5522486C6FDD0DE35BE03E /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -249,6 +265,7 @@
 			);
 			name = MultiverseExplorerTests;
 			packageProductDependencies = (
+				1DA21591685648C4F848DD12 /* SnapshotTesting */,
 			);
 			productName = MultiverseExplorerTests;
 			productReference = EF8255D2D200EB6B0A11CBA2 /* MultiverseExplorerTests.xctest */;
@@ -293,6 +310,9 @@
 			);
 			mainGroup = 26055A90E2A7DAB028DDBF95;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2D84367655A61035EAE369D1 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 867C569BBF7C2E839F40C996 /* Products */;
 			projectDirPath = "";
@@ -377,6 +397,7 @@
 			files = (
 				D234ED5A0CC85BE7DDCCA2BA /* CardNameRenderTests.swift in Sources */,
 				E9D37ED185F65C1CDAB30C6C /* CharacterDetailScreenStateTests.swift in Sources */,
+				66EF93F7FF10BC67A507A479 /* DesignSystemSnapshotTests.swift in Sources */,
 				2F2DFABD6BB86D420667FCDD /* DiscoveryScreenStateTests.swift in Sources */,
 				CC60FD4271C3984B6D65E2E7 /* FavoritesScreenStateTests.swift in Sources */,
 				578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */,
@@ -662,6 +683,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2D84367655A61035EAE369D1 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = exactVersion;
+				version = 1.19.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1DA21591685648C4F848DD12 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2D84367655A61035EAE369D1 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C23A9C01C3806882E2DC10DB /* Project object */;
 }

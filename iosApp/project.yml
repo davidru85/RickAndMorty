@@ -5,6 +5,14 @@
 # rules require `iosApp/App.xcodeproj/project.pbxproj` to be trackable when it exists, so the
 # generated project is committed after generation rather than regenerated per checkout.
 name: MultiverseExplorer
+
+# The snapshot library `DEC-025` names (`TESTING.md` §8.3): committed baselines for the iOS design
+# system and the feature screens, pinned by version so a resolution cannot drift.
+packages:
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    exactVersion: 1.19.2
+
 options:
   bundleIdPrefix: io.github.davidru85.multiverse
   deploymentTarget:
@@ -99,6 +107,7 @@ targets:
       - path: Tests
     dependencies:
       - target: MultiverseExplorer
+      - package: SnapshotTesting
     settings:
       base:
         # The test bundle needs its own Info.plist. XcodeGen does not synthesise one for a unit-test
