@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-03 (**B3 complete**: Phase 3.3 merged in PR #117); must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-04 (**B6 prepared across PRs #153/#156 and the M1 release phase**); must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -8,6 +8,26 @@
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### B6 closure — 2026-10-04
+
+**Block 6 is complete through its three phase pull requests, prepared and not yet merged** (`DEC-107`):
+
+| Phase | PR | Members | State |
+| --- | --- | --- | --- |
+| 6.1 Visual and accessibility evidence | #153 | `TASK-045`, `TASK-046` | In review; `android` observed FAILURE on the first head, corrected in `09c68af` |
+| 6.2 Security and performance evidence | #156 | `TASK-048`, `TASK-049` | In review; stacked on 6.1's head so it merges cleanly after |
+| 6.3 M1 release | this phase | `TASK-050` | Prepared; `REL3`/`REL4` (tag, publish) are the owner's |
+
+**Delivered evidence:** 46 committed Roborazzi baselines across the component catalogue, the seven `ERROR_FLOW.md` states, the four feature surfaces and the shell, each proved byte-identical in light and dark (`TEST-UI-012`, `TEST-UI-016`); the automated accessibility cases `TEST-A11Y-002`…`006`; the four security policy checks with seeded red evidence; `TEST-PERF-003` asserting zero network requests on a cache-hit render against the real transport; and `TEST-UNIT-019` proving the Android milestone assembles with iOS absent. Local suite total 831 tests, 0 failures (B5 close: 735).
+
+**Two real product defects were fixed, and both were required by the criteria the phase verifies** (`DEC-114`): the tone-30 accent container placed its tone on the mean sRGB channel, so containers sat at L* 40–57 and On Surface text over a saturated accent measured **2.79:1** against the 4.5:1 floor — the tone is now solved in CIE L\* and the worst case is **7.33:1**; and both grids hard-coded two columns, so `REQ-UX-006`'s collapse at the largest text sizes never happened — a shared `MultiverseGrid` now decides the count.
+
+**Carried as unmet, named rather than waived (`DEC-115`, `DEC-116`):** `M1-4` (budgets on the named reference device) and `M1-5` (the `DEC-023` device checklist) cannot be evidenced — `A-PERF-1` is still unassigned and no physical device is available to this workstation. The release is prepared at `v0.1.0` and the tag/publish remain the owner's.
+
+**Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `GAP-006`/`GAP-010` unchanged.
+
+**B7 entry condition:** B6 Phase 6.3 merged and the M1 release published by the owner.
 
 ### PR #150 branch update — 2026-10-04
 
