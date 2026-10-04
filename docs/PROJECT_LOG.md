@@ -1154,3 +1154,11 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **One stacking gap was found and is not a merge blocker:** `feat/b8-phase-8-1` does not contain `feat/b7-phase-7-3`'s tip by ancestry, because the branches cross-merge each other's heads; the empirical merge above is the property that matters, and it holds.
 - **The propagated CI fix (`LOG-0120`) reaches every red head.** The eight branches that were red on `ios` now carry the two fix commits as their own top commit, so the `ios` job's fix is present whichever order they merge in. Verified per branch: `RESOLVED_TOOLCHAIN_DIR` in `tools/swift-lint.sh`, the symlink case in `tools/swift-tools-test.sh`, the step in `.github/workflows/pull-request.yml`, and the rule in `ModularWorkflowGate`.
 - **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0122 · 2026-10-04 · A stale device-side dex, and how it was told apart from the product defect
+
+- **Event:** the end-of-phase re-run of the product journey (`TASK-070`, Phase 9.3), after the `GAP-032` fix.
+- **Observed, and alarming:** the freshly built APK, installed with `adb install -r`, launched into a `"Multiverse Explorer keeps stopping"` dialog, and `logcat` carried the **same** `NoDefinitionFoundException` for `CoilImageSeam` at `MainActivity.getImageSeam(MainActivity.kt:31)` — the line the fix had already replaced with the `ImageSeam` port.
+- **It was not the product.** Three observations separated the two: the APK's own bytecode reported `getImageSeam()Lio/github/davidru85/multiverse/core/designsystem/image/ImageSeam;` by `dexdump`, so the artifact was correct; the source at `HEAD` declares the port; and the reported line number pointed at a line the current source does not contain. `adb uninstall` followed by a plain `adb install` then launched cleanly — 0 `FATAL EXCEPTION`, Discovery with 826 live characters, and the Detail screen with its live `51 Episodes` enrichment.
+- **Conclusion:** `adb install -r` on this emulator kept serving a stale dex for the replacement APK, so the crash was device state, not a regression. The distinction matters because the two are indistinguishable from the dialog alone, and reporting the second as a product defect would have been wrong.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
