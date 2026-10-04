@@ -39,6 +39,7 @@ internal object ModularWorkflowGate {
         "contract-replay" to setOf(":core:data:contractTestReplayAndroidHost"),
     )
     private const val MATRIX_RUN = "./gradlew \$GRADLE_TASKS --stacktrace"
+    private const val IOS_SCHEME = "MultiverseExplorer"
     private const val RESULT_RUN = "python3 .github/scripts/verify-ci-results.py"
 
     fun matches(document: WorkflowDocument): Boolean =
@@ -160,6 +161,12 @@ internal object ModularWorkflowGate {
             // the gate was itself unguarded, so a defect in it could only surface as a red `ios` job.
             if (job.executableRunTexts().none { it.contains("tools/swift-tools-test.sh") }) {
                 report(job, "the iOS job must run the Swift fail-closed suite `tools/swift-tools-test.sh` (`TEST-UNIT-046`)")
+            }
+            // `TESTING.md` §14.2: the Swift test target — the state holders, the screens and the committed
+            // snapshot baselines — runs on every pull request from `TASK-051`/`TASK-059`. Without this
+            // step those cases exist and never execute in the gate.
+            if (job.executableRunTexts().none { it.contains("xcodebuild") && it.contains(" test") && it.contains("-scheme $IOS_SCHEME") }) {
+                report(job, "the iOS job must build the iOS app and run its test target with `xcodebuild test -scheme $IOS_SCHEME` (`TESTING.md` §14.2, `TASK-051`, `TASK-059`)")
             }
         }
         return findings
