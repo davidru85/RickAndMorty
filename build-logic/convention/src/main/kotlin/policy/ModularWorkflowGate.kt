@@ -24,7 +24,13 @@ internal object ModularWorkflowGate {
             ":feature:favorites:verifyRoborazziAndroidHostTest",
             ":feature:settings:verifyRoborazziAndroidHostTest",
         ),
-        "app-artifacts" to setOf(":androidApp:assembleDebug", ":androidApp:verifyReleaseArtifact", ":androidApp:verifySdkLevels"),
+        // `TASK-048` (`TEST-UNIT-028`, the artifact half): the release APK's merged permission table.
+        "app-artifacts" to setOf(
+            ":androidApp:assembleDebug",
+            ":androidApp:verifyReleaseArtifact",
+            ":androidApp:verifySdkLevels",
+            ":androidApp:verifyShippedPermissions",
+        ),
         "build-logic" to setOf(":build-logic:convention:check"),
         "policies" to setOf("verifyModuleBoundaries", "verifyDependencyPolicy", "verifyRepositoryHygiene", "verifyNoLiveHosts", "verifyWorkflowGate", "verifyDocumentedGate"),
         "dependency-health" to setOf("buildHealth"),

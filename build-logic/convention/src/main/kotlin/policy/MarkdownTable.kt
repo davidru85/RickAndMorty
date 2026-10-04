@@ -44,8 +44,11 @@ internal object MarkdownTable {
      */
     fun parse(file: File, beginMarker: String, endMarker: String): Result {
         val lines = file.readLines()
-        val begins = lines.withIndex().filter { it.value.trim() == beginMarker }.map { it.index }
-        val ends = lines.withIndex().filter { it.value.trim() == endMarker }.map { it.index }
+        // A marker inside a fenced example is documentation, not the real table (`TEST-UNIT-030`,
+        // `TEST-UNIT-027`): only a marker outside every fenced block can delimit a parsed table.
+        val fenced = fencedLines(lines)
+        val begins = lines.withIndex().filter { !fenced[it.index] && it.value.trim() == beginMarker }.map { it.index }
+        val ends = lines.withIndex().filter { !fenced[it.index] && it.value.trim() == endMarker }.map { it.index }
         val problems = mutableListOf<Problem>()
 
         if (begins.isEmpty() || ends.isEmpty()) {
@@ -138,5 +141,27 @@ internal object MarkdownTable {
     /** Every code-span contents in a cell, in order, wherever they appear. */
     fun codeSpans(cell: String): List<String> = CODE_SPAN.findAll(cell).map { it.groupValues[1] }.toList()
 
+    /**
+     * One boolean per line: whether the line sits inside a fenced code block (``` or ~~~).
+     *
+     * The markers live in the prose around the block, and a block that documents the table must not
+     * be read as the table itself. The fences do not nest, so a toggle is enough.
+     */
+    internal fun fencedLines(lines: List<String>): BooleanArray {
+        val fenced = BooleanArray(lines.size)
+        var inside = false
+        lines.forEachIndexed { index, line ->
+            if (FENCE.containsMatchIn(line)) {
+                // Both fence lines are marked, so neither the opener nor the closer can act as a marker.
+                fenced[index] = true
+                inside = !inside
+            } else {
+                fenced[index] = inside
+            }
+        }
+        return fenced
+    }
+
     private val CODE_SPAN = Regex("`([^`]+)`")
+    private val FENCE = Regex("^\\s*(```|~~~)")
 }
