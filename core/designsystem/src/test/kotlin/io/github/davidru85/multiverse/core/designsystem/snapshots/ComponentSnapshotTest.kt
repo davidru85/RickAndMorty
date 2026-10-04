@@ -1,6 +1,8 @@
 package io.github.davidru85.multiverse.core.designsystem.snapshots
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -81,7 +83,12 @@ class ComponentSnapshotTest {
     ) {
         compose.setContent {
             MultiverseTheme {
-                Box(modifier = Modifier.padding(12.dp)) { content() }
+                Column(
+                    modifier = Modifier.background(MultiverseColors.surface).padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    content()
+                }
             }
         }
         compose.waitForIdle()
@@ -180,31 +187,31 @@ class ComponentSnapshotTest {
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "en-notnight")
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-notnight")
     fun `TEST-UI-016 given_the_system_in_light_when_every_component_renders_then_the_catalogue_is_snapshotted`() {
         capture("components-light") { components() }
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "en-night")
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-night")
     fun `TEST-UI-016 given_the_system_in_dark_when_every_component_renders_then_the_catalogue_is_snapshotted`() {
         capture("components-dark") { components() }
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "en-notnight")
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-notnight")
     fun `TEST-UI-016 given_the_system_in_light_when_the_loading_and_image_states_render_then_they_are_snapshotted`() {
         capture("states-light") { loadingAndImageStates() }
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "en-night")
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-night")
     fun `TEST-UI-016 given_the_system_in_dark_when_the_loading_and_image_states_render_then_they_are_snapshotted`() {
         capture("states-dark") { loadingAndImageStates() }
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "en-notnight")
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-notnight")
     fun `TEST-UI-012 given_the_committed_baselines_when_light_and_dark_are_compared_then_they_are_byte_identical`() {
         listOf("components", "states").forEach { subject ->
             val light = File(baselineDir, "$subject-light.png")

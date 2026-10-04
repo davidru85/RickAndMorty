@@ -18,7 +18,13 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36], qualifiers = "en-w412dp-h891dp", application = android.app.Application::class)
 class ReducedMotionSplashTest {
     @get:Rule
-    val compose = createComposeRule(effectContext = object : MotionDurationScale { override val scaleFactor = 0f })
+    val compose =
+        createComposeRule(
+            effectContext =
+                object : MotionDurationScale {
+                    override val scaleFactor = 0f
+                },
+        )
 
     @Test
     fun `TEST-A11Y-006 given_system_animations_disabled_when_splash_waits_then_the_reduced_motion_indicator_still_pulses`() {

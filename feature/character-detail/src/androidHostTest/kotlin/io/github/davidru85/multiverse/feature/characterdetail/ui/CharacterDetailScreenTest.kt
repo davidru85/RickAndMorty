@@ -209,7 +209,8 @@ class CharacterDetailScreenTest {
             val layout = layouts.single()
             val bounds = node.fetchSemanticsNode().boundsInRoot
             if ((0 until layout.lineCount).any(layout::isLineEllipsized) || layout.size.height > bounds.height + 1f) {
-                failures += "$text: ellipsized=${(0 until layout.lineCount).any(layout::isLineEllipsized)}, size=${layout.size}, bounds=$bounds"
+                failures +=
+                    "$text: ellipsized=${(0 until layout.lineCount).any(layout::isLineEllipsized)}, size=${layout.size}, bounds=$bounds"
             }
         }
         assertTrue("maximum text size must not clip detail text: $failures", failures.isEmpty())

@@ -1,9 +1,10 @@
 package io.github.davidru85.multiverse.core.designsystem.tokens
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.max
 import kotlin.math.min
@@ -57,7 +58,7 @@ class ContrastRecordTest {
         foreground: Color,
         background: Color,
     ): Double {
-        val light = relativeLuminance(foreground)
+        val light = relativeLuminance(foreground.compositeOver(background))
         val dark = relativeLuminance(background)
         return (max(light, dark) + 0.05) / (min(light, dark) + 0.05)
     }
@@ -119,11 +120,16 @@ class ContrastRecordTest {
                     BODY,
                 ),
                 pair("card name (Title Medium Emphasized)", MultiverseColors.onSurface, MultiverseColors.surfaceContainerHigh, LARGE),
-                pair("card species at 80% (Body Small)", MultiverseColors.onSurface, MultiverseColors.surfaceContainerHigh, BODY),
                 pair(
-                    "status badge label at 90% (Label Medium)",
+                    "card species at 80% (Body Small)",
+                    MultiverseColors.onSurface.copy(alpha = 0.8f),
+                    MultiverseColors.surfaceContainerHigh,
+                    BODY,
+                ),
+                pair(
+                    "status badge label over 90% surface, brightest portrait (Label Medium)",
                     MultiverseColors.onSurface,
-                    MultiverseColors.surfaceContainerHighest,
+                    MultiverseColors.surfaceContainerHighest.copy(alpha = 0.9f).compositeOver(Color.White),
                     BODY,
                 ),
                 pair("placeholder heading (Display Small Emphasized)", MultiverseColors.onSurface, MultiverseColors.surface, LARGE),
@@ -153,9 +159,21 @@ class ContrastRecordTest {
                     LARGE,
                 ),
                 pair(
-                    "stat tile label, Primary Container (Label Medium)",
-                    MultiverseColors.onPrimaryContainer,
+                    "stat tile label at 85%, Primary Container (Label Medium)",
+                    MultiverseColors.onPrimaryContainer.copy(alpha = 0.85f),
                     MultiverseColors.primaryContainer,
+                    BODY,
+                ),
+                pair(
+                    "stat tile label at 85%, Tertiary Container",
+                    MultiverseColors.onTertiaryContainer.copy(alpha = 0.85f),
+                    MultiverseColors.tertiaryContainer,
+                    BODY,
+                ),
+                pair(
+                    "stat tile label at 85%, Secondary Fixed Dim",
+                    MultiverseColors.onSecondaryFixed.copy(alpha = 0.85f),
+                    MultiverseColors.secondaryFixedDim,
                     BODY,
                 ),
                 pair("error title (Display Small Emphasized)", MultiverseColors.onSurface, MultiverseColors.surface, LARGE),
@@ -195,6 +213,14 @@ class ContrastRecordTest {
                         MultiverseColors.onSurface,
                         Color(TonalPalette.fromHueChromaTone(hue.toDouble(), chroma, TonalPalette.CONTAINER_TONE)),
                         BODY,
+                    )
+                }.flatMap { namePair ->
+                    listOf(
+                        namePair,
+                        namePair.copy(
+                            surface = namePair.surface.replace("card name", "card species at 80%"),
+                            foreground = namePair.foreground.copy(alpha = 0.8f),
+                        ),
                     )
                 }.toTypedArray()
         }

@@ -81,7 +81,11 @@ class AccessibilityVerificationTest {
                 }
             }
         }
-        compose.onNodeWithText("Clear filters").performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose
+            .onNodeWithText("Clear filters")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
     }
 
     private fun seam(result: ImageSeamResult = ImageSeamResult.Loading) =
