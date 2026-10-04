@@ -1,0 +1,306 @@
+import MultiverseExplorer
+import SwiftUI
+
+/// The iOS Discovery screen (`UI_SPEC.md` §6.2, §8, `IC-018`, `TASK-055`).
+///
+/// It renders the shared `CharacterListUiState` and nothing it derives itself: the headline's count
+/// comes from the state's `totalCount` (the server's `info.count`), the four filter options are the
+/// shared `StatusFilter` cases with their canonical copy keys, and the grid draws each card from the
+/// `IC-016` values the state carries (`CONTRACTS.md` R2). The screen owns only the platform
+/// concerns — the glass components, the SF Symbols and the accessibility shape — and never reaches a
+/// pager, a repository or a use case (`ERROR_FLOW.md` §3 invariant 4): every interaction leaves as a
+/// `CharacterListIntent`.
+///
+/// The content order is the specification's: the glass search field, the large title with its count,
+/// the glass segmented control, then the grid — or, in its place, the designed empty or error
+/// surface. Every state in `ERROR_FLOW.md` §8 renders here: the initial skeleton, the paging
+/// indicator, the empty search, the full-surface error with Retry and the stale banner over content.
+///
+/// The search field carries no microphone (`REQ-SEC-004`, `DEC-002`): voice search is deferred, so
+/// the affordance is not rendered and no speech permission is requested.
+struct DiscoveryScreen: View {
+    let state: CharacterListUiState
+    let onIntent: (any CharacterListIntent) -> Void
+    let onOpenDetail: (CharacterCardUi) -> Void
+
+    /// The one image seam (`TASK-058`, `UI_SPEC.md` §5.1): a card's portrait resolves through it, so a
+    /// test substitutes an in-memory loader and never touches the network. `nil` uses the app's own
+    /// pipeline, which is the only implementation the shipped app resolves.
+    private let loader: (any PortraitImageLoading)?
+
+    init(
+        state: CharacterListUiState,
+        loader: (any PortraitImageLoading)? = nil,
+        onIntent: @escaping (any CharacterListIntent) -> Void,
+        onOpenDetail: @escaping (CharacterCardUi) -> Void
+    ) {
+        self.state = state
+        self.loader = loader
+        self.onIntent = onIntent
+        self.onOpenDetail = onOpenDetail
+    }
+
+    /// The typed query, held by the view only until the intent leaves.
+    ///
+    /// The reducer owns the 300 ms debounce and the page-1 reset, so nothing here decides when a
+    /// request happens (`REQ-FUNC-003`, `AC-REQ-FUNC-003-2`); the field mirrors the state's filter so
+    /// a "Clear filters" action is reflected immediately.
+    @State private var query: String = ""
+
+    /// The reader's text size (`UI_SPEC.md` §9): at the accessibility sizes the grid drops to one
+    /// column.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+            searchField
+            headline
+            filterRow
+            content
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onAppear { query = state.filter.query }
+        .onChange(of: state.filter.query) { _, next in query = next }
+    }
+
+    // MARK: - Search field
+
+    /// The glass search field of `UI_SPEC.md` §4.2: the spec's placeholder, no mic (`DEC-002`).
+    private var searchField: some View {
+        GlassSearchField(
+            text: Binding(
+                get: { query },
+                set: { next in
+                    query = next
+                    onIntent(CharacterListIntentQueryChanged(query: next))
+                }
+            ),
+            placeholder: copy("search_characters")
+        )
+        .padding(.horizontal, MultiverseDimensions.spaceL)
+    }
+
+    // MARK: - Headline
+
+    /// The large title and its count line (`AC-REQ-FUNC-001-3`). The number is the shared formatter's
+    /// output over the state's `totalCount`, so both platforms render the same template.
+    private var headline: some View {
+        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceXs) {
+            Text(copy("nav_characters"))
+                .font(MultiverseType.largeTitleBold)
+                .foregroundStyle(MultiverseLabelColors.primary)
+            if let count = state.totalCount {
+                Text(countLine(count: count.int32Value))
+                    .font(MultiverseType.subheadline)
+                    .foregroundStyle(MultiverseLabelColors.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, MultiverseDimensions.spaceL)
+    }
+
+    private func countLine(count: Int32) -> String {
+        let rendered = DefaultPresentationFormatters.shared.charactersCount(count: count)
+        return LocalizedCopy.shared.text(for: "characters_count")
+            .replacingOccurrences(of: "%1$@", with: rendered)
+    }
+
+    // MARK: - Filters
+
+    /// The four single-select options (`AC-REQ-FUNC-004-2`), `All` by default. The options are built
+    /// from the shared `StatusFilter` cases and the canonical keys, so the row cannot drift from the
+    /// shared filter vocabulary.
+    private var filterRow: some View {
+        GlassSegmentedControl(
+            selection: Binding(
+                get: { CharacterPresentation.filterIdentifier(state.filter.status) },
+                set: { identifier in
+                    guard let status = CharacterPresentation.statusFilter(identifier) else { return }
+                    onIntent(CharacterListIntentStatusSelected(status: status))
+                }
+            ),
+            options: filterOptions
+        )
+        .padding(.horizontal, MultiverseDimensions.spaceL)
+    }
+
+    private var filterOptions: [GlassSegmentedControl.Option] {
+        var options: [GlassSegmentedControl.Option] = []
+        let all = CharacterPresentation.filterIdentifier(StatusFilter.all)
+        let alive = CharacterPresentation.filterIdentifier(StatusFilter.alive)
+        let dead = CharacterPresentation.filterIdentifier(StatusFilter.dead)
+        options.append(.init(id: all, label: copy("filter_all")))
+        options.append(.init(id: alive, label: copy("status_alive")))
+        options.append(.init(id: dead, label: copy("status_dead")))
+        options.append(
+            .init(id: CharacterPresentation.filterIdentifier(StatusFilter.unknown), label: copy("value_unknown"))
+        )
+        return options
+    }
+
+    // MARK: - Content
+
+    /// The `IC-018` precedence rendered: `Empty` and `Error` replace the grid, `Loading` and
+    /// `Content` render it with their own overlay (`ERROR_FLOW.md` §8).
+    @ViewBuilder
+    private var content: some View {
+        switch state.loadState {
+        case is LoadStateEmpty:
+            emptyState
+        case let error as LoadStateError:
+            errorState(failure: error.failure)
+        default:
+            grid
+        }
+    }
+
+    /// The stated empty-results surface (`UI_SPEC.md` §8, iOS column: "Same content in
+    /// `ContentUnavailableView`"): the message with the active query and "Clear filters"
+    /// (`AC-REQ-FUNC-010-2`).
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label(emptySearchMessage, systemImage: "person.2.fill")
+        } actions: {
+            GlassTextButton(label: copy("action_clear_filters")) {
+                // Clearing both dimensions is what "clear filters" means, and the query is the one
+                // dimension a segment cannot clear; the row follows the state on the next frame.
+                query = ""
+                onIntent(CharacterListIntentQueryChanged(query: ""))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var emptySearchMessage: String {
+        LocalizedCopy.shared.text(for: "empty_search_message")
+            .replacingOccurrences(of: "%1$@", with: state.filter.query)
+    }
+
+    /// The full-surface error (`UI_SPEC.md` §8, iOS column: "`ContentUnavailableView` + Retry glass
+    /// button"): the shared title, the failure's own message and one Retry (`ERROR_FLOW.md` §4, §10).
+    private func errorState(failure: any ApiFailure) -> some View {
+        let message = CharacterPresentation.message(
+            DefaultPresentationFormatters.shared.failureMessage(failure: failure)
+        )
+        let title = copy(CharacterPresentation.key(DefaultPresentationFormatters.shared.failureTitle()))
+        return ContentUnavailableView {
+            Label(title, systemImage: "network.slash")
+        } description: {
+            Text(message)
+        } actions: {
+            GlassTextButton(
+                label: copy(CharacterPresentation.key(DefaultPresentationFormatters.shared.retryAction()))
+            ) {
+                onIntent(CharacterListIntentRetry.shared)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// The grid of glass cards, with the stale banner over it and the paging indicator as its last
+    /// item (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
+    private var grid: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+                if state.isStale { staleBanner }
+                LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
+                    if state.loadState is LoadStateLoading {
+                        skeletonGrid
+                    } else {
+                        cardGrid
+                    }
+                }
+                if state.isAppending { pagingIndicator }
+                pagingSentinel
+            }
+            .padding(MultiverseDimensions.spaceM)
+        }
+    }
+
+    /// The paging trigger of `API_SPECS.md` §8: the last item's appearance requests the next page,
+    /// and the reducer's own guards — in flight, end reached, failure — decide what happens. It is a
+    /// zero-height sentinel that exists only with `Content`, so neither a loading nor an error
+    /// surface can request a page.
+    @ViewBuilder
+    private var pagingSentinel: some View {
+        if state.loadState is LoadStateContent {
+            Color.clear
+                .frame(height: 0)
+                .onAppear { onIntent(CharacterListIntentLoadNextPage.shared) }
+        }
+    }
+
+    private var gridColumns: [GridItem] {
+        // `UI_SPEC.md` §9: the grid drops to one column at the largest accessibility sizes.
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible())]
+        }
+        return [
+            GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter),
+            GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter)
+        ]
+    }
+
+    /// Six skeletons in the Tall/Regular pattern while no load has completed (`UI_SPEC.md` §8).
+    private var skeletonGrid: some View {
+        ForEach(Array(0..<DiscoveryLayout.skeletonCount), id: \.self) { _ in
+            GlassCharacterCard(
+                name: "",
+                species: "",
+                statusTone: .unknown,
+                statusLabel: "",
+                portrait: CharacterPresentation.placeholderPortrait()
+            )
+            .redacted(reason: .placeholder)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var cardGrid: some View {
+        // The shared card id crosses the boundary erased to `Any`, so the grid identifies a cell by
+        // its position; the card itself carries the canonical id for the accessibility identifier.
+        ForEach(Array(state.items.enumerated()), id: \.offset) { _, card in
+            CharacterCardCell(
+                card: card,
+                loader: loader,
+                identifierPrefix: "discovery.card",
+                action: { onOpenDetail(card) }
+            )
+        }
+    }
+
+    /// The stale banner of `UI_SPEC.md` §8: the content stays visible while its provenance is stated
+    /// (`ERROR_FLOW.md` §9).
+    private var staleBanner: some View {
+        Text(copy("state_stale_banner"))
+            .font(MultiverseType.subheadline)
+            .foregroundStyle(MultiverseColors.onSecondaryContainer)
+            .padding(.horizontal, MultiverseDimensions.spaceL)
+            .padding(.vertical, MultiverseDimensions.spaceS)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassSurface(.capsule, tint: MultiverseColors.secondaryContainer)
+    }
+
+    /// The paging indicator as the last grid item (`UI_SPEC.md` §8): a `ProgressView` in a glass
+    /// capsule.
+    private var pagingIndicator: some View {
+        ProgressView()
+            .progressViewStyle(.circular)
+            .padding(MultiverseDimensions.spaceM)
+            .glassSurface(.capsule)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(Text(copy("splash_loading")))
+    }
+
+    // MARK: - Helpers
+
+    private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+}
+
+/// The fixed geometry of the Discovery surface (`UI_SPEC.md` §4.1, §8).
+enum DiscoveryLayout {
+    /// The skeleton count of `UI_SPEC.md` §8, "Initial loading".
+    static let skeletonCount = 6
+}

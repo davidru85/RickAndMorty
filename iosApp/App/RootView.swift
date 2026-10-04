@@ -1,48 +1,54 @@
 import MultiverseExplorer
 import SwiftUI
 
-/// The iOS app shell (`UI_SPEC.md` §6/§7, `REQ-FUNC-007`, `REQ-FUNC-008`, `TASK-054`).
+/// The iOS app shell (`UI_SPEC.md` §6/§7, `REQ-FUNC-007`, `REQ-FUNC-008`, `TASK-054`/`TASK-055`).
 ///
-/// It composes the four top-level destinations, the branded splash and the platform chrome, and it
-/// carries the integration the features must not own. The navigation rule lives in
-/// [ShellNavigation], so the view holds no state of its own and the "Browse characters" contract is
-/// testable without rendering.
+/// It composes the four destinations, the branded splash and the platform chrome, and it carries the
+/// integration the features must not own. The navigation rule lives in [ShellNavigation], so the view
+/// holds no state of its own and the "Browse characters" contract is testable without rendering.
 ///
-/// The destinations are the shared Kotlin route declarations (`ShellDestination.sharedRouteName`),
-/// read from `:core:ios`; no Swift-only route enum exists (`CONTRACTS.md` §7.1 R4). The copy comes
-/// from the committed `Localizable.strings` through the canonical key list, so both platforms show
-/// the same words (`REQ-UX-008`).
+/// Each destination hosts the **real** feature screen where one exists (`TASK-055` delivered
+/// Discovery, Detail and Favorites), so the shell is the composition root for the screens exactly as
+/// `:androidApp` is on Android: it resolves the shared graph through `MultiverseBootstrap` and hands
+/// the screen a state holder, and a screen never resolves a dependency itself.
 struct RootView: View {
     @StateObject private var navigation = ShellNavigation()
 
-    /// The splash gate: `TASK-054` shows the branded splash until the shared gate resolves, and the
-    /// splash completes with no network (`AC-REQ-FUNC-007-3`).
+    /// The splash gate: the branded splash shows until its floor elapses, and it completes with no
+    /// network (`AC-REQ-FUNC-007-3`).
     @State private var splashVisible = true
 
-    var body: some View {
-        ZStack {
-            TabView(
-                selection: Binding(
-                    get: { navigation.selected },
-                    set: { navigation.select($0) }
-                )
-            ) {
-                ForEach(ShellDestination.allCases) { destination in
-                    DestinationView(destination: destination, navigation: navigation)
-                        .tabItem {
-                            Text(LocalizedCopy.shared.text(for: destination.labelKey))
-                        }
-                        .tag(destination)
-                }
-            }
-            .tint(MultiverseBrandColors.portalGlow)
+    /// The card the user tapped, so the detail destination can render its header before any request
+    /// (`AC-REQ-FUNC-002-1`).
+    @State private var opened: CharacterCardUi?
 
+    var body: some View {
+        TabView(
+            selection: Binding(
+                get: { navigation.selected },
+                set: { navigation.select($0) }
+            )
+        ) {
+            ForEach(ShellDestination.allCases) { destination in
+                DestinationView(
+                    destination: destination,
+                    navigation: navigation,
+                    opened: $opened
+                )
+                .tabItem {
+                    Text(LocalizedCopy.shared.text(for: destination.labelKey))
+                }
+                .tag(destination)
+            }
+        }
+        .tint(MultiverseBrandColors.portalGlow)
+        .overlay {
             if splashVisible {
                 BrandedSplashView(reduceMotion: UIAccessibility.isReduceMotionEnabled)
                     .transition(.opacity)
                     .task {
-                        // The splash is a floor, not a network wait: it completes on its own so a
-                        // cold start with no connectivity still reaches the shell (`TASK-007`).
+                        // The splash is a floor, not a network wait, so a cold start with no
+                        // connectivity still reaches the shell (`TASK-007`).
                         try? await Task.sleep(nanoseconds: UInt64(SplashTiming.minimumSeconds * 1_000_000_000))
                         withAnimation(.easeInOut(duration: SplashTiming.exitCrossfadeSeconds)) {
                             splashVisible = false
@@ -52,7 +58,6 @@ struct RootView: View {
         }
         // Single appearance (`UI_SPEC.md` §9): the app is dark-only and never follows the system.
         .preferredColorScheme(.dark)
-        .accessibilityIdentifier("shell.root")
     }
 }
 
@@ -65,57 +70,50 @@ enum SplashTiming {
 
 /// One destination's surface (`TASK-054`).
 ///
-/// `TASK-055` replaces these with the real screens; until then each is the designed placeholder of
-/// `UI_SPEC.md` §6.4 with the canonical copy and the working "Browse characters" action, which is
-/// what `AC-REQ-FUNC-008-1` and `-2` require of the shell.
+/// Discovery, Favorites and Settings host their feature screens; Episodes is the designed placeholder
+/// of `UI_SPEC.md` §6.4 until `DEF-002` re-admits the real screen. Each destination keeps its own
+/// title and copy, so a tab never borrows another's words.
 struct DestinationView: View {
     let destination: ShellDestination
     @ObservedObject var navigation: ShellNavigation
+    @Binding var opened: CharacterCardUi?
 
     var body: some View {
         NavigationStack {
             switch destination {
             case .characters:
-                // The Discovery surface is `TASK-055`'s; until it lands the shell shows a placeholder
-                // that names **this** destination rather than borrowing another's copy, which the
-                // first simulator run exposed as a real defect when the Characters tab rendered the
-                // Favorites empty state.
-                EmptyState(
-                    symbol: "person.2.fill",
-                    heading: LocalizedCopy.shared.text(for: "nav_characters"),
-                    body:
-                        LocalizedCopy.shared.text(for: "characters_count")
-                            .replacingOccurrences(of: "%1$@", with: "826"),
-                    actionLabel: LocalizedCopy.shared.text(for: "action_retry"),
-                    action: {}
-                )
-                .navigationTitle(LocalizedCopy.shared.text(for: destination.labelKey))
-            case .episodes, .favorites, .settings:
+                // Discovery owns its own state holder: the pager is per-screen (`IC-014`), so the
+                // holder builds it from the shared graph through the bootstrap.
+                DiscoveryHost { card in
+                    opened = card
+                }
+            case .favorites:
+                FavoritesHost(onBrowse: { navigation.browseCharacters() })
+            case .episodes:
                 placeholder
+            case .settings:
+                // `TASK-077` delivers the real screen; the host stays so the destination composes.
+                SettingsHost()
             }
+        }
+        .navigationDestination(item: $opened) { card in
+            // The detail destination renders from the card the list already had, so its header is
+            // present in the first frame (`AC-REQ-FUNC-002-1`).
+            DetailHost(card: card)
         }
     }
 
     private var placeholder: some View {
         EmptyState(
-            symbol: symbolName,
-            heading: LocalizedCopy.shared.text(for: headingKey),
-            body: LocalizedCopy.shared.text(for: bodyKey),
+            symbol: destination == .episodes ? "play.tv.fill" : "heart",
+            heading:
+                LocalizedCopy.shared.text(
+                    for: destination == .episodes ? "episodes_heading" : "favorites_heading"
+                ),
+            body: LocalizedCopy.shared.text(for: destination == .episodes ? "episodes_body" : "favorites_body"),
             actionLabel: LocalizedCopy.shared.text(for: "browse_characters"),
             action: { navigation.browseCharacters() }
         )
         .navigationTitle(LocalizedCopy.shared.text(for: destination.labelKey))
-    }
-
-    private var headingKey: String {
-        destination == .episodes ? "episodes_heading" : "favorites_heading"
-    }
-
-    private var bodyKey: String {
-        destination == .episodes ? "episodes_body" : "favorites_body"
-    }
-
-    private var symbolName: String {
-        destination == .episodes ? "play.tv.fill" : "heart"
     }
 }

@@ -32,6 +32,9 @@ targets:
     sources:
       - path: App
       - path: Features
+      # The portrait seam (`TASK-058`): the image pipeline lives in its own folder, owned by
+      # `TASK-058`, and is compiled into the app target like every other source.
+      - path: ImagePipeline
       - path: DesignSystem
         # `README.md` documents the components; it is not a bundle resource, and a non-code file in
         # the app bundle breaks code signing.
