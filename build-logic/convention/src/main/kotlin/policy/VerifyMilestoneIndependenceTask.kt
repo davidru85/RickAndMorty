@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.buildlogic.policy
 
 import java.util.zip.ZipFile
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
@@ -63,63 +64,31 @@ public abstract class VerifyMilestoneIndependenceTask : DefaultTask(), Verificat
     @TaskAction
     fun verify() {
         val apk = releaseApk.get().asFile
-        val violations = mutableListOf<String>()
-
-        // 1. The artifact carries no iOS payload.
-        ZipFile(apk).use { zip ->
-            zip.entries().asSequence().forEach { entry ->
-                val name = entry.name
-                if (IOS_PAYLOAD_MARKERS.any { name.contains(it, ignoreCase = true) }) {
-                    violations +=
-                        "the release APK carries `$name`, which is iOS/Kotlin-Native payload; the " +
-                            "Android deliverable must be independent of the iOS one (AC-REQ-PLAT-004-1)"
-                }
-            }
-        }
-
-        // 2. No Android configuration reaches a module that exists only for iOS.
-        val edges = androidReleaseEdges.get().map { it.trim() }.filter { it.isNotEmpty() }
-        val iosOnly = iosOnlyModules.get().map { it.trim() }.filter { it.isNotEmpty() }
-        val reached = edges.filter { edge -> iosOnly.any { edge == it || edge.endsWith(":$it") } }
-        reached.forEach { edge ->
-            violations +=
-                "`:androidApp`'s release configuration reaches `$edge`, a module that exists only for " +
-                    "the Apple target; `REQ-PLAT-004` requires the Android milestone to build with no " +
-                    "iOS artifact at all"
-        }
+        val entries = ZipFile(apk).use { zip -> zip.entries().asSequence().map { it.name }.toList() }
+        val edges = androidReleaseEdges.get()
+        val iosOnly = iosOnlyModules.get()
+        // The rule lives in `MilestoneIndependencePolicy`, so its regression cases run without a build.
+        val violations = MilestoneIndependencePolicy.scan(entries, edges, iosOnly)
 
         val evidence =
             buildString {
                 appendLine("TEST-UNIT-019 — milestone independence (AC-REQ-PLAT-004-1, DEC-040)")
                 appendLine("release artifact: ${apk.name} (${apk.length()} bytes)")
-                appendLine("entries scanned: ${ZipFile(apk).use { it.size() }}")
+                appendLine("entries scanned: ${entries.size}")
                 appendLine("iOS-only modules declared: ${iosOnly.joinToString(", ").ifEmpty { "(none)" }}")
                 appendLine("Android release edges inspected: ${edges.size}")
                 appendLine("violations: ${violations.size}")
-                violations.forEach { appendLine("  - $it") }
+                violations.forEach { appendLine("  - ${it.location}: ${it.reason}") }
             }
         val reportFile = report.get().asFile
         reportFile.parentFile.mkdirs()
         reportFile.writeText(evidence)
 
-        check(violations.isEmpty()) {
-            "TEST-UNIT-019 failed:\n" + violations.joinToString("\n") { "  $it" } +
-                "\nThe evidence report is at ${reportFile.absolutePath}."
-        }
-    }
-
-    /** Path fragments only an iOS or Kotlin/Native payload can produce. */
-    private companion object {
-        val IOS_PAYLOAD_MARKERS =
-            listOf(
-                "iosapp/",
-                "core/ios",
-                "core-ios",
-                "kotlin-native",
-                "kotlinnative",
-                ".framework/",
-                "libbackend.a",
-                "libclang_rt",
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "TEST-UNIT-019 failed:\n" + violations.joinToString("\n") { "  $it" } +
+                    "\nThe evidence report is at ${reportFile.absolutePath}.",
             )
+        }
     }
 }

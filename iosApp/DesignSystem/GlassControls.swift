@@ -75,16 +75,42 @@ public struct GlassSegmentedControl: View {
     private let options: [Option]
     @Namespace private var namespace
 
+    /// The reader's text size (`UI_SPEC.md` §9).
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     public init(selection: Binding<String>, options: [Option]) {
         self._selection = selection
         self.options = options
     }
 
     public var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            fittedBody
+        } else {
+            compactBody
+        }
+    }
+
+    /// At the accessibility sizes the four labels cannot share the fixed capsule without truncating
+    /// (`REQ-UX-006`), so each segment takes its label's width and the row scrolls horizontally.
+    private var fittedBody: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: MultiverseDimensions.glassControlInset) {
+                ForEach(options) { option in
+                    segment(option, fitted: true)
+                }
+            }
+            .padding(MultiverseDimensions.glassControlInset)
+        }
+        .glassSurface(.capsule)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var compactBody: some View {
         GlassContainer(spacing: MultiverseDimensions.glassControlInset) {
             HStack(spacing: MultiverseDimensions.glassControlInset) {
                 ForEach(options) { option in
-                    segment(option)
+                    segment(option, fitted: false)
                 }
             }
             .padding(MultiverseDimensions.glassControlInset)
@@ -97,7 +123,7 @@ public struct GlassSegmentedControl: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func segment(_ option: Option) -> some View {
+    private func segment(_ option: Option, fitted: Bool) -> some View {
         let selected = option.id == selection
         let foreground =
             selected ? MultiverseBrandColors.spaceBlack : MultiverseLabelColors.primary
@@ -106,10 +132,7 @@ public struct GlassSegmentedControl: View {
                 selection = option.id
             }
         } label: {
-            Text(option.label)
-                .font(MultiverseType.subheadline)
-                .foregroundStyle(foreground)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            label(option, foreground: foreground, fitted: fitted)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -121,6 +144,21 @@ public struct GlassSegmentedControl: View {
             }
         }
         .accessibilityAddTraits(selected ? [.isSelected] : [])
+    }
+
+    @ViewBuilder
+    private func label(_ option: Option, foreground: Color, fitted: Bool) -> some View {
+        let text = Text(option.label)
+            .font(MultiverseType.subheadline)
+            .foregroundStyle(foreground)
+        if fitted {
+            text
+                .fixedSize()
+                .padding(.horizontal, MultiverseDimensions.spaceM)
+                .padding(.vertical, MultiverseDimensions.spaceS)
+        } else {
+            text.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 
     private enum SegmentSelection {

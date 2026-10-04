@@ -128,7 +128,9 @@ struct FavoritesScreen: View {
     private var grid: some View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
-                ForEach(Array(state.items.enumerated()), id: \.offset) { _, card in
+                // Keyed by the canonical id, so removing a favourite never hands its cell to another
+                // character (`GAP-031`).
+                ForEach(state.items, id: \.gridIdentity) { card in
                     CharacterCardCell(
                         card: card,
                         loader: loader,

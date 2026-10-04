@@ -44,18 +44,24 @@ public final class DiscoveryStateHolder: ObservableObject {
             preconditionFailure("the shared reducer published no initial state")
         }
         self.state = initial
+        // The first load is started exactly as the Android holder's `init` starts it, through the
+        // shared reducer, so a page-1 reset or a debounce rule cannot differ between platforms. Without
+        // it the screen stays on its initial `Loading` state (`DiscoveryStateHolderTests`, `GAP-031`).
+        _ = reducer.start(initialFilter: initialFilter)
         // `reducer.state` is a `StateFlow`, which Kotlin/Native exports without `AsyncSequence`
-        // conformance, so it is read by polling rather than collected. The poll is what the
-        // propagation test exercises, and it is why that test exists: it proves the holder really does
-        // republish rather than leaving a screen on its first state.
-        observation = Task { [weak self] in
+        // conformance, so it is read by polling rather than collected.
+        observation = Task { [weak self, scope] in
             while !Task.isCancelled {
-                guard let self else { return }
-                if let next = self.reducer.state.value as? CharacterListUiState {
+                guard let self else { break }
+                // A `StateFlow` keeps its instance until the value changes, so a new reference is a
+                // new state; republishing the same one would re-render the screen every frame.
+                if let next = self.reducer.state.value as? CharacterListUiState, next !== self.state {
                     self.state = next
                 }
                 try? await Task.sleep(nanoseconds: 16_000_000)
             }
+            // The holder is gone: the reducer's scope and its intent loop end with it.
+            MultiverseBootstrap.shared.cancelScope(scope: scope)
         }
     }
 
@@ -66,7 +72,7 @@ public final class DiscoveryStateHolder: ObservableObject {
 
     deinit {
         // Swift 6 does not allow a nonisolated `deinit` to touch a non-Sendable stored property, so
-        // the observation carries the cancellation here.
+        // the observation carries the cancellation: ending it cancels the reducer's scope.
         observation?.cancel()
     }
 }

@@ -1,0 +1,133 @@
+[
+  {
+    "step": 0,
+    "text": "zzpr153auditnomatch",
+    "desc": "null",
+    "class": "android.widget.EditText",
+    "bounds": "48 180 1232 402",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "zzpr153auditnomatch",
+      "Search"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "Characters",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 426 601 571",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Characters"
+    ]
+  },
+  {
+    "step": 2,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "48 595 241 739",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "All"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "265 595 540 739",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Alive"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "564 595 842 739",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Dead"
+    ]
+  },
+  {
+    "step": 5,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "866 595 1232 798",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Unknown"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "No one in this dimension matches \u201czzpr153auditnomatch\u201d",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 1386 1232 2016",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "No one in this dimension matches \u201czzpr153auditnomatch\u201d"
+    ]
+  },
+  {
+    "step": 7,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "395 2160 885 2304",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Clear filters"
+    ]
+  },
+  {
+    "step": 8,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2304 640 2544",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Characters"
+    ]
+  },
+  {
+    "step": 9,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2304 1268 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Episodes"
+    ]
+  }
+]
