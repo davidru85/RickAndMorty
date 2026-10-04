@@ -81,4 +81,32 @@ class ShellGraphTest {
             MultiverseApplication().koinLevel(),
         )
     }
+
+    @Test
+    fun `TEST-UNIT-057 given_the_shell_graph_when_every_type_the_activity_injects_is_resolved_then_none_is_missing`() {
+        // `TASK-070`'s handover run launched the app and it died in `onCreate`: the activity injected
+        // `CoilImageSeam`, the concrete class, while the graph registers only the `ImageSeam` port, so
+        // Koin threw `NoDefinitionFoundException` before the first frame drew. The cases above resolve a
+        // hand-written list of bindings and happen not to name the seam, so the graph was green while the
+        // app could not start.
+        //
+        // This case reads the activity's **actual** injected properties reflectively, so a `by inject()`
+        // whose declared type the graph cannot serve fails here rather than on a device. A Kotlin
+        // delegate compiles to a `Lazy` field plus an accessor, so the accessor's return type — not the
+        // field type — is what Koin resolves; `detailHandoff` is a plain property with no injection and
+        // is excluded by name.
+        val koin = graph()
+        val injectedTypes =
+            MainActivity::class.java.declaredMethods
+                .filter { it.name.startsWith("get") && it.parameterCount == 0 }
+                .map { it.name.removePrefix("get").replaceFirstChar(Char::lowercase) to it.returnType }
+                .filter { (name, _) -> name != "detailHandoff" }
+        assertTrue("the activity must declare its injections", injectedTypes.isNotEmpty())
+        injectedTypes.forEach { (name, type) ->
+            assertNotNull(
+                "MainActivity injects `$name` as $type and the graph must serve it",
+                koin.getOrNull<Any>(type.kotlin),
+            )
+        }
+    }
 }

@@ -318,6 +318,12 @@ jobs:
       # `DEC-083` ended with the `iosApp` application target the tripwire detects).
       - name: Run the shared suites on the Apple target
         run: ./gradlew iosSimulatorArm64Test --stacktrace
+      # `TASK-070`: `:core:ios` has no Android target, so it is deliberately absent from the
+      # `module-checks` matrix. Its formatter therefore ran in no job, and `./gradlew check` failed
+      # locally on a file no CI job checked. It is a Kotlin module like the others, so its formatter
+      # belongs beside the Apple suites rather than nowhere.
+      - name: Check the framework module's Kotlin formatting
+        run: ./gradlew :core:ios:ktlintCheck --stacktrace
       - name: Replay the contract suite on the Apple target
         run: ./gradlew :core:data:contractTestReplayIosSimulator --stacktrace
       # The pinned Swift toolchain, then the formatting and lint row (`DEC-076`, `TASK-051`). The

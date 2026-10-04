@@ -32,11 +32,11 @@ A client for the public [Rick and Morty API](https://rickandmortyapi.com/) that 
 
 | ID | Item | Decision | Re-entry condition |
 | --- | --- | --- | --- |
-| DEF-001 | Voice search (speech-to-text) | DEC-002 | Only if a platform speech path is required; carry `REQ-FUNC-030`. |
-| DEF-002 | Real Episodes list and detail screens | DEC-005 | After M2, using `API-EPI-*` batch endpoints already documented. |
-| DEF-003 | Real Locations screens | DEC-005, DEC-055 | Same as DEF-002, plus a decision on where Locations is reached from: it has no navigation destination since DEC-055. |
-| DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. |
-| DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. Until then the Sounds preference (`REQ-FUNC-033`) is stored but plays nothing. |
+| DEF-001 | Voice search (speech-to-text) | DEC-002 | Only if a platform speech path is required; carry `REQ-FUNC-030`. **Re-read 2026-10-04:** no speech path is required and the manifest holds no microphone permission (`DEC-118`). |
+| DEF-002 | Real Episodes list and detail screens | DEC-005 | **Condition met 2026-10-04** (M2 released, `DEC-118`): re-admissible but not started — `REQ-FUNC-031` is Could-have, so starting it needs a new accepted decision. Endpoints already documented (`API-EPI-*`). |
+| DEF-003 | Real Locations screens | DEC-005, DEC-055 | Same as `DEF-002`, plus a decision on where Locations is reached from: it has no navigation destination since `DEC-055`. |
+| DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. **Re-read 2026-10-04:** it is still Alpha, and the roadmap's next milestone is Alpha→Beta (`DEC-118`). |
+| DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. Until then the Sounds preference (`REQ-FUNC-033`) is stored but plays nothing. **Re-read 2026-10-04:** no sound set is specified (`DEC-118`). |
 
 ## 2. Actors and journeys
 

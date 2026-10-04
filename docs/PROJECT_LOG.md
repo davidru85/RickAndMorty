@@ -1092,3 +1092,43 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
   - **Every requirement row names its tests.** `REQUIREMENTS.md`'s detail sections carry a `Tests:` line per requirement, and `TESTING.md` §16 holds the inverse requirement→test map; the two agree on the ids the audit sampled.
 - **What this does not claim:** the index is a document, so its completeness is checked by reading it, not by a build task. The machine-checked half of `DEFINITION.md` §6 is `verifyDocumentedCompleteness`, added by `TASK-068` in this same phase; `DOC5` (requirements → task → test) needs the judgement that an id maps to a *suitable* task and test, which stays with the review and is reported there rather than approximated.
 - **Affected documents:** `PROJECT_LOG.md` (this entry), `BACKLOG.md` (`TASK-069` row).
+
+### LOG-0118 · 2026-10-04 · B9 Phase 9.3: the product launched for the first time, and the crash that had hidden behind four merged phases
+
+- **Event:** `TASK-070` and `TASK-071` (Phase 9.3 of `DEC-110`) on `feat/b9-phase-9-3`.
+- **`TASK-070`'s handover criterion is "no claim that a check was run when it was not", so the phase began by running the app rather than reading it — and the app did not run.** `:androidApp:assembleDebug` built, the APK installed, and every launch died in `onCreate`:
+  ```
+  FATAL EXCEPTION: main
+  Process: io.github.davidru85.multiverse, PID: 3766
+  Caused by: org.koin.core.error.NoDefinitionFoundException:
+      No definition found for type 'io.github.davidru85.multiverse.app.image.CoilImageSeam' on scope '['_root_']'.
+      at io.github.davidru85.multiverse.app.MainActivity.getImageSeam(MainActivity.kt:31)
+  ```
+  `MainActivity` injected the **concrete** `CoilImageSeam`; `ShellModule.imageLoaderModule` registers the **port** (`ImageSeam`), which is also the only type the design system declares and the only one a caller may depend on (`R4`). `rememberCoilImageSeam` — a helper that would have produced the port — was dead code, called from nowhere.
+- **It was not a B9 defect and not a one-branch accident.** Introduced by B5 Phase 5.2 (`db4223b`), it is present on every B6, B7, B8 and B9 branch. Four merged phases therefore describe an app that could not start, and **no check caught it**: `TEST-UNIT-057` resolved a hand-written list of bindings (`CharacterRemoteDataSource`, `CharacterRepository`, `FavoritesRepository`, `AppLogger`) that happened not to name the seam, and no case started the activity. Registered as `GAP-032` (S1).
+- **Fixed, and proved fixed by running the product end-to-end on the emulator** — the first launch of this repository's application in its history:
+  | Step | Observed |
+  | --- | --- |
+  | Launch | `topResumedActivity=…/.app.MainActivity`, 0 `FATAL EXCEPTION` in the crash buffer |
+  | Discovery | 826 characters from the live API, real portraits, status badges and the four filter chips |
+  | Detail | `Rick Sanchez`, `51 Episodes` (the live `/episode/{ids}` batch enrichment), origin and last-known-location rows |
+  | Favourite | the heart marks the character and `Favorites` lists it |
+  | Persistence | `am force-stop` then relaunch: the favourite survives — DataStore, not memory |
+  | Delete all | the confirmation dialog, then `No favorites yet` |
+  | Offline with cache | cached content served, `IS_STALE=false` inside the freshness window, as specified |
+  | Offline without cache | `Portal link lost` / `You're offline. Reconnect to continue exploring the multiverse.` |
+  | Retry | connectivity restored, `Retry` reloads, 826 characters return |
+- **Regression case, red-then-green:** `TEST-UNIT-057` now reads the activity's **injection accessors reflectively** and resolves each declared type from the real shell graph, so a future `by inject()` whose type the graph cannot serve fails in the suite instead of on a device. Proven both ways: on the restored old shape (`CoilImageSeam`) the case FAILED; on the fix it passes.
+- **Suite totals observed on this phase's tree:** `./gradlew allTests` BUILD SUCCESSFUL, **1110 tests, 0 failures** across 188 report files; `xcodebuild test` on the booted iPhone 17 Pro simulator **96 tests, 0 failures, `** TEST SUCCEEDED **`**.
+- **`TASK-071`, the deferred-register reconciliation (`DEC-118`).** `DEC-025` is **closed — re-admitted**: its condition ("iOS milestone starts") fired with B7 and M2's release in B8 Phase 8.3, and `TASK-059` delivered the six committed baselines the question was about. `DEF-002`/`DEF-003`'s condition (after M2) has likewise been met, but both stay deferred because they are Could-have and starting them needs a new accepted decision. `DEF-001` (no speech path; the manifest holds no microphone permission), `DEF-004` (Swift export is **Alpha**, not Stable — kotlinlang.org, verified 2026-10-04) and `DEF-005` (no sound set) stay deferred with their conditions re-read against the tree rather than restated. `DEC-029` stays deferred: `API_SPECS.md` still records no version segment.
+- **A second real defect found while reconciling:** `DEC-080` and `DEC-081` are `Accepted` decisions and were sitting in `DECISION_BOARD.md` §4's **deferred** register with no §2 row, which broke §2's numeric order at the 079→082 gap. They now carry their proper §2 rows and §4 holds only deferred items.
+- **Affected documents:** `DECISION_BOARD.md` (`DEC-118`, the `DEC-080`/`DEC-081` move, the `DEC-025` closure, the change-log row), `REQUIREMENTS.md` §1.3 (six DEF rows re-read), `BACKLOG.md` §7 and the `TASK-070`/`TASK-071` rows, `DOCUMENTATION_AUDIT.md` (`GAP-032`), `HANDOFF.md` (the released state), `PROJECT_LOG.md` (this entry).
+
+### LOG-0119 · 2026-10-04 · B9 Phase 9.3 (continued): `:core:ios` was formatted by no job
+
+- **Event:** `TASK-070` (Phase 9.3 of `DEC-110`), found while running the phase's verification set.
+- **Observed:** `./gradlew ktlintCheck` FAILED on `:core:ios:ktlintCommonMainSourceSetCheck`; `./gradlew :core:ios:check` selects that task, so the module's own gate task had been red since the module was written. Eight violations in the module's one file: import order, an unused import, two `Expected newline before '.'`, a body-expression line break, a needless blank line, and the non-autocorrectable `iOSGraph` object name.
+- **Root cause, and why nothing caught it:** `:core:ios` deliberately has no Android target (`ADR-0012`, boundary rule `R12`), so it cannot be in the `module-checks` matrix, whose gate requires `compileAndroidMain` and `testAndroidHostTest` per module. The `ios` job ran `iosSimulatorArm64Test` and the replay but **not** the module's formatter. The module was therefore formatted by no job in any workflow, and no local command was run against it — the class of gap `TEST-UNIT-044` exists to prevent, in a place it did not cover.
+- **Fixed:** the formatter passes; `iOSGraph` is `IosGraph` at its eleven sites; `:core:ios:ktlintCheck` is a step of the `ios` job; and `ModularWorkflowGate`'s `ios` rule now requires that step, so deleting it is a gate failure. **Proven both ways:** with the step removed the gate reports `` `:core:ios:ktlintCheck` is not an executable step of the ios gate job ``; restored, it is BUILD SUCCESSFUL.
+- **Not claimed:** `GAP-029` (`:androidApp`'s own ktlint plugin) is a different hole of the same family and stays open, because `AndroidApplicationConventionPlugin` is not the module's formatter owner and closing it is a separate change.
+- **Affected documents:** `.github/workflows/pull-request.yml`, `ModularWorkflowGate.kt`, `PROJECT_LOG.md` (this entry), `HANDOFF.md` (the B9 closure).

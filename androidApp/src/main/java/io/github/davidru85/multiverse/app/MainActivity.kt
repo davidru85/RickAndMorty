@@ -7,9 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.github.davidru85.multiverse.app.image.CoilImageSeam
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
 import io.github.davidru85.multiverse.app.splash.SplashGate
+import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.DetailHandoff
 import kotlinx.coroutines.Dispatchers
@@ -27,8 +27,13 @@ import org.koin.android.ext.android.inject
 public class MainActivity : ComponentActivity() {
     private val characterRepository: CharacterRepository by inject()
 
-    /** The one image seam (`DEC-097`): the app's Coil loader, adapted to the design system's port. */
-    private val imageSeam: CoilImageSeam by inject()
+    /**
+     * The one image seam (`DEC-097`), resolved by its **port**: the graph registers
+     * `ImageSeam`, so injecting the concrete `CoilImageSeam` found no definition and the app died
+     * in `onCreate` before it could draw. The port is the contract the design system declares, and
+     * it is the only type a caller may depend on (`R4`).
+     */
+    private val imageSeam: ImageSeam by inject()
 
     /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()

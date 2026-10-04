@@ -139,7 +139,7 @@ internal object ModularWorkflowGate {
         }
         jobs["ios"]?.let { job ->
             val commands = job.executableRunTexts().filter { it.executesGradle() }.joinToString(" ")
-            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator").forEach { command ->
+            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator", ":core:ios:ktlintCheck").forEach { command ->
                 if (!commands.contains(command)) report(job, "`$command` is not an executable step of the ios gate job")
             }
             // TASK-051: the Swift quality gate (`DEC-076`) is part of the iOS row, so removing its

@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import coil3.ImageLoader
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
@@ -57,12 +56,5 @@ public class CoilImageSeam(
             else -> ImageSeamResult.Loading
         }
     }
-}
-
-/** The seam the composition root provides, resolved from the graph's image loader. */
-@Composable
-public fun rememberCoilImageSeam(imageLoader: ImageLoader): ImageSeam {
-    val context = LocalContext.current
-    return remember(imageLoader, context) { CoilImageSeam(context, imageLoader) }
 }
 
