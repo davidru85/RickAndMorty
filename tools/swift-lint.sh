@@ -36,11 +36,31 @@ read_pin() {
     awk -v want="$_tool" '$1 == want { print $2 "\t" $3 "\t" $4; found = 1 } END { exit !found }' "$LOCK"
 }
 
+# The `Developer` directory of the toolchain this shell will use.
+#
+# `DEVELOPER_DIR` wins, then the active `xcode-select` choice, and only then the default path: a CI
+# runner that selects its Xcode with `xcode-select -s` must be honoured, because otherwise the gate
+# validates one toolchain and runs another. Observed on `xcode-27`: `xcode-select -s
+# /Applications/Xcode_27.app` was applied and `xcodebuild -version` reported 27.0, while the script
+# still read `/Applications/Xcode.app` and rejected its own formatter as "outside the validated
+# toolchain".
+developer_dir() {
+    if [ -n "${DEVELOPER_DIR:-}" ]; then
+        printf '%s\n' "$DEVELOPER_DIR"
+        return
+    fi
+    _selected="$(xcode-select -p 2>/dev/null || true)"
+    if [ -n "$_selected" ]; then
+        printf '%s\n' "$_selected"
+        return
+    fi
+    printf '%s\n' "/Applications/Xcode.app/Contents/Developer"
+}
+
 # The Xcode version this toolchain provides, read from Apple's own version output rather than from
-# a guess: `--- xcodebuild ---` then `Xcode 27.0` and `Build version …`. `DEVELOPER_DIR` wins
-# because that is the toolchain `xcrun` will use.
+# a guess: `--- xcodebuild ---` then `Xcode 27.0` and `Build version …`.
 xcode_version() {
-    _xcodebuild="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}/usr/bin/xcodebuild"
+    _xcodebuild="$(developer_dir)/usr/bin/xcodebuild"
     [ -x "$_xcodebuild" ] || _xcodebuild="$(command -v xcodebuild 2>/dev/null || true)"
     [ -n "$_xcodebuild" ] || return 1
     "$_xcodebuild" -version 2>/dev/null | awk '/^Xcode /{ print $2; found = 1 } END { exit !found }'
@@ -99,7 +119,7 @@ accept_tool() {
 # (`--version` prints `main`), so membership of the validated toolchain is the check: the resolved
 # path must live under the toolchain of the Xcode whose version the lock records. An override is
 # accepted for routing (a different build of the same toolchain) but must still be executable.
-TOOLCHAIN_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}/Toolchains/XcodeDefault.xctoolchain"
+TOOLCHAIN_DIR="$(developer_dir)/Toolchains/XcodeDefault.xctoolchain"
 
 SWIFT_FORMAT_PATH="${SWIFT_FORMAT:-}"
 if [ -n "$SWIFT_FORMAT_PATH" ]; then
