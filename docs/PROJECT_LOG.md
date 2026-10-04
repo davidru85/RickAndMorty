@@ -1132,3 +1132,16 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **Fixed:** the formatter passes; `iOSGraph` is `IosGraph` at its eleven sites; `:core:ios:ktlintCheck` is a step of the `ios` job; and `ModularWorkflowGate`'s `ios` rule now requires that step, so deleting it is a gate failure. **Proven both ways:** with the step removed the gate reports `` `:core:ios:ktlintCheck` is not an executable step of the ios gate job ``; restored, it is BUILD SUCCESSFUL.
 - **Not claimed:** `GAP-029` (`:androidApp`'s own ktlint plugin) is a different hole of the same family and stays open, because `AndroidApplicationConventionPlugin` is not the module's formatter owner and closing it is a separate change.
 - **Affected documents:** `.github/workflows/pull-request.yml`, `ModularWorkflowGate.kt`, `PROJECT_LOG.md` (this entry), `HANDOFF.md` (the B9 closure).
+
+### LOG-0120 · 2026-10-04 · The `ios` gate's fourth CI defect: the runner's own toolchain rejected twice named
+
+- **Event:** B9 Phase 9.3 (`TASK-070`), found by reading the pushed heads' check results rather than by a local run — the local Xcode is selected the ordinary way, so the defect cannot reproduce on this workstation.
+- **Observed:** `ios` FAILED on every B7–B9 head (`7d7edaf`, `50ac13d`, `ab772a0`, `b1cdf9b`), and the `android` context then failed with `CI gate failed: Required checks did not succeed: ios`. The message:
+  ```
+  ERROR: swift-format resolved to /Applications/Xcode_27.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-format,
+    which is outside the validated Xcode 27.0 toolchain (/Applications/Xcode_27.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain)
+  ```
+- **Root cause, reproduced with a fake toolchain:** the `xcode-27` image installs `Xcode_27.0.app` as a **symlink** to `Xcode_27.app`. `xcode-select -s /Applications/Xcode_27.0.app` records the link spelling; `xcrun --find` resolves it and reports the physical path. `tools/swift-lint.sh` compared the resolved path against the selected spelling, so it rejected the runner's own formatter. **`485c8c4` fixed the selection *step* but not this second membership test**, which is why the heads stayed red after it.
+- **Fixed:** the membership test accepts the selected directory **or its physical resolution** (`pwd -P`), so either spelling names the same toolchain. A wrong toolchain still fails closed, because neither form matches it.
+- **Proven both ways, in `tools/swift-tools-test.sh`:** a new case builds a symlinked fake toolchain with a fake `xcodebuild` and `xcrun` that resolves exactly as the real one does. With the fix the gate exits 0; with the single-spelling test restored it FAILS `expected exit 0, got 1`. The suite is 10 passed, 0 failed either way, so the case is what moves.
+- **Affected documents:** `tools/swift-lint.sh`, `tools/swift-tools-test.sh`, `PROJECT_LOG.md` (this entry).
