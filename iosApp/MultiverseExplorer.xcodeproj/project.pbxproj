@@ -11,6 +11,7 @@
 		08EB182477F63FE3D9F79CDB /* en.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 5536017E77F302F6EB967132 /* en.lproj */; };
 		1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */; };
 		2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */; };
+		24399A57F641B15333EB01D6 /* PortraitMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B97A7C1A118838F11C3598 /* PortraitMotionTests.swift */; };
 		267BC68D43A11C59F00068F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */; };
 		279699C3BE84710C549ADB48 /* BrandedSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1AFE1EEBB5398C60FBB7AC /* BrandedSplashView.swift */; };
 		299283721CEAE203B18BFD98 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0422C1E40C05BA5AD16E9B67 /* Tokens.swift */; };
@@ -24,6 +25,7 @@
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
 		75828753B0CCE9DFEBE7DFEF /* LocalizedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BED588860D71840131E473 /* LocalizedCopy.swift */; };
 		7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */; };
+		A5173A14BCFF6235D7D5BACF /* PortraitMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536D11A7C633C64930CA43F5 /* PortraitMotion.swift */; };
 		A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */; };
 		B93EBAFF6017B60149A2964B /* ShellNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E70E5D71457D346BF26D4B /* ShellNavigation.swift */; };
 		C12B109F91909463515EB506 /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148069F4158CE9125230726C /* EmptyState.swift */; };
@@ -52,7 +54,9 @@
 		3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFramework.swift; sourceTree = "<group>"; };
 		3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */ = {isa = PBXFileReference; path = es.lproj; sourceTree = "<group>"; };
 		52E70E5D71457D346BF26D4B /* ShellNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigation.swift; sourceTree = "<group>"; };
+		536D11A7C633C64930CA43F5 /* PortraitMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitMotion.swift; sourceTree = "<group>"; };
 		5536017E77F302F6EB967132 /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
+		59B97A7C1A118838F11C3598 /* PortraitMotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitMotionTests.swift; sourceTree = "<group>"; };
 		65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseTokensParityTests.swift; sourceTree = "<group>"; };
 		7AEB402259234D6DC93CA08F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7FB00588E2E25299609BD647 /* GlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
@@ -108,6 +112,7 @@
 				21D851FB75D9353923D5987C /* GlassControls.swift */,
 				7FB00588E2E25299609BD647 /* GlassSurface.swift */,
 				D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */,
+				536D11A7C633C64930CA43F5 /* PortraitMotion.swift */,
 				0422C1E40C05BA5AD16E9B67 /* Tokens.swift */,
 			);
 			path = DesignSystem;
@@ -153,6 +158,7 @@
 			children = (
 				351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */,
 				65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */,
+				59B97A7C1A118838F11C3598 /* PortraitMotionTests.swift */,
 				B54C460E27588DBDEF1A64F0 /* ShellNavigationTests.swift */,
 			);
 			path = Tests;
@@ -305,6 +311,7 @@
 				03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */,
 				75828753B0CCE9DFEBE7DFEF /* LocalizedCopy.swift in Sources */,
 				1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */,
+				A5173A14BCFF6235D7D5BACF /* PortraitMotion.swift in Sources */,
 				267BC68D43A11C59F00068F9 /* RootView.swift in Sources */,
 				48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */,
 				C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */,
@@ -319,6 +326,7 @@
 			files = (
 				578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */,
 				2F77E6E1EA204BCB96388013 /* MultiverseTokensParityTests.swift in Sources */,
+				24399A57F641B15333EB01D6 /* PortraitMotionTests.swift in Sources */,
 				390EF1F7D7B0747448A5D42A /* ShellNavigationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
