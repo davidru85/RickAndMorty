@@ -398,8 +398,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
             include("**/AndroidManifest.xml")
             exclude(*BUILD_STATE_EXCLUDES)
         }
-        // `iosApp/` does not exist yet: the plist input is declared while empty, so the first
-        // `Info.plist` to land is scanned rather than being an untracked file the task happens to see.
+        // Every plist is an input, `iosApp/App/Info.plist` included, so a new one is scanned the
+        // moment it lands rather than being an untracked file the task happens to see.
         val plists = target.fileTree(rootDir) {
             include("**/Info.plist", "**/*.plist")
             exclude(*BUILD_STATE_EXCLUDES)

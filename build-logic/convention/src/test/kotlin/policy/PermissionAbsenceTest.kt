@@ -11,8 +11,8 @@ import kotlin.test.assertTrue
  *
  * The audit scans every manifest in the repository for `RECORD_AUDIO` and every `Info.plist` for a
  * speech or microphone usage description. The shipped manifest must be present for a clean run to
- * mean anything, so its absence fails closed; `iosApp/` does not exist yet, and the empty plist set
- * is a pass rather than an error.
+ * mean anything, so its absence fails closed; a tree with no plist at all is a pass rather than an
+ * error, because Android-only modules carry none.
  */
 class PermissionAbsenceTest {
 
