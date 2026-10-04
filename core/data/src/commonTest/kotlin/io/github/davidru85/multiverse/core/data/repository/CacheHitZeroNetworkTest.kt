@@ -3,8 +3,8 @@ package io.github.davidru85.multiverse.core.data.repository
 import io.github.davidru85.multiverse.core.data.cache.CachePolicy
 import io.github.davidru85.multiverse.core.data.cache.ResponseCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
-import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.data.remote.rest.RestCharacterRemoteDataSource
+import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.repository.PageLoadPolicy
 import io.github.davidru85.multiverse.core.domain.result.DataResult
@@ -15,8 +15,8 @@ import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import io.ktor.client.HttpClient
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -84,8 +84,9 @@ class CacheHitZeroNetworkTest {
             assertEquals(
                 expected = 1,
                 actual = served.size,
-                message = "a cache-hit render issues zero network requests (AC-REQ-NFR-003-3): the engine " +
-                    "served ${served.size} request(s), ${served.map { it.url }}",
+                message =
+                    "a cache-hit render issues zero network requests (AC-REQ-NFR-003-3): the engine " +
+                        "served ${served.size} request(s), ${served.map { it.url }}",
             )
         }
 
