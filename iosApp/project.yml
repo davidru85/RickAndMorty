@@ -84,3 +84,19 @@ targets:
       - path: Tests
     dependencies:
       - target: MultiverseExplorer
+    settings:
+      base:
+        # The test bundle needs its own Info.plist. XcodeGen does not synthesise one for a unit-test
+        # target, and without this the target cannot be code-signed or run (`TASK-052` adds the first
+        # cases; the setting only matters once a test file exists).
+        GENERATE_INFOPLIST_FILE: YES
+        # `@testable import MultiverseApp` loads the app module's dependency graph, which includes
+        # the Kotlin framework (ADR-0012); the test target resolves it from the same path the app
+        # uses, so the framework's Swift module is found during testing too.
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - MultiverseExplorer

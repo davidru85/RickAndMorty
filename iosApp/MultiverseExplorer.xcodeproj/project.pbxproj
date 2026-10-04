@@ -7,13 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */; };
 		1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */; };
+		2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */; };
 		267BC68D43A11C59F00068F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */; };
+		299283721CEAE203B18BFD98 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0422C1E40C05BA5AD16E9B67 /* Tokens.swift */; };
+		2A819670E43D88EBDCBE76A1 /* GlassSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB00588E2E25299609BD647 /* GlassSurface.swift */; };
+		2F77E6E1EA204BCB96388013 /* MultiverseTokensParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */; };
 		34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */; };
 		48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */; };
+		575F388BD1BAE8C4EA7902EE /* GlassCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */; };
+		578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */; };
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
 		A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */; };
+		C12B109F91909463515EB506 /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148069F4158CE9125230726C /* EmptyState.swift */; };
 		C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */; };
+		F30923B2AF3F46A94E8734A1 /* GlassControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D851FB75D9353923D5987C /* GlassControls.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,13 +36,22 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0422C1E40C05BA5AD16E9B67 /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		0654B4D228F19F8CCCD54CD8 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		148069F4158CE9125230726C /* EmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyState.swift; sourceTree = "<group>"; };
 		184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStateHolder.swift; sourceTree = "<group>"; };
+		21D851FB75D9353923D5987C /* GlassControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassControls.swift; sourceTree = "<group>"; };
 		27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryStateHolder.swift; sourceTree = "<group>"; };
+		351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponentRenderingTests.swift; sourceTree = "<group>"; };
 		3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFramework.swift; sourceTree = "<group>"; };
+		65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseTokensParityTests.swift; sourceTree = "<group>"; };
 		7AEB402259234D6DC93CA08F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7FB00588E2E25299609BD647 /* GlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
+		94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCards.swift; sourceTree = "<group>"; };
 		9739581C43EEFA27FB213EC3 /* MultiverseExplorer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MultiverseExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtons.swift; sourceTree = "<group>"; };
 		B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTabBar.swift; sourceTree = "<group>"; };
 		E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseApp.swift; sourceTree = "<group>"; };
 		EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailStateHolder.swift; sourceTree = "<group>"; };
 		EF8255D2D200EB6B0A11CBA2 /* MultiverseExplorerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MultiverseExplorerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -71,6 +89,13 @@
 		39B1EAE7FFCD651F750AAECC /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				148069F4158CE9125230726C /* EmptyState.swift */,
+				A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */,
+				94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */,
+				21D851FB75D9353923D5987C /* GlassControls.swift */,
+				7FB00588E2E25299609BD647 /* GlassSurface.swift */,
+				D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */,
+				0422C1E40C05BA5AD16E9B67 /* Tokens.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -101,6 +126,8 @@
 		726559611B824AB4EAE11FA9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */,
+				65FEC3168B3D7308440A974F /* MultiverseTokensParityTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -229,11 +256,18 @@
 			files = (
 				34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */,
 				A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */,
+				C12B109F91909463515EB506 /* EmptyState.swift in Sources */,
 				5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */,
+				2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */,
+				575F388BD1BAE8C4EA7902EE /* GlassCards.swift in Sources */,
+				F30923B2AF3F46A94E8734A1 /* GlassControls.swift in Sources */,
+				2A819670E43D88EBDCBE76A1 /* GlassSurface.swift in Sources */,
+				03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */,
 				1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */,
 				267BC68D43A11C59F00068F9 /* RootView.swift in Sources */,
 				48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */,
 				C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */,
+				299283721CEAE203B18BFD98 /* Tokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,6 +275,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */,
+				2F77E6E1EA204BCB96388013 /* MultiverseTokensParityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -382,10 +418,20 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					MultiverseExplorer,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.MultiverseExplorerTests;
 				SDKROOT = iphoneos;
@@ -456,10 +502,20 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					MultiverseExplorer,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.MultiverseExplorerTests;
 				SDKROOT = iphoneos;
