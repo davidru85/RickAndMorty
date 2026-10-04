@@ -5,6 +5,11 @@ import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.feature.characterdetail.navigation.CharacterDetail
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 /**
  * The `:core:ios` bootstrap (`ADR-0012`, `TASK-078`).
@@ -65,4 +70,29 @@ public object MultiverseBootstrap {
      * carries the repository interface the Swift shell starts its graph around (`DEC-091`).
      */
     public fun repositoryType(): String = CharacterRepository::class.qualifiedName.orEmpty()
+
+    /**
+     * A state-holder scope for one iOS screen (`TASK-053`).
+     *
+     * Kotlin/Native exports `CoroutineScope` as a **protocol**, not a constructor, so Swift cannot
+     * build one; the shared holders therefore take the scope from here rather than each platform
+     * inventing its own. The scope is a supervisor job on the platform main queue, so a failed load
+     * cancels nothing else and every update lands where the view reads it, and closing it cancels the
+     * screen's work exactly as `viewModelScope` does on Android.
+     */
+    public fun screenScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    /**
+     * The dispatcher the shared holders run their work on: the main queue, so a state update is
+     * already where SwiftUI reads it and no extra hop is needed.
+     */
+    public fun mainDispatcher(): CoroutineDispatcher = Dispatchers.Main
+
+    /**
+     * Cancels [scope]. Kotlin/Native exports `CoroutineScope` as a protocol with no `cancel`, so a
+     * Swift holder cannot close the scope it was given; this is the one operation it needs.
+     */
+    public fun cancelScope(scope: CoroutineScope) {
+        scope.cancel()
+    }
 }

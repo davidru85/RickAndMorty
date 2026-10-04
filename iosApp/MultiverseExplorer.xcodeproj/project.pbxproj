@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */; };
 		267BC68D43A11C59F00068F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */; };
+		34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */; };
+		48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */; };
+		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
+		A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */; };
 		C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */; };
 /* End PBXBuildFile section */
 
@@ -24,15 +28,35 @@
 
 /* Begin PBXFileReference section */
 		0654B4D228F19F8CCCD54CD8 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStateHolder.swift; sourceTree = "<group>"; };
+		27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryStateHolder.swift; sourceTree = "<group>"; };
 		3979CE5C2A0FEA2778157D0E /* SharedFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFramework.swift; sourceTree = "<group>"; };
 		7AEB402259234D6DC93CA08F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9739581C43EEFA27FB213EC3 /* MultiverseExplorer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MultiverseExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseApp.swift; sourceTree = "<group>"; };
+		EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailStateHolder.swift; sourceTree = "<group>"; };
 		EF8255D2D200EB6B0A11CBA2 /* MultiverseExplorerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MultiverseExplorerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStateHolder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		1CDF8AE67A05619CB6558F59 /* Discovery */ = {
+			isa = PBXGroup;
+			children = (
+				27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */,
+			);
+			path = Discovery;
+			sourceTree = "<group>";
+		};
+		2546BEFEE1FD34F0C450EEBE /* Favorites */ = {
+			isa = PBXGroup;
+			children = (
+				FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */,
+			);
+			path = Favorites;
+			sourceTree = "<group>";
+		};
 		26055A90E2A7DAB028DDBF95 = {
 			isa = PBXGroup;
 			children = (
@@ -54,6 +78,10 @@
 		3E297FDC5E379D61FD7A9746 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				8E9BD9D5C35A57464235877F /* CharacterDetail */,
+				1CDF8AE67A05619CB6558F59 /* Discovery */,
+				2546BEFEE1FD34F0C450EEBE /* Favorites */,
+				E51CD1BFCCD4CE44FFA0CD0A /* Settings */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -84,6 +112,22 @@
 				EF8255D2D200EB6B0A11CBA2 /* MultiverseExplorerTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8E9BD9D5C35A57464235877F /* CharacterDetail */ = {
+			isa = PBXGroup;
+			children = (
+				EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */,
+			);
+			path = CharacterDetail;
+			sourceTree = "<group>";
+		};
+		E51CD1BFCCD4CE44FFA0CD0A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -183,8 +227,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */,
+				A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */,
+				5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */,
 				1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */,
 				267BC68D43A11C59F00068F9 /* RootView.swift in Sources */,
+				48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */,
 				C3352E99394E59B7C62E62D8 /* SharedFramework.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
