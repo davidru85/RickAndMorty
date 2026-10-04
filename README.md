@@ -229,9 +229,9 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 3. **Voice search is not implemented.** It is deferred, and no microphone or speech permission is requested (`DEC-002`).
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).
-6. **Exactly one artifact is pinned pre-release.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and no module declares it yet; the accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). The other two alpha-only components are not adopted.
+6. **Exactly one pre-release artifact ships.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and declared by `:core:designsystem` and by four feature modules (`:feature:character-detail`, `:feature:discovery`, `:feature:favorites`, `:feature:settings`), so the Android app contains it. The accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md), whose rule that only the design system declares it the four feature modules do not yet meet (`CONF-84`). The other two alpha-only components are not adopted.
 7. **The API is unversioned.** Its shape can change without notice, so contract tests run outside the merge gate (`DEC-029`).
-8. **The reference device for performance budgets is not yet locked.** Budgets and the measurement method exist; the named device is recorded as a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+8. **The reference device for performance budgets is not yet locked.** Budgets and the measurement method exist; the named device is recorded as a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), so no performance budget has been measured yet. Only the zero-network assertion on a cached page runs in the merge gate (`DEC-115`).
 
 ## 12. Documentation index
 

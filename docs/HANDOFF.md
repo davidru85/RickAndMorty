@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. The current PR #156 review is recorded in §1.15; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-04: B6 Phases 6.1 and 6.2 are merged (PRs #153, #156) and the M1 release phase is in review in PR #158. The latest review is recorded in §1.16; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -8,6 +8,26 @@
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### B6 closure — 2026-10-04
+
+**Block 6: Phases 6.1 and 6.2 are merged; Phase 6.3, the M1 release, is in review** (`DEC-107`):
+
+| Phase | PR | Members | State |
+| --- | --- | --- | --- |
+| 6.1 Visual and accessibility evidence | #153 | `TASK-045`, `TASK-046` | Merged as `f77f333`; both `Done` |
+| 6.2 Security and performance evidence | #156 | `TASK-048`, `TASK-049` | Merged as `e70def4`; `TASK-048` `Done`, `TASK-049` `In progress` (device budgets, `DEC-115`) |
+| 6.3 M1 release | #158 | `TASK-050` | In review; `REL3`/`REL4` (tag, publish) are the owner's |
+
+**Delivered evidence:** 52 committed Roborazzi baselines across the component catalogue, the seven `ERROR_FLOW.md` states, the four feature surfaces and the shell (Episodes and the maximum-text captures included), each proved byte-identical in light and dark (`TEST-UI-012`, `TEST-UI-016`); the automated accessibility cases `TEST-A11Y-002`…`006` and the `DEC-119` emulator checklist; the four security policy checks, with `TEST-UNIT-027` covering every shipped persistence site and `TEST-UNIT-028` reading the release APK; `TEST-PERF-003` asserting zero network requests on a cache-hit render against the real transport; and `TEST-UNIT-019` proving the Android milestone assembles with iOS absent, run by the `app-artifacts` worker. The executed checks of each reviewed head are in `PROJECT_LOG.md` LOG-0125…LOG-0128.
+
+**Two real product defects were fixed, and both were required by the criteria the phase verifies** (`DEC-114`): the tone-30 accent container placed its tone on the mean sRGB channel, so containers sat at L* 40–57 and On Surface text over a saturated accent measured **2.79:1** against the 4.5:1 floor — the tone is now solved in CIE L\* and the worst case is **7.33:1**; and both grids hard-coded two columns, so `REQ-UX-006`'s collapse at the largest text sizes never happened — a shared `MultiverseGrid` now decides the count.
+
+**Carried as unmet, named rather than waived (`DEC-115`, `DEC-116`):** `M1-4` (budgets on the named reference device) cannot be evidenced while `A-PERF-1` is unassigned and `PERF-Q1` is undecided. `M1-5` is evidenced by the `DEC-119` emulator checklist. The release is prepared at `v0.1.0` and the tag/publish remain the owner's.
+
+**Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `CONF-84` (four feature modules declare the Material 3 alpha that ADR-0008 confines to `:core:designsystem`); `GAP-006`/`GAP-010` unchanged.
+
+**B7 entry condition:** B6 Phase 6.3 merged and the M1 release published by the owner.
 
 ### PR #150 branch update — 2026-10-04
 
@@ -230,6 +250,12 @@ The branch-update verification commands and observed results are recorded in `PR
 PR #156 was reviewed against `main` containing the PR #153 merge. Two security checks were narrower than their criteria and are now fixed with red-then-green commits: `TEST-UNIT-027` also searches every shipped source for a persistence site outside the inventoried stores, and `TEST-UNIT-028` gains `:androidApp:verifyShippedPermissions`, which reads the release APK's merged permission table and is pinned in the `app-artifacts` worker. A stray `iosApp/` Xcode workspace file was removed, and the README baseline count, the `PERFORMANCE.md` result register and `TESTING.md` §17 now match the code. `PROJECT_LOG.md` LOG-0127 has the commits and the observed verification.
 
 `TASK-048` and `TASK-049` stay In review until the owner merges. `TASK-049`'s device budgets remain unmeasured under `DEC-115`: the owner must name the reference device (A-PERF-1) and decide the harness module (PERF-Q1) before `M1-4` can be evidenced. Next is PR #158, reviewed against `main` containing the #156 merge. **When PR #161 merges `main`, it must keep `iosApp/MultiverseExplorer.xcodeproj/project.xcworkspace/contents.xcworkspacedata`:** Git drops it silently because that branch inherited it from `197a200` without modifying it.
+
+## 1.16 PR #158 sequential review (2026-10-04)
+
+The owner merged PR #156 as `e70def4`; PR #158 then conflicted in `HANDOFF.md` and `PROJECT_LOG.md` only, and a merge commit resolves both, keeping every log entry. The review found that `TEST-UNIT-019` had never run in CI: since `DEC-112` no worker runs `:androidApp:check`. The `app-artifacts` worker now runs it, `ModularWorkflowGate` pins it, and its rule moved into a tested `MilestoneIndependencePolicy` (red-then-green commits). Four statements went stale or were wrong, and are now corrected: `DEC-116`, `LOG-0104` and this file's B6 closure said `M1-5` was unmet, although `DEC-119` evidences it; `README.md` §11 said no module declares the Material 3 alpha, but five do (`CONF-84`, escalated); the `TASK-050` row was still `Proposed`; and no release-note draft existed, so the PR description now carries one, generated by the command in `PROJECT_LOG.md` LOG-0128.
+
+Owner actions after merging PR #158: tag `v0.1.0` on the merge commit (`REL3`), publish the GitHub Release with the release APK and the note generated by LOG-0128's command for that commit (`REL4`, `REL5`), close issues #154 and #157, and decide `CONF-84`, `A-PERF-1` and `PERF-Q1`. Next is PR #161, reviewed against `main` containing the #158 merge; it must keep its `iosApp/…/contents.xcworkspacedata` (§1.15).
 
 ## 2. Completed work
 
