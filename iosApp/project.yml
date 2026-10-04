@@ -5,6 +5,14 @@
 # rules require `iosApp/App.xcodeproj/project.pbxproj` to be trackable when it exists, so the
 # generated project is committed after generation rather than regenerated per checkout.
 name: MultiverseExplorer
+
+# The snapshot library `DEC-025` names (`TESTING.md` §8.3): committed baselines for the iOS design
+# system and the feature screens, pinned by version so a resolution cannot drift.
+packages:
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    exactVersion: 1.19.2
+
 options:
   bundleIdPrefix: io.github.davidru85.multiverse
   deploymentTarget:
@@ -32,7 +40,22 @@ targets:
     sources:
       - path: App
       - path: Features
+      # The portrait seam (`TASK-058`): the image pipeline lives in its own folder, owned by
+      # `TASK-058`, and is compiled into the app target like every other source.
+      - path: ImagePipeline
       - path: DesignSystem
+        # `README.md` documents the components; it is not a bundle resource, and a non-code file in
+        # the app bundle breaks code signing.
+        excludes:
+          - "README.md"
+      # The committed copy files (`TASK-060`): `en.lproj`/`es.lproj` are copied into the bundle root
+      # as localised resources, so the strings the parity test compares are the ones the app loads.
+      # Each locale folder is a separate group: a single `folder` source would nest them under
+      # `Resources/`, where iOS does not look for a localisation.
+      - path: Resources/en.lproj
+        buildPhase: resources
+      - path: Resources/es.lproj
+        buildPhase: resources
     # The framework search path is where `:core:ios` writes the Kotlin framework (ADR-0012). The
     # app links exactly one; a second would be the duplicate-runtime failure the ADR forbids.
     settings:
@@ -84,6 +107,7 @@ targets:
       - path: Tests
     dependencies:
       - target: MultiverseExplorer
+      - package: SnapshotTesting
     settings:
       base:
         # The test bundle needs its own Info.plist. XcodeGen does not synthesise one for a unit-test

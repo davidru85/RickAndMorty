@@ -5,7 +5,36 @@ import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.feature.characterdetail.navigation.CharacterDetail
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
+import io.github.davidru85.multiverse.core.data.cache.NsFileCacheStorage
+import io.github.davidru85.multiverse.core.data.cache.iosResponseCacheDirectory
+import io.github.davidru85.multiverse.core.data.favorites.UserDefaultsFavoritesLocalDataSource
+import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
+import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
+import io.github.davidru85.multiverse.core.data.di.coreModule
+import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
+import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
+import platform.Foundation.NSUserDefaults
+import io.github.davidru85.multiverse.core.data.logging.OsLogSink
+import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
+import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
+import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavorite
+import io.github.davidru85.multiverse.feature.favorites.domain.ResolveFavoriteCards
+import io.github.davidru85.multiverse.feature.settings.domain.ClearFavorites
+import io.github.davidru85.multiverse.feature.settings.domain.ObserveAppSettings
+import io.github.davidru85.multiverse.feature.settings.domain.UpdateAppSettings
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
+import io.github.davidru85.multiverse.feature.settings.di.settingsModule
 import kotlinx.coroutines.CoroutineDispatcher
+import org.koin.core.Koin
+import org.koin.mp.KoinPlatformTools
+import org.koin.core.context.startKoin
+import org.koin.core.module.Module
+import org.koin.core.parameter.parametersOf
+import org.koin.dsl.module
+import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -95,4 +124,132 @@ public object MultiverseBootstrap {
     public fun cancelScope(scope: CoroutineScope) {
         scope.cancel()
     }
+
+    /**
+     * The pager one iOS screen's state holder runs on (`IC-014`, `TASK-055`).
+     *
+     * The graph binds `factory<CharacterPager>` **with a `CoroutineScope` parameter**, and Kotlin/Native
+     * exports a parameterised Koin factory as a lambda a Swift caller cannot invoke. Rather than
+     * teaching Swift Koin's parameter protocol, the one place that owns the graph — the composition
+     * root — exposes the resolved value: `:core:ios` starts the graph from the same modules the
+     * Android shell loads, and this function is how the Swift side receives a dependency.
+     */
+    public fun characterPager(scope: CoroutineScope): CharacterPager =
+        iOSGraph.koin.get { parametersOf(scope) }
+
+    /**
+     * The Detail screen's dependencies (`IC-019`, `TASK-055`).
+     *
+     * Koin's Swift surface cannot name a generic resolution, so each screen's dependency set is
+     * bundled here: the Swift host receives concrete values and passes them to its state holder, and
+     * no Swift file resolves from the graph itself.
+     */
+    public fun characterDetailDependencies(): CharacterDetailDependencies =
+        CharacterDetailDependencies(
+            getDetails = iOSGraph.koin.get(),
+            toggleFavorite = iOSGraph.koin.get(),
+            observeFavoriteIds = iOSGraph.koin.get(),
+        )
+
+    /** The Favorites section's dependencies (`IC-020`, `TASK-055`). */
+    public fun favoritesDependencies(): FavoritesDependencies =
+        FavoritesDependencies(
+            observeFavoriteIds = iOSGraph.koin.get(),
+            resolveFavoriteCards = iOSGraph.koin.get(),
+        )
+
+    /**
+     * The Settings screen's dependencies (`IC-023`, `TASK-077`).
+     *
+     * `observeFavoriteIds` is included because the screen derives `canDeleteFavorites` from the
+     * stored set (`AC-REQ-FUNC-035-3`), which is `:core:domain`'s use case rather than a settings one.
+     */
+    public fun settingsDependencies(): SettingsDependencies =
+        SettingsDependencies(
+            observeAppSettings = iOSGraph.koin.get(),
+            updateAppSettings = iOSGraph.koin.get(),
+            clearFavorites = iOSGraph.koin.get(),
+            observeFavoriteIds = iOSGraph.koin.get(),
+        )
+}
+
+/** The Detail screen's resolved dependencies (`IC-019`). */
+public class CharacterDetailDependencies(
+    public val getDetails: GetCharacterDetails,
+    public val toggleFavorite: ToggleFavorite,
+    public val observeFavoriteIds: ObserveFavoriteIds,
+)
+
+/** The Favorites section's resolved dependencies (`IC-020`). */
+public class FavoritesDependencies(
+    public val observeFavoriteIds: ObserveFavoriteIds,
+    public val resolveFavoriteCards: ResolveFavoriteCards,
+)
+
+/** The Settings screen's resolved dependencies (`IC-023`). */
+public class SettingsDependencies(
+    public val observeAppSettings: ObserveAppSettings,
+    public val updateAppSettings: UpdateAppSettings,
+    public val clearFavorites: ClearFavorites,
+    public val observeFavoriteIds: ObserveFavoriteIds,
+)
+
+
+/**
+ * The iOS composition root (`DESIGN.md` §5, `DEC-091`, ADR-0014, `TASK-055`).
+ *
+ * It starts the **same** Koin graph the Android shell starts — `coreModule` plus each feature's own
+ * module — so no feature names an implementation and the two platforms cannot diverge on which
+ * implementation serves an interface. The Android peer is `:androidApp`'s `MultiverseApplication`.
+ *
+ * It lives in `:core:ios` rather than in the Swift app because starting a graph is Kotlin work: Koin's
+ * `startKoin` is a Kotlin DSL, and a Kotlin/Native caller is the only kind that can invoke it. The
+ * Swift side reaches the graph through [MultiverseBootstrap]'s functions instead of resolving
+ * dependencies itself.
+ */
+public object iOSGraph {
+    private var started = false
+
+    /** The graph, started on first use. */
+    public val koin: Koin
+        get() {
+            if (!started) {
+                startKoin {
+                    modules(
+                        coreModule,
+                        discoveryModule,
+                        characterDetailModule,
+                        favoritesModule,
+                        settingsModule,
+                    )
+                    modules(iOSPlatformInputs())
+                }
+                started = true
+            }
+            // Kotlin/Native has no `GlobalContext` object: the platform-neutral accessor is
+            // `KoinPlatformTools.defaultContext()`, which is what `startKoin` populated.
+            return KoinPlatformTools.defaultContext().get()
+        }
+}
+
+/**
+ * The iOS platform inputs (`CoreGraphInputs`).
+ *
+ * `NSUserDefaults` is the platform store for both favourites and preferences (`DEC-017`, `ADR-0007`),
+ * and the response cache is the app's own caches directory ([`NsFileCacheStorage`]); the HTTP client
+ * is the Darwin-engine one the shared data layer already builds for Apple targets.
+ */
+private fun iOSPlatformInputs(): Module {
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val logger = ValidatingAppLogger.forRelease(OsLogSink)
+    return CoreGraphInputs(
+        client = appleRickAndMortyHttpClient(),
+        decodingDispatcher = Dispatchers.Default,
+        clock = Clock.System,
+        applicationScope = scope,
+        favoritesStore = UserDefaultsFavoritesLocalDataSource(NSUserDefaults.standardUserDefaults, logger),
+        cacheStorage = NsFileCacheStorage(iosResponseCacheDirectory()),
+        settingsStore = UserDefaultsAppSettingsLocalDataSource(),
+        logger = logger,
+    ).asModule()
 }

@@ -330,8 +330,21 @@ jobs:
         run: |
           LOCKED="$(awk '$1 == "swift-format" { print $2 }' tools/swift-tools.lock | sed "s/@Xcode-//")"
           echo "tools/swift-tools.lock pins Xcode $LOCKED"
-          if [ -d "/Applications/Xcode_$LOCKED.app" ]; then
-            sudo xcode-select -s "/Applications/Xcode_$LOCKED.app"
+          # The runner names the bundle with the version the lock records (`Xcode_27.0.app`) while the
+          # active selection may report it without the patch component (`Xcode_27.app`); both spellings
+          # name the same toolchain, so both are accepted rather than failing on the directory name.
+          SELECTED=""
+          for candidate in "/Applications/Xcode_$LOCKED.app" "/Applications/Xcode_${LOCKED%.*}.app"; do
+            if [ -d "$candidate" ]; then
+              SELECTED="$candidate"
+              break
+            fi
+          done
+          if [ -n "$SELECTED" ]; then
+            sudo xcode-select -s "$SELECTED"
+          elif [ -n "$(xcodebuild -version 2>/dev/null | awk '/^Xcode /{ print $2 }' | grep -x "$LOCKED" || true)" ]; then
+            # The selected toolchain already reports the locked version, so no change is needed.
+            echo "the active Xcode already reports $LOCKED"
           else
             echo "WARNING: /Applications/Xcode_$LOCKED.app is not installed on this runner; the available toolchains are:"
             ls -d /Applications/Xcode*.app 2>/dev/null || true
