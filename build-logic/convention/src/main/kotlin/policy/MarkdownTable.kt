@@ -152,7 +152,7 @@ internal object MarkdownTable {
         var inside = false
         lines.forEachIndexed { index, line ->
             if (FENCE.containsMatchIn(line)) {
-                // The opening fence itself is not "inside"; the closing one is, so both are skipped.
+                // Both fence lines are marked, so neither the opener nor the closer can act as a marker.
                 fenced[index] = true
                 inside = !inside
             } else {
