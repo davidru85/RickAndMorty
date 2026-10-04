@@ -368,6 +368,8 @@ jobs:
         run: bash tools/swift-tools-test.sh
       - name: Swift formatting and lint
         run: bash tools/swift-lint.sh iosApp
+      - name: Check the iOS version against VERSION
+        run: bash tools/ios-version.sh --check
       # The snapshot baselines are recorded on this device and runtime — the iOS 27.0 runtime the pinned
       # Xcode ships, which the runner provides — so a different runtime, which renders glass
       # differently, fails visibly instead of being compared against the wrong reference.
