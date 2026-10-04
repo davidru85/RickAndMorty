@@ -132,6 +132,7 @@
 | DEC-049 | Agents may edit and open pull requests; merging, tagging, releases, repository settings and secrets are human-only | Process | Accepted | Blocking | `AGENTS.md` | — | Interview H3 |
 | DEC-050 | Mermaid diagrams in the owning document; C4 context/container described in text | Documentation | Accepted | Normal | `DESIGN.md` §0 | — | Interview H4 |
 | DEC-051 | Five reusable templates: ADR, backlog item, test case, pull request, bug report | Documentation | Accepted | Normal | `docs/templates/` | — | Interview H5 |
+| DEC-119 | TASK-046 / PR #153 only: execute the Android accessibility checklist on an Android emulator with TalkBack, retaining screenshots, focus/target records and contrast measurements in `docs/evidence/pr153/README.md`. The owner explicitly accepts the emulator method in place of the physical-device requirement of `TESTING.md` §9.2. All checklist items and automated checks remain required; this does not waive a gate or replace the reference-device performance method. The review fixes uncovered implementation defects within TASK-045/TASK-046's existing acceptance criteria | Process | Accepted | High | `TESTING.md` §9.2, `DEFINITION.md` M1-5, `TASK-046`, PR #153 | — (task-scoped evidence method) | Owner directive 2026-10-04 in this chat: “Do it yourself. You can use an Android emulator if needed.” |
 
 ## 3. Superseded and rejected
 

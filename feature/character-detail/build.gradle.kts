@@ -130,6 +130,8 @@ kotlin {
             implementation(libs.ktor.client.core)
         }
         androidHostTest.dependencies {
+            // TEST-A11Y-005 measures Rect bounds to catch text clipped by its layout (DEC-077).
+            implementation(libs.androidx.compose.ui.geometry)
             // `TEST-UI-002` runs on the JVM host with Robolectric and the Compose test rule.
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)

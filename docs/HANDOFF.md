@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-03 (**B3 complete**: Phase 3.3 merged in PR #117); must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. The current PR #156 branch update is recorded in §1.14; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -211,6 +211,19 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 - **`WorkflowGateGuard`:** a new `HOST_DISABLED_EXCLUSIONS` allow-list (the `android` job may exclude `iosSimulatorArm64Test`, the `ios` job may exclude nothing), enforced per job and per step, so the fix cannot be widened into a general `-x`; the existing execution filter now strips the sanctioned exclusion before deciding a step still executes its other commands.
 - **Observed locally:** red first — 3 guard-test failures against the unfixed guard; green after — the 40-test `WorkflowGateGuardTest` class and `:build-logic:convention:check ktlintCheck` all pass. `check --dry-run`: 1158 → 982 tasks, 30 → 0 Kotlin/Native tasks, with every Linux-executable step unchanged.
 **Obligation this change inherits:** its own pull-request run must be observed, and `GAP-028` is closed only on that evidence (`LOG-0097`).
+
+## 1.13 PR #153 sequential review (2026-10-04)
+
+TASK-045/TASK-046 now carry actual maximum-text regressions, complete component catalogues, Episodes coverage, a real composition-root startup test and reduced-motion integration tests. The review fixed the concrete image-type injection crash, unused NavHost policy, frozen scale-zero pulse, clipped stats/empty actions, system-bar overlap and split navigation labels. The owner accepted emulator checklist execution through DEC-119; [the evidence](evidence/pr153/README.md) retains screenshots, TalkBack focus records and measured contrast. The source fixes are new commits; the original commits are preserved.
+
+The owner merged PR #153 as `f77f333` on 2026-10-04; TASK-045/TASK-046 are Done with the reviewed head's successful CI and retained checklist. PR #156 follows against that merged main (§1.14), then PR #158 against the merged #156. The PR description names the executed checks and final-head CI result. This review does not declare M1 released or replace performance-device evidence.
+
+
+## 1.14 PR #156 conflict resolution after Phase 6.1 (2026-10-04)
+
+GH CLI confirms PR #153 was merged by the owner as `f77f333349599a0d1698ffac8306991545ed90fb`. The owner explicitly requested resolving PR #156's conflicts next. The branch update merges that main commit into the existing Phase 6.2 head `197a20014b8ab3621297aaa4b309d23a25f8da5f`, preserving both histories. `CONF-83` records the two documentation resolutions: keep both log entries, the zero-network test activation and the corrected 96-pair contrast coverage. Product, test, build and workflow files combine without content conflicts.
+
+The branch-update verification commands and observed results are recorded in `PROJECT_LOG.md` LOG-0126 and the PR description. This compatibility update does not measure the remaining performance budgets: `DEC-115` and TASK-049 retain that limitation. Review and merge PR #156 before starting PR #158. No emulator or simulator is needed for this conflict-resolution work.
 
 ## 2. Completed work
 

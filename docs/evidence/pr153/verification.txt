@@ -1,0 +1,21 @@
+PR153 corrected-source local verification, 2026-10-04
+Prerequisite: ANDROID_HOME set to the installed Android SDK.
+Command: ./gradlew :core:designsystem:check :androidApp:testDebugUnitTest :androidApp:lint :androidApp:verifyRoborazziDebug :feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest :feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest :feature:character-detail:ktlintCheck :feature:character-detail:ktlintAndroidHostTestSourceSetCheck verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate buildHealth :core:data:contractTestReplayAndroidHost :build-logic:convention:test --console=plain
+Observed: BUILD SUCCESSFUL in 52s
+851 actionable tasks: 138 executed, 45 from cache, 668 up-to-date
+verifyRepositoryHygiene: 0 findings.
+All 52 committed snapshot PNGs verified, including byte-identical light/dark pairs.
+Changed-document relative links: PASS. git diff --check: PASS.
+Contract replay is explicitly selected; ordinary data tests are independently run by CI's data worker.
+
+Focused regressions and observed outcomes:
+- AccessibilityVerificationTest + ContrastRecordTest + assembleDebug: PASS after remediation.
+- CharacterDetailScreenTest: PASS at real fontScale 2.0, native glyph rendering.
+- MainActivityStartupTest: PASS, labelled progress UI from the real composition root.
+- ReducedMotionSplashTest + SplashAccessibilityTest: PASS, including duration scale zero.
+- ShellSnapshotTest reduced-motion destination regression: PASS, old screen removed by 350 ms.
+- buildHealth and character-detail host-source ktlint: PASS after direct ui-geometry declaration.
+
+The temporary app formatter used ktlint-cli 1.8.0 with Compose function/constant naming exemptions,
+matching the design-system convention. It formatted only the six reviewed app source files;
+GAP-029's permanent app-plugin activation is separate work.

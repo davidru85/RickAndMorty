@@ -7,17 +7,22 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -27,13 +32,11 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
-import androidx.compose.ui.draw.clip
+import kotlinx.coroutines.isActive
 
 /** The acceleration of `UI_SPEC.md` §7: 360° over 1.2 s on the stated curve. */
 internal const val ACCELERATION_MILLIS = 1_200
@@ -183,18 +186,19 @@ internal fun portalAngleAt(progress: Float): Float {
 /** The Reduce Motion signal: a gentle pulse instead of a spin (`UI_SPEC.md` §7). */
 @Composable
 private fun portalPulse(): Float {
-    val transition = rememberInfiniteTransition(label = "portal-pulse")
-    val pulse by
-        transition.animateFloat(
-            initialValue = PULSE_LOW,
-            targetValue = 1f,
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(durationMillis = REDUCE_MOTION_MILLIS, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-            label = "portal-pulse-alpha",
-        )
+    val pulse by produceState(PULSE_LOW) {
+        // Scale 0 is this app's Reduce Motion signal. Frame time keeps the specified opacity-only
+        // progress signal alive while the rotation and other system animations remain disabled.
+        // The infinite-frame API also lets test clocks freeze this indicator for stable snapshots.
+        val start = withInfiniteAnimationFrameNanos { it }
+        while (isActive) {
+            withInfiniteAnimationFrameNanos { now ->
+                val cycle = ((now - start) / 1_000_000f / REDUCE_MOTION_MILLIS) % 2f
+                val fraction = if (cycle <= 1f) cycle else 2f - cycle
+                value = PULSE_LOW + (1f - PULSE_LOW) * fraction
+            }
+        }
+    }
     return pulse
 }
 
@@ -208,7 +212,9 @@ private val PortalAcceleration = CubicBezierEasing(0.32f, 0f, 0.67f, 0f)
 private fun PortalMark(modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         androidx.compose.material3.Icon(
-            painter = androidx.compose.ui.res.painterResource(id = SPLASH_PORTAL_DRAWABLE),
+            painter =
+                androidx.compose.ui.res
+                    .painterResource(id = SPLASH_PORTAL_DRAWABLE),
             contentDescription = null,
             tint = MultiverseBrandColors.portalGlow,
             modifier = Modifier.fillMaxSize(),

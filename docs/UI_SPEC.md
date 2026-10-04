@@ -77,6 +77,11 @@ Every Material 3 kit instance is re-bound to the local `Multiverse · M3 Scheme`
 
 > **Font note:** iOS text uses Apple's SF Pro; Android uses Roboto Flex (Google Fonts). If SF Pro shows as a missing font in your Figma client, install Apple's SF Pro fonts locally. Card names are single-line and end in "…" when too long. Other full-width text (info-row label and value, search placeholder, episodes accessory title) wraps within its container width; it never shrinks to fit its content.
 
+The Android component reference captures render each catalogue subject in a separate row on Surface,
+with enough viewport height to show the entire catalogue; image loading, content and failure variants
+are shown separately. This makes each specified component visible for comparison with the exports
+above. Screenshot tooling and baseline review rules remain owned by `TESTING.md` §8.2.
+
 ## 2. Brand and design principles
 
 - **Sci-fi meets minimalism.** Space-black canvas, two brand accents (Portal Green, Cosmic Violet), with imagery doing the heavy lifting.
@@ -234,10 +239,10 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Filter chips | Elevated style, 32 dp, 16 dp start inset. Exactly four single-select options: **All** (selected, check icon) · Alive · Dead · Unknown. They fit the screen width, so no scrolling. Equivalent to the iOS segmented control | `ElevatedFilterChip`s in a `Row`; selecting one deselects the others |
 | Character card | 184 dp wide; container corner 28, 6 dp inset; portrait corner 20. Regular portrait 172 dp, Tall 224 dp. Shows exactly photo, name, status (badge) and species (§6.2). Name in Title Medium Emphasized, up to 2 lines so the full name fits (ellipsis only beyond that); species in Body Small, On Surface @80%. Container colour = dynamic accent (§5), Elevation 1 | `Card(shape = RoundedCornerShape(28.dp))` + `AsyncImage`; status badge overlaid top-start at (10, 10) |
 | Status badge | Pill; 8 dp dot + Label Medium; Surface Container Highest @90%; Alive dot glows | Custom `StatusBadge(status)` |
-| Staggered grid | 2 fixed columns, 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(StaggeredGridCells.Fixed(2))` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
-| Navigation bar | 4 destinations in this order: Characters (`groups`), Episodes (`play_arrow`), Favorites (`favorite`), Settings (`settings`, outlined); container Surface Container. Selected item: Secondary Container indicator, On Secondary Container icon, Secondary label; unselected items: On Surface Variant icon and label. Figma component `Android/Navigation bar` (§1.2) | `NavigationBar`; the selected item follows the current section. Episodes opens its placeholder, Favorites its list or empty state (§6.4), Settings the settings screen (§6.5) |
+| Staggered grid | 2 columns below font scale 1.5, 1 column from 1.5 (including the maximum 2.0), 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(MultiverseGrid.columns())` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
+| Navigation bar | 4 destinations in this order: Characters (`groups`), Episodes (`play_arrow`), Favorites (`favorite`), Settings (`settings`, outlined); container Surface Container. Selected item: Secondary Container indicator, On Secondary Container icon, Secondary label; unselected items: On Surface Variant icon and label. Figma component `Android/Navigation bar` (§1.2) | `NavigationBar`; the selected item follows the current section. Episodes opens its placeholder, Favorites its list or empty state (§6.4), Settings the settings screen (§6.5). At font scale ≥1.5, arrange the same ordered destinations in two rows so each label fits |
 | Detail icon buttons | 48 dp touch target, 40 dp container at Surface Container Highest @72% over the image | `FilledTonalIconButton` with custom container colour |
-| Stat tiles | Row of 3, 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
+| Stat tiles | Row of 3 below font scale 1.5, vertical connected group from 1.5, with each tile filling the available width and a 76 dp minimum height that grows with its text. 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
 | Extended FAB | Medium (80 dp), Primary colour, "Favorite" label, Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area. Unmarked (as drawn): outline `favorite` icon. Marked: filled heart | M3 Expressive medium extended FAB |
 | Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs. Used only for paging (§8), not on the splash | `ContainedLoadingIndicator` |
@@ -622,3 +627,7 @@ The masters are 432 px, which is the 108 dp canvas at xxxhdpi. Launchers show on
 - [ ] §8 states, then drawn in Figma for sign-off
 - [ ] Screenshot tests compared with the Figma frames in §1.1
 - [ ] Launcher icons: Android adaptive icon (background + foreground, with system splash wiring) and single-appearance iOS Icon Composer icon, per §10
+
+### PR #153 accessibility remediation (2026-10-04)
+
+The Android shell applies safe drawing insets to interactive destinations. Empty/error surfaces scroll when their copy exceeds the available viewport; their action has a 48 dp minimum layout height. The reduced-motion splash uses an opacity-only frame-clock pulse, keeping the specified 1.2 s signal alive even when animator duration scale is zero. The shell selects the reduced crossfade policy in its actual NavHost. Validation artifacts are in [the PR #153 review record](evidence/pr153/README.md).
