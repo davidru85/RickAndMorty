@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -84,6 +85,11 @@ class ComponentSnapshotTest {
             }
         }
         compose.waitForIdle()
+        if (name.startsWith("components")) {
+            val regular = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human, button").fetchSemanticsNode().boundsInRoot
+            val tall = compose.onNodeWithContentDescription("Morty Smith, Unknown, Human, button").fetchSemanticsNode().boundsInRoot
+            assertTrue("both cards must be visible without covering each other in the catalogue", !regular.overlaps(tall))
+        }
         compose.onRoot().captureRoboImage(
             file = File(baselineDir, "$name.png"),
             roborazziOptions = RoborazziOptions(),

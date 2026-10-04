@@ -17,6 +17,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
@@ -35,6 +37,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * The automated accessibility cases of `TESTING.md` §9.1 that a rendered component can decide
@@ -48,6 +51,7 @@ import org.robolectric.annotation.Config
  * by the recorded manual checklist of `DEC-023` (`TESTING.md` §9.2) rather than asserted here.
  */
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "en")
 class AccessibilityVerificationTest {
     @get:Rule
@@ -219,8 +223,13 @@ class AccessibilityVerificationTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Rick Sanchez").assertIsDisplayed()
-        compose.onNodeWithText("Human").assertIsDisplayed()
+        listOf("Rick Sanchez", "Human").forEach { text ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(text).assertIsDisplayed().performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            val layout = layouts.single()
+            assertEquals("$text must actually render at maximum font scale", 2f, layout.layoutInput.density.fontScale, 0f)
+            assertTrue("$text must not be clipped or ellipsized", !layout.hasVisualOverflow)
+        }
     }
 
     /**
