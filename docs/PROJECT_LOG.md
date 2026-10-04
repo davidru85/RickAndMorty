@@ -1050,3 +1050,20 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **Explicitly not evidenced (`DEC-117`), because the environment cannot supply it:** `M2-1` and `M2-2` need an **iOS 18** simulator or device, and every runtime available here starts at 26.4 — so neither the deployment-floor run nor the "iOS 18 renders the fallback" pair is executable. The fallback path **is** baselined (`card-material`, `empty-state-material`) through the `.multiverseGlassPath` seam, which proves the path renders correctly but not that iOS 18 selects it. `M2-4` needs a physical device under the `PERFORMANCE.md` §4.2 procedure. Nothing is claimed as met that was not observed.
 - **Not hidden:** `GAP-031` (the Discovery grid painting its skeleton branch on the device) is still open from Phase 8.1, and `M2-7`'s "no P0 or P1 defect open" therefore has a named exception rather than a clean bill.
 - **Affected documents:** `DECISION_BOARD.md` (`DEC-117`), `PROJECT_LOG.md` (this entry), `BACKLOG.md` (`TASK-061`/`TASK-062`/`TASK-063` rows), `HANDOFF.md` (B8 closure).
+
+### LOG-0113 · 2026-10-04 · B9 Phase 9.1: the state-model cross-check and the carried budgets
+
+- **Event:** `TASK-064`, `TASK-065` and `TASK-067` (Phase 9.1 of `DEC-110`) on `feat/b9-phase-9-1`.
+- **`TASK-064`, the cross-check `AC-REQ-UX-009-1` asks for, executed and reported rather than asserted.** `ERROR_FLOW.md` §12 names seven rendered states and every one is covered on **both** platforms:
+  | State (`ERROR_FLOW.md` §12) | Android | iOS |
+  | --- | --- | --- |
+  | initial loading (list) | `discovery-loading-{light,dark}.png` | `DiscoveryScreenStateTests` loading case |
+  | paging indicator (list) | `discovery-appending-{light,dark}.png` | appending case |
+  | empty search (list) | `discovery-empty-{light,dark}.png` | empty case |
+  | offline/error without cache (list) | `discovery-error-offline-{light,dark}.png` (+ server) | the failure matrix cases |
+  | stale banner over content (list) | `discovery-stale-{light,dark}.png` | stale case |
+  | detail load failure with the header retained | `detail-error-with-header-{light,dark}.png` | the retained-header failure case |
+  | detail load failure without cached data | `detail-error-without-header-{light,dark}.png` | the headerless failure case |
+  Observed counts: 7 Android list baselines and 4 detail baselines per appearance, and 30 iOS state cases across the two suites. The combined cases the acceptance names — a retained **stale** value plus a failed refresh, and an **enrichment-absent** partial detail — are asserted where the contract lives: the stale flag travels with the pager state (`ERROR_FLOW.md` §8, `CONF-71`) and the partial detail is the absent-row rule (`AC-REQ-FUNC-023-2`).
+- **`TASK-065` and `TASK-067` are carried as unevidenced, for the reasons already recorded** (`DEC-115`, `DEC-117`): the Android and iOS budgets need a named reference device and a physical device respectively, and the advisory register requires a **real** finding — `SECURITY.md` §11.1 forbids an invented row, so the register stays empty and the scan configuration is what `TASK-067` can point at.
+- **Affected documents:** `PROJECT_LOG.md` (this entry), `BACKLOG.md` (`TASK-064`/`TASK-065`/`TASK-067` rows).
