@@ -142,6 +142,11 @@ internal object ModuleBoundaryRules {
                         project.path.startsWith(":core:"))
             if (!isKmpLibrary) return@forEach
             if (kind == ModuleKind.CORE_DESIGN_SYSTEM) return@forEach
+            // `:core:ios` is exempt by ADR-0012, which makes the absence of `androidTarget` a
+            // requirement rather than an omission: the module exists only to produce the Apple
+            // framework, and an Android target on it would be the violation. Its Apple-only set is
+            // asserted separately by `R12`.
+            if (project.path == ":core:ios") return@forEach
 
             val targets = project.targets.toSet()
             // A snapshot with no targets is a module the capture could not read a Kotlin extension
