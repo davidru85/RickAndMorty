@@ -57,7 +57,7 @@ class WorkflowGateGuardTest {
                 appendLine("  push:")
                 appendLine("    branches: [main]")
                 appendLine("jobs:")
-                listOf("android" to "ubuntu-latest", "ios" to "macos-latest").forEach { (name, runner) ->
+                listOf("android" to "ubuntu-latest", "ios" to "xcode-27").forEach { (name, runner) ->
                     appendLine("  $name:")
                     appendLine("    runs-on: $runner")
                     appendLine("    steps:")
@@ -212,7 +212,7 @@ class WorkflowGateGuardTest {
                 appendLine("      - run: |")
                 step.trim().lines().forEach { appendLine("          $it") }
                 appendLine("  ios:")
-                appendLine("    runs-on: macos-latest")
+                appendLine("    runs-on: xcode-27")
                 appendLine("    steps:")
                 appendLine("      - uses: $pinned")
                 appendLine("      - run: ./gradlew check :androidApp:assembleDebug")
@@ -346,7 +346,7 @@ class WorkflowGateGuardTest {
                 appendLine("      - run: ./gradlew verifyDocumentedGate")
                 stepYaml.trimEnd().lines().forEach { appendLine("      $it") }
                 appendLine("  ios:")
-                appendLine("    runs-on: macos-latest")
+                appendLine("    runs-on: xcode-27")
                 appendLine("    steps:")
                 appendLine("      - uses: $pinned")
                 appendLine("      - run: ./gradlew check iosSimulatorArm64Test buildHealth")
@@ -551,8 +551,8 @@ class WorkflowGateGuardTest {
         file.writeText(
             file.readText()
                 .replace("runs-on: ubuntu-latest", "runs-on: SWAP")
-                .replace("runs-on: macos-latest", "runs-on: ubuntu-latest")
-                .replace("runs-on: SWAP", "runs-on: macos-latest"),
+                .replace("runs-on: xcode-27", "runs-on: ubuntu-latest")
+                .replace("runs-on: SWAP", "runs-on: xcode-27"),
         )
         assertTrue(
             findings(root).any { it.reason.contains("must run on") },
@@ -761,9 +761,9 @@ class WorkflowGateGuardTest {
     fun `an ios job present during the suspension is still held to its runner and its conditions`() {
         val root = complete()
         val file = File(root, "${WorkflowGateGuard.WORKFLOW_DIRECTORY}/pull-request.yml")
-        file.writeText(file.readText().replace("    runs-on: macos-latest", "    if: false\n    runs-on: ubuntu-latest"))
+        file.writeText(file.readText().replace("    runs-on: xcode-27", "    if: false\n    runs-on: ubuntu-latest"))
         val reasons = findings(root).map { it.reason }
-        assertTrue(reasons.any { it.contains("must run on `macos-latest`") }, "TEST-UNIT-044: got $reasons")
+        assertTrue(reasons.any { it.contains("must run on `xcode-27`") }, "TEST-UNIT-044: got $reasons")
         assertTrue(reasons.any { it.contains("`ios` job carries `if: false`") }, "TEST-UNIT-044: got $reasons")
     }
 }

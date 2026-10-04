@@ -71,7 +71,7 @@ class WorkflowGateReproductionTest {
                 // Every required job carries `if: ${{ false }}`: the rollup is green and nothing ran.
                 text.replace("    if: \${{ always() }}\n", "")
                     .replace("    runs-on: ubuntu-latest", "    if: \${{ false }}\n    runs-on: ubuntu-latest")
-                    .replace("    runs-on: macos-latest", "    if: \${{ false }}\n    runs-on: macos-latest")
+                    .replace("    runs-on: xcode-27", "    if: \${{ false }}\n    runs-on: xcode-27")
             }
         assertTrue(
             findings.any { it.contains("can skip its required checks") },

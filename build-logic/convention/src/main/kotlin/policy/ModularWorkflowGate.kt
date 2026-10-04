@@ -50,7 +50,11 @@ internal object ModularWorkflowGate {
                 report(null, "the `$name` job is missing from the modular gate (TEST-UNIT-061)")
                 return@forEach
             }
-            val runner = if (name == "ios") "macos-latest" else "ubuntu-latest"
+            // `TASK-051`: the iOS runner is `xcode-27`, because `tools/swift-tools.lock` pins
+            // swift-format to Xcode 27.0 and `macos-latest` ships Xcode 26.x. The runner image is
+            // asserted here as well as in `WorkflowGateGuard`, so a job moved back to a runner
+            // without the locked toolchain fails the gate rather than the Swift step.
+            val runner = if (name == "ios") "xcode-27" else "ubuntu-latest"
             if (job.stringAt("runs-on") != runner) report(job, "the `$name` job must run on `$runner`")
             val condition = job.scalarAt("if")
             if (name == "android") {
