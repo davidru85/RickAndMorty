@@ -359,6 +359,11 @@ jobs:
           xcodebuild -version
       - name: Set up the Swift tools
         run: bash tools/swift-tools-setup.sh
+      # `TEST-UNIT-046` covers these scripts themselves, and nothing ran them: the suite that proves
+      # the Swift gate fails closed was itself unchecked by any job, so a defect in it would surface
+      # only as a red `ios` job. It needs no simulator and no network.
+      - name: Prove the Swift quality scripts fail closed
+        run: bash tools/swift-tools-test.sh
       - name: Swift formatting and lint
         run: bash tools/swift-lint.sh iosApp
       - name: Upload verification evidence

@@ -148,6 +148,11 @@ internal object ModularWorkflowGate {
             if (job.executableRunTexts().none { it.contains("tools/swift-lint.sh") }) {
                 report(job, "the iOS job must run the Swift quality gate `tools/swift-lint.sh` (`DEC-076`, `TASK-051`)")
             }
+            // `TEST-UNIT-046` proves those scripts fail closed, and no job ran it: the suite guarding
+            // the gate was itself unguarded, so a defect in it could only surface as a red `ios` job.
+            if (job.executableRunTexts().none { it.contains("tools/swift-tools-test.sh") }) {
+                report(job, "the iOS job must run the Swift fail-closed suite `tools/swift-tools-test.sh` (`TEST-UNIT-046`)")
+            }
         }
         return findings
     }
