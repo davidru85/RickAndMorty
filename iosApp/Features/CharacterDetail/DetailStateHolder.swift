@@ -43,12 +43,18 @@ public final class DetailStateHolder: ObservableObject {
             preconditionFailure("the shared detail holder published no initial state")
         }
         self.state = initial
-        observation = Task { @MainActor [weak self] in
+        observation = Task { @MainActor [weak self, scope] in
             while !Task.isCancelled {
-                guard let self else { return }
-                if let next = self.holder.state.value as? CharacterDetailUiState { self.state = next }
+                guard let self else { break }
+                // A `StateFlow` keeps its instance until the value changes, so a new reference is a
+                // new state; republishing the same one would re-render the screen every frame.
+                if let next = self.holder.state.value as? CharacterDetailUiState, next !== self.state {
+                    self.state = next
+                }
                 try? await Task.sleep(nanoseconds: 16_000_000)
             }
+            // The holder is gone: its shared scope and every collector in it end with it.
+            MultiverseBootstrap.shared.cancelScope(scope: scope)
         }
     }
 
@@ -58,8 +64,7 @@ public final class DetailStateHolder: ObservableObject {
 
     deinit {
         // Swift 6 does not allow touching a non-Sendable stored property from a nonisolated
-        // `deinit`, so the observation is what carries the cancellation here; the scope's own
-        // completion is left to the shared holder's supervisor job.
+        // `deinit`, so the observation carries the cancellation: ending it cancels the shared scope.
         observation?.cancel()
     }
 }
