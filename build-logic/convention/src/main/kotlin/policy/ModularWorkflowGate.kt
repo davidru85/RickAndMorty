@@ -139,7 +139,7 @@ internal object ModularWorkflowGate {
         }
         jobs["ios"]?.let { job ->
             val commands = job.executableRunTexts().filter { it.executesGradle() }.joinToString(" ")
-            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator").forEach { command ->
+            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator", ":core:ios:ktlintCheck").forEach { command ->
                 if (!commands.contains(command)) report(job, "`$command` is not an executable step of the ios gate job")
             }
             // TASK-051: the Swift quality gate (`DEC-076`) is part of the iOS row, so removing its
@@ -147,6 +147,11 @@ internal object ModularWorkflowGate {
             // which fails closed when a tool is missing.
             if (job.executableRunTexts().none { it.contains("tools/swift-lint.sh") }) {
                 report(job, "the iOS job must run the Swift quality gate `tools/swift-lint.sh` (`DEC-076`, `TASK-051`)")
+            }
+            // `TEST-UNIT-046` proves those scripts fail closed, and no job ran it: the suite guarding
+            // the gate was itself unguarded, so a defect in it could only surface as a red `ios` job.
+            if (job.executableRunTexts().none { it.contains("tools/swift-tools-test.sh") }) {
+                report(job, "the iOS job must run the Swift fail-closed suite `tools/swift-tools-test.sh` (`TEST-UNIT-046`)")
             }
         }
         return findings
