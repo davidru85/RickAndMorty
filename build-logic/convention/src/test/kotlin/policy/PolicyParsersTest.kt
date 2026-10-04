@@ -149,6 +149,40 @@ class PolicyParsersTest {
         assertEquals(emptyMap(), PropertiesFiles.read(absent))
     }
 
+    // ---- The table reader's fenced-block rule (TEST-UNIT-027, TEST-UNIT-030) ----------------------
+
+    /**
+     * A table's markers may be quoted inside a fenced example, as `SECURITY.md` documents its own
+     * grammar. Only a marker outside every fence can delimit a parsed table, so the parser must skip
+     * the fenced copy and find the real one.
+     */
+    @Test
+    fun `a marker inside a fenced example is not the table's marker`() {
+        val file = kotlin.io.path.createTempFile("fenced", ".md").toFile()
+        file.writeText(
+            """
+            ````
+            <!-- policy-table:begin -->
+            | A | B |
+            <!-- policy-table:end -->
+            ````
+
+            <!-- policy-table:begin -->
+            | Name | Value |
+            | --- | --- |
+            | real | row |
+            <!-- policy-table:end -->
+            """.trimIndent() + "\n",
+        )
+
+        val table = MarkdownTable.parse(file, "<!-- policy-table:begin -->", "<!-- policy-table:end -->")
+
+        assertEquals(emptyList(), table.problems.map { it.reason }, "the fenced marker must not be a problem")
+        assertEquals(listOf("Name", "Value"), table.header)
+        assertEquals(listOf(listOf("real", "row")), table.rows.map { it.cells })
+        file.delete()
+    }
+
     // ---- The mask the policy and the boundary check both rely on ---------------------------------
 
     @Test

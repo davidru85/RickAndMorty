@@ -365,11 +365,80 @@ class DependencyPolicyPlugin : Plugin<Project> {
             noAnalytics.configure { dependsOn(shipped) }
         }
 
+        // TASK-048 (`TEST-UNIT-027`, `TEST-UNIT-028`, `TEST-UNIT-030`, `TEST-UNIT-031`): the security
+        // baseline's four policy checks. Each reads its real source (never a hard-coded key) and
+        // fails closed, so a store key, a permission entry, a register row or a reporting route that
+        // drifts from the documents fails the build rather than passing quietly.
+        val persistedInventory = target.tasks.register<VerifyPersistedFieldInventoryTask>("verifyPersistedFieldInventory") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-027: every persisted field classified in SECURITY.md 3 exists in code and every " +
+                "store key is classified; the preference keys match CONTRACTS.md IC-021 (AC-REQ-SEC-003-1)."
+            securityDocument.set(target.layout.projectDirectory.file("docs/SECURITY.md"))
+            contractsDocument.set(target.layout.projectDirectory.file("docs/CONTRACTS.md"))
+            favoritesAndroid.set(target.layout.projectDirectory.file(FAVORITES_ANDROID_SOURCE))
+            favoritesApple.set(target.layout.projectDirectory.file(FAVORITES_APPLE_SOURCE))
+            settingsAndroid.set(target.layout.projectDirectory.file(SETTINGS_ANDROID_SOURCE))
+            settingsApple.set(target.layout.projectDirectory.file(SETTINGS_APPLE_SOURCE))
+            shell.set(target.layout.projectDirectory.file(SHELL_SOURCE))
+            imageLoader.set(target.layout.projectDirectory.file(IMAGE_LOADER_SOURCE))
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
+        val manifests = target.fileTree(rootDir) {
+            include("**/AndroidManifest.xml")
+            exclude(*BUILD_STATE_EXCLUDES)
+        }
+        // `iosApp/` does not exist yet: the plist input is declared while empty, so the first
+        // `Info.plist` to land is scanned rather than being an untracked file the task happens to see.
+        val plists = target.fileTree(rootDir) {
+            include("**/Info.plist", "**/*.plist")
+            exclude(*BUILD_STATE_EXCLUDES)
+        }
+        val noMicSpeech = target.tasks.register<VerifyNoMicSpeechPermissionTask>("verifyNoMicSpeechPermission") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-028: neither shipped app declares RECORD_AUDIO or a speech/microphone usage " +
+                "description (AC-REQ-SEC-004-1)."
+            this.manifests.from(manifests)
+            this.plists.from(plists)
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
+        val advisoryRegister = target.tasks.register<VerifyAdvisoryRegisterTask>("verifyAdvisoryRegister") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-030: every SECURITY.md 11.3 register row carries the 12 columns of 11.2 with no " +
+                "blank or placeholder cell; an empty register passes (AC-REQ-SEC-006-1)."
+            securityDocument.set(target.layout.projectDirectory.file("docs/SECURITY.md"))
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
+        val reportingRoute = target.tasks.register<VerifyReportingRouteTask>("verifyReportingRoute") {
+            group = VERIFICATION_GROUP
+            description = "TEST-UNIT-031: the vulnerability-reporting route in SECURITY.md 10 and CONTRIBUTING.md 10 is " +
+                "stated identically (AC-REQ-SEC-007-1)."
+            securityDocument.set(target.layout.projectDirectory.file("docs/SECURITY.md"))
+            contributingDocument.set(target.layout.projectDirectory.file("docs/CONTRIBUTING.md"))
+            rootDirectory.set(target.layout.projectDirectory)
+        }
+
         val aggregate = target.tasks.register("verifyDependencyPolicy") {
             group = VERIFICATION_GROUP
-            description = "Verifies the dependency policy: exact pins, per-entry rationale, README inventory and no " +
-                "analytics artifact (TEST-UNIT-013, TEST-UNIT-014, TEST-UNIT-051, TEST-UNIT-034; DEC-061)."
-            dependsOn(pins, rationale, inventory, liveHosts, workflowGate, documentedGate, adviceRegister, noAnalytics)
+            description = "Verifies the dependency policy and the security baseline: exact pins, per-entry rationale, " +
+                "README inventory, no analytics artifact, and the persisted-field, permission, advisory-register and " +
+                "reporting-route checks (TEST-UNIT-013/014/051/034, TEST-UNIT-027/028/030/031; DEC-061, TASK-048)."
+            dependsOn(
+                pins,
+                rationale,
+                inventory,
+                liveHosts,
+                workflowGate,
+                documentedGate,
+                adviceRegister,
+                noAnalytics,
+                persistedInventory,
+                noMicSpeech,
+                advisoryRegister,
+                reportingRoute,
+            )
         }
 
         target.tasks.named("check").configure { dependsOn(aggregate) }
@@ -406,6 +475,18 @@ class DependencyPolicyPlugin : Plugin<Project> {
         const val BUILD_LOGIC = "build-logic"
         const val POLICY_PACKAGE_GLOB = "**/src/main/kotlin/policy/**"
         const val TEST_SOURCE_GLOB = "**/src/test/**"
+
+        // The real persisted-field sources the inventory reads (`TASK-048`, `TEST-UNIT-027`).
+        const val FAVORITES_ANDROID_SOURCE =
+            "core/data/src/androidMain/kotlin/io/github/davidru85/multiverse/core/data/favorites/DataStoreFavoritesLocalDataSource.kt"
+        const val FAVORITES_APPLE_SOURCE =
+            "core/data/src/iosMain/kotlin/io/github/davidru85/multiverse/core/data/favorites/UserDefaultsFavoritesLocalDataSource.kt"
+        const val SETTINGS_ANDROID_SOURCE =
+            "core/data/src/androidMain/kotlin/io/github/davidru85/multiverse/core/data/settings/DataStoreAppSettingsLocalDataSource.kt"
+        const val SETTINGS_APPLE_SOURCE =
+            "core/data/src/iosMain/kotlin/io/github/davidru85/multiverse/core/data/settings/UserDefaultsAppSettingsLocalDataSource.kt"
+        const val SHELL_SOURCE = "androidApp/src/main/java/io/github/davidru85/multiverse/app/di/ShellModule.kt"
+        const val IMAGE_LOADER_SOURCE = "androidApp/src/main/java/io/github/davidru85/multiverse/app/image/ImageLoader.kt"
         val SETTINGS_NAMES = listOf("settings.gradle.kts", "settings.gradle")
         val BUILD_STATE_EXCLUDES = arrayOf("**/build/**", "**/.gradle/**", "**/.kotlin/**")
     }
