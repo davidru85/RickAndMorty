@@ -368,10 +368,11 @@ jobs:
         run: bash tools/swift-tools-test.sh
       - name: Swift formatting and lint
         run: bash tools/swift-lint.sh iosApp
-      # The snapshot baselines are pixel-exact, so the simulator runtime they were recorded on is pinned:
-      # a different runtime renders glass differently and must fail visibly, not compare loosely.
+      # The snapshot baselines are recorded on this device and runtime — the iOS 27.0 runtime the pinned
+      # Xcode ships, which the runner provides — so a different runtime, which renders glass
+      # differently, fails visibly instead of being compared against the wrong reference.
       - name: Build the iOS app and run its tests and snapshot baselines
-        run: xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' -resultBundlePath build/ios-tests.xcresult CODE_SIGNING_ALLOWED=NO
+        run: xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0' -resultBundlePath build/ios-tests.xcresult CODE_SIGNING_ALLOWED=NO
       - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
