@@ -74,4 +74,47 @@ class PermissionAbsenceTest {
 
         assertTrue(findings.any { it.reason.contains("missing") }, findings.map { it.toString() }.toString())
     }
+
+    // The artifact half: the source manifests above cannot see a permission a library manifest merges
+    // into the APK, so the shipped artifact's own permission table is read as well. The fixtures are
+    // `aapt2 dump permissions` output in the exact shape the release APK produced on 2026-10-04.
+
+    private val releaseApk = "androidApp/build/outputs/apk/release/androidApp-release-unsigned.apk"
+
+    private val cleanDump =
+        doc(
+            "package: io.github.davidru85.multiverse",
+            "uses-permission: name='android.permission.INTERNET'",
+            "permission: io.github.davidru85.multiverse.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+            "uses-permission: name='io.github.davidru85.multiverse.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'",
+        )
+
+    @Test
+    fun `TEST-UNIT-028 the release APK's permission table without RECORD_AUDIO passes`() {
+        assertEquals(emptyList(), PermissionAbsencePolicy.scanArtifact(cleanDump, releaseApk).map { it.toString() })
+    }
+
+    @Test
+    fun `TEST-UNIT-028 a RECORD_AUDIO merged into the release APK is reported`() {
+        val merged = cleanDump + "uses-permission: name='android.permission.RECORD_AUDIO'\n"
+
+        val findings = PermissionAbsencePolicy.scanArtifact(merged, releaseApk)
+
+        assertEquals(1, findings.size, "one merged forbidden permission is one finding: $findings")
+        assertTrue(findings.single().location == releaseApk && findings.single().reason.contains("REQ-SEC-004"), findings.toString())
+    }
+
+    @Test
+    fun `TEST-UNIT-028 a RECORD_AUDIO requested only from a given SDK level is still reported`() {
+        val merged = cleanDump + "uses-permission-sdk-23: name='android.permission.RECORD_AUDIO'\n"
+
+        assertEquals(1, PermissionAbsencePolicy.scanArtifact(merged, releaseApk).size)
+    }
+
+    @Test
+    fun `TEST-UNIT-028 an unreadable permission table fails closed`() {
+        val findings = PermissionAbsencePolicy.scanArtifact("ERROR: dump failed: not a valid APK\n", releaseApk)
+
+        assertTrue(findings.any { it.reason.contains("fails closed") }, findings.map { it.toString() }.toString())
+    }
 }
