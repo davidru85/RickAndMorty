@@ -38,7 +38,7 @@ public abstract class VerifySdkLevelsTask : DefaultTask(), VerificationTask {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     public val aapt2Executable: org.gradle.api.provider.Provider<File>
-        get() = sdkDirectory.map { locateAapt2(it.asFile) }
+        get() = sdkDirectory.map { Aapt2.locate(it.asFile, "verifySdkLevels", "TEST-UNIT-018") }
 
     /** Where the observed levels are written. */
     @get:OutputFile
@@ -113,24 +113,6 @@ public abstract class VerifySdkLevelsTask : DefaultTask(), VerificationTask {
     }
 
     private companion object {
-        /** The newest installed build-tools executable, without snapshotting the entire SDK. */
-        fun locateAapt2(root: File): File {
-            val buildTools = File(root, "build-tools")
-            val candidate =
-                buildTools
-                    .listFiles()
-                    ?.filter { it.isDirectory }
-                    ?.sortedByDescending { it.name }
-                    ?.map { File(it, AAPT2) }
-                    ?.firstOrNull { it.isFile }
-            return candidate
-                ?: throw GradleException(
-                    "verifySdkLevels needs `$AAPT2` under `${buildTools.path}` (TEST-UNIT-018); " +
-                        "a missing Android build-tools installation fails the check rather than skipping it",
-                )
-        }
-
-        const val AAPT2 = "aapt2"
         const val EXPECTED_MIN_SDK = 26
         const val EXPECTED_TARGET_SDK = 37
         const val EXPECTED_COMPILE_SDK = 37

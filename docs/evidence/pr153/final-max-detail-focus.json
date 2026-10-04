@@ -1,0 +1,184 @@
+[
+  {
+    "step": 0,
+    "text": "null",
+    "desc": "Morty Smith",
+    "class": "android.view.View",
+    "bounds": "0 156 1280 1610",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Morty Smith"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "48 204 192 348",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Back"
+    ]
+  },
+  {
+    "step": 2,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "1088 204 1232 348",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Share"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "null",
+    "desc": "Alive",
+    "class": "android.view.View",
+    "bounds": "78 1673 292 1758",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Alive"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "Morty Smith",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 1797 874 1978",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Morty Smith"
+    ]
+  },
+  {
+    "step": 5,
+    "text": "Human",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 2002 307 2093",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Human"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "51",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "84 2171 208 2297",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "51"
+    ]
+  },
+  {
+    "step": 7,
+    "text": "Episodes",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "84 2219 400 2304",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Episodes"
+    ]
+  },
+  {
+    "step": 8,
+    "text": "Human",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "84 1271 433 1397",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Human"
+    ]
+  },
+  {
+    "step": 9,
+    "text": "Species",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "84 1397 358 1482",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Species"
+    ]
+  },
+  {
+    "step": 10,
+    "text": "Last known location",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "276 1576 977 1661",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Last known location"
+    ]
+  },
+  {
+    "step": 11,
+    "text": "Citadel of Ricks",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "276 1661 882 1760",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Citadel of Ricks"
+    ]
+  },
+  {
+    "step": 12,
+    "text": "First seen in",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "276 1792 706 1877",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "First seen in"
+    ]
+  },
+  {
+    "step": 13,
+    "text": "Pilot \u00b7 S01E01",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "276 1877 820 1976",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Pilot \u00b7 S01E01"
+    ]
+  }
+]

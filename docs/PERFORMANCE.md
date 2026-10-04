@@ -1,7 +1,7 @@
 # PERFORMANCE.md - Performance Budgets and Measurement Method
 
-- **Status:** Active - target state. The Gradle/KMP build skeleton exists as of TASK-014 and contains no measurable feature, so every budget below is a *target* that has never been measured yet. No number in this file is a measurement result.
-- **Last verified:** 2026-09-29
+- **Status:** Active - target state. The Android app is runnable since TASK-044, but no budget has been measured: the reference device is unassigned (A-PERF-1) and the harness module is undecided (PERF-Q1), so every budget below is a *target* (DEC-115). No number in this file is a device measurement; the one recorded result is the deterministic zero-request half of `PERF-006` (§5).
+- **Last verified:** 2026-10-04
 - **Owner:** Implementation Engineer (see `AGENTS.md` §3.5); measurement evidence is recorded by the QA & Validation Engineer (`AGENTS.md` §3.6)
 - **Authoritative for:** the numeric performance budgets (`PERF-###`), the reference device definition, the measurement method and tools per platform, the result register, and the regression and budget-change policy. Nothing else in the repository may state a numeric performance budget (DEC-033).
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) §6 (`REQ-NFR-003`) · [`API_SPECS.md`](API_SPECS.md) §8, §12 · [`DESIGN.md`](DESIGN.md) §4, §5 · [`UI_SPEC.md`](UI_SPEC.md) §5, §6 · [`TESTING.md`](TESTING.md) · [`PROJECT_LOG.md`](PROJECT_LOG.md) · [`DECISION_BOARD.md`](DECISION_BOARD.md)
@@ -104,7 +104,7 @@ There is no automated equivalent of the Macrobenchmark harness on iOS, so the pr
 
 ## 5. Result register
 
-No measurement exists yet: the repository contains the build skeleton and the pinned catalog but no feature code (`README.md` §14), so every row below is `unmeasured`. The register is the single place where measured values live; the `PROJECT_LOG.md` entry referenced in §3 carries the narrative and the raw evidence.
+No device measurement exists yet. The Android app is runnable since `TASK-044`, but A-PERF-1 names no reference device and PERF-Q1 leaves the harness undecided, so every timing, frame and memory row stays `unmeasured` (DEC-115); the rows that say "no runnable app" record the state when they were created and are kept for the trend (§4.3 rule 3). The only recorded result is the zero-request half of `PERF-006`, a deterministic assertion in the blocking gate rather than a device measurement. The register is the single place where measured values live; the `PROJECT_LOG.md` entry referenced in §3 carries the narrative and the raw evidence.
 
 | ID | Platform | Test id producing the value | Last measured value | Date | Device | Build | Evidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -119,6 +119,7 @@ No measurement exists yet: the repository contains the build skeleton and the pi
 | `PERF-005` | Android | Instrumented header assertion; perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-005` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-006` | Android | `TEST-PERF-003` (zero-network) and `TEST-UNIT-037` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-006` | Android | `TEST-PERF-003` (zero-request half only) | 0 engine requests on a cache-hit render, against the real REST adapter and `MockEngine`; a refresh control observes 1 | 2026-10-04 | None - JVM host test (`:core:data:testAndroidHostTest`), not a device run | `0.1.0`, PR #156 (B6 Phase 6.2) | `PROJECT_LOG.md` LOG-0103, LOG-0127 | Zero-request half passing in the blocking gate; timing half unmeasured (A-PERF-1, PERF-Q1, DEC-115) |
 | `PERF-006` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-007` | Android | `TEST-INT-002` (image cache); byte-count id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-007` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
@@ -188,3 +189,4 @@ A budget regression `MUST` be reported as a regression, not reclassified as nois
 | --- | --- | --- |
 | 2026-09-29 | Created: scope and constraints, reference device profile, `PERF-001`…`PERF-009` budgets with method/tool/recording, Android Macrobenchmark harness plan, iOS manual procedure, result register, design levers, regression and budget-change policy, open items. | DEC-033, DEC-027, DEC-038, DEC-052, DEC-054 |
 | 2026-09-29 | Added a `Verification` column to the budget table and a `Test id producing the value` column to the result register, so every row names the test or method that produces its number; aligned the regression policy with the measurement job described in `TESTING.md` §10/§14.3; `PERF-Q1` records the missing harness-module decision. | DEC-052, DEC-054 |
+| 2026-10-04 | B6 Phase 6.2: §5 records the zero-request half of `PERF-006` (`TEST-PERF-003`, passing in the blocking gate) as a new row, and the status line and §5 state why every device budget stays unmeasured now that the app runs: no reference device (A-PERF-1) and no harness decision (PERF-Q1). | `DEC-115`, `TASK-049`, `LOG-0127` |

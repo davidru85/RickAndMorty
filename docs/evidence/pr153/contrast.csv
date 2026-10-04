@@ -1,0 +1,117 @@
+image,text,foreground,background,ratio,classification
+final-max-list.png,Search characters,#AEA9B4,#0F0E12,8.3655,measured
+final-max-list.png,Characters,#E9E3EF,#0F0E12,15.2938,measured
+final-max-list.png,826 characters across the multiverse,#AEA9B4,#0F0E12,8.3655,measured
+final-max-list.png,All,#AEC5AD,#2C402E,6.0586,measured
+final-max-list.png,Alive,#AEA9B4,#141318,8.0399,measured
+final-max-list.png,Dead,#AEA9B4,#141318,8.0399,measured
+final-max-list.png,Unknown,#AEA9B4,#141318,8.0399,measured
+final-max-list.png,Rick Sanchez,#E9E3EF,#211E26,13.0626,measured
+final-max-list.png,Human,#C1BCC7,#211E26,8.8281,measured
+final-max-list.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-max-list.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-list.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-list.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail.png,Morty Smith,#E9E3EF,#0F0E12,15.2938,measured
+final-max-detail.png,Human,#AEA9B4,#0F0E12,8.3655,measured
+final-max-detail.png,51,#FFFFFF,#497401,5.5528,measured
+final-max-detail.png,Episodes,#E4EAD9,#497401,4.5136,measured
+final-max-detail.png,Human,#304431,#C3DBC1,7.1227,measured
+final-max-detail.png,Species,#465B47,#C3DBC1,4.9943,measured
+final-max-detail.png,Last known location,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail.png,Citadel of Ricks,#E9E3EF,#1A191F,13.8837,measured
+final-max-detail.png,First seen in,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail.png,Pilot · S01E01,#E9E3EF,#1A191F,13.8837,measured
+final-max-detail.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-max-detail.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail-top.png,Morty Smith,#E9E3EF,#0F0E12,15.2938,measured
+final-max-detail-top.png,Human,#AEA9B4,#0F0E12,8.3655,measured
+final-max-detail-top.png,Human,#304431,#C3DBC1,7.1227,measured
+final-max-detail-top.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-max-detail-top.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail-top.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-detail-top.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-episodes.png,Episodes are on their way,#E9E3EF,#0F0E12,15.2938,measured
+final-max-episodes.png,"Soon you'll be able to browse every episode, from the Pilot to the latest season.",#AEA9B4,#0F0E12,8.3655,measured
+final-max-episodes.png,Browse characters,#A4D661,#0F0E12,11.3290,measured
+final-max-episodes.png,Characters,#AEA9B4,#1A191F,7.5942,measured
+final-max-episodes.png,Episodes,#B5CDB4,#1A191F,10.2733,measured
+final-max-episodes.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-episodes.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites.png,No favorites yet,#E9E3EF,#0F0E12,15.2938,measured
+final-max-favorites.png,Tap the heart on a character's page to keep them here.,#AEA9B4,#0F0E12,8.3655,measured
+final-max-favorites.png,Browse characters,#A4D661,#0F0E12,11.3290,measured
+final-max-favorites.png,Characters,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites.png,Favorites,#B5CDB4,#1A191F,10.2733,measured
+final-max-favorites.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites-loaded.png,Rick Sanchez,#E9E3EF,#211E26,13.0626,measured
+final-max-favorites-loaded.png,Human,#C1BCC7,#211E26,8.8281,measured
+final-max-favorites-loaded.png,Characters,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites-loaded.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-favorites-loaded.png,Favorites,#B5CDB4,#1A191F,10.2733,measured
+final-max-favorites-loaded.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Settings,#E9E3EF,#0F0E12,15.2938,measured
+final-max-settings.png,Preferences,#A4D661,#0F0E12,11.3290,measured
+final-max-settings.png,Sounds,#E9E3EF,#0F0E12,15.2938,measured
+final-max-settings.png,Play sound effects in the app,#AEA9B4,#0F0E12,8.3655,measured
+final-max-settings.png,Data,#A4D661,#0F0E12,11.3290,measured
+final-max-settings.png,Data source,#E9E3EF,#0F0E12,15.2938,measured
+final-max-settings.png,REST API,#2C4800,#A4D661,6.0814,measured
+final-max-settings.png,GraphQL,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Favorites,#A4D661,#0F0E12,11.3290,measured
+final-max-settings.png,Remove every character you've saved. This can't be undone.,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Delete favorites,#5F5C64,#2F2D34,2.0711,inactive control
+final-max-settings.png,Characters,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-settings.png,Settings,#B5CDB4,#1A191F,10.2733,measured
+final-max-delete-dialog.png,Delete all favorites?,#E9E3EF,#211E26,13.0626,measured
+final-max-delete-dialog.png,This removes every character from Favorites. You can't undo this.,#AEA9B4,#211E26,7.1451,measured
+final-max-delete-dialog.png,Delete,#F97758,#211E26,6.1075,measured
+final-max-delete-dialog.png,Cancel,#A4D661,#211E26,9.6762,measured
+final-max-error.png,pr153offlinequery,#E9E3EF,#0F0E12,15.2938,measured
+final-max-error.png,Characters,#E9E3EF,#0F0E12,15.2938,measured
+final-max-error.png,All,#AEC5AD,#2C402E,6.0586,measured
+final-max-error.png,Alive,#AEA9B4,#141318,8.0399,measured
+final-max-error.png,Dead,#AEA9B4,#141318,8.0399,measured
+final-max-error.png,Unknown,#AEA9B4,#141318,8.0399,measured
+final-max-error.png,Portal link lost,#E9E3EF,#0F0E12,15.2938,measured
+final-max-error.png,You're offline. Reconnect to continue exploring the multiverse.,#AEA9B4,#0F0E12,8.3655,measured
+final-max-error.png,Retry,#A4D661,#0F0E12,11.3290,measured
+final-max-error.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-max-error.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-error.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-error.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-max-no-results.png,zzpr153auditnomatch,#E9E3EF,#0F0E12,15.2938,measured
+final-max-no-results.png,Characters,#E9E3EF,#0F0E12,15.2938,measured
+final-max-no-results.png,All,#AEC5AD,#2C402E,6.0586,measured
+final-max-no-results.png,Alive,#AEA9B4,#141318,8.0399,measured
+final-max-no-results.png,Dead,#AEA9B4,#141318,8.0399,measured
+final-max-no-results.png,Unknown,#AEA9B4,#141318,8.0399,measured
+final-max-no-results.png,No one in this dimension matches “zzpr153auditnomatch”,#E9E3EF,#0F0E12,15.2938,measured
+final-max-no-results.png,Clear filters,#A4D661,#0F0E12,11.3290,measured
+final-max-no-results.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-max-no-results.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-max-no-results.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-max-no-results.png,Settings,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Rick Sanchez,#E9E3EF,#0F0E12,15.2938,measured
+final-detail-favorited.png,Human · Earth (C-137),#AEA9B4,#0F0E12,8.3655,measured
+final-detail-favorited.png,51,#FFFFFF,#497401,5.5528,measured
+final-detail-favorited.png,Episodes,#E4EAD9,#497401,4.5136,measured
+final-detail-favorited.png,C-137,#12003E,#997BFE,6.0430,measured
+final-detail-favorited.png,Dimension,#26125B,#997BFE,5.0142,measured
+final-detail-favorited.png,Human,#304431,#C3DBC1,7.1227,measured
+final-detail-favorited.png,Species,#465B47,#C3DBC1,4.9943,measured
+final-detail-favorited.png,Origin,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Earth (C-137),#E9E3EF,#1A191F,13.8837,measured
+final-detail-favorited.png,Last known location,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Citadel of Ricks,#E9E3EF,#1A191F,13.8837,measured
+final-detail-favorited.png,First seen in,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Pilot · S01E01,#E9E3EF,#1A191F,13.8837,measured
+final-detail-favorited.png,Characters,#B5CDB4,#1A191F,10.2733,measured
+final-detail-favorited.png,Episodes,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Favorites,#AEA9B4,#1A191F,7.5942,measured
+final-detail-favorited.png,Settings,#AEA9B4,#1A191F,7.5942,measured

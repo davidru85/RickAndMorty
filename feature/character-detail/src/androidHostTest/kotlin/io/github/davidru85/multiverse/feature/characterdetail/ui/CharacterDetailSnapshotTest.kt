@@ -1,11 +1,14 @@
 package io.github.davidru85.multiverse.feature.characterdetail.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -83,17 +86,20 @@ class CharacterDetailSnapshotTest {
         name: String,
         state: CharacterDetailUiState,
         portalMark: Painter = ColorPainter(Color.Black),
+        fontScale: Float = 1f,
     ) {
         compose.setContent {
-            MultiverseTheme {
-                CharacterDetailScreen(
-                    state = state,
-                    seam = seam(),
-                    onIntent = {},
-                    onBack = {},
-                    onShare = {},
-                    portalMark = portalMark,
-                )
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
+                MultiverseTheme {
+                    CharacterDetailScreen(
+                        state = state,
+                        seam = seam(),
+                        onIntent = {},
+                        onBack = {},
+                        onShare = {},
+                        portalMark = portalMark,
+                    )
+                }
             }
         }
         compose.waitForIdle()
@@ -204,11 +210,24 @@ class CharacterDetailSnapshotTest {
     }
 
     @Test
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-notnight")
+    fun `TEST-A11Y-005 given_maximum_text_in_light_when_detail_renders_then_it_is_snapshotted`() {
+        capture("detail-maximum-text-light", content(), fontScale = 2f)
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-night")
+    fun `TEST-A11Y-005 given_maximum_text_in_dark_when_detail_renders_then_it_is_snapshotted`() {
+        capture("detail-maximum-text-dark", content(), fontScale = 2f)
+    }
+
+    @Test
     @Config(sdk = [36], qualifiers = "en-w412dp-h1600dp-notnight")
     fun `TEST-UI-012 given_the_committed_detail_baselines_when_light_and_dark_are_compared_then_they_are_byte_identical`() {
         listOf(
             "detail-loading",
             "detail-content",
+            "detail-maximum-text",
             "detail-error-with-header",
             "detail-error-without-header",
         ).forEach { subject ->

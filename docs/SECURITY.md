@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-04
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -257,7 +257,7 @@ Since `TASK-047` the read-only API exists in `:core:diagnostics` and the exclusi
 - Exported entry points are minimised: the launcher entry point on Android and no exported component that accepts a remote-host URL. The app `MUST NOT` declare a deep link or intent filter that hands an arbitrary URL to the network layer without the §5.1 allow-list checks.
 - No permission `MUST` be added for a convenience reason. A new permission is a decision plus a security review (`../AGENTS.md` §15).
 
-Verification: `TEST-UNIT-028` asserts the absence of microphone and speech permission entries in both shipped apps (`AC-REQ-SEC-004-1`).
+Verification: `TEST-UNIT-028` asserts the absence of microphone and speech permission entries in both shipped apps (`AC-REQ-SEC-004-1`): `verifyNoMicSpeechPermission` reads every source manifest and plist, and `:androidApp:verifyShippedPermissions` reads the release APK's merged permission table, so a permission a library manifest merges in is caught as well.
 
 ### 8.2 What the app never asks for
 
@@ -424,6 +424,7 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-04 | B6 Phase 6.2 review: §8.1 names both halves of `TEST-UNIT-028` — the source manifests and plists, and the release APK's merged permission table. `TEST-UNIT-027` also fails on a persistence site outside the inventoried stores, so a new store cannot persist a field §3 does not classify. No classification, rule or register row changed. | `TASK-048`, `LOG-0127` |
 | 2026-10-03 | B3 Phase 3.3: §3 row 4 names the persisted key on each platform and row 10 the implemented correlation-id form (`CONF-77`); §6.1 names the two stores; §6.3 records how an unreadable store or a failed write degrades. | `TASK-040`, `DEC-017` |
 | 2026-10-02 | B3 Phase 3.2: §5.2 records the transport-wide host enforcement of `TASK-038` and the `LOG-004` redaction; §7.1, §7.3 and §7.4 record what `TASK-047` implements — the redaction proof on the real search path, the validated correlation id and the graph-level release exclusion of the diagnostic API. | `TASK-038`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-01 | §9.3 states the observed position: the two policy checks that run locally in `check` are named, `GAP-010` is indexed as `TASK-084`, and the CI prerequisite for artifact verification is recorded (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-046`, `TASK-084` |
