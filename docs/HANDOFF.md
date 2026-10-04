@@ -25,6 +25,8 @@
 
 **A further defect fixed in this phase:** `:core:ios` is deliberately absent from the `module-checks` matrix because it has no Android target, so its Kotlin formatter ran in **no job** — and `./gradlew check` failed locally on a file no job checked (`iOSGraph`, an object name that violates the Kotlin convention, plus import order, an unused import and three formatting rules). The module is formatted now, and `:core:ios:ktlintCheck` runs in the `ios` job with `verifyWorkflowGate` extended so its removal is a gate failure rather than a silent narrowing (`TEST-UNIT-044`, proven red then green).
 
+**All twelve phase pull requests are green** (#153, #156, #158, #161, #164, #166, #170, #174, #178, #182, #186, #189), each with a passing `android` context, and all twelve merge into `main` clean in order with the merged tree passing 1039 tests and the full policy set (`LOG-0121`, `LOG-0124`). The owner's remaining steps are the review and merge, re-adding the `ios` required context (`TASK-108`), and the tags and releases (`DEC-049`).
+
 **Open:** `GAP-031` (the iOS Discovery grid's skeleton branch) and `GAP-029` (`:androidApp` and the ktlint plugin) — the two remaining formatter-coverage holes of the same family as the `:core:ios` one just closed; `GAP-030`, `CONF-79`, `CONF-80`, `CONF-81`; and the owner's `TASK-108` ruleset step for the `ios` context.
 
 ### B6 closure — 2026-10-04
