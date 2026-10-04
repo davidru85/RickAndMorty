@@ -71,6 +71,3 @@ tools/.cache/
 
 # The Gradle-built Kotlin framework (TASK-078): a build artifact, never tracked.
 core/ios/build/
-
-# XcodeGen output: the project is generated from `iosApp/project.yml`, which is the source.
-iosApp/*.xcodeproj/project.xcworkspace/
