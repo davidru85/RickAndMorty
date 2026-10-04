@@ -1,10 +1,13 @@
 package io.github.davidru85.multiverse.feature.characterdetail.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -13,6 +16,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
@@ -28,10 +34,12 @@ import io.github.davidru85.multiverse.feature.characterdetail.presentation.Chara
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailUiState
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.InfoRowKind
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.InfoRowUi
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * `TEST-UI-002` (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`/`-3`, `REQ-FUNC-023`) — the Detail screen's
@@ -43,6 +51,7 @@ import org.robolectric.annotation.Config
  * English literal the copy set does not carry.
  */
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "en-w412dp-h1600dp", application = android.app.Application::class)
 class CharacterDetailScreenTest {
     @get:Rule
@@ -76,17 +85,20 @@ class CharacterDetailScreenTest {
     private fun show(
         state: CharacterDetailUiState,
         onIntent: (CharacterDetailIntent) -> Unit = {},
+        fontScale: Float = 1f,
     ) {
         compose.setContent {
-            MultiverseTheme {
-                CharacterDetailScreen(
-                    state = state,
-                    seam = RecordingSeam(),
-                    onIntent = onIntent,
-                    onBack = {},
-                    onShare = {},
-                    portalMark = ColorPainter(Color.Black),
-                )
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
+                MultiverseTheme {
+                    CharacterDetailScreen(
+                        state = state,
+                        seam = RecordingSeam(),
+                        onIntent = onIntent,
+                        onBack = {},
+                        onShare = {},
+                        portalMark = ColorPainter(Color.Black),
+                    )
+                }
             }
         }
         compose.waitForIdle()
@@ -152,6 +164,56 @@ class CharacterDetailScreenTest {
         assertVisible(copy("detail_info_first_seen_in"))
         assertVisible("Pilot · S01E01")
         compose.onNodeWithContentDescription(copy("detail_action_favorite")).assertIsDisplayed()
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-w412dp-h891dp", application = android.app.Application::class)
+    fun `TEST-A11Y-005 given_maximum_text_size_when_detail_is_read_then_every_stat_and_info_value_fits`() {
+        show(
+            CharacterDetailUiState(
+                header = header,
+                episodeCount = 51,
+                dimension = "C-137",
+                info =
+                    listOf(
+                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)"),
+                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, "Citadel of Ricks"),
+                        InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, "Pilot · S01E01"),
+                    ),
+                loadState = LoadState.Content,
+            ),
+            fontScale = 2f,
+        )
+        val texts =
+            listOf(
+                "Rick Sanchez",
+                "51",
+                "C-137",
+                "Human",
+                "Earth (C-137)",
+                "Citadel of Ricks",
+                "Pilot · S01E01",
+                copy("detail_stat_episodes"),
+                copy("detail_stat_dimension"),
+                copy("detail_stat_species"),
+                copy("detail_info_origin"),
+                copy("detail_info_last_known_location"),
+                copy("detail_info_first_seen_in"),
+            )
+        val failures = mutableListOf<String>()
+        texts.forEach { text ->
+            assertVisible(text)
+            val layouts = mutableListOf<TextLayoutResult>()
+            val node = compose.onNodeWithText(text)
+            node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            val layout = layouts.single()
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            if ((0 until layout.lineCount).any(layout::isLineEllipsized) || layout.size.height > bounds.height + 1f) {
+                failures +=
+                    "$text: ellipsized=${(0 until layout.lineCount).any(layout::isLineEllipsized)}, size=${layout.size}, bounds=$bounds"
+            }
+        }
+        assertTrue("maximum text size must not clip detail text: $failures", failures.isEmpty())
     }
 
     @Test

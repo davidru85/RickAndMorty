@@ -5,7 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,10 +20,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -50,7 +53,7 @@ public fun StatTile(
         modifier =
             modifier
                 .width(120.dp)
-                .height(76.dp)
+                .heightIn(min = 76.dp)
                 .clip(position.shape())
                 .background(containerColor)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -80,7 +83,8 @@ public fun StatTileRow(
     tiles: List<Triple<String, String, Pair<Color, Color>>>,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    val stacked = MultiverseGrid.columnsFor(LocalDensity.current.fontScale) == 1
+    val content: @Composable () -> Unit = {
         tiles.forEachIndexed { index, (value, label, colors) ->
             val position =
                 when (index) {
@@ -94,8 +98,14 @@ public fun StatTileRow(
                 containerColor = colors.first,
                 contentColor = colors.second,
                 position = position,
+                modifier = if (stacked) Modifier.fillMaxWidth() else Modifier,
             )
         }
+    }
+    if (stacked) {
+        Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) { content() }
+    } else {
+        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) { content() }
     }
 }
 
@@ -126,7 +136,7 @@ public fun InfoListItem(
 ) {
     if (value == null) return
     Row(
-        modifier = modifier.height(72.dp).padding(horizontal = 16.dp),
+        modifier = modifier.heightIn(min = 72.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

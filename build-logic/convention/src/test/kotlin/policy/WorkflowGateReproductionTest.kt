@@ -129,6 +129,21 @@ class WorkflowGateReproductionTest {
     }
 
     @Test
+    fun `an ios job that never builds and tests the iOS app is reported`() {
+        // `TESTING.md` §14.2: the Swift test targets and the iOS snapshot baselines run on every pull
+        // request from `TASK-051`/`TASK-059`. A job that runs only the Kotlin/Native suites and the
+        // Swift linters leaves both unexecuted, so the step that runs them must not be removable.
+        val findings =
+            findingsAfter { text ->
+                text.lines().filterNot { it.contains("xcodebuild") && it.contains(" test") }.joinToString("\n") + "\n"
+            }
+        assertTrue(
+            findings.any { it.contains("xcodebuild") && it.contains("TESTING.md") },
+            "an ios job without the iOS app's test step must be reported; got $findings",
+        )
+    }
+
+    @Test
     fun `the untouched repository workflows pass every rule`() {
         val root = kotlin.io.path.createTempDirectory("gate-reproduction-clean").toFile()
         val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)

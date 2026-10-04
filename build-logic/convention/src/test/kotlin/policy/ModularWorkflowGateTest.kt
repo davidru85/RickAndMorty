@@ -17,7 +17,9 @@ class ModularWorkflowGateTest {
             "./gradlew :androidApp:testDebugUnitTest :androidApp:lint :androidApp:verifyRoborazziDebug " +
             ":feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest " +
             ":feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest",
-        "app-artifacts" to "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels",
+        "app-artifacts" to
+            "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels " +
+            ":androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence",
         "build-logic" to "./gradlew :build-logic:convention:check",
         "policies" to "./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate",
         "dependency-health" to "./gradlew buildHealth",
@@ -131,6 +133,17 @@ class ModularWorkflowGateTest {
             ":feature:settings:verifyRoborazziAndroidHostTest" to ":feature:settings:testAndroidHostTest",
         ).forEach { (removed, replacement) ->
             val reasons = reasons { it.replace(removed, replacement) }
+            assertTrue(reasons.any { it.contains(removed) }, "a dropped `$removed` must block")
+        }
+    }
+
+    @Test
+    fun `a dropped release-artifact verification is rejected`() {
+        // TEST-UNIT-061 x TASK-048/TASK-050: the checks that read the real release APK run only where a
+        // worker names them, because the gate runs explicit tasks rather than `:androidApp:check`
+        // (`DEC-112`). Dropping one must fail the guard rather than leave the check unexecuted.
+        listOf(":androidApp:verifyShippedPermissions", ":androidApp:verifyMilestoneIndependence").forEach { removed ->
+            val reasons = reasons { it.replace(" $removed", "") }
             assertTrue(reasons.any { it.contains(removed) }, "a dropped `$removed` must block")
         }
     }

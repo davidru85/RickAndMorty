@@ -9,13 +9,17 @@ import java.io.File
  * `SECURITY.md` §8.1 forbids a `RECORD_AUDIO` entry and an `NSSpeechRecognitionUsageDescription` /
  * `NSMicrophoneUsageDescription` entry while voice search is deferred. The audit covers the whole
  * repository rather than only the shipped manifest, so a new manifest or plist that introduces one
- * is caught wherever it lands; `iosApp/` does not exist yet, so finding no plist is a pass and not
- * an error. The shipped manifest must be present: the check fails closed when it is missing.
+ * is caught wherever it lands, the iOS app's `Info.plist` included. The shipped manifest must be
+ * present: the check fails closed when it is missing.
+ *
+ * A source manifest cannot show a permission that a library manifest merges into the APK, so
+ * [scanArtifact] reads the shipped artifact's own permission table as well (`TESTING.md` §17 places
+ * `TEST-UNIT-028` in the app shells for that reason).
  */
 internal object PermissionAbsencePolicy {
     const val TEST_ID = "TEST-UNIT-028"
 
-    /** The one Android permission the MVP is allowed to declare (`SECURITY.md` §8.1). */
+    /** The Android microphone permission no shipped app may declare (`SECURITY.md` §8.1). */
     const val RECORD_AUDIO = "android.permission.RECORD_AUDIO"
 
     /** The only shipped Android manifest, which must exist for a clean run to mean anything. */
@@ -23,6 +27,9 @@ internal object PermissionAbsencePolicy {
 
     /** The usage-description keys that gate a speech or microphone capability on Apple platforms. */
     private val USAGE_DESCRIPTIONS = listOf("NSSpeechRecognitionUsageDescription", "NSMicrophoneUsageDescription")
+
+    /** A requested permission in `aapt2 dump permissions`, including the `uses-permission-sdk-NN` form. */
+    private val USES_PERMISSION = Regex("""^uses-permission(?:-sdk-\d+)?:\s*name='([^']+)'""")
 
     /**
      * @param manifests every `AndroidManifest.xml` under the repository, minus build output.
@@ -65,5 +72,32 @@ internal object PermissionAbsencePolicy {
                 )
             }
         }
+    }
+
+    /**
+     * The artifact half: the permission table `aapt2 dump permissions` prints for the APK that ships.
+     *
+     * A table without its `package:` line is not a permission table, so a missing or unreadable APK
+     * fails closed instead of passing on an empty list.
+     *
+     * @param dump the tool's standard output for the shipped APK.
+     * @param apk the APK's repository-relative path, used as the finding's location.
+     */
+    fun scanArtifact(dump: String, apk: String): List<Violation> = buildList {
+        val lines = dump.lines().map { it.trim() }
+        if (lines.none { it.startsWith("package:") }) {
+            add(
+                Violation(
+                    TEST_ID,
+                    apk,
+                    "`aapt2 dump permissions` returned no permission table for the shipped APK; the check fails closed",
+                ),
+            )
+            return@buildList
+        }
+        lines
+            .mapNotNull { USES_PERMISSION.find(it)?.groupValues?.get(1) }
+            .filter { it == RECORD_AUDIO }
+            .forEach { add(Violation(TEST_ID, apk, "`$it` is merged into the shipped APK, which `REQ-SEC-004` forbids")) }
     }
 }
