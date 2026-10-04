@@ -270,49 +270,90 @@ internal object TonalPalette {
     /**
      * A colour at [hue] (degrees), [chroma] (`0..100`) and [tone] (`0..100`), as packed ARGB.
      *
-     * Because the tone is the HSL lightness and the chroma its saturation scaled, the mapping is exact:
-     * a caller can assert the returned colour's hue and tone directly, which is how the policy's three
-     * rules are tested.
+     * [tone] is the **CIE L\*** lightness the pipeline's documentation and `UI_SPEC.md` §5.4 mean by it:
+     * the six reference accents the specification records (`#544519`, `#4A4900`, `#204D55`, `#424B23`,
+     * `#5A4302`, `#7B2F07`) all measure `L* = 30.0 ± 0.2`, which is how the meaning was established rather
+     * than assumed. Placing it as the mean channel instead — as this port did before `TASK-045` — put the
+     * colour at `L* ≈ 40…57` and produced containers whose on-surface text fell to `2.8:1`, below the
+     * `REQ-UX-003` floor; the accent policy's own test could not see it because it asserted the mean
+     * channel, which is the very quantity the construction fixed.
+     *
+     * The requested [chroma] is the channel spread of [shapeFor], so the returned colour's hue and — when
+     * the tone admits it — its spread are the requested ones. A tone of 30 is dark, so a saturated bright
+     * hue cannot always reach the requested spread inside `0..255`; [pack] clamps, which reduces the
+     * spread exactly as upstream's gamut search reduces chroma to the closest reachable colour.
      */
     fun fromHueChromaTone(
         hue: Double,
         chroma: Double,
         tone: Double,
     ): Int {
-        // The colour is built so that `Score.chromaOf(result)` equals [chroma]: the requested chroma is
-        // the channel spread as a fraction of the full range, so a fully saturated colour has a spread of
-        // 1 and a grey has none. The hue decides which channel leads, and the tone places the colour's
-        // **mean** channel at that lightness. Deriving the spread from the chroma, rather than using HSL
-        // saturation, is what makes the two measures one scale — the earlier conversion compressed the
-        // spread at tone 30 and the clamp was measured 14.5 % instead of the requested 24 %.
-        val spread = (chroma / 100.0).coerceIn(0.0, 1.0)
-        val lightness = (tone / 100.0).coerceIn(0.0, 1.0)
-        val normalizedHue = ((hue % 360.0) + 360.0) % 360.0
-        val sector = normalizedHue / 60.0
-        val fraction = sector % 2.0
-        val falling = fraction > 1.0
-        val second = if (falling) 2.0 - fraction else fraction
-
-        // `low` is the smallest channel; the leading channel adds the spread, the middle one adds a
-        // fraction of it, and the third is the lowest of the three.
-        val mid = lightness - spread / 6.0 * (1.0 + second - 2.0 * 0.0)
-        val low = mid - 0.0
-        val high = low + spread
-        val middle = low + spread * second
-        val (red, green, blue) =
-            when {
-                sector < 1.0 -> Triple(high, middle, low)
-                sector < 2.0 -> Triple(middle, high, low)
-                sector < 3.0 -> Triple(low, high, middle)
-                sector < 4.0 -> Triple(low, middle, high)
-                sector < 5.0 -> Triple(middle, low, high)
-                else -> Triple(high, low, middle)
+        val base = shapeFor(hue, chroma)
+        // The tone is placed by solving for the shift that puts the packed colour's L* at it. The packed
+        // colour is the authority, so the solve cannot disagree with what a caller measures.
+        var low = -4.0
+        var high = 4.0
+        while (luminanceOf(pack(base[0] + low, base[1] + low, base[2] + low)) > tone) low -= 1.0
+        while (luminanceOf(pack(base[0] + high, base[1] + high, base[2] + high)) < tone) high += 1.0
+        repeat(LIGHTNESS_STEPS) {
+            val middle = (low + high) / 2.0
+            if (luminanceOf(pack(base[0] + middle, base[1] + middle, base[2] + middle)) < tone) {
+                low = middle
+            } else {
+                high = middle
             }
-        // The mean channel is placed at the tone, so the container's lightness is the specification's.
-        val mean = (red + green + blue) / 3.0
-        val shift = lightness - mean
-        return pack(red + shift, green + shift, blue + shift)
+        }
+        val shift = (low + high) / 2.0
+        return pack(base[0] + shift, base[1] + shift, base[2] + shift)
     }
+
+    /** The requested channel spread around a neutral, before the tone is applied. */
+    private fun shapeFor(
+        hue: Double,
+        chroma: Double,
+    ): DoubleArray {
+        // The spread is the chroma as a fraction of the full range, so `Score.chromaOf(result)` equals
+        // [chroma] whenever the tone admits it: `0` is a grey, `1` is fully saturated. The hue decides
+        // which channel leads and which one follows at a fraction of the spread.
+        val spread = (chroma / 100.0).coerceIn(0.0, 1.0)
+        val sector = (((hue % 360.0) + 360.0) % 360.0) / 60.0
+        val fraction = sector % 2.0
+        val second = if (fraction > 1.0) 2.0 - fraction else fraction
+        // The lowest channel is 0, so the spread is the leading channel's value and the requested chroma
+        // survives whatever shift the tone then applies.
+        val lowest = 0.0
+        val highest = lowest + spread
+        val middle = lowest + spread * second
+        return when {
+            sector < 1.0 -> doubleArrayOf(highest, middle, lowest)
+            sector < 2.0 -> doubleArrayOf(middle, highest, lowest)
+            sector < 3.0 -> doubleArrayOf(lowest, highest, middle)
+            sector < 4.0 -> doubleArrayOf(lowest, middle, highest)
+            sector < 5.0 -> doubleArrayOf(middle, lowest, highest)
+            else -> doubleArrayOf(highest, lowest, middle)
+        }
+    }
+
+    /**
+     * The CIE L\* lightness of [argb], the packed colour this object produces.
+     *
+     * This is the quantity [fromHueChromaTone] solves for. It is defined by the same sRGB transfer
+     * function and `Y` weights as the contrast record (`TEST-A11Y-002`), so "tone 30" and "4.5:1" are
+     * measured on one scale rather than two.
+     */
+    fun luminanceOf(argb: Int): Double {
+        val r = (argb shr 16 and 0xFF) / 255.0
+        val g = (argb shr 8 and 0xFF) / 255.0
+        val b = (argb and 0xFF) / 255.0
+        val y = 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+        return if (y > 0.008856) 116.0 * y.pow(1.0 / 3.0) - 16.0 else 903.3 * y
+    }
+
+    /** The sRGB transfer function's linear value for a channel in `0..1`. */
+    private fun linearize(value: Double): Double = if (value <= 0.04045) value / 12.92 else ((value + 0.055) / 1.055).pow(2.4)
+
+    /** Halvings of the tone solve; 40 puts the result well inside one 8-bit channel step. */
+    private const val LIGHTNESS_STEPS = 40
 
     private fun pack(
         red: Double,

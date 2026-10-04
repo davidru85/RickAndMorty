@@ -41,16 +41,17 @@ class CharacterAccentPolicyTest {
             val accent = policy(pixelsOf("red" to redPixels)).accentFor("red")
             val argb = accent.toArgbValue()
 
-            // Tone 30 is the lightness the policy places the container's mean channel at, so the case
-            // asserts that value directly: the palette and the tone speak one scale.
-            val mean =
-                ((argb shr 16 and 0xFF).toDouble() + (argb shr 8 and 0xFF).toDouble() + (argb and 0xFF).toDouble()) /
-                    3.0 / 255.0
+            // Tone 30 is the CIE L* lightness `UI_SPEC.md` §5.4 means by it — established from the six
+            // reference accents the specification records, which all measure L* = 30.0 ± 0.2 — so the case
+            // asserts the quantity a reviewer measures. Asserting the mean sRGB channel instead (as this
+            // case did before `TASK-045`) could not see the construction's defect: it asserted the very
+            // quantity the old construction fixed, while the colour sat at L* 57 and on-surface text over
+            // it fell to 2.8:1, below the 4.5:1 floor of `REQ-UX-003`.
             assertEquals(
-                "the container sits at tone 30 (UI_SPEC.md §5.4)",
-                TonalPalette.CONTAINER_TONE / 100.0,
-                mean,
-                0.02,
+                "the container sits at tone 30 in CIE L* (UI_SPEC.md §5.4)",
+                TonalPalette.CONTAINER_TONE,
+                TonalPalette.luminanceOf(argb),
+                0.6,
             )
             assertNotEquals(
                 "an accent must not be the portrait's own colour",

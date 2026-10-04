@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +22,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
+import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
@@ -113,7 +113,7 @@ private fun Grid(
     onCharacterSelected: (CharacterCardUi) -> Unit,
 ) {
     LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(GRID_COLUMNS),
+        columns = MultiverseGrid.columns(),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(MultiverseDimensions.spaceL),
         horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
@@ -190,9 +190,6 @@ private fun CharacterStatus.tone(): StatusTone =
         CharacterStatus.Dead -> StatusTone.Dead
         CharacterStatus.Unknown, is CharacterStatus.Unsupported -> StatusTone.Unknown
     }
-
-/** The grid's two fixed columns (`UI_SPEC.md` §4.1). */
-private const val GRID_COLUMNS: Int = 2
 
 /** The mix of card heights: a `Tall` card at 0 and 3 of every 4 (`UI_SPEC.md` §4.1). */
 private const val TALL_EVERY: Int = 4
