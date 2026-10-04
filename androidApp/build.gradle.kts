@@ -135,3 +135,48 @@ val verifySdkLevels by tasks.registering(io.github.davidru85.multiverse.buildlog
 }
 
 tasks.named("check") { dependsOn(verifySdkLevels) }
+
+/**
+ * `TEST-UNIT-019` (`AC-REQ-PLAT-004-1`, `DEC-040`, `REQ-PLAT-004`, `TASK-050`): the Android milestone
+ * is releasable with the iOS app absent.
+ *
+ * Two evidence sources make the criterion a property of this build rather than of a checkout that
+ * happens to lack `iosApp/`. The release APK is inspected for iOS or Kotlin/Native payload, and the
+ * app's declared release dependency edges are handed to the task so it can fail when any of them
+ * names a module that exists only for the Apple target — the regression the criterion exists to
+ * prevent, and one an artifact-only scan would not see until the dependency produced output.
+ *
+ * The edges are read from the build model at configuration time and passed as an `@Input`, which keeps
+ * the task configuration-cache compatible; the model (not a resolution) is the authority, because a
+ * declared edge is what a review has to catch.
+ */
+val declaredReleaseDependencyNames: List<String> =
+    // `implementation(...)` lands in a variant-independent configuration, so filtering by a `release`
+    // name would inspect nothing at all — a check that passes because it looks at the wrong place is
+    // worse than no check. Every configuration this project can put on a release classpath is read,
+    // and the `debugImplementation` edges are excluded because they are not part of a release artifact.
+    configurations
+        .filterNot { configuration -> configuration.name.startsWith("debug") }
+        .flatMap { configuration ->
+            configuration.dependencies
+                .filter { dependency -> dependency is org.gradle.api.artifacts.ProjectDependency }
+                .map { dependency -> (dependency as org.gradle.api.artifacts.ProjectDependency).path }
+        }
+        .distinct()
+        .sorted()
+        .also { names ->
+            check(names.isNotEmpty()) {
+                "TEST-UNIT-019 cannot inspect an empty edge set: the app must declare its project " +
+                    "dependencies somewhere this check can read them."
+            }
+        }
+
+val verifyMilestoneIndependence by tasks.registering(io.github.davidru85.multiverse.buildlogic.policy.VerifyMilestoneIndependenceTask::class) {
+    releaseApk.set(layout.buildDirectory.file("outputs/apk/release/androidApp-release-unsigned.apk"))
+    androidReleaseEdges.set(declaredReleaseDependencyNames)
+    iosOnlyModules.set(listOf(":core:ios"))
+    report.set(layout.buildDirectory.file("reports/verifyMilestoneIndependence/milestone-independence.txt"))
+    dependsOn("assembleRelease")
+}
+
+tasks.named("check") { dependsOn(verifyMilestoneIndependence) }
