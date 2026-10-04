@@ -1,6 +1,9 @@
 package io.github.davidru85.multiverse.core.designsystem.tokens
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.max
@@ -46,11 +49,16 @@ class ContrastRecordTest {
         }
     }
 
+    @Test
+    fun `TEST-A11Y-002 given_transparent_text_when_contrast_is_measured_then_only_the_background_contributes`() {
+        assertEquals(1.0, contrastRatio(Color.White.copy(alpha = 0f), Color.Black), 0.0)
+    }
+
     private fun contrastRatio(
         foreground: Color,
         background: Color,
     ): Double {
-        val light = relativeLuminance(foreground)
+        val light = relativeLuminance(foreground.compositeOver(background))
         val dark = relativeLuminance(background)
         return (max(light, dark) + 0.05) / (min(light, dark) + 0.05)
     }
@@ -112,11 +120,16 @@ class ContrastRecordTest {
                     BODY,
                 ),
                 pair("card name (Title Medium Emphasized)", MultiverseColors.onSurface, MultiverseColors.surfaceContainerHigh, LARGE),
-                pair("card species at 80% (Body Small)", MultiverseColors.onSurface, MultiverseColors.surfaceContainerHigh, BODY),
                 pair(
-                    "status badge label at 90% (Label Medium)",
+                    "card species at 80% (Body Small)",
+                    MultiverseColors.onSurface.copy(alpha = 0.8f),
+                    MultiverseColors.surfaceContainerHigh,
+                    BODY,
+                ),
+                pair(
+                    "status badge label over 90% surface, brightest portrait (Label Medium)",
                     MultiverseColors.onSurface,
-                    MultiverseColors.surfaceContainerHighest,
+                    MultiverseColors.surfaceContainerHighest.copy(alpha = 0.9f).compositeOver(Color.White),
                     BODY,
                 ),
                 pair("placeholder heading (Display Small Emphasized)", MultiverseColors.onSurface, MultiverseColors.surface, LARGE),
@@ -146,9 +159,21 @@ class ContrastRecordTest {
                     LARGE,
                 ),
                 pair(
-                    "stat tile label, Primary Container (Label Medium)",
-                    MultiverseColors.onPrimaryContainer,
+                    "stat tile label at 85%, Primary Container (Label Medium)",
+                    MultiverseColors.onPrimaryContainer.copy(alpha = 0.85f),
                     MultiverseColors.primaryContainer,
+                    BODY,
+                ),
+                pair(
+                    "stat tile label at 85%, Tertiary Container",
+                    MultiverseColors.onTertiaryContainer.copy(alpha = 0.85f),
+                    MultiverseColors.tertiaryContainer,
+                    BODY,
+                ),
+                pair(
+                    "stat tile label at 85%, Secondary Fixed Dim",
+                    MultiverseColors.onSecondaryFixed.copy(alpha = 0.85f),
+                    MultiverseColors.secondaryFixedDim,
                     BODY,
                 ),
                 pair("error title (Display Small Emphasized)", MultiverseColors.onSurface, MultiverseColors.surface, LARGE),
@@ -160,6 +185,44 @@ class ContrastRecordTest {
                     MultiverseColors.surfaceContainerHigh,
                     BODY,
                 ),
+                // The dynamic tone-30 accent pairs (`UI_SPEC.md` §5.4, §9; `REQ-UX-003`). The card's
+                // container is tinted from the portrait's own colour, so the record cannot list one
+                // value: it lists the clamp's two bounds crossed with the hue circle, which is every
+                // container the policy can emit. The tone-30 solve then has to keep On Surface readable
+                // over all of them — the property the specification states and the port previously
+                // broke, reaching 2.8:1 on a saturated green.
+                *accentPairs(),
             )
+
+        /**
+         * The card's own text over every container the accent policy can emit.
+         *
+         * The policy clamps chroma to `[MIN_CHROMA, MAX_CHROMA]` and derives the hue from the portrait,
+         * so the reachable set is the clamp's bounds crossed with the hue circle. The hue step of 15°
+         * samples it densely enough that a regression cannot hide between samples while keeping the
+         * record readable; the case that follows proves the sampling claim against the policy itself.
+         */
+        fun accentPairs(): Array<ContrastPair> {
+            val hues = 0 until 360 step 15
+            val chromas = listOf(TonalPalette.MIN_CHROMA, TonalPalette.MAX_CHROMA)
+            return hues
+                .flatMap { hue -> chromas.map { chroma -> hue to chroma } }
+                .map { (hue, chroma) ->
+                    pair(
+                        "card name over a tone-30 accent (hue $hue°, chroma ${chroma.toInt()})",
+                        MultiverseColors.onSurface,
+                        Color(TonalPalette.fromHueChromaTone(hue.toDouble(), chroma, TonalPalette.CONTAINER_TONE)),
+                        BODY,
+                    )
+                }.flatMap { namePair ->
+                    listOf(
+                        namePair,
+                        namePair.copy(
+                            surface = namePair.surface.replace("card name", "card species at 80%"),
+                            foreground = namePair.foreground.copy(alpha = 0.8f),
+                        ),
+                    )
+                }.toTypedArray()
+        }
     }
 }

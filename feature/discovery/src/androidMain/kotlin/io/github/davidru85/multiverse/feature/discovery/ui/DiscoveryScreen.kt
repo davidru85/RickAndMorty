@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
@@ -47,6 +46,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
@@ -260,7 +260,7 @@ private fun CharacterGrid(
     Column(modifier = Modifier.fillMaxSize()) {
         if (state.isStale) StaleBanner()
         LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
+            columns = MultiverseGrid.columns(),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(12.dp),

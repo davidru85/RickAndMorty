@@ -13,7 +13,10 @@ class ModularWorkflowGateTest {
     )
     private val commands = linkedMapOf(
         "designsystem" to "./gradlew :core:designsystem:check",
-        "app-tests" to "./gradlew :androidApp:testDebugUnitTest :androidApp:lint",
+        "app-tests" to
+            "./gradlew :androidApp:testDebugUnitTest :androidApp:lint :androidApp:verifyRoborazziDebug " +
+            ":feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest " +
+            ":feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest",
         "app-artifacts" to "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels",
         "build-logic" to "./gradlew :build-logic:convention:check",
         "policies" to "./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate",
@@ -114,6 +117,21 @@ class ModularWorkflowGateTest {
     fun `the result must always run and read the real dependency results`() {
         listOf("if: \${{ always() }}" to "if: success()", "\${{ toJSON(needs) }}" to "'{}'").forEach { (from, to) ->
             assertTrue(reasons { it.replace(from, to) }.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `a dropped snapshot verification is rejected`() {
+        // TEST-UNIT-061 x TASK-045: the committed baselines are verified in the gate, so removing any
+        // one of the invocations must fail the guard rather than silently narrowing the coverage.
+        listOf(
+            ":core:designsystem:check" to ":core:designsystem:test",
+            ":androidApp:verifyRoborazziDebug" to ":androidApp:testDebugUnitTest",
+            ":feature:discovery:verifyRoborazziAndroidHostTest" to ":feature:discovery:testAndroidHostTest",
+            ":feature:settings:verifyRoborazziAndroidHostTest" to ":feature:settings:testAndroidHostTest",
+        ).forEach { (removed, replacement) ->
+            val reasons = reasons { it.replace(removed, replacement) }
+            assertTrue(reasons.any { it.contains(removed) }, "a dropped `$removed` must block")
         }
     }
 

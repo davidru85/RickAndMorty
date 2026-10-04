@@ -13,7 +13,17 @@ internal object ModularWorkflowGate {
     )
     private val requiredCommands = mapOf(
         "designsystem" to setOf(":core:designsystem:check"),
-        "app-tests" to setOf(":androidApp:testDebugUnitTest", ":androidApp:lint"),
+        "app-tests" to setOf(
+            ":androidApp:testDebugUnitTest",
+            ":androidApp:lint",
+            // `TASK-045` (`TEST-UI-012`, `TEST-UI-016`): the screens' committed baselines are verified
+            // in the gate, so a drifted or missing baseline fails rather than passing silently.
+            ":androidApp:verifyRoborazziDebug",
+            ":feature:discovery:verifyRoborazziAndroidHostTest",
+            ":feature:character-detail:verifyRoborazziAndroidHostTest",
+            ":feature:favorites:verifyRoborazziAndroidHostTest",
+            ":feature:settings:verifyRoborazziAndroidHostTest",
+        ),
         "app-artifacts" to setOf(":androidApp:assembleDebug", ":androidApp:verifyReleaseArtifact", ":androidApp:verifySdkLevels"),
         "build-logic" to setOf(":build-logic:convention:check"),
         "policies" to setOf("verifyModuleBoundaries", "verifyDependencyPolicy", "verifyRepositoryHygiene", "verifyNoLiveHosts", "verifyWorkflowGate", "verifyDocumentedGate"),

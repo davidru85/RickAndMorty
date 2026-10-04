@@ -7,6 +7,9 @@ plugins {
     // `@Composable` functions (ADR-0008, `GUIDELINES.md` §5.1). The root build declares the alias
     // `apply false`, so the version has exactly one source (the catalog).
     alias(libs.plugins.kotlin.compose)
+    // The component screenshot baselines (`TEST-UI-012`, `TASK-045`): Roborazzi records the
+    // committed PNGs under `src/test/snapshots` and verifies them on the JVM host (DEC-034).
+    alias(libs.plugins.roborazzi)
 }
 
 // The copy-resolution case (TEST-UNIT-008) reads the module's own resources on the JVM host with
@@ -53,4 +56,19 @@ dependencies {
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
+    // The screenshot harness (`TASK-045`): the capture API and its JUnit rule, declared where the
+    // component snapshots use them (DEC-077).
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
 }
+
+/**
+ * `TEST-UI-012`/`TEST-UI-016`, the gate half (`TASK-045`): the committed component baselines are
+ * **verified** on every `check`, not merely recorded.
+ *
+ * `DEC-071` activates a row in the same change that introduces its harness, so the Roborazzi plugin's
+ * own `verifyRoborazziDebug` joins `check` here rather than waiting for a later task: a missing or
+ * drifted baseline fails the `designsystem` worker instead of passing silently.
+ */
+tasks.named("check") { dependsOn("verifyRoborazziDebug") }

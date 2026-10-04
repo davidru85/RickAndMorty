@@ -108,6 +108,7 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 robolectric-annotations = { module = "org.robolectric:annotations", version.ref = "robolectric" }
 robolectric-shadows-framework = { module = "org.robolectric:shadows-framework", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-core = { module = "io.github.takahirom.roborazzi:roborazzi-core", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
 

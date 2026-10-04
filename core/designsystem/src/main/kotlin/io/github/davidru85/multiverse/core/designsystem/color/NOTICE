@@ -15,15 +15,22 @@ follows those algorithms; deviations are listed here.
 
 Ports and simplifications, one per line:
 - The colour maths is NOT upstream's sRGB -> XYZ -> CAM16 -> HCT pipeline: this
-  port works in HSL terms throughout, so `chroma` is the channel spread
-  ((max - min) / 255 * 100), `hue` comes from the channel order, and `tone` is
-  placed as the mean channel of the built colour rather than the CIE L* value
-  upstream defines. The three rules the specification fixes (hue from the
-  scored colour, chroma clamped to [24, 48], container at tone 30) are kept,
-  and the derived container is measurable and deterministic, which is what
-  TEST-A11Y-002 records; but its colours are not bit-identical to what the
-  CAM16 path would produce, and the contrast record, not upstream, is the
-  authority for their readability.
+  port works in HSL terms, so `chroma` is the channel spread
+  ((max - min) / 255 * 100) and `hue` comes from the channel order. Before
+  TASK-045 the port also placed `tone` as the **mean channel** of the built
+  colour rather than the CIE L* value upstream defines; that made the container
+  sit at L* 40-57 instead of 30, so on-surface text over a saturated accent fell
+  to 2.8:1 and UI_SPEC.md 5.4's "4.5:1 or better" did not hold. The port now
+  solves the tone in L* — the same sRGB transfer function and Y weights the
+  contrast record uses — and reproduces the six reference accents UI_SPEC.md
+  records (three exactly, three within one 8-bit step). Where a tone of 30 cannot
+  hold the requested channel spread inside 0..255, the packed colour clamps and
+  the spread is reduced, which is what upstream's gamut search does to chroma.
+  The three rules the specification fixes (hue from the scored colour, chroma
+  clamped to [24, 48], container at tone 30) are kept, and the derived container
+  is measurable and deterministic, which is what TEST-A11Y-002 records; but its
+  colours are not bit-identical to what the CAM16 path would produce, and the
+  contrast record, not upstream, is the authority for their readability.
 - QuantizerCelebi keeps upstream's two-stage shape (histogram pass refined by
   k-means over twelve iterations), with two differences: the starting palette
   is the most populous 5-bit histogram bins rather than upstream's Wu
@@ -31,9 +38,10 @@ Ports and simplifications, one per line:
 - Score keeps upstream's weights (target chroma 48, proportion 0.7, above 0.3,
   below 0.1, cutoff chroma 5, excited-proportion cutoff 1.4 %), applied to the
   HSL-style chroma above rather than CAM16 chroma.
-- The inverse mapping (hue/chroma/tone -> sRGB) is the direct HSL construction
+- The inverse mapping (hue/chroma/tone -> sRGB) is a direct HSL construction
   documented at its call site, not upstream's HctSolver gamut search: the
-  requested channel spread is placed around the tone, so a caller can assert
-  the returned colour's spread and mean directly.
+  requested channel spread is placed around a zero base and the tone is then
+  solved as the CIE L* the port's own documentation defines, so a caller can
+  assert the returned colour's spread and lightness directly.
 
 No other file in this repository is derived from upstream.

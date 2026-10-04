@@ -5,6 +5,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     // The detail screen is a composable, so the module needs the Compose compiler (ADR-0008).
     alias(libs.plugins.kotlin.compose)
+    // The detail-screen screenshot baselines (`TEST-UI-012`, `TEST-UI-016`, `TASK-045`): Roborazzi
+    // records the committed PNGs under `src/androidHostTest/snapshots` and verifies them on the JVM
+    // host (DEC-034).
+    alias(libs.plugins.roborazzi)
 }
 
 /**
@@ -126,6 +130,8 @@ kotlin {
             implementation(libs.ktor.client.core)
         }
         androidHostTest.dependencies {
+            // TEST-A11Y-005 measures Rect bounds to catch text clipped by its layout (DEC-077).
+            implementation(libs.androidx.compose.ui.geometry)
             // `TEST-UI-002` runs on the JVM host with Robolectric and the Compose test rule.
             implementation(libs.kotlin.test)
             implementation(libs.kotlin.test.junit)
@@ -147,6 +153,13 @@ kotlin {
             // Robolectric is only needed on the host-test **runtime** path: no case compiles against
             // it, so the edge is `runtimeOnly` (`DEC-077`).
             runtimeOnly(libs.robolectric)
+            // The screenshot harness (`TASK-045`): the capture API and its JUnit rule, declared where
+            // the screen snapshots use them (`DEC-077`).
+            // The capture API (`captureRoboImage`) and the options type the calls name explicitly;
+            // `roborazzi-compose` and `roborazzi-junit-rule` are unused here, and dependency analysis
+            // rejects an unused edge (DEC-077), so only what is referenced is declared.
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.core)
         }
     }
 }

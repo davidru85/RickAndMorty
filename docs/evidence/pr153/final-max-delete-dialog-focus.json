@@ -1,0 +1,93 @@
+[
+  {
+    "step": 0,
+    "text": "Delete all favorites?",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "232 981 1048 1251",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Delete all favorites?"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "This removes every character from Favorites. You can't undo this.",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "232 1299 1048 1726",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "This removes every character from Favorites. You can't undo this."
+    ]
+  },
+  {
+    "step": 2,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "406 1798 724 1958",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Cancel"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "748 1798 1048 1958",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Delete"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "748 1798 1048 1958",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Delete"
+    ]
+  },
+  {
+    "step": 5,
+    "text": "Delete all favorites?",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "232 981 1048 1251",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Delete all favorites?"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "This removes every character from Favorites. You can't undo this.",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "232 1299 1048 1726",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "This removes every character from Favorites. You can't undo this."
+    ]
+  }
+]
