@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     // The Settings screen is a composable, so the module needs the Compose compiler (ADR-0008).
     alias(libs.plugins.kotlin.compose)
+    // The Settings screenshot baselines (`TEST-UI-012`, `TEST-UI-016`, `TASK-045`): Roborazzi
+    // records the committed PNGs under `src/androidHostTest/snapshots` and verifies them on the JVM
+    // host (DEC-034).
+    alias(libs.plugins.roborazzi)
 }
 
 /**
@@ -127,6 +131,13 @@ kotlin {
             // the test manifest, and the cases never name its API, so it is a runtime dependency of
             // the host-test manifest merge (dependency analysis, `DEC-077`).
             runtimeOnly(libs.androidx.compose.ui.test.manifest)
+            // The screenshot harness (`TASK-045`): the capture API and its JUnit rule, declared where
+            // the screen snapshots use them (`DEC-077`).
+            // The capture API (`captureRoboImage`) and the options type the calls name explicitly;
+            // `roborazzi-compose` and `roborazzi-junit-rule` are unused here, and dependency analysis
+            // rejects an unused edge (DEC-077), so only what is referenced is declared.
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.core)
         }
     }
 }

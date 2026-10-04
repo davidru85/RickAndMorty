@@ -11,6 +11,9 @@ plugins {
     // The app-wide `NavHost` is composed from the features' typed route declarations, which are
     // `@Serializable`.
     alias(libs.plugins.kotlin.serialization)
+    // The app-shell screenshot baselines (`TEST-UI-012`, `TASK-045`): Roborazzi records the committed
+    // PNGs under `src/test/snapshots` and verifies them on the JVM host (DEC-024, DEC-034).
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -84,6 +87,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(project(":core:testing"))
     testImplementation(libs.androidx.compose.ui.test.junit4)
+    // The app-shell screenshot harness (`TASK-045`): the capture API and its JUnit rule, declared
+    // where the shell snapshots use them (DEC-077, DEC-034).
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
     // The Compose rule hosts its content in a provided activity; the artifact supplies it to the test
     // manifest, so a UI case needs no activity of the app's own.
     debugImplementation(libs.androidx.compose.ui.test.manifest)

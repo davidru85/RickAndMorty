@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     // The Discovery screen is a composable, so the module needs the Compose compiler (ADR-0008).
     alias(libs.plugins.kotlin.compose)
+    // The screen screenshot baselines (`TASK-045`, `TEST-UI-012`/`TEST-UI-016`): Roborazzi records the
+    // committed PNGs under `src/androidHostTest/snapshots` and verifies them on the JVM host (DEC-034).
+    alias(libs.plugins.roborazzi)
 }
 
 /**
@@ -137,6 +140,13 @@ kotlin {
             // Robolectric is only needed on the host-test **runtime** path: no case compiles against
             // it, so the edge is `runtimeOnly` (`DEC-077`).
             runtimeOnly(libs.robolectric)
+            // The screen screenshot harness (`TASK-045`): the capture API and its JUnit rule, declared
+            // where the discovery snapshots use them (DEC-077, DEC-034).
+            // The capture API (`captureRoboImage`) and the options type the calls name explicitly;
+            // `roborazzi-compose` and `roborazzi-junit-rule` are unused here, and dependency analysis
+            // rejects an unused edge (DEC-077), so only what is referenced is declared.
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.core)
         }
     }
 }

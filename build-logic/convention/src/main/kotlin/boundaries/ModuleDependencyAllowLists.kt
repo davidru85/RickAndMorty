@@ -47,6 +47,12 @@ internal object ModuleDependencyAllowLists {
         "junit:junit",
         "org.robolectric:robolectric",
         "org.jetbrains.kotlinx:kotlinx-serialization-json",
+        // The screenshot harness of `TASK-045` (`TEST-UI-012`, `TEST-UI-016`): the component baselines
+        // are recorded and verified from this module's own test source set (`DEC-034`, `DEC-106`'s
+        // closed test list extended by the task that introduced the harness).
+        "io.github.takahirom.roborazzi:roborazzi",
+        "io.github.takahirom.roborazzi:roborazzi-compose",
+        "io.github.takahirom.roborazzi:roborazzi-junit-rule",
     )
 
     /**
