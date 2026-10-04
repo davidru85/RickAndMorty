@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-04 (**B6 prepared across PRs #153/#156 and the M1 release phase**); must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-04 (**B6–B8 prepared across their phase pull requests**); must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -28,6 +28,18 @@
 **Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `GAP-006`/`GAP-010` unchanged.
 
 **B7 entry condition:** B6 Phase 6.3 merged and the M1 release published by the owner.
+
+### B8 closure — 2026-10-04
+
+**Block 8 is prepared through its three phase pull requests** (`DEC-109`): 8.1 the iOS journey, motion fallback and image cache (#170), 8.2 the placeholders, Settings and the snapshot baselines (#174), 8.3 the M2 evidence and the M1 non-regression.
+
+**Delivered:** the iOS Discovery, Detail, Favorites and Settings screens over the shared `IC-018`/`IC-019`/`IC-020`/`IC-023` contracts; the Episodes placeholder; the zoom transition with its Reduce Motion fallback; the image cache with both `REQ-FUNC-021` assertions; six committed snapshot baselines covering the glass path, the pre-iOS-26 fallback, Reduce Transparency and the largest Dynamic Type size; and the response-cache backend iOS never had. 96 iOS tests green; the M1 Android verification set re-run green on the same tree, so iOS added no regression.
+
+**Carried as unevidenced, named rather than claimed (`DEC-117`):** `M2-1`/`M2-2` need an **iOS 18** simulator or device and every runtime here starts at 26.4, so the deployment-floor run and the "iOS 18 renders the fallback" pair could not be executed; `M2-4` needs a physical device; and the `DEC-023`-style on-device checklist claims (VoiceOver traversal, colour-picker contrast, target measurements) remain unrecorded.
+
+**Open:** `GAP-031` (the Discovery grid paints its skeleton branch on the device while its own body logs `Content`), `GAP-029`, `GAP-030`, `CONF-79`, `CONF-80`, `CONF-81`.
+
+**B9 entry condition:** B8 Phase 8.3 merged by the owner.
 
 ### PR #150 branch update — 2026-10-04
 
