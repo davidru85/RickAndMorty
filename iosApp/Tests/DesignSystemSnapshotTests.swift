@@ -40,9 +40,9 @@ final class DesignSystemSnapshotTests: XCTestCase {
     ) {
         let view =
             content()
-                .environment(\.multiverseGlassPath, glassPath)
-                .environment(\.dynamicTypeSize, dynamicTypeSize)
-                .frame(width: 320)
+            .environment(\.multiverseGlassPath, glassPath)
+            .environment(\.dynamicTypeSize, dynamicTypeSize)
+            .frame(width: 320)
         assertSnapshot(
             of: view,
             as: .image(layout: .sizeThatFits),

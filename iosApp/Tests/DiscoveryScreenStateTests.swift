@@ -164,7 +164,14 @@ final class DiscoveryScreenStateTests: XCTestCase {
     // MARK: - Copy bindings
 
     func test_AC_REQ_UX_009_given_the_states_when_their_copy_is_resolved_then_each_key_exists_in_both_locales() {
-        let keys = ["empty_search_message", "action_clear_filters", "state_stale_banner", "error_title", "action_retry"]
+        // Built by appending because `GAP-030`: a multiline collection literal cannot satisfy both
+        // `.swift-format` (which requires a trailing comma) and SwiftLint (which forbids one).
+        var keys: [String] = []
+        keys.append("empty_search_message")
+        keys.append("action_clear_filters")
+        keys.append("state_stale_banner")
+        keys.append("error_title")
+        keys.append("action_retry")
         for key in keys {
             XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "en"), "en must carry \(key)")
             XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "es"), "es must carry \(key)")
@@ -189,7 +196,8 @@ final class DiscoveryScreenStateTests: XCTestCase {
         let loader = PortraitImageStub()
         let screen = DiscoveryScreen(state: state, loader: loader, onIntent: { _ in }, onOpenDetail: { _ in })
         let renderer = ImageRenderer(
-            content: screen
+            content:
+                screen
                 .frame(width: 402, height: 874)
                 .background(MultiverseBrandColors.spaceBlack)
                 .environment(\.multiverseGlassPath, .material)

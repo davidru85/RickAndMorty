@@ -90,9 +90,9 @@ struct DestinationView: View {
             case .favorites:
                 FavoritesHost(onBrowse: { navigation.browseCharacters() })
             case .episodes:
-                placeholder
+                // The designed coming-soon screen (`UI_SPEC.md` §6.4, `TASK-056`).
+                EpisodesPlaceholderScreen(onBrowseCharacters: { navigation.browseCharacters() })
             case .settings:
-                // `TASK-077` delivers the real screen; the host stays so the destination composes.
                 SettingsHost()
             }
         }
@@ -103,17 +103,4 @@ struct DestinationView: View {
         }
     }
 
-    private var placeholder: some View {
-        EmptyState(
-            symbol: destination == .episodes ? "play.tv.fill" : "heart",
-            heading:
-                LocalizedCopy.shared.text(
-                    for: destination == .episodes ? "episodes_heading" : "favorites_heading"
-                ),
-            body: LocalizedCopy.shared.text(for: destination == .episodes ? "episodes_body" : "favorites_body"),
-            actionLabel: LocalizedCopy.shared.text(for: "browse_characters"),
-            action: { navigation.browseCharacters() }
-        )
-        .navigationTitle(LocalizedCopy.shared.text(for: destination.labelKey))
-    }
 }

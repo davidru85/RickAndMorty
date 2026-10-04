@@ -158,12 +158,18 @@ public object MultiverseBootstrap {
             resolveFavoriteCards = iOSGraph.koin.get(),
         )
 
-    /** The Settings screen's dependencies (`IC-023`, `TASK-055`). */
+    /**
+     * The Settings screen's dependencies (`IC-023`, `TASK-077`).
+     *
+     * `observeFavoriteIds` is included because the screen derives `canDeleteFavorites` from the
+     * stored set (`AC-REQ-FUNC-035-3`), which is `:core:domain`'s use case rather than a settings one.
+     */
     public fun settingsDependencies(): SettingsDependencies =
         SettingsDependencies(
             observeAppSettings = iOSGraph.koin.get(),
             updateAppSettings = iOSGraph.koin.get(),
             clearFavorites = iOSGraph.koin.get(),
+            observeFavoriteIds = iOSGraph.koin.get(),
         )
 }
 
@@ -185,6 +191,7 @@ public class SettingsDependencies(
     public val observeAppSettings: ObserveAppSettings,
     public val updateAppSettings: UpdateAppSettings,
     public val clearFavorites: ClearFavorites,
+    public val observeFavoriteIds: ObserveFavoriteIds,
 )
 
 

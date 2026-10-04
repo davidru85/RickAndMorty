@@ -96,20 +96,26 @@ struct FavoritesHost: View {
     }
 }
 
-/// The settings destination.
-///
-/// `TASK-077` (B8 Phase 8.2) delivers the real screen; until then the shell shows the designed
-/// placeholder rather than a second, temporary settings implementation, because a stub screen would
-/// be exactly the placeholder `DEFINITION.md` §3 D4 forbids from shipping as a feature.
+/// The settings screen (`IC-023`, `TASK-077`).
 struct SettingsHost: View {
-    var body: some View {
-        EmptyState(
-            symbol: "gearshape",
-            heading: LocalizedCopy.shared.text(for: "nav_settings"),
-            body: LocalizedCopy.shared.text(for: "browse_characters"),
-            actionLabel: LocalizedCopy.shared.text(for: "browse_characters"),
-            action: {}
+    @StateObject private var holder: SettingsStateHolder
+
+    init() {
+        let resolved = MultiverseBootstrap.shared.settingsDependencies()
+        _holder = StateObject(
+            wrappedValue: SettingsStateHolder(
+                observeAppSettings: resolved.observeAppSettings,
+                updateAppSettings: resolved.updateAppSettings,
+                observeFavoriteIds: resolved.observeFavoriteIds,
+                clearFavorites: resolved.clearFavorites
+            )
         )
-        .navigationTitle(LocalizedCopy.shared.text(for: "nav_settings"))
+    }
+
+    var body: some View {
+        SettingsScreen(
+            state: holder.state,
+            onIntent: { holder.onIntent($0) }
+        )
     }
 }

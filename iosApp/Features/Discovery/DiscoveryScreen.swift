@@ -235,10 +235,10 @@ struct DiscoveryScreen: View {
         if dynamicTypeSize.isAccessibilitySize {
             return [GridItem(.flexible())]
         }
-        return [
-            GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter),
-            GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter)
-        ]
+        // Built with the repeating initialiser rather than as a multiline literal: `GAP-030` makes a
+        // multiline collection literal unsatisfiable for both tools, and the two-column grid is the
+        // same shape Favorites uses.
+        return [GridItem](repeating: GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter), count: 2)
     }
 
     /// Six skeletons in the Tall/Regular pattern while no load has completed (`UI_SPEC.md` §8).
