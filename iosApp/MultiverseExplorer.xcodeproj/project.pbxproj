@@ -434,7 +434,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64\n";
+			shellScript = "cd \"$SRCROOT/..\"\n# Link the framework the search path expects: the simulator or the device target, in the\n# Debug or Release build, so a device or Release build never links a simulator object.\ncase \"$PLATFORM_NAME\" in\n  iphonesimulator) TARGET=IosSimulatorArm64 ;;\n  iphoneos) TARGET=IosArm64 ;;\n  *) echo \"error: no Kotlin framework target for platform '$PLATFORM_NAME'\"; exit 1 ;;\nesac\ncase \"$CONFIGURATION\" in\n  Release) BUILD=Release ;;\n  *) BUILD=Debug ;;\nesac\n./gradlew \":core:ios:link${BUILD}Framework${TARGET}\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -561,6 +561,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				KOTLIN_FRAMEWORK_BUILD = debug;
+				KOTLIN_FRAMEWORK_DIR = "$(SRCROOT)/../core/ios/build/bin/$(KOTLIN_FRAMEWORK_TARGET)/$(KOTLIN_FRAMEWORK_BUILD)Framework";
+				"KOTLIN_FRAMEWORK_TARGET[sdk=iphoneos*]" = iosArm64;
+				"KOTLIN_FRAMEWORK_TARGET[sdk=iphonesimulator*]" = iosSimulatorArm64;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -620,6 +624,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				KOTLIN_FRAMEWORK_BUILD = release;
+				KOTLIN_FRAMEWORK_DIR = "$(SRCROOT)/../core/ios/build/bin/$(KOTLIN_FRAMEWORK_TARGET)/$(KOTLIN_FRAMEWORK_BUILD)Framework";
+				"KOTLIN_FRAMEWORK_TARGET[sdk=iphoneos*]" = iosArm64;
+				"KOTLIN_FRAMEWORK_TARGET[sdk=iphonesimulator*]" = iosSimulatorArm64;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -636,7 +644,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+					"$(KOTLIN_FRAMEWORK_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -664,7 +672,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+					"$(KOTLIN_FRAMEWORK_DIR)",
 				);
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -693,7 +701,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+					"$(KOTLIN_FRAMEWORK_DIR)",
 				);
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -720,7 +728,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../core/ios/build/bin/iosSimulatorArm64/debugFramework",
+					"$(KOTLIN_FRAMEWORK_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
