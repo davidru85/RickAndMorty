@@ -28,6 +28,23 @@ final class DiscoveryStateHolderTests: XCTestCase {
         )
         XCTAssertTrue(holder.state.loadState is LoadStateLoading, "nothing has loaded yet, so the state stays Loading")
     }
+
+    func test_PERF_004_given_an_unchanged_state_when_the_holder_polls_then_it_publishes_nothing() async {
+        // The holder polls the shared `StateFlow` every frame; republishing an unchanged value makes
+        // SwiftUI re-evaluate the whole screen 60 times a second while nothing happens.
+        let holder = DiscoveryStateHolder(
+            pager: RecordingCharacterPager(),
+            initialFilter: CharacterFilter(query: "", status: StatusFilter.all)
+        )
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        var publications = 0
+        let subscription = holder.objectWillChange.sink { publications += 1 }
+        defer { subscription.cancel() }
+
+        try? await Task.sleep(nanoseconds: 300_000_000)
+
+        XCTAssertEqual(publications, 0, "an unchanged shared state must not be republished")
+    }
 }
 
 /// A `CharacterPager` that records the filters it is asked for and never publishes a page.
