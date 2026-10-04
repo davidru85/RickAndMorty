@@ -66,7 +66,13 @@ jobs:
   android:
     name: android
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The ceiling covers the gate the block phases run, not a cold-cache worst case that repeats
+    # the Kotlin/Native download (`GAP-028`). Measured on the B5 phase runs: the whole job took
+    # 16 min on phase 5.1 (run 37142102522) only because `check` reached the disabled native
+    # suite; with that subtree pruned the local gate is minutes, and the remaining steps are
+    # small. 60 leaves headroom for a slower runner without letting a genuinely stuck gate
+    # occupy a runner for an hour.
+    timeout-minutes: 60
     steps:
       - name: Check out the pull request
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -84,8 +90,20 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
+      # `-x iosSimulatorArm64Test` is not a narrowed gate: the KMP plugin DISABLES that task on a
+      # non-Apple host ("Native task 'iosSimulatorArm64Test' is disabled / cannot run on the
+      # current host (linux-x86_64)"), so the Linux runner never executes it. What it did do was
+      # drag the whole Kotlin/Native chain into the job as a dependency — `downloadKotlin
+      # NativeDistribution` (13-15 min, measured) and `compileKotlinIosSimulatorArm64` for every
+      # KMP module — for a task that can never run, which is what exhausted the job's ceiling
+      # (`GAP-028`). Excluding it by name prunes that subtree (measured: 1158 -> 982 tasks, 30
+      # native tasks -> 0) and leaves every check that can actually execute untouched. The
+      # Apple-side suites are run by the macOS `ios` job when `DEC-083`'s suspension ends and by
+      # the local macOS supplement meanwhile; the guard is unchanged, so the moment an
+      # `iosApp` application target exists it demands the `ios` job and its native suites back
+      # (`TASK-051`), and this exclusion no longer has a job to sit in.
       - name: Run the local gate
-        run: ./gradlew check --stacktrace
+        run: ./gradlew check -x iosSimulatorArm64Test --stacktrace
 
       # TASK-029: the quality toolchain is part of the gate, not a local convention.
       # ktlint, Android Lint and the dependency policy run inside `check`; `buildHealth`

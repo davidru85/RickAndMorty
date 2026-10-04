@@ -97,6 +97,31 @@ internal object WorkflowGateGuard {
     private val REQUIRED_RUNNERS = mapOf("android" to "ubuntu-latest", "ios" to "macos-latest")
 
     /**
+     * `TEST-UNIT-044` (`GAP-028`): the task names a job may exclude with `-x`, because the runner's
+     * platform *disables* them rather than failing them.
+     *
+     * The Kotlin Multiplatform plugin disables `iosSimulatorArm64Test` on a non-Apple host —
+     * "cannot run on the current host (linux-x86_64)". Reaching it from `check` did not run it; it
+     * pulled the whole Kotlin/Native chain in as a dependency (`downloadKotlinNativeDistribution`,
+     * 13-15 minutes, and `compileKotlinIosSimulatorArm64` per module) for a task that could never
+     * execute, which exhausted the `android` job's ceiling and cancelled four consecutive runs.
+     *
+     * The exclusion is therefore an allow-list keyed by job: `android` may exclude
+     * `iosSimulatorArm64Test` and nothing else. The `ios` job may exclude nothing — on macOS the
+     * suite is executable, so excluding it there would be a genuinely narrowed gate.
+     */
+    private val HOST_DISABLED_EXCLUSIONS = mapOf("android" to setOf("iosSimulatorArm64Test"))
+
+    /**
+     * The `-x`/`--exclude-task` names a `run` text excludes, so the rule can decide each one.
+     */
+    private fun String.excludedTasks(): List<String> =
+        Regex("(?:^|\\s)-x\\s+(\\S+)|(?:^|\\s)--exclude-task[=\\s]+(\\S+)")
+            .findAll(this)
+            .mapNotNull { match -> match.groupValues[1].ifEmpty { match.groupValues[2] }.takeIf { it.isNotEmpty() } }
+            .toList()
+
+    /**
      * `TEST-UNIT-045` (`TASK-093`, `DEC-078`): the automated-integration patterns a workflow step
      * may never contain. Integration reaches `main` through a human merge only (`DEC-049`).
      */
@@ -432,6 +457,23 @@ internal object WorkflowGateGuard {
                                     "`if: always()` (AC-REQ-NFR-011-1)",
                             )
                     }
+                    // GAP-028: a task the runner's platform disables may be excluded by name; every
+                    // other exclusion is the narrowed gate this guard exists to reject.
+                    val allowed = HOST_DISABLED_EXCLUSIONS[jobName].orEmpty()
+                    step.stringAt("run")?.excludedTasks()?.forEach { excluded ->
+                        if (excluded !in allowed) {
+                            findings +=
+                                Finding(
+                                    relative,
+                                    step.lineOf("run") ?: step.startLine,
+                                    "step ${index + 1} of the `$jobName` job excludes `$excluded` with `-x`; only " +
+                                        "a task this runner's platform disables may be excluded " +
+                                        "(${allowed.sorted().joinToString(", ") { "`$it`" }.ifEmpty { "none" }}), " +
+                                        "and excluding it otherwise hides a check that could have run " +
+                                        "(AC-REQ-NFR-011-1, GAP-028)",
+                                )
+                        }
+                    }
                 }
             }
         }
@@ -447,10 +489,10 @@ internal object WorkflowGateGuard {
                 .flatMap { document -> document.jobEntries() }
                 .filter { (name, _) -> name in REQUIRED_JOBS }
                 .groupBy({ it.first }, { it.second })
-                .mapValues { (_, jobs) ->
+                .mapValues { (jobName, jobs) ->
                     jobs
                         .flatMap { job -> job.executableRunTexts() }
-                        .mapNotNull { text -> text.takeIf { it.actuallyExecutes() } }
+                        .mapNotNull { text -> text.takeIf { it.actuallyExecutes(jobName) } }
                 }
         val anchor = gateDocuments.first()
         val requiredCommands = if (iosRestored) REQUIRED_COMMANDS + IOS_RESTORED_COMMANDS else REQUIRED_COMMANDS
@@ -486,6 +528,24 @@ internal object WorkflowGateGuard {
      * A text that contains a required command but also `echo`, a dry run, `-x`, or a failure
      * suppressor (`|| true`, `|| :`) would satisfy a substring check while proving nothing: the step
      * succeeds whether or not the check ran (`TASK-098`, `B2-R01` item 9).
+     *
+     * `GAP-028` refines the `-x` case. Excluding a task genuinely stops the invocation being
+     * evidence that the command ran, and a step that excludes a *required* command is still caught
+     * by the rule above. But a single step may legitimately carry both `./gradlew check` and an
+     * exclusion of a suite the runner's platform disables; the exclusion must not then void the
+     * whole step, because the check itself still ran. So the text is normalised by stripping the
+     * exclusions this job is allowed to make, and the `-x` form is judged on what remains.
      */
-    private fun String.actuallyExecutes(): Boolean = NON_EXECUTING_FORMS.none { Regex(it).containsMatchIn(this) }
+    private fun String.actuallyExecutes(jobName: String? = null): Boolean {
+        val allowed = jobName?.let { HOST_DISABLED_EXCLUSIONS[it] }.orEmpty()
+        val normalised =
+            if (allowed.isEmpty()) {
+                this
+            } else {
+                allowed.fold(this) { text, task ->
+                    text.replace(Regex("(?:^|\\s)-x\\s+${Regex.escape(task)}(?=\\s|$)"), " ").replace("  ", " ")
+                }
+            }
+        return NON_EXECUTING_FORMS.none { Regex(it).containsMatchIn(normalised) }
+    }
 }
