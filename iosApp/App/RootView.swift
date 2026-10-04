@@ -18,9 +18,10 @@ struct RootView: View {
     /// network (`AC-REQ-FUNC-007-3`).
     @State private var splashVisible = true
 
-    /// The card the user tapped, so the detail destination can render its header before any request
-    /// (`AC-REQ-FUNC-002-1`).
-    @State private var opened: CharacterCardUi?
+    /// The card each destination opened, so the detail destination can render its header before any
+    /// request (`AC-REQ-FUNC-002-1`). It is kept per destination: every tab has its own stack, and a
+    /// card opened in one must not push a detail onto the others.
+    @State private var openedCards: [ShellDestination: CharacterCardUi] = [:]
 
     var body: some View {
         TabView(
@@ -33,7 +34,10 @@ struct RootView: View {
                 DestinationView(
                     destination: destination,
                     navigation: navigation,
-                    opened: $opened
+                    opened: Binding(
+                        get: { openedCards[destination] },
+                        set: { openedCards[destination] = $0 }
+                    )
                 )
                 .tabItem {
                     Text(LocalizedCopy.shared.text(for: destination.labelKey))
@@ -84,26 +88,37 @@ struct DestinationView<Detail: View>: View {
 
     var body: some View {
         NavigationStack {
-            switch destination {
-            case .characters:
-                // Discovery owns its own state holder: the pager is per-screen (`IC-014`), so the
-                // holder builds it from the shared graph through the bootstrap.
-                DiscoveryHost { card in
-                    opened = card
+            root
+                // Inside the stack, on its root: SwiftUI drops a `navigationDestination` attached to
+                // the stack itself, so a tapped card would push nothing. The detail renders from the
+                // card the list already had, so its header is present in the first frame
+                // (`AC-REQ-FUNC-002-1`).
+                .navigationDestination(item: $opened) { card in
+                    detail(card)
                 }
-            case .favorites:
-                FavoritesHost(onBrowse: { navigation.browseCharacters() })
-            case .episodes:
-                // The designed coming-soon screen (`UI_SPEC.md` §6.4, `TASK-056`).
-                EpisodesPlaceholderScreen(onBrowseCharacters: { navigation.browseCharacters() })
-            case .settings:
-                SettingsHost()
-            }
         }
-        .navigationDestination(item: $opened) { card in
-            // The detail destination renders from the card the list already had, so its header is
-            // present in the first frame (`AC-REQ-FUNC-002-1`).
-            detail(card)
+    }
+
+    @ViewBuilder
+    private var root: some View {
+        switch destination {
+        case .characters:
+            // Discovery owns its own state holder: the pager is per-screen (`IC-014`), so the holder
+            // builds it from the shared graph through the bootstrap.
+            DiscoveryHost { card in
+                opened = card
+            }
+        case .favorites:
+            // A favourite opens the same detail destination Discovery's cards do (`IC-020`).
+            FavoritesHost(
+                onBrowse: { navigation.browseCharacters() },
+                onOpenDetail: { card in opened = card }
+            )
+        case .episodes:
+            // The designed coming-soon screen (`UI_SPEC.md` §6.4, `TASK-056`).
+            EpisodesPlaceholderScreen(onBrowseCharacters: { navigation.browseCharacters() })
+        case .settings:
+            SettingsHost()
         }
     }
 
