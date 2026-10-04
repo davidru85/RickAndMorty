@@ -1174,3 +1174,28 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **The property that holds:** with `b6-phase-6-1` at its **merged** head (`09c68af`), the twelve phase branches merge clean and the affected suite is BUILD SUCCESSFUL on the merged tree. When the concurrent reviewer's green fix lands, its branch returns to the same class.
 - **Rule for the next reader:** a red test on a PR head is a TDD red phase until its green commit arrives in the same branch, and a remote-tracking ref is not the remote. Re-clone or `git fetch` before concluding anything about another branch's content.
 - **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0124 · 2026-10-04 · B6, B7, B8 and B9 delivered: twelve phase pull requests, all green
+
+- **Event:** the end of the block-delivery instruction — B6, B7, B8 and B9 completed in full, each in its three sequential phase pull requests (`DEC-107`, `DEC-108`, `DEC-109`, `DEC-110`), without waiting for any manual review, under the owner's directive of 2026-10-04.
+- **Observed state of the twelve heads**, each with a green `pull-request` run and a passing `android` context:
+  | Block | Phase | PR | Head |
+  | --- | --- | --- | --- |
+  | B6 | 6.1 visual and accessibility evidence | #153 | `feat/b6-phase-6-1` |
+  | B6 | 6.2 security and performance evidence | #156 | `feat/b6-phase-6-2` |
+  | B6 | 6.3 M1 release | #158 | `feat/b6-phase-6-3` |
+  | B7 | 7.1 framework export and app target | #161 | `feat/b7-phase-7-1` |
+  | B7 | 7.2 design system and state holders | #164 | `feat/b7-phase-7-2` |
+  | B7 | 7.3 shell and copy parity | #166 | `feat/b7-phase-7-3` |
+  | B8 | 8.1 journey parity and motion fallback | #170 | `feat/b8-phase-8-1` |
+  | B8 | 8.2 placeholders, Settings and baselines | #174 | `feat/b8-phase-8-2` |
+  | B8 | 8.3 iOS evidence and M2 | #178 | `feat/b8-phase-8-3` |
+  | B9 | 9.1 hardening and risk | #182 | `feat/b9-phase-9-1` |
+  | B9 | 9.2 documentation gate and traceability | #186 | `feat/b9-phase-9-2` |
+  | B9 | 9.3 handover and deferred reconciliation | #189 | `feat/b9-phase-9-3` |
+- **The sequential-merge constraint the owner set is verified twice over:** all twelve merge into `main` clean, in that order, with no conflict — checked in a throwaway clone before and after the CI fix propagation — and the resulting tree passes `allTests :build-logic:convention:test` with **1039 tests, 0 failures** plus the full policy set (`LOG-0121`).
+- **Defects this final phase found and fixed, each proven red-then-green:** the Android app crashed on every launch since B5.2 (`GAP-032`, S1 — the seam port injected as its concrete class, caught by no test because `TEST-UNIT-057` resolved a hand-written binding list); `:core:ios` was formatted by no job (its ktlint task failed on eight violations in a file no CI job checked); the Swift quality gate rejected the runner's own toolchain because `xcode-27` installs `Xcode_27.0.app` as a symlink to `Xcode_27.app` and the membership test compared one spelling against the other (every B7–B9 head was red without it); and `tools/swift-tools-test.sh` — the suite that proves the gate fails closed — ran in no job.
+- **The product was launched and its journey exercised for the first time in this repository's history** (`LOG-0118`): Discovery with 826 live characters; Detail with its live episode enrichment; the favourite and its survival across a process restart; "Delete all" to the empty state; cached content offline; the offline error state and a working Retry.
+- **Carried as unevidenced, named in `HANDOFF.md` rather than claimed:** `M1-4`/`M1-5`/`M2-4` (budgets on a named reference device — none exists here), `M2-1`/`M2-2` (the iOS 18 floor — every runtime starts at 26.4), the device-level accessibility checklist and the dependency advisory register (no real finding exists to record).
+- **The owner's remaining steps** (`DEC-049`): review and merge the twelve pull requests in order; re-add the `ios` required context to the `main protection` ruleset (`TASK-108`); and tag/publish the releases.
+- **Affected documents:** `PROJECT_LOG.md` (this entry), `HANDOFF.md` (the B9 closure and the state table).
