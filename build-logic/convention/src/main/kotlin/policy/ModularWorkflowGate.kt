@@ -138,6 +138,12 @@ internal object ModularWorkflowGate {
             listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator").forEach { command ->
                 if (!commands.contains(command)) report(job, "`$command` is not an executable step of the ios gate job")
             }
+            // TASK-051: the Swift quality gate (`DEC-076`) is part of the iOS row, so removing its
+            // step is a gate narrowing rather than a simplification. The step runs the pinned script,
+            // which fails closed when a tool is missing.
+            if (job.executableRunTexts().none { it.contains("tools/swift-lint.sh") }) {
+                report(job, "the iOS job must run the Swift quality gate `tools/swift-lint.sh` (`DEC-076`, `TASK-051`)")
+            }
         }
         return findings
     }
