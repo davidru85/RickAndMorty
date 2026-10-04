@@ -3,9 +3,12 @@ package io.github.davidru85.multiverse.core.designsystem.accessibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -19,11 +22,14 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCardSkeleton
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
+import io.github.davidru85.multiverse.core.designsystem.components.MultiverseNavigationBar
+import io.github.davidru85.multiverse.core.designsystem.components.NavigationDestination
 import io.github.davidru85.multiverse.core.designsystem.components.StatusBadge
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
@@ -209,16 +215,18 @@ class AccessibilityVerificationTest {
     @Config(sdk = [36], qualifiers = "en-rUS-w411dp-h891dp")
     fun `TEST-A11Y-005 given_a_large_font_scale_when_a_card_renders_then_its_name_and_species_still_render`() {
         compose.setContent {
-            MultiverseTheme {
-                CharacterCard(
-                    name = "Rick Sanchez",
-                    species = "Human",
-                    statusTone = StatusTone.Alive,
-                    statusLabel = "Alive",
-                    imageUrl = "https://example.invalid/avatar/1.jpeg",
-                    seam = seam(),
-                    portalMark = ColorPainter(Color.White),
-                )
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                MultiverseTheme {
+                    CharacterCard(
+                        name = "Rick Sanchez",
+                        species = "Human",
+                        statusTone = StatusTone.Alive,
+                        statusLabel = "Alive",
+                        imageUrl = "https://example.invalid/avatar/1.jpeg",
+                        seam = seam(),
+                        portalMark = ColorPainter(Color.White),
+                    )
+                }
             }
         }
         compose.waitForIdle()
@@ -228,7 +236,26 @@ class AccessibilityVerificationTest {
             compose.onNodeWithText(text).assertIsDisplayed().performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
             val layout = layouts.single()
             assertEquals("$text must actually render at maximum font scale", 2f, layout.layoutInput.density.fontScale, 0f)
-            assertTrue("$text must not be clipped or ellipsized", !layout.hasVisualOverflow)
+            assertTrue("$text must not be clipped or ellipsized", (0 until layout.lineCount).none(layout::isLineEllipsized))
+        }
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-rUS-w411dp-h891dp")
+    fun `TEST-A11Y-005 given_maximum_text_when_navigation_renders_then_destination_labels_fit_without_breaking_words`() {
+        val icon = ImageVector.Builder("decorative", 24.dp, 24.dp, 24f, 24f).build()
+        val labels = listOf("Characters", "Episodes", "Favorites", "Settings")
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                MultiverseTheme {
+                    MultiverseNavigationBar(labels.map { NavigationDestination(it, it, icon, icon) }, "Characters", {})
+                }
+            }
+        }
+        labels.forEach { label ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(label).assertIsDisplayed().performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals("$label must fit without splitting its word", 1, layouts.single().lineCount)
         }
     }
 
