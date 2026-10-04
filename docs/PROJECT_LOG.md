@@ -1162,3 +1162,15 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **It was not the product.** Three observations separated the two: the APK's own bytecode reported `getImageSeam()Lio/github/davidru85/multiverse/core/designsystem/image/ImageSeam;` by `dexdump`, so the artifact was correct; the source at `HEAD` declares the port; and the reported line number pointed at a line the current source does not contain. `adb uninstall` followed by a plain `adb install` then launched cleanly — 0 `FATAL EXCEPTION`, Discovery with 826 live characters, and the Detail screen with its live `51 Episodes` enrichment.
 - **Conclusion:** `adb install -r` on this emulator kept serving a stale dex for the replacement APK, so the crash was device state, not a regression. The distinction matters because the two are indistinguishable from the dialog alone, and reporting the second as a product defect would have been wrong.
 - **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0123 · 2026-10-04 · The merge verification's own false alarm, and the concurrent work that caused it
+
+- **Event:** the merge simulation of `LOG-0121`, re-run after the CI fix propagation, began failing on `TEST-A11Y-005` ("maximum text size must not clip detail text") with `C-137`, `Human`, `Episodes` and `Dimension` ellipsized at `fontScale 2.0`.
+- **It was not a defect in the stack.** The failing assertion arrived on `origin/feat/b6-phase-6-1` in commit `b630066`, whose own message says it is **deliberately red**: `test(androidApp): reproduce PR153 snapshot and text-scale gaps … Observed red: :feature:character-detail:testAndroidHostTest with native graphics failed because C-137, Human, Episodes and Dimension are ellipsized at fontScale 2.0.` That is a concurrent reviewer's **red phase**; its green fix (`StatTile`'s fixed `width(120.dp)` and `height(76.dp)`) was still uncommitted in that reviewer's worktree when this simulation ran.
+- **Three wrong readings were discarded before the right one, and the difference matters:**
+  1. *"A real cross-branch defect"* — wrong: a second clone of the same content passed, which pointed at state rather than code.
+  2. *"A caching artifact"* — wrong: `--rerun-tasks` reproduced the failure deterministically in one tree and, once the commit was present, in every tree.
+  3. *"A stale local branch"* — wrong, and the most instructive: `git rev-parse origin/feat/b6-phase-6-1` returned `09c68af` against a stale remote-tracking ref, so the commit looked local-only. A fresh `git clone` fetched it and showed it on the remote.
+- **The property that holds:** with `b6-phase-6-1` at its **merged** head (`09c68af`), the twelve phase branches merge clean and the affected suite is BUILD SUCCESSFUL on the merged tree. When the concurrent reviewer's green fix lands, its branch returns to the same class.
+- **Rule for the next reader:** a red test on a PR head is a TDD red phase until its green commit arrives in the same branch, and a remote-tracking ref is not the remote. Re-clone or `git fetch` before concluding anything about another branch's content.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
