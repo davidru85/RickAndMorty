@@ -73,9 +73,15 @@ struct CharacterDetailScreen: View {
     /// the back, share and favourite controls stay individually reachable elements
     /// (`UI_SPEC.md` §9).
     private var hero: some View {
-        CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+        // The frame is sized first — the full width at the hero's ratio, which in the scroll view's
+        // unbounded height is what fixes the 402 × 520 box — and the portrait then fills and is clipped
+        // to it. A `.fill` aspect ratio on an unbounded frame covered the whole screen instead.
+        Color.clear
+            .aspectRatio(Self.heroAspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)
-            .aspectRatio(Self.heroAspectRatio, contentMode: .fill)
+            .overlay {
+                CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+            }
             .clipped()
             .overlay(alignment: .top) { heroControls }
             .accessibilityElement(children: .contain)

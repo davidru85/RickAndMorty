@@ -129,6 +129,36 @@ class WorkflowGateReproductionTest {
     }
 
     @Test
+    fun `an ios job that never builds and tests the iOS app is reported`() {
+        // `TESTING.md` §14.2: the Swift test targets and the iOS snapshot baselines run on every pull
+        // request from `TASK-051`/`TASK-059`. A job that runs only the Kotlin/Native suites and the
+        // Swift linters leaves both unexecuted, so the step that runs them must not be removable.
+        val findings =
+            findingsAfter { text ->
+                text.lines().filterNot { it.contains("xcodebuild") && it.contains(" test") }.joinToString("\n") + "\n"
+            }
+        assertTrue(
+            findings.any { it.contains("xcodebuild") && it.contains("TESTING.md") },
+            "an ios job without the iOS app's test step must be reported; got $findings",
+        )
+    }
+
+    @Test
+    fun `an ios job that never checks the app version against VERSION is reported`() {
+        // `DEFINITION.md` §5 REL2 and `AC-REQ-NFR-006-3`: `CFBundleShortVersionString` derives from the
+        // single `VERSION` source through the committed `Version.xcconfig`, so a gate that never runs
+        // `tools/ios-version.sh --check` lets a bumped `VERSION` ship the previous iOS version.
+        val findings =
+            findingsAfter { text ->
+                text.lines().filterNot { it.contains("tools/ios-version.sh") }.joinToString("\n") + "\n"
+            }
+        assertTrue(
+            findings.any { it.contains("tools/ios-version.sh --check") },
+            "an ios job without the version check must be reported; got $findings",
+        )
+    }
+
+    @Test
     fun `the untouched repository workflows pass every rule`() {
         val root = kotlin.io.path.createTempDirectory("gate-reproduction-clean").toFile()
         val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)

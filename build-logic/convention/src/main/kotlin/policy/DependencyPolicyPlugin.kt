@@ -372,7 +372,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
         val persistedInventory = target.tasks.register<VerifyPersistedFieldInventoryTask>("verifyPersistedFieldInventory") {
             group = VERIFICATION_GROUP
             description = "TEST-UNIT-027: every persisted field classified in SECURITY.md 3 exists in code and every " +
-                "store key is classified; the preference keys match CONTRACTS.md IC-021 (AC-REQ-SEC-003-1)."
+                "store key is classified; the preference keys match CONTRACTS.md IC-021, and no shipped source persists " +
+                "outside the inventoried stores (AC-REQ-SEC-003-1)."
             securityDocument.set(target.layout.projectDirectory.file("docs/SECURITY.md"))
             contractsDocument.set(target.layout.projectDirectory.file("docs/CONTRACTS.md"))
             favoritesAndroid.set(target.layout.projectDirectory.file(FAVORITES_ANDROID_SOURCE))
@@ -381,6 +382,15 @@ class DependencyPolicyPlugin : Plugin<Project> {
             settingsApple.set(target.layout.projectDirectory.file(SETTINGS_APPLE_SOURCE))
             shell.set(target.layout.projectDirectory.file(SHELL_SOURCE))
             imageLoader.set(target.layout.projectDirectory.file(IMAGE_LOADER_SOURCE))
+            // Every Kotlin and Swift source, so a store outside the six files above is seen too; the
+            // rule itself decides which of them ship (production source sets, the iOS app's targets).
+            candidateSources.from(
+                target.fileTree(rootDir) {
+                    include("**/src/**/*.kt", "iosApp/**/*.swift")
+                    exclude(*BUILD_STATE_EXCLUDES)
+                    exclude("build-logic/**")
+                },
+            )
             rootDirectory.set(target.layout.projectDirectory)
         }
 
@@ -388,8 +398,8 @@ class DependencyPolicyPlugin : Plugin<Project> {
             include("**/AndroidManifest.xml")
             exclude(*BUILD_STATE_EXCLUDES)
         }
-        // `iosApp/` does not exist yet: the plist input is declared while empty, so the first
-        // `Info.plist` to land is scanned rather than being an untracked file the task happens to see.
+        // Every plist is an input, `iosApp/App/Info.plist` included, so a new one is scanned the
+        // moment it lands rather than being an untracked file the task happens to see.
         val plists = target.fileTree(rootDir) {
             include("**/Info.plist", "**/*.plist")
             exclude(*BUILD_STATE_EXCLUDES)
