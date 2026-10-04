@@ -186,9 +186,9 @@ class DiscoverySnapshotTest {
             gridHolder.value = LazyStaggeredGridState(case.firstVisibleItemIndex)
             compose.waitForIdle()
             compose.onRoot().captureRoboImage(
-            file = File(baselineDir, "${case.name}.png"),
-            roborazziOptions = RoborazziOptions(),
-        )
+                file = File(baselineDir, "${case.name}.png"),
+                roborazziOptions = RoborazziOptions(),
+            )
         }
     }
 
