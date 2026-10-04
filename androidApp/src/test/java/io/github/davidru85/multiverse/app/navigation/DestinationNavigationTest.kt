@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.app.navigation
 
+import android.app.Application
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,7 +8,21 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.davidru85.multiverse.app.di.shellModules
+import io.github.davidru85.multiverse.core.data.di.coreModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
+import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailViewModelModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryModule
+import io.github.davidru85.multiverse.feature.discovery.di.discoveryViewModelModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import org.junit.After
+import org.junit.Before
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +50,32 @@ import org.robolectric.annotation.Config
 class DestinationNavigationTest {
     @get:Rule
     val compose = createComposeRule()
+
+    /**
+     * The graph the destinations resolve from. The real Discovery and Detail screens resolve their
+     * ViewModels through Koin, so this case starts the same graph the application does; the
+     * assertions below are about navigation and are untouched.
+     */
+    @Before
+    fun startGraph() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        startKoin {
+            androidContext(context)
+            modules(coreModule)
+            modules(shellModules(CoroutineScope(Dispatchers.Unconfined), context))
+            modules(
+                discoveryModule,
+                discoveryViewModelModule,
+                characterDetailModule,
+                characterDetailViewModelModule,
+            )
+        }
+    }
+
+    @After
+    fun stopGraph() {
+        stopKoin()
+    }
 
     private val labels = listOf("Characters", "Episodes", "Favorites", "Settings")
 

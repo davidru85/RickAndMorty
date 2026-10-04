@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The host-test manifest for the Discovery UI cases (`TEST-UI-001`, `TEST-UI-003`, `TEST-UI-009`).
+  It declares the activity `androidx.compose.ui.test.junit4.createComposeRule()` hosts its content in.
+  An app gets that activity merged in from `androidx.compose.ui:ui-test-manifest`; a Kotlin
+  Multiplatform library's host-test run has its own manifest instead, so the activity is declared
+  here. It is merged by AGP into the host-test manifest, never published, and never part of the
+  library's own manifest.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
+</manifest>

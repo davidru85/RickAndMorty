@@ -120,7 +120,6 @@ private fun encode(entry: CacheEntry): ByteArray {
     return buffer
 }
 
-@Suppress("ReturnCount")
 private fun decode(bytes: ByteArray): CacheEntry? {
     if (bytes.size < HEADER) return null
     var offset = 0
@@ -146,7 +145,6 @@ private fun decode(bytes: ByteArray): CacheEntry? {
     return CacheEntry(payload, Instant.fromEpochMilliseconds(storedAt), validator)
 }
 
-// `MVRSCACH` as ASCII, so a foreign file is rejected before anything is read from it.
-private const val MAGIC: Long = 0x4D_56_52_53_43_41_43_48
+private const val MAGIC: Long = 0x4D_56_52_53_43_41_43_48 // "MVRSCACH"
 private const val HEADER: Int = 8 + 8 + 8
 private const val NO_VALIDATOR: Int = -1
