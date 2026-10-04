@@ -139,3 +139,27 @@ targets:
           - $(inherited)
           - -framework
           - MultiverseExplorer
+
+# The one shared scheme, committed so every machine runs the same test configuration. The test action
+# pins the language and region: the screen baselines render the app's own localised copy, so a
+# simulator set to another language would otherwise compare a different string set against them.
+schemes:
+  MultiverseExplorer:
+    build:
+      targets:
+        MultiverseExplorer: all
+        MultiverseExplorerTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      language: en
+      region: US
+      targets:
+        - MultiverseExplorerTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
