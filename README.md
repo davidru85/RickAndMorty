@@ -217,7 +217,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 | Item | Value | Where |
 | --- | --- | --- |
 | API base URL | `https://rickandmortyapi.com/api/` | Build constant; not discovered at runtime |
-| App version | Single `VERSION` source (`0.1.0`). The Android `versionName` is that value verbatim today; the iOS `CFBundleShortVersionString` derives from it from `TASK-051` onward (`DEC-043`, `DEC-067`) | `DEC-043` |
+| App version | Single `VERSION` source (`0.2.0`, prepared for the M2 release; M1 is `0.1.0`). The Android `versionName` is that value verbatim; the iOS `CFBundleShortVersionString` derives from it through the generated `iosApp/App/Version.xcconfig`, which the `ios` job checks with `tools/ios-version.sh --check` (`DEC-043`, `DEC-067`, `DEC-121`) | `DEC-043` |
 | Remote protocol | Both ship and the user picks in Settings: REST API (default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Cache freshness | 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback | `DEC-012` |
 | Release mechanism | Tag `vMAJOR.MINOR.PATCH`, GitHub Release with the APK attached | `DEC-043` |
