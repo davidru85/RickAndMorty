@@ -44,10 +44,12 @@ public final class DiscoveryStateHolder: ObservableObject {
             preconditionFailure("the shared reducer published no initial state")
         }
         self.state = initial
+        // The first load is started exactly as the Android holder's `init` starts it, through the
+        // shared reducer, so a page-1 reset or a debounce rule cannot differ between platforms. Without
+        // it the screen stays on its initial `Loading` state (`DiscoveryStateHolderTests`, `GAP-031`).
+        _ = reducer.start(initialFilter: initialFilter)
         // `reducer.state` is a `StateFlow`, which Kotlin/Native exports without `AsyncSequence`
-        // conformance, so it is read by polling rather than collected. The poll is what the
-        // propagation test exercises, and it is why that test exists: it proves the holder really does
-        // republish rather than leaving a screen on its first state.
+        // conformance, so it is read by polling rather than collected.
         observation = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
