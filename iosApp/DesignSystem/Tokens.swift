@@ -215,6 +215,12 @@ public enum MultiverseDimensions {
     public static let emptyStateTextWidth: CGFloat = 320
     /// The frosted panel's inner padding (`UI_SPEC.md` §4.2): 20.
     public static let glassPanelPadding: CGFloat = 20
+    /// A settings panel's corner (`UI_SPEC.md` §4.2, "Settings section": `Liquid Glass – Regular –
+    /// Small`, continuous corner 26 — the kit component's small corner, not the 34 of the larger
+    /// frosted panel above).
+    public static let settingsPanelCorner: CGFloat = 26
+    /// A settings row's height (`UI_SPEC.md` §4.2, "Settings row": the iOS kit `Row`, Tall, 68 pt).
+    public static let settingsRowHeight: CGFloat = 68
     /// The 1 pt light-catching rim (`UI_SPEC.md` §3.2).
     public static let rimWidth: CGFloat = 1
 }
