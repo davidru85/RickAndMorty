@@ -11,7 +11,8 @@ import SwiftUI
 
 /// One settings section: the header, the glass panel holding the rows, and the optional footer
 /// (`UI_SPEC.md` §4.2: `Liquid Glass – Regular – Small`, continuous corner 26, header in Subheadline
-/// Emphasized at `Label/Secondary`).
+/// Emphasized at `Label/Secondary`; the header and the footer 16 pt in from the panel's edge, Figma
+/// `123:374`, `123:477`).
 struct SettingsSection<Content: View>: View {
     let header: String
     let footer: String?
@@ -28,6 +29,7 @@ struct SettingsSection<Content: View>: View {
             Text(header)
                 .font(MultiverseType.subheadlineEmphasized)
                 .foregroundStyle(MultiverseLabelColors.secondary)
+                .padding(.leading, MultiverseDimensions.spaceL)
             VStack(alignment: .leading, spacing: 0) {
                 content()
             }
@@ -37,6 +39,7 @@ struct SettingsSection<Content: View>: View {
                 Text(footer)
                     .font(MultiverseType.footnote)
                     .foregroundStyle(MultiverseLabelColors.secondary)
+                    .padding(.horizontal, MultiverseDimensions.spaceL)
             }
         }
     }
@@ -76,9 +79,11 @@ struct SettingsRow<Trailing: View>: View {
                     .foregroundStyle(MultiverseBrandColors.portalGlow)
             }
             VStack(alignment: .leading, spacing: MultiverseDimensions.spaceXs) {
+                // A destructive row is the system's own red, as the iOS kit's `Row - Button` draws it
+                // (`UI_SPEC.md` §4.2), not the M3 Error the Android screen uses.
                 Text(title)
                     .font(MultiverseType.body)
-                    .foregroundStyle(isDestructive ? MultiverseColors.error : MultiverseLabelColors.primary)
+                    .foregroundStyle(isDestructive ? Color.red : MultiverseLabelColors.primary)
                 if let subtitle {
                     Text(subtitle)
                         .font(MultiverseType.subheadline)

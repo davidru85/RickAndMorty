@@ -131,7 +131,14 @@ struct SettingsScreen: View {
     /// (`AC-REQ-FUNC-034-1`). Nothing else on the screen changes.
     private var dataSection: some View {
         SettingsSection(header: copy(SettingsCopy.dataSection)) {
-            SettingsRow(symbol: "arrow.left.arrow.right", title: copy(SettingsCopy.dataSourceTitle))
+            // The row says what the picker below decides (`CONF-80`, Figma `123:422`), and reads as one
+            // element: its title and subtitle together.
+            SettingsRow(
+                symbol: "arrow.left.arrow.right",
+                title: copy(SettingsCopy.dataSourceTitle),
+                subtitle: copy(SettingsCopy.dataSourceBody)
+            )
+            .accessibilityElement(children: .combine)
             Picker(
                 copy(SettingsCopy.dataSourceTitle),
                 selection: Binding(
@@ -211,6 +218,7 @@ enum SettingsCopy {
     static let soundsTitle = "settings_sound_title"
     static let soundsBody = "settings_sound_body"
     static let dataSourceTitle = "settings_data_source_title"
+    static let dataSourceBody = "settings_data_source_body"
     static let dataRest = "settings_data_rest"
     static let dataGraphql = "settings_data_graphql"
     static let deleteAction = "settings_delete_action"
@@ -230,6 +238,7 @@ enum SettingsCopy {
         keys.append(soundsTitle)
         keys.append(soundsBody)
         keys.append(dataSourceTitle)
+        keys.append(dataSourceBody)
         keys.append(dataRest)
         keys.append(dataGraphql)
         keys.append(deleteAction)
