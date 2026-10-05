@@ -9,7 +9,7 @@ import XCTest
 ///
 /// The tab bar and the navigation bar stayed visible over the pushed Detail, which Figma draws with
 /// neither. Hiding the navigation bar must not take the edge-swipe back gesture with it, because the
-/// glass Back is then the only other way out (`REQ-UX-003`). The shell's real destination is hosted in
+/// glass Back is then the only other way out (`REQ-FUNC-008`). The shell's real destination is hosted in
 /// a tab view, with a probe for the detail, so no graph or network is involved.
 @MainActor
 final class DetailChromeTests: XCTestCase {
