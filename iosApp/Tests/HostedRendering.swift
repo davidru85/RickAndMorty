@@ -62,6 +62,32 @@ enum HostedRendering {
         return bright
     }
 
+    /// The 8-bit colour of `image` at `point`, in points, so a case can name the spot it samples in the
+    /// geometry the specification uses rather than in pixels of a given scale.
+    static func color(in image: UIImage, at point: CGPoint) throws -> (red: Int, green: Int, blue: Int) {
+        let cgImage = try XCTUnwrap(image.cgImage)
+        let x = Int(point.x * image.scale)
+        let y = Int(point.y * image.scale)
+        var pixel = [UInt8](repeating: 0, count: 4)
+        let context = try XCTUnwrap(
+            CGContext(
+                data: &pixel,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        // Draw the image shifted so the sampled pixel lands on the one-pixel context's origin.
+        context.draw(
+            cgImage,
+            in: CGRect(x: -x, y: y - cgImage.height + 1, width: cgImage.width, height: cgImage.height)
+        )
+        return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
+    }
+
     private static func settle(_ controller: UIViewController) {
         controller.view.setNeedsLayout()
         controller.view.layoutIfNeeded()
