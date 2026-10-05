@@ -66,11 +66,9 @@ struct RootView: View {
     }
 }
 
-/// The splash's motion timing (`UI_SPEC.md` §6.1, `TASK-007`): the portal's 1.2 s cycle — the shared
-/// gate's minimum, so one full acceleration always plays — and the exit crossfade the Android shell
-/// uses. How long the splash stays is the shared gate's decision (`IC-026`), not a constant here.
+/// The splash's exit crossfade (`UI_SPEC.md` §6.1, `TASK-007`), the one the Android shell uses. How long
+/// the splash stays is the shared gate's decision (`IC-026`), and the portal's motion is `PortalSpin`'s.
 enum SplashTiming {
-    static let minimumSeconds: Double = 1.2
     static let exitCrossfadeSeconds: Double = 0.38
 }
 
