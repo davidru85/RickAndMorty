@@ -308,8 +308,8 @@ Android card containers are tinted from each character's portrait, as the M3 bri
 1. Quantize the decoded bitmap (`QuantizerCelebi`, 128 colours), then `Score` it to get the source colour. Fall back to Portal Green.
 2. Build `TonalPalette.fromHueAndChroma(hue, chroma.coerceIn(24.0, 48.0))`.
 3. Container = **tone 30**. Text stays On Surface; meta uses On Surface @80%, which keeps it at 4.5:1 or better.
-4. Compute off the main thread and memoize per image URL (LRU). Show Surface Container High until it resolves, then animate the colour over 300 ms.
-5. Coil hardware bitmaps can't be read. Request a software bitmap only for extraction (`allowHardware(false)` on that request), or copy it once.
+4. Compute off the main thread, **one extraction at a time** (`DEC-155`), and memoize per image URL (LRU). Show Surface Container High until it resolves, then animate the colour over 300 ms.
+5. Coil hardware bitmaps can't be read. Request a software bitmap only for extraction (`allowHardware(false)` on that request), at most **32 px** on its longest side (`DEC-155`): 1 024 pixels still fill the 128 colours, and the extraction runs once per card a fling brings on screen.
 
 Reference values extracted in Figma (tone 30):
 
