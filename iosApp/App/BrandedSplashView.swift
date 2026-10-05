@@ -46,7 +46,7 @@ struct BrandedSplashView: View {
                 .opacity(reduceMotion ? PortalSpin.pulse(elapsed: elapsed) : 1)
             Color.clear
                 .frame(width: SplashLayout.lens, height: SplashLayout.lens)
-                .glassSurface(.rounded(SplashLayout.lensCorner))
+                .glassSurface(.rounded(SplashLayout.lensCorner), variant: .clear)
         }
     }
 
