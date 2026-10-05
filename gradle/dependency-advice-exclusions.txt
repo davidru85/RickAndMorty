@@ -13,4 +13,3 @@
 # (`DEC-081`, C4 of the B4 brief): `TASK-043` builds the design system, but a feature consumes it
 # only with its own screen, so each row points at that feature's task and is removed by it.
 :feature:discovery|:core:testing|TASK-001
-:feature:episodes|:core:presentation|TASK-008

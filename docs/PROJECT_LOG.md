@@ -1091,6 +1091,16 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - The main actor's idle wake-up rate measured on a device. `TEST-UNIT-094` proves that the observer delivers once per value, and that nothing polls.
   - A Reduce Motion change while the iOS app runs, which SwiftUI's environment value carries but which is not driven by a test.
 
+### LOG-0142 · 2026-10-05 · `TASK-118`: Episodes names its copy keys (`CONF-91`)
+
+- **Event:** the owner decided `CONF-91` with option (a) (`DEC-146`). `TASK-118`, delivered as PR #211, makes the Episodes placeholder name its four copy keys through `CopyKeys` and deletes the stale row `:feature:episodes|:core:presentation|TASK-008` from `gradle/dependency-advice-exclusions.txt`. That one-row write is outside `DEC-122`'s paths and was authorized for this task alone. No typed copy key remains in Kotlin.
+- **Red, then green:** with the keys named and the row still present, `./gradlew verifyDependencyAdviceRegister` failed. Its message was `DEC-081: :feature:episodes already consumes :core:presentation in its production source, so the exclusion must be deleted`. With the row deleted, it passes.
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-146`), `docs/BACKLOG.md` (`TASK-115` Done, `TASK-118`…`TASK-122`), `docs/DOCUMENTATION_AUDIT.md` (`CONF-90`, `CONF-91`, `GAP-033`, `GAP-034`), `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1211 tasks, whose 262 test reports hold 1343 tests and 0 failures.
+  - The Episodes baselines verify unchanged through `:androidApp:verifyRoborazziDebug`.
+- **Not verified:** nothing beyond the gate; the change renders the same strings.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

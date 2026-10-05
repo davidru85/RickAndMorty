@@ -10,6 +10,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
 
 /**
  * The Episodes placeholder (`UI_SPEC.md` §6.4, `TASK-008`): the section's empty state with the copy the
@@ -33,7 +34,7 @@ public fun EpisodesPlaceholder(
     Column(modifier = modifier.fillMaxSize()) {
         // The section's title, in the place every top-level screen puts it (Figma `101:499`).
         ScreenTitle(
-            text = CopyResolver.copy("nav_episodes"),
+            text = CopyResolver.copy(CopyKeys.NAV_EPISODES.value),
             modifier =
                 Modifier.padding(
                     start = MultiverseDimensions.spaceL,
@@ -42,10 +43,10 @@ public fun EpisodesPlaceholder(
                 ),
         )
         EmptyState(
-            heading = CopyResolver.copy("episodes_heading"),
-            body = CopyResolver.copy("episodes_body"),
+            heading = CopyResolver.copy(CopyKeys.EPISODES_HEADING.value),
+            body = CopyResolver.copy(CopyKeys.EPISODES_BODY.value),
             illustration = illustration,
-            actionLabel = CopyResolver.copy("browse_characters"),
+            actionLabel = CopyResolver.copy(CopyKeys.BROWSE_CHARACTERS.value),
             // The section's colours: Secondary Container with its matching "on" glyph (`UI_SPEC.md` §6.4).
             containerColor = MultiverseColors.secondaryContainer,
             illustrationTint = MultiverseColors.onSecondaryContainer,
