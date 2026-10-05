@@ -50,6 +50,25 @@ final class DiscoveryFidelityTests: XCTestCase {
         XCTAssertGreaterThan(coverage, 0.45, "a failed portrait shows the filled portal logo, not a ring symbol")
     }
 
+    func test_TEST_UI_037_given_a_selected_segment_when_rendered_then_its_label_is_white_on_green_glass() throws {
+        var options: [GlassSegmentedControl.Option] = []
+        options.append(.init(id: "all", label: "All"))
+        options.append(.init(id: "alive", label: "Alive"))
+        options.append(.init(id: "dead", label: "Dead"))
+        options.append(.init(id: "unknown", label: "Unknown"))
+        let control = GlassSegmentedControl(selection: .constant("all"), options: options)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(MultiverseBrandColors.spaceBlack)
+        let image = try HostedRendering.render(UIHostingController(rootView: control))
+
+        // The selected segment is the leading quarter of the 370 pt control centred on the canvas.
+        let segment = CGRect(x: 16, y: 437 - 22, width: 370 / 4, height: 44)
+        let label = try HostedRendering.matchingPixels(in: image, region: segment) { red, green, blue in
+            red > 200 && green > 200 && blue > 200
+        }
+        XCTAssertGreaterThan(label.count, 60, "the selected label is white (Figma 29:419), not Space Black")
+    }
+
     /// The portal logo's greens at 40 % over the dark canvas: green leads red and blue clearly.
     private static func isPortalGreen(_ red: Int, _ green: Int, _ blue: Int) -> Bool {
         green > 50 && green > red + 15 && green > blue + 30
