@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`), and `TASK-118`…`TASK-122` deliver those decisions and the remaining gaps as stacked pull requests; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118` and `TASK-119` are merged (PRs #211, #212), and `TASK-120`…`TASK-122` deliver the remaining gaps as stacked pull requests; `TASK-123`/`TASK-124` (`GAP-035`, `GAP-036`) and `CONF-92` await the owner; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -21,12 +21,19 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 | `TASK-113` P2-A — Android fidelity to Figma: Roboto Flex, edge to edge, Discovery, card and accent, Detail, Favorites/Episodes titles, Settings, splash, launcher icon | `feat/task-113-p2a` (from `TASK-112`'s head) | Merged (PR #203, `7694c77`; `LOG-0139`) |
 | `TASK-114` P2-B — iOS fidelity to Figma: glass tab bar, cosmic canvas, Discovery header and margins, card parallax, portal logo, Detail backdrop and chrome, splash, Settings, off-main portrait pipeline | `feat/task-114-p2b` (from `TASK-113`'s head) | Merged (PR #204, `f2c34e2`; `LOG-0140`) |
 | `TASK-115` P3 — iOS observation without polling and one scope per screen, dead code, named copy keys, tokens for every UI measurement, presentation bindings in the roots, Reduce Motion observed, Discovery re-mapping only changed cards | `feat/task-115-p3` (from `TASK-114`'s head) | Merged (PR #205, `50e1574`; `LOG-0141`) |
-| `TASK-118`…`TASK-122` — Episodes' copy keys (`CONF-91`), the iOS diagnostics sheet (`CONF-90`), the release APK size (`GAP-034`), the iOS link input (`GAP-033`), the iOS app icon | one branch each, stacked from `main` at `50e1574` (`DEC-133`, `DEC-146`) | `TASK-118` in review (PR #211); `TASK-119` in review (PR #212); the others next, in order (issues #206–#210) |
+| `TASK-118`…`TASK-122` — Episodes' copy keys (`CONF-91`), the iOS diagnostics sheet (`CONF-90`), the release APK size (`GAP-034`), the iOS link input (`GAP-033`), the iOS app icon | one branch each, stacked from `main` at `50e1574` (`DEC-133`, `DEC-146`) | `TASK-118` merged (PR #211, `37cf8c1`); `TASK-119` merged (PR #212, `d0fa6f1`); `TASK-120` in review; `TASK-121` and `TASK-122` next, in order (issues #208–#210) |
 | `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | **Merged** (PR #201, `b457a71`; issue #199; `LOG-0137`). It also fixed a latent iOS crash: the log sink passed Kotlin strings to `%@` |
 
 **Observed on the `TASK-112` branch (`LOG-0138`):** see that entry for the commands. In short, every touched Kotlin suite and the full Gradle gate pass, every Android Roborazzi baseline verifies, `xcodebuild test` on iPhone 17 / iOS 27.0 after a clean build passes 132 tests with 0 failures, and on that simulator the splash shows at 0.5 s and Discovery at 4.5 s. Not observed: the rendered card→Detail motion on a device (the tests pin its structure, not its frames).
 
 **Found in `TASK-113` (`GAP-034`):** the release APK already measures 12.31 MiB against `PERF-009`'s 12 MiB. The task kept its own addition small (a 66 KB font subset, `DEC-137`); bringing the APK under budget needs release-build changes in `build-logic/**`, so it is left for its own task.
+
+**Resolved by `TASK-120` (`DEC-148`, `LOG-0144`):** the build type lives in `androidApp/build.gradle.kts` after all. R8 and resource shrinking take the release APK to 2.23 MiB, and `verifyReleaseApkSize` checks it in `check`; CI does not run it yet (`CONF-92`).
+
+**Found in `TASK-120`'s device run, awaiting the owner:**
+
+- **`GAP-035` (S1).** Over GraphQL, a Detail can show another character's details: the GraphQL detail cache key omits the id. This affects both platforms and is pre-existing (the debug build shows it too). The fix is proposed as `TASK-123`.
+- **`GAP-036` (S3).** On Android, a long Detail stat value breaks inside a word. The fix is proposed as `TASK-124`.
 
 **Escalated in `TASK-112` (`CONF-90`):** the iOS debug diagnostics sheet of `REQ-OBS-002` needs `:core:ios` to link `:core:diagnostics`. `R12` in `build-logic` forbids that edge, and `build-logic/**` is outside the task's write authorization (`DEC-122`). The recommended option is one authorized `R12` change with a `DEC` that amends `DEC-088` for iOS; a Swift re-implementation of the recorder is rejected as a second implementation. Until the owner decides, `TEST-UI-027` stays reserved.
 

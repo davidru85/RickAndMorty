@@ -1123,6 +1123,46 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `tools/swift-lint.sh` — 0 violations in 76 files.
 - **Not verified:** opening the sheet by tapping in the simulator, since there is no tap automation here; `TEST-UI-027` renders the sheet with its nine rows instead.
 
+### LOG-0144 · 2026-10-05 · `TASK-120`: the release APK under `PERF-009`, and three findings from its device run
+
+- **Event:** `TASK-120` resolves `GAP-034` (`DEC-148`).
+- **The change:**
+  - `androidApp/build.gradle.kts` shrinks the release build with R8 and resource shrinking. The convention plugins define no build type, so nothing under `build-logic/**` changed.
+  - `:androidApp:verifyReleaseApkSize` measures the unsigned universal release APK against 12 MiB, writes the total and the ten largest entries to `build/reports/verifyReleaseApkSize/apk-size.txt`, and runs in `check`.
+  - `androidApp/proguard-rules.pro` pins the diagnostic type names with `-keepnames`, so `TEST-UNIT-033` still sees a diagnostic type that leaks into the release.
+- **Red, then green:**
+  - `verifyReleaseApkSize` failed at `a17ddd2`: 12 974 772 B (12.37 MiB) against 12 582 912 B. With R8 (`149a4e0`) it passes at 2 337 826 B (2.23 MiB). The largest entries are `classes.dex` (1 866 809 B compressed) and `resources.arsc` (174 604 B).
+  - The check's first commit did not compile: the build script resolved `java.util` against the `java` extension. It was amended before any push, and the red above was re-observed on the amended commit.
+  - **Negative control for `TEST-UNIT-033`, not committed.** `:core:diagnostics` was linked as `implementation` and a `DiagnosticsRecorder` built in the `Application`. Without the rule, `verifyReleaseArtifact` **passed**, because R8 had inlined the recorder (`R8$$REMOVED$$CLASS$$581` in the mapping). With `-keepnames` it failed on `DiagnosticsRecorder`. The rule leaves the real release unchanged.
+- **Device run (OnePlus A3003, Android 9, API 28):**
+  - The minified release was signed locally with the debug keystore for installation only; nothing was committed.
+  - It started, loaded Discovery with portraits and card accents, opened a Detail, and visited Episodes, Favourites and Settings.
+  - It switched the data source to REST and back, with no crash in logcat.
+  - The `java.lang.ClassValue` lines in logcat come from kotlinx.serialization's probe for that class. They are info-level class-verification logs, not failures.
+  - The debug build was reinstalled afterwards and GraphQL left selected, as found.
+- **Findings, all pre-existing (the debug build shows them too):**
+  - **`GAP-035` (S1).** Over GraphQL, Rick Sanchez's Detail showed Beth Smith's gender, episode count and dimension.
+    - Cause: the GraphQL detail cache key has no character id (`CacheKeyBuilder.details`).
+    - Evidence: the device cache held two detail entries, ids 38 and 39. REST showed the right data.
+    - Next: proposed as `TASK-123`, awaiting the owner's authorization.
+  - **`GAP-036` (S3).** "Dimension C-137" breaks inside a word in the Android Detail stat card. Proposed as `TASK-124`.
+  - **`CONF-92`.** CI never runs `:androidApp:check`, so the size check blocks the local gate only. Adding it to the `app-artifacts` job is a `.github/**` change.
+- **Affected documents:**
+  - `docs/DECISION_BOARD.md` (`DEC-148`).
+  - `docs/PERFORMANCE.md` (status, `PERF-009`, §5, §7.1, A-PERF-2).
+  - `docs/DEFINITION.md` (REL4: the mapping is kept, never attached).
+  - `docs/DOCUMENTATION_AUDIT.md` (`GAP-034` resolved; `GAP-035`, `GAP-036`, `CONF-92`).
+  - `docs/BACKLOG.md` (`TASK-112`, `TASK-118` and `TASK-119` done; `TASK-120` in review; `TASK-123` and `TASK-124` proposed).
+  - `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1231 tasks, whose 264 test reports hold 1348 tests and 0 failures. `verifyReleaseApkSize`, `verifyReleaseArtifact` and `verifyShippedPermissions` pass inside it.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+  - The release APK carries no mapping entry; the mapping is `androidApp/build/outputs/mapping/release/mapping.txt`.
+- **Not verified:**
+  - The size check in CI (`CONF-92`).
+  - A release signed with a release key: no release keystore exists, and signing is the owner's.
+  - The mapping's retention in a published release, since none has been published.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
