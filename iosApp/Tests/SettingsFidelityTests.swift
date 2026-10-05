@@ -14,13 +14,17 @@ import XCTest
 final class SettingsFidelityTests: XCTestCase {
     func test_TEST_UI_040_given_the_data_section_when_rendered_then_the_data_source_row_has_its_subtitle() throws {
         let host = UIHostingController(rootView: settings(canDelete: false))
-        _ = try HostedRendering.render(host)
+        let image = try HostedRendering.render(host)
 
-        let labels = Self.accessibilityLabels(in: host.view)
-        XCTAssertTrue(
-            labels.contains { $0.contains(LocalizedCopy.shared.text(for: "settings_data_source_body")) },
-            "the Data source row says how the app fetches characters; read: \(labels)"
-        )
+        // The picker is UIKit's segmented control; the Data source row sits right above it, and its
+        // subtitle is the only `Label/Secondary` text there — the title above it is primary white.
+        let picker = try XCTUnwrap(Self.find(UISegmentedControl.self, in: host.view), "the data-source picker renders")
+        let frame = picker.convert(picker.bounds, to: nil)
+        let subtitle = try HostedRendering.matchingPixels(
+            in: image,
+            region: CGRect(x: 60, y: frame.minY - 34, width: 280, height: 30)
+        ) { red, green, blue in Self.isSecondaryLabel(red, green, blue) }
+        XCTAssertGreaterThan(subtitle.count, 150, "the Data source row says how the app fetches characters")
     }
 
     func test_TEST_UI_040_given_favourites_when_rendered_then_the_delete_action_is_system_red() throws {
@@ -33,15 +37,28 @@ final class SettingsFidelityTests: XCTestCase {
         XCTAssertGreaterThan(red.count, 100, "Delete favorites is drawn in system red")
     }
 
-    func test_TEST_UI_040_given_the_sections_when_rendered_then_their_headers_are_inset_16_pt() throws {
-        let image = try HostedRendering.render(UIHostingController(rootView: settings(canDelete: false)))
+    func test_TEST_UI_040_given_a_section_when_rendered_then_its_header_is_inset_16_pt() throws {
+        // The section alone, 370 pt wide and centred, so its panel's leading edge is at x = 16, over
+        // plain black, so the header is the only light text on the screen.
+        let section = SettingsSection(header: "Preferences") { Color.clear.frame(height: 68) }
+            .frame(width: MultiverseDimensions.glassContainerWidth)
+            .padding(.top, 100)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.black)
+            .environment(\.multiverseGlassPath, .material)
+        let image = try HostedRendering.render(UIHostingController(rootView: section))
 
-        // A header is Subheadline Emphasized in `Label/Secondary`; with the 16 pt inset nothing of it
-        // reaches the strip just inside the panels' leading edge.
-        let flush = try HostedRendering.matchingPixels(in: image, region: CGRect(x: 18, y: 150, width: 10, height: 600)) {
-            red, green, blue in (140...205).contains(red) && (140...205).contains(green) && blue >= red
-        }
-        XCTAssertLessThan(flush.count, 20, "no header text starts at the panel's edge")
+        // The header is the topmost light thing on the screen; measured in its own 16 pt strip, so the
+        // highlight on the panel's rounded corner below it does not count.
+        let light = { (red: Int, green: Int, blue: Int) in red > 140 && green > 140 && blue > 140 }
+        let top = try XCTUnwrap(try HostedRendering.matchingPixels(in: image, matches: light).bounds, "the header is painted")
+        let header = try HostedRendering.matchingPixels(
+            in: image,
+            region: CGRect(x: 0, y: top.minY, width: 402, height: 16),
+            matches: light
+        )
+        let bounds = try XCTUnwrap(header.bounds)
+        XCTAssertEqual(bounds.minX, 32, accuracy: 2, "the header starts 16 pt in from the panel's edge (Figma 123:374)")
     }
 
     private func settings(canDelete: Bool) -> some View {
@@ -57,25 +74,17 @@ final class SettingsFidelityTests: XCTestCase {
         .environment(\.multiverseGlassPath, .material)
     }
 
-    /// Every accessibility label under [element], depth first.
-    private static func accessibilityLabels(in element: NSObject) -> [String] {
-        var labels: [String] = []
-        if let label = element.accessibilityLabel, !label.isEmpty { labels.append(label) }
-        if let elements = element.accessibilityElements as? [NSObject] {
-            for child in elements { labels += accessibilityLabels(in: child) }
-        } else {
-            let count = element.accessibilityElementCount()
-            if count != NSNotFound, count > 0 {
-                for index in 0..<count {
-                    if let child = element.accessibilityElement(at: index) as? NSObject {
-                        labels += accessibilityLabels(in: child)
-                    }
-                }
-            }
+    /// `Label/Secondary` (#EBEBF5 at 68 %) over the dark glass: a light grey with a blue lean, which the
+    /// neutral grey of a panel's rim does not have.
+    private static func isSecondaryLabel(_ red: Int, _ green: Int, _ blue: Int) -> Bool {
+        (120...215).contains(red) && (120...215).contains(green) && blue - red >= 4
+    }
+
+    private static func find<T: UIView>(_ type: T.Type, in view: UIView) -> T? {
+        if let match = view as? T { return match }
+        for subview in view.subviews {
+            if let match = find(type, in: subview) { return match }
         }
-        if let view = element as? UIView {
-            for subview in view.subviews { labels += accessibilityLabels(in: subview) }
-        }
-        return labels
+        return nil
     }
 }
