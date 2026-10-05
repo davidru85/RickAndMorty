@@ -107,7 +107,7 @@ public class DiscoveryReducer(
             intents.collect(::handle)
         }
 
-    private suspend fun handle(intent: CharacterListIntent) {
+    private fun handle(intent: CharacterListIntent) {
         when (intent) {
             is CharacterListIntent.QueryChanged -> {
                 // The active status is preserved because only the query dimension is replaced
@@ -136,13 +136,26 @@ public class DiscoveryReducer(
                 request(chosen)
             }
 
-            CharacterListIntent.LoadNextPage -> pager.next()
-            CharacterListIntent.Refresh -> pager.refresh()
-            CharacterListIntent.Retry -> {
-                loading.value = true
-                pager.retry()
-                loading.value = false
-            }
+            // A load is started, never awaited, here: the loop must stay free to take the next intent,
+            // so a query or status change made during a load supersedes it at once through `IC-014`'s
+            // generation guard instead of waiting behind it (`DEC-124`).
+            CharacterListIntent.LoadNextPage -> scope.launch(dispatcher) { pager.next() }
+            CharacterListIntent.Refresh -> scope.launch(dispatcher) { pager.refresh() }
+            CharacterListIntent.Retry -> retry()
+        }
+    }
+
+    /**
+     * Re-attempts the failed load. The session flag reads `Loading` while it runs, and only a retry that
+     * ends while its filter is still the requested one clears it, so a filter change made meanwhile
+     * keeps its own `Loading` until its own load ends.
+     */
+    private fun retry() {
+        val filter = requestedFilter
+        loading.value = true
+        scope.launch(dispatcher) {
+            pager.retry()
+            if (requestedFilter == filter) loading.value = false
         }
     }
 
