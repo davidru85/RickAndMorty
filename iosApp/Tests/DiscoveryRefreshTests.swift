@@ -12,7 +12,10 @@ import XCTest
 final class DiscoveryRefreshTests: XCTestCase {
     func test_TEST_UI_024_given_a_refresh_when_it_is_awaited_then_it_returns_only_after_the_revalidation_ends() async {
         let pager = HeldRefreshPager()
-        let holder = DiscoveryStateHolder(pager: pager, initialFilter: CharacterFilter(query: "", status: StatusFilter.all))
+        let holder = DiscoveryStateHolder(
+            pager: pager,
+            initialFilter: CharacterFilter(query: "", status: StatusFilter.all)
+        )
         let probe = RefreshProbe()
 
         let refresh = Task { @MainActor in

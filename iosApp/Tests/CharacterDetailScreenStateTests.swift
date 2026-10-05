@@ -262,18 +262,22 @@ final class CharacterDetailScreenStateTests: XCTestCase {
 
     /// The two rows the shared reducer keeps for an origin and a location the API reports as unknown.
     private func unknownRows() -> [InfoRowUi] {
-        [
+        var rows: [InfoRowUi] = []
+        rows.append(
             InfoRowUi(
                 kind: InfoRowKind.origin,
                 copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
                 value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
-            ),
+            )
+        )
+        rows.append(
             InfoRowUi(
                 kind: InfoRowKind.lastknownlocation,
                 copyKey: CopyKeys.shared.DETAIL_INFO_LAST_KNOWN_LOCATION,
                 value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
-            ),
-        ]
+            )
+        )
+        return rows
     }
 
     private func card(id: String, name: String) -> CharacterCardUi {

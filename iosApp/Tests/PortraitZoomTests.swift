@@ -23,7 +23,10 @@ final class PortraitZoomTests: XCTestCase {
     }
 
     func test_TEST_UI_025_given_reduce_motion_when_a_card_opens_then_no_zoom_source_is_named() {
-        XCTAssertNil(PortraitMotion.zoomSourceID(characterID: "1", reduceMotion: true), "AC-REQ-FUNC-009-2: the cross-fade, not the zoom")
+        XCTAssertNil(
+            PortraitMotion.zoomSourceID(characterID: "1", reduceMotion: true),
+            "AC-REQ-FUNC-009-2: the cross-fade, not the zoom"
+        )
     }
 
     func test_TEST_UI_025_given_the_shell_namespace_when_the_grid_renders_then_its_cards_are_transition_sources() {
@@ -33,7 +36,11 @@ final class PortraitZoomTests: XCTestCase {
         let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
-        XCTAssertGreaterThan(image.size.width * image.size.height, 0, "the grid renders with the shell's namespace in place")
+        XCTAssertGreaterThan(
+            image.size.width * image.size.height,
+            0,
+            "the grid renders with the shell's namespace in place"
+        )
     }
 }
 
@@ -53,7 +60,7 @@ private struct NamespacedGrid: View {
                         status: CharacterStatusAlive.shared,
                         statusLabel: CopyKeys.shared.STATUS_ALIVE,
                         imageUrl: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
-                    ),
+                    )
                 ],
                 totalCount: KotlinInt(int: 1),
                 loadState: LoadStateContent.shared,

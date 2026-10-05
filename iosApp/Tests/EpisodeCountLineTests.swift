@@ -24,6 +24,9 @@ final class EpisodeCountLineTests: XCTestCase {
     }
 
     func test_TEST_UI_023_given_the_registered_plural_key_when_it_crosses_the_boundary_then_it_is_the_resource_name() {
-        XCTAssertEqual(CharacterPresentation.key(CopyKeys.shared.DETAIL_APPEARS_IN_EPISODES), "detail_appears_in_episodes")
+        XCTAssertEqual(
+            CharacterPresentation.key(CopyKeys.shared.DETAIL_APPEARS_IN_EPISODES),
+            "detail_appears_in_episodes"
+        )
     }
 }
