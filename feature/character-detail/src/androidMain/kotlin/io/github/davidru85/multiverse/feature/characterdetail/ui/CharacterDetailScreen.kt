@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterPortrait
@@ -238,8 +237,7 @@ private fun TitleBlock(state: CharacterDetailUiState) {
         )
         Text(
             text = header.name,
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.displayMediumEmphasized,
             color = MultiverseColors.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -247,7 +245,7 @@ private fun TitleBlock(state: CharacterDetailUiState) {
         Subtitle(state = state, species = header.species)?.let { line ->
             Text(
                 text = line,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MultiverseColors.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

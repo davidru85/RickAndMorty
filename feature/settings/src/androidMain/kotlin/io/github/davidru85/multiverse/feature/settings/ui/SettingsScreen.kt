@@ -70,7 +70,7 @@ public fun SettingsScreen(
         ) {
             Text(
                 text = CopyResolver.copy("nav_settings"),
-                style = MaterialTheme.typography.displaySmall,
+                style = MaterialTheme.typography.displaySmallEmphasized,
                 color = MultiverseColors.onSurface,
             )
 

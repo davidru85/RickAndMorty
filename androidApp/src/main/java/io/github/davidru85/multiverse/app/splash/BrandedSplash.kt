@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
@@ -111,13 +112,13 @@ public fun BrandedSplash(
             }
             Text(
                 text = CopyResolver.copy("splash_wordmark"),
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Black,
+                style = MaterialTheme.typography.displayMediumEmphasized,
                 color = MultiverseColors.onSurface,
             )
             Text(
                 text = CopyResolver.copy("splash_wordmark_sub"),
-                style = MaterialTheme.typography.labelLarge,
+                // "EXPLORER" carries +8 sp tracking (`UI_SPEC.md` §3.4).
+                style = MaterialTheme.typography.labelLargeEmphasized.copy(letterSpacing = 8.sp),
                 color = MultiverseColors.primary,
             )
             Text(

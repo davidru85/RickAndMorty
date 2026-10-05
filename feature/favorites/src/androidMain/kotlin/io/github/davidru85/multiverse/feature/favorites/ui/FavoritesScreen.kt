@@ -160,7 +160,7 @@ private fun FullSurfaceError(
     ) {
         Text(
             text = CopyResolver.copy(CopyKeys.ERROR_TITLE.value),
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineSmallEmphasized,
             color = MultiverseColors.onSurface,
             textAlign = TextAlign.Center,
         )
