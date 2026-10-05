@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
-import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /**
  * The designed empty state (`UI_SPEC.md` §6.4): the Cookie-9 illustration, a heading, a body and one
@@ -91,9 +90,6 @@ public fun EmptyState(
 
 /** The body's measure (`UI_SPEC.md` §6.4): 320 dp, centred. */
 private val BodyWidth = 320.dp
-
-/** The corner a section group uses for its own panel (`UI_SPEC.md` §4.1): 28. */
-internal val SectionCorner = MultiverseDimensions.cornerExtraLarge
 
 @Preview
 @Composable

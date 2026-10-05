@@ -1,16 +1,13 @@
 package io.github.davidru85.multiverse.app.navigation
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 
@@ -38,14 +35,6 @@ public object PortraitMotion {
     public const val REDUCED_MOTION_CROSSFADE_MILLIS: Int = 300
 
     /**
-     * The shared-element key of one character's portrait.
-     *
-     * It is derived from the canonical id (`IC-001`), never from a position in a list, so the same
-     * character carries the same key in the grid and in the hero.
-     */
-    public fun sharedKey(characterId: String): String = PortraitTransition.key(characterId)
-
-    /**
      * The transition pair the destination change runs with: the container transform, or the
      * cross-fade Reduce Motion substitutes for it.
      */
@@ -67,34 +56,4 @@ public object PortraitMotion {
             expandVertically(tween(TRANSITION_MILLIS, easing = Easing), expandFrom = Alignment.Top) to
                 shrinkVertically(tween(TRANSITION_MILLIS, easing = Easing), shrinkTowards = Alignment.Top)
         }
-}
-
-/**
- * Holds the pair of destinations a card-to-detail transition moves between, with the motion the
- * platform setting selects.
- *
- * The shell calls this around its `NavHost`; the shared element itself is applied by the design
- * system's portrait, which is the only place that knows both the card's and the hero's bounds
- * (`DEC-097`). This host therefore owns the **timing and the Reduced Motion fallback**, which is the
- * part `TASK-009` fixes, and the key both sides use comes from [PortraitMotion.sharedKey].
- *
- * [reduceMotion] is read from the platform at render time by the caller, so a settings change is
- * visible without a restart, exactly as the splash's pulse does (`TASK-007`).
- */
-@Composable
-public fun MotionAwareDestination(
-    destination: Any,
-    reduceMotion: Boolean,
-    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
-    content: @Composable (Any) -> Unit,
-) {
-    val (enter, exit) = PortraitMotion.transition(reduceMotion)
-    AnimatedContent(
-        targetState = destination,
-        transitionSpec = { enter togetherWith exit },
-        label = "destination",
-        modifier = modifier,
-    ) { target ->
-        content(target)
-    }
 }

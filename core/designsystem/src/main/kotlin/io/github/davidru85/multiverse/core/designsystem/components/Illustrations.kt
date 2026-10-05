@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -65,9 +64,6 @@ public class Cookie9Shape(
             }
         return Outline.Generic(path)
     }
-
-    /** The rectangular bounds the shape draws within; a Cookie-9 is a disc, so it fills its box. */
-    public fun bounds(size: Size): Rect = Rect(Offset.Zero, size)
 
     private companion object {
         const val LOBES = 9
