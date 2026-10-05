@@ -48,8 +48,8 @@ final class EpisodesPlaceholderScreenTests: XCTestCase {
     func test_AC_REQ_UX_008_1_given_the_placeholder_when_its_copy_resolves_then_each_key_exists_in_both_locales() {
         let keys = [EmptyStateCopy.episodesHeading, EmptyStateCopy.episodesBody, EmptyStateCopy.browseCharacters]
         for key in keys {
-            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "en"), "en must carry \(key)")
-            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "es"), "es must carry \(key)")
+            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key.rawValue, in: "en"), "en must carry \(key)")
+            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key.rawValue, in: "es"), "es must carry \(key)")
         }
     }
 
@@ -57,9 +57,9 @@ final class EpisodesPlaceholderScreenTests: XCTestCase {
     /// illustration (`UI_SPEC.md` §6.4).
     func test_UI_SPEC_6_4_given_the_placeholder_when_its_section_is_named_then_it_is_episodes() {
         XCTAssertEqual(EmptyStateCopy.episodesSymbol, "play.tv.fill")
-        XCTAssertEqual(EmptyStateCopy.episodesHeading, "episodes_heading")
-        XCTAssertEqual(EmptyStateCopy.episodesBody, "episodes_body")
-        XCTAssertEqual(EmptyStateCopy.browseCharacters, "browse_characters")
+        XCTAssertEqual(EmptyStateCopy.episodesHeading.rawValue, "episodes_heading")
+        XCTAssertEqual(EmptyStateCopy.episodesBody.rawValue, "episodes_body")
+        XCTAssertEqual(EmptyStateCopy.browseCharacters.rawValue, "browse_characters")
         XCTAssertFalse(
             LocalizedCopy.shared.text(for: EmptyStateCopy.episodesHeading)
                 == LocalizedCopy.shared.text(for: EmptyStateCopy.favoritesHeading),

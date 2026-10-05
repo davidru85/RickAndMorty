@@ -22,12 +22,12 @@ public enum ShellDestination: String, CaseIterable, Identifiable, Hashable, Send
 
     /// The copy key of this destination's label (`IC-017`), so the shell never holds an English
     /// literal (`REQ-FUNC-013`, `REQ-UX-008`).
-    public var labelKey: String {
+    public var labelKey: CopyKey {
         switch self {
-        case .characters: return "nav_characters"
-        case .episodes: return "nav_episodes"
-        case .favorites: return "nav_favorites"
-        case .settings: return "nav_settings"
+        case .characters: return .navCharacters
+        case .episodes: return .navEpisodes
+        case .favorites: return .navFavorites
+        case .settings: return .navSettings
         }
     }
 
