@@ -790,6 +790,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-120`: the release build is minified, so `TEST-UNIT-033`'s artifact half relies on `androidApp/proguard-rules.pro` pinning the diagnostic type names; a negative control showed the check blind under R8 without the pin and failing with it. `PERF-009`'s `verifyReleaseApkSize` stays a release verification task, not a test id (`PERFORMANCE.md`). | `DEC-148`, `LOG-0144` |
 | 2026-10-05 | `TASK-119`: `TEST-UI-027`, reserved since `TASK-112`, is implemented with a Debug and a Release half; `TEST-UNIT-103` is allocated and implemented. | `TASK-119`, `LOG-0143` |
 | 2026-10-05 | `TASK-115` (P3 quality): `TEST-UNIT-094`…`102` are implemented and traced in §3.2 and §16, and `TEST-UNIT-035`'s dimension half reads the real `Dp` tokens; every Android baseline verifies unchanged after the UI's literals became tokens. | `TASK-115`, `LOG-0141` |
 | 2026-10-05 | `TASK-114` (P2-B iOS fidelity): `TEST-UNIT-090`…`093` and `TEST-UI-036`…`040` are implemented and traced in §3.2 and §16; every iOS screen baseline and the empty-state component baseline are re-recorded after comparison with their Figma exports, Discovery's inside a navigation stack so the system large title is drawn, and a Settings screen baseline is added. | `TASK-114`, `LOG-0140` |
