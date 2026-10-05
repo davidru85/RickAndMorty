@@ -52,15 +52,6 @@ struct CharacterDetailScreen: View {
     /// The hero's size (`UI_SPEC.md` §6.3): 402 × 520.
     private static let heroAspectRatio: CGFloat = 402 / 520
 
-    /// Where the hero starts dissolving into the backdrop (`UI_SPEC.md` §5.3): 55 % of its height.
-    private static let heroDissolveStart: CGFloat = 0.55
-
-    /// The backdrop's blur: Figma's 64 pt layer blur, which is a Gaussian of half that radius.
-    private static let backdropBlur: CGFloat = 32
-
-    /// The backdrop's Space Black dim (`UI_SPEC.md` §5.3).
-    private static let backdropDim: Double = 0.38
-
     /// How far above the hero's bottom the stack starts (Figma `31:396`: the title block at y 358 of
     /// the 520 pt hero).
     private static let titleRise: CGFloat = 162
@@ -117,14 +108,7 @@ struct CharacterDetailScreen: View {
     /// The glass backdrop (`UI_SPEC.md` §5.3, Figma `26:454`…`26:458`): the portrait again, full
     /// screen and blurred, under the Space Black dim and the Detail's two glows.
     private var backdrop: some View {
-        CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-            .blur(radius: Self.backdropBlur, opaque: true)
-            .overlay { MultiverseBrandColors.spaceBlack.opacity(Self.backdropDim) }
-            .overlay { CosmicCanvas(.detail, base: false) }
-            .ignoresSafeArea()
-            .accessibilityHidden(true)
+        DetailBackdrop(imageUrl: state.header?.imageUrl ?? "", loader: loader)
     }
 
     // MARK: - Failure
@@ -183,37 +167,11 @@ struct CharacterDetailScreen: View {
             .aspectRatio(Self.heroAspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)
             .overlay {
-                ZStack {
-                    // The sharp portrait, opaque to 55 % of the height and clear at the bottom.
-                    CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
-                        .mask { fade(opaqueUntil: Self.heroDissolveStart) }
-                    // The progressive blur: a blurred copy that takes over below 55 % and fades out too.
-                    CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
-                        .blur(radius: MultiverseDimensions.spaceL)
-                        .mask { dissolveBand }
-                }
+                DetailHeroPortrait(imageUrl: state.header?.imageUrl ?? "", loader: loader)
             }
             .clipped()
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text(state.header?.name ?? copy("nav_characters")))
-    }
-
-    /// Opaque from the top to [location] of the height, then fading to clear at the bottom.
-    private func fade(opaqueUntil location: CGFloat) -> some View {
-        var stops: [Gradient.Stop] = []
-        stops.append(.init(color: .black, location: 0))
-        stops.append(.init(color: .black, location: location))
-        stops.append(.init(color: .clear, location: 1))
-        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
-    }
-
-    /// Clear above the dissolve, strongest between it and the bottom, clear again at the bottom edge.
-    private var dissolveBand: some View {
-        var stops: [Gradient.Stop] = []
-        stops.append(.init(color: .clear, location: Self.heroDissolveStart - 0.05))
-        stops.append(.init(color: .black, location: 0.8))
-        stops.append(.init(color: .clear, location: 1))
-        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
     }
 
     /// The back, share and favourite controls (`UI_SPEC.md` §4.1, §6.3). The favourite is the
@@ -327,58 +285,16 @@ struct CharacterDetailScreen: View {
         }
     }
 
-    /// The stats row of the frosted panel (`UI_SPEC.md` §4.2, §6.3, Figma `31:403`): Episodes count ·
-    /// Dimension · Species in equal columns split by 1 pt separators, each a Title 2 value over a
-    /// Caption 1 label, the Episodes value in Portal Glow. A `nil` dimension drops its column rather
-    /// than rendering a placeholder (`IC-019`).
+    /// The stats row (`UI_SPEC.md` §6.3): Episodes · Dimension · Species, from the state alone.
     @ViewBuilder
     private var stats: some View {
         if let header = state.header {
-            HStack(spacing: 0) {
-                if let count = state.episodeCount {
-                    stat(
-                        value: String(count.int32Value),
-                        label: copy("detail_stat_episodes"),
-                        tint: MultiverseBrandColors.portalGlow
-                    )
-                    statSeparator
-                }
-                if let dimension = state.dimension {
-                    stat(value: dimension, label: copy("detail_stat_dimension"), tint: MultiverseLabelColors.primary)
-                    statSeparator
-                }
-                stat(
-                    value: CharacterPresentation.text(header.species),
-                    label: copy("detail_stat_species"),
-                    tint: MultiverseLabelColors.primary
-                )
-            }
+            DetailStatsRow(
+                episodeCount: state.episodeCount.map { Int($0.int32Value) },
+                dimension: state.dimension,
+                species: CharacterPresentation.text(header.species)
+            )
         }
-    }
-
-    /// One column of the stats row.
-    private func stat(value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(MultiverseType.title2Bold)
-                .foregroundStyle(tint)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(MultiverseType.caption1)
-                .foregroundStyle(MultiverseLabelColors.secondary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-
-    /// The 1 pt separator between two stat columns.
-    private var statSeparator: some View {
-        Rectangle()
-            .fill(MultiverseGlassColors.strokeHighlight)
-            .frame(width: MultiverseDimensions.rimWidth, height: MultiverseDimensions.space2Xl)
-            .accessibilityHidden(true)
     }
 
     /// The info rows and the inline error (`UI_SPEC.md` §6.3, §8).
