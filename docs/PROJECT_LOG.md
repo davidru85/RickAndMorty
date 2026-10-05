@@ -1093,7 +1093,7 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 
 ### LOG-0142 · 2026-10-05 · `TASK-118`: Episodes names its copy keys (`CONF-91`)
 
-- **Event:** the owner decided `CONF-91` with option (a) (`DEC-146`). `TASK-118` makes the Episodes placeholder name its four copy keys through `CopyKeys` and deletes the stale row `:feature:episodes|:core:presentation|TASK-008` from `gradle/dependency-advice-exclusions.txt`. That one-row write is outside `DEC-122`'s paths and was authorized for this task alone. No typed copy key remains in Kotlin.
+- **Event:** the owner decided `CONF-91` with option (a) (`DEC-146`). `TASK-118`, delivered as PR #211, makes the Episodes placeholder name its four copy keys through `CopyKeys` and deletes the stale row `:feature:episodes|:core:presentation|TASK-008` from `gradle/dependency-advice-exclusions.txt`. That one-row write is outside `DEC-122`'s paths and was authorized for this task alone. No typed copy key remains in Kotlin.
 - **Red, then green:** with the keys named and the row still present, `./gradlew verifyDependencyAdviceRegister` failed. Its message was `DEC-081: :feature:episodes already consumes :core:presentation in its production source, so the exclusion must be deleted`. With the row deleted, it passes.
 - **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-146`), `docs/BACKLOG.md` (`TASK-115` Done, `TASK-118`…`TASK-122`), `docs/DOCUMENTATION_AUDIT.md` (`CONF-90`, `CONF-91`, `GAP-033`, `GAP-034`), `docs/HANDOFF.md`, and this entry.
 - **Validation (observed on the branch head):**
