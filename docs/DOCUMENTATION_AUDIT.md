@@ -316,6 +316,7 @@ Next actions, in order: **Block 2 is closed** — all nine rows `Done` (PRs #52,
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-05 | PR #182 review: `SECURITY.md` §9.3's stale "no CI exists" bullet replaced by the observed monitoring gaps; the advisory review of 270 pinned packages (0 advisories) recorded; `TASK-064`'s cross-check made image-based on iOS. No conflict or gap opened. | `TASK-064`, `TASK-067`, `LOG-0131` |
 | 2026-10-05 | PR #178 review (`REL7` preparation for M2): the B8 closure, `DEC-117` and the `TASK-061`…`063` rows restated against the reviewed tree; `README.md` §11 names the unrun iOS 18 floor; no conflict or gap opened. | `TASK-063`, `DEC-117`, `DEC-121`, `LOG-0130` |
 | 2026-10-05 | PR #161 review: `GAP-031` resolved — the Discovery holder never started its reducer, and the grid's skeleton and card cells shared identities — with the transition, holder and screen-baseline cases that pin it. | `GAP-031`, `TASK-055`, `TASK-059`, `LOG-0129` |
 | 2026-10-04 | `TASK-110` closure verified on `6382e1c`: 18 successful checks in 4m37s; the Git pipe deadlock and whole-SDK snapshot stalls are fixed. | `GAP-028`, `DEC-112`, `LOG-0100` |

@@ -62,6 +62,60 @@ final class ScreenSnapshotTests: XCTestCase {
         }
     }
 
+    /// `TEST-UI-016` on iOS: the seven rendered states of `ERROR_FLOW.md` §12, each a committed
+    /// baseline, so the state model is cross-checked against images on both platforms
+    /// (`AC-REQ-UX-009-1`, `TASK-064`). The stale banner over content is the combined
+    /// stale-plus-failed-refresh case, and `detail` above is the enrichment-absent partial detail.
+    func test_TEST_UI_016_stateBaselines() {
+        let names = ["Rick Sanchez", "Morty Smith", "Summer Smith"]
+        let cards = (1...6).map { card(id: "\($0)", name: names[($0 - 1) % names.count]) }
+        let list = { (items: [CharacterCardUi], loadState: any LoadState, appending: Bool, stale: Bool) in
+            CharacterListUiState(
+                filter: CharacterFilter(query: items.isEmpty ? "zzz" : "", status: StatusFilter.all),
+                items: items,
+                totalCount: KotlinInt(int: 826),
+                loadState: loadState,
+                isAppending: appending,
+                isStale: stale
+            )
+        }
+        let discovery = { (state: CharacterListUiState) in
+            DiscoveryScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+        }
+        record("discovery-loading", dynamicTypeSize: .large) {
+            discovery(list([], LoadStateLoading.shared, false, false))
+        }
+        // Two cards, so the paging indicator after the last row is inside the frame.
+        record("discovery-appending", dynamicTypeSize: .large) {
+            discovery(list(Array(cards.prefix(2)), LoadStateContent.shared, true, false))
+        }
+        record("discovery-empty", dynamicTypeSize: .large) {
+            discovery(list([], LoadStateEmpty.shared, false, false))
+        }
+        record("discovery-error-offline", dynamicTypeSize: .large) {
+            discovery(list([], LoadStateError(failure: ApiFailureOffline.shared), false, false))
+        }
+        record("discovery-stale", dynamicTypeSize: .large) {
+            discovery(list(cards, LoadStateContent.shared, false, true))
+        }
+        let failedDetail = { (header: CharacterCardUi?) in
+            CharacterDetailUiState(
+                header: header,
+                episodeCount: nil,
+                dimension: nil,
+                info: [],
+                isFavorite: false,
+                loadState: LoadStateError(failure: ApiFailureOffline.shared)
+            )
+        }
+        record("detail-error-with-header", dynamicTypeSize: .large) {
+            detailScreen(failedDetail(cards[0]))
+        }
+        record("detail-error-without-header", dynamicTypeSize: .large) {
+            detailScreen(failedDetail(nil))
+        }
+    }
+
     /// Renders the screen in a real window, as the device draws it — after layout, the portrait's
     /// load and the appearance transitions — and compares that frame with the committed baseline.
     /// Snapshot-testing's off-screen SwiftUI path draws neither, which left these screens black.

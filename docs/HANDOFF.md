@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's); B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`) and B8 Phase 8.3 in PR #178, prepared on #161's head. The latest review is recorded in §1.18; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's); B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`), B8 Phase 8.3 in PR #178 and B9 Phase 9.1 in PR #182, each prepared on the previous one's head. The latest review is recorded in §1.19; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -309,6 +309,19 @@ Owner actions after merging PR #178:
 - Decide whether M2 is published with `M2-1`/`M2-2`/`M2-4` named as unevidenced (`DEC-117`).
 
 Next is PR #182 (B9 Phase 9.1), prepared on PR #178's head.
+
+## 1.19 PR #182 review: B9 Phase 9.1, hardening and advisory review (2026-10-05)
+
+PR #182 is prepared on PR #178's head. Phase 9.1 had no code of its own. The review made its three tasks evidence-based:
+- `TASK-064` compared iOS "render something" cases rather than baselines. It now has seven committed iOS state baselines for `ERROR_FLOW.md` §12, matching the Android set.
+- `TASK-067` claimed a scan configuration that did not exist. It now has a recorded advisory review (270 pinned packages, 0 advisories, OSV, 2026-10-05) and `.github/dependabot.yml` for security updates.
+- `TASK-065` states its own reason (`DEC-115`, `DEC-117`) instead of a copied one.
+
+Owner actions after merging PR #182:
+- Enable Dependabot alerts and security updates in the repository settings; until then the configuration raises nothing (`SECURITY.md` §9.3).
+- Name the reference devices that `TASK-065` needs.
+
+Next is PR #186 (B9 Phase 9.2), prepared on PR #182's head.
 
 ## 2. Completed work
 
