@@ -34,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -133,6 +134,9 @@ public object MultiverseBootstrap {
     public fun cancelScope(scope: CoroutineScope) {
         scope.cancel()
     }
+
+    /** Whether [scope] is still active: the Swift side's one way to see that a screen's work ended. */
+    public fun isScopeActive(scope: CoroutineScope): Boolean = scope.isActive
 
     /**
      * Whether a portrait URL may be fetched at all (`REQ-SEC-001`, `DEC-126`): the one host rule of

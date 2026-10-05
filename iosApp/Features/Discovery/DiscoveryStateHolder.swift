@@ -23,12 +23,14 @@ public final class DiscoveryStateHolder: ObservableObject {
     /// The screen's one scope and its state observation, ended with the holder (`DEC-143`).
     private let lifetime = ScreenLifetime()
 
-    /// Builds the holder around the pager and the initial filter the shell resolved for this screen.
+    /// Builds the holder for one screen: [pagerFactory] builds the screen's pager on the holder's own
+    /// scope, so the pager, its protocol observer and its loads end with the holder (`IC-014`).
     public init(
-        pager: CharacterPager,
+        pagerFactory: (Kotlinx_coroutines_coreCoroutineScope) -> CharacterPager,
         initialFilter: CharacterFilter
     ) {
         let scope = lifetime.scope
+        let pager = pagerFactory(scope)
         let reducer = DiscoveryReducer(
             pager: pager,
             scope: scope,
