@@ -38,6 +38,10 @@ settings:
     "KOTLIN_FRAMEWORK_TARGET[sdk=iphonesimulator*]": iosSimulatorArm64
     "KOTLIN_FRAMEWORK_TARGET[sdk=iphoneos*]": iosArm64
     KOTLIN_FRAMEWORK_DIR: $(SRCROOT)/../core/ios/build/bin/$(KOTLIN_FRAMEWORK_TARGET)/$(KOTLIN_FRAMEWORK_BUILD)Framework
+    # The simulator framework is `arm64` only (`iosSimulatorArm64`), so no simulator build may ask for
+    # an `x86_64` slice: a Release build, which builds every architecture, failed to link without this
+    # (`GAP-033`).
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
   configs:
     Debug:
       KOTLIN_FRAMEWORK_BUILD: debug
