@@ -16,6 +16,8 @@ final class DetailChromeTests: XCTestCase {
     func test_TEST_UI_039_given_an_opened_card_when_its_detail_shows_then_the_bars_are_hidden_and_swipe_back_works() throws {
         let driver = ChromeDriver()
         let host = UIHostingController(rootView: ChromeHarness(driver: driver))
+        // Whether the push is the zoom or, with Reduce Motion, the system's own: the edge swipe is
+        // asserted on whichever path the simulator's setting selects.
         // Run alone, the case can start before the host app has connected its scene; wait for it.
         let deadline = Date().addingTimeInterval(5)
         while UIApplication.shared.connectedScenes.isEmpty && Date() < deadline { settle() }

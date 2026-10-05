@@ -103,6 +103,10 @@ struct DestinationView<Detail: View>: View {
                 // (`AC-REQ-FUNC-002-1`).
                 .navigationDestination(item: $opened) { card in
                     detail(card)
+                        // Figma `26:452` draws the Detail with neither bar (`DEC-140`): its glass
+                        // controls replace them, and the edge swipe stays a way back.
+                        .toolbar(.hidden, for: .tabBar)
+                        .toolbar(.hidden, for: .navigationBar)
                         .modifier(
                             ZoomDestination(
                                 sourceID: PortraitMotion.zoomSourceID(
