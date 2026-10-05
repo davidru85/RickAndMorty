@@ -144,6 +144,21 @@ class WorkflowGateReproductionTest {
     }
 
     @Test
+    fun `an ios job that never checks the app version against VERSION is reported`() {
+        // `DEFINITION.md` §5 REL2 and `AC-REQ-NFR-006-3`: `CFBundleShortVersionString` derives from the
+        // single `VERSION` source through the committed `Version.xcconfig`, so a gate that never runs
+        // `tools/ios-version.sh --check` lets a bumped `VERSION` ship the previous iOS version.
+        val findings =
+            findingsAfter { text ->
+                text.lines().filterNot { it.contains("tools/ios-version.sh") }.joinToString("\n") + "\n"
+            }
+        assertTrue(
+            findings.any { it.contains("tools/ios-version.sh --check") },
+            "an ios job without the version check must be reported; got $findings",
+        )
+    }
+
+    @Test
     fun `the untouched repository workflows pass every rule`() {
         val root = kotlin.io.path.createTempDirectory("gate-reproduction-clean").toFile()
         val dir = File(root, WorkflowGateGuard.WORKFLOW_DIRECTORY)

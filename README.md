@@ -217,7 +217,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 | Item | Value | Where |
 | --- | --- | --- |
 | API base URL | `https://rickandmortyapi.com/api/` | Build constant; not discovered at runtime |
-| App version | Single `VERSION` source (`0.1.0`). The Android `versionName` is that value verbatim today; the iOS `CFBundleShortVersionString` derives from it from `TASK-051` onward (`DEC-043`, `DEC-067`) | `DEC-043` |
+| App version | Single `VERSION` source (`0.2.0`, prepared for the M2 release; M1 is `0.1.0`). The Android `versionName` is that value verbatim; the iOS `CFBundleShortVersionString` derives from it through the generated `iosApp/App/Version.xcconfig`, which the `ios` job checks with `tools/ios-version.sh --check` (`DEC-043`, `DEC-067`, `DEC-121`) | `DEC-043` |
 | Remote protocol | Both ship and the user picks in Settings: REST API (default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Cache freshness | 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback | `DEC-012` |
 | Release mechanism | Tag `vMAJOR.MINOR.PATCH`, GitHub Release with the APK attached | `DEC-043` |
@@ -232,6 +232,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 6. **Exactly one pre-release artifact ships.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and declared by `:core:designsystem` and by four feature modules (`:feature:character-detail`, `:feature:discovery`, `:feature:favorites`, `:feature:settings`), so the Android app contains it. The accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md), whose rule that only the design system declares it the four feature modules do not yet meet (`CONF-84`). The other two alpha-only components are not adopted.
 7. **The API is unversioned.** Its shape can change without notice, so contract tests run outside the merge gate (`DEC-029`).
 8. **The reference device for performance budgets is not yet locked.** Budgets and the measurement method exist; the named device is recorded as a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), so no performance budget has been measured yet. Only the zero-network assertion on a cached page runs in the merge gate (`DEC-115`).
+9. **iOS 18 is the declared floor but has not been run.** The app targets iOS 18.0 and its non-glass fallback is snapshot-tested through a seam on the iOS 27 simulator, but no iOS 18 simulator or device run exists: Xcode 27 offers no iOS 18 runtime (`DEC-117`). The iOS app is not signed or distributed; the GitHub Release carries the Android APK.
 
 ## 12. Documentation index
 

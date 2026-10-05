@@ -162,6 +162,11 @@ internal object ModularWorkflowGate {
             if (job.executableRunTexts().none { it.contains("tools/swift-tools-test.sh") }) {
                 report(job, "the iOS job must run the Swift fail-closed suite `tools/swift-tools-test.sh` (`TEST-UNIT-046`)")
             }
+            // `DEFINITION.md` §5 REL2, `AC-REQ-NFR-006-3`: the iOS version derives from `VERSION` through
+            // the committed `Version.xcconfig`, and only the check proves the two still agree.
+            if (job.executableRunTexts().none { it.contains("tools/ios-version.sh --check") }) {
+                report(job, "the iOS job must check the app version against `VERSION` with `tools/ios-version.sh --check` (`DEC-067`, REL2)")
+            }
             // `TESTING.md` §14.2: the Swift test target — the state holders, the screens and the committed
             // snapshot baselines — runs on every pull request from `TASK-051`/`TASK-059`. Without this
             // step those cases exist and never execute in the gate.

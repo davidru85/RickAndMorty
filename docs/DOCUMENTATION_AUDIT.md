@@ -316,6 +316,7 @@ Next actions, in order: **Block 2 is closed** — all nine rows `Done` (PRs #52,
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-05 | PR #178 review (`REL7` preparation for M2): the B8 closure, `DEC-117` and the `TASK-061`…`063` rows restated against the reviewed tree; `README.md` §11 names the unrun iOS 18 floor; no conflict or gap opened. | `TASK-063`, `DEC-117`, `DEC-121`, `LOG-0130` |
 | 2026-10-05 | PR #161 review: `GAP-031` resolved — the Discovery holder never started its reducer, and the grid's skeleton and card cells shared identities — with the transition, holder and screen-baseline cases that pin it. | `GAP-031`, `TASK-055`, `TASK-059`, `LOG-0129` |
 | 2026-10-04 | `TASK-110` closure verified on `6382e1c`: 18 successful checks in 4m37s; the Git pipe deadlock and whole-SDK snapshot stalls are fixed. | `GAP-028`, `DEC-112`, `LOG-0100` |
 | 2026-10-04 | B6 Phase 6.3: the M1 release is prepared at `v0.1.0` (`DEC-116`); `TEST-UNIT-019` is implemented and, after review, runs in the `app-artifacts` worker; `GAP-029` stays open and `M1-4` is carried as unmet because no reference device is named. On review, `CONF-84` is registered: ADR-0008's alpha containment does not hold for four feature modules, and `README.md` §11 now states that the alpha ships. | `TASK-050`, `DEC-116`, `CONF-84`, `LOG-0104`, `LOG-0128` |

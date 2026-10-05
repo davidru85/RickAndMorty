@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's), and B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`). The latest review is recorded in §1.17; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's); B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`) and B8 Phase 8.3 in PR #178, prepared on #161's head. The latest review is recorded in §1.18; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -28,6 +28,26 @@
 **Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `CONF-84` (four feature modules declare the Material 3 alpha that ADR-0008 confines to `:core:designsystem`); `GAP-006`/`GAP-010` unchanged.
 
 **B7 entry condition:** B6 Phase 6.3 merged and the M1 release published by the owner.
+
+### B8 closure — 2026-10-05
+
+**Block 8 is prepared in two pull requests:** Phases 8.1 and 8.2 are delivered inside PR #161 with B7 (`DEC-120`), and Phase 8.3, the M2 evidence and release preparation, is PR #178 (`DEC-109`).
+
+**Delivered:**
+- The iOS Discovery, Detail, Favorites and Settings screens over the shared `IC-018`/`IC-019`/`IC-020`/`IC-023` contracts, with the Episodes placeholder.
+- The zoom transition with its Reduce Motion fallback, the image cache with both `REQ-FUNC-021` assertions, and the response-cache backend iOS never had.
+- Ten committed iOS baselines (five component, five screen) in the `ios` job, and 104 iOS tests green.
+- The M1 Android verification set re-run green on the same tree.
+- M2 prepared at `v0.2.0` (`DEC-121`).
+
+**Carried as unevidenced, named rather than claimed (`DEC-117`):**
+- `M2-1`/`M2-2` need an **iOS 18** simulator or device. Xcode 27 offers no iOS 18 runtime, so neither the deployment-floor run nor the iOS 18 fallback pair can be executed here.
+- `M2-4` needs a physical device.
+- The on-device checklist claims (VoiceOver traversal, contrast and target measurements) remain unrecorded.
+
+**Open:** `GAP-029`, `GAP-030`, `CONF-79`, `CONF-80`, `CONF-81`, `CONF-84`. `GAP-031` is resolved (PR #161).
+
+**B9 entry condition:** B8 Phase 8.3 merged by the owner.
 
 ### PR #150 branch update — 2026-10-04
 
@@ -275,6 +295,20 @@ Owner actions after merging PR #161:
 - Close PRs #164, #166, #170 and #174, which then carry no change of their own (`DEC-120`).
 
 Next is PR #178 (B8 Phase 8.3), prepared on PR #161's final head so it merges cleanly once #161 is merged.
+
+## 1.18 PR #178 review: B8 Phase 8.3, the M2 evidence and release preparation (2026-10-05)
+
+PR #178 is prepared on PR #161's reviewed head, so it merges cleanly once #161 is merged. Phase 8.3 had no code of its own; the merge commit takes #161's tree and re-applies the phase's four documents. The review:
+- Corrected its stale facts: 104 iOS tests, ten baselines, and `GAP-031` resolved, so `M2-7` no longer carries that exception.
+- Recorded why `M2-1`/`M2-2` cannot be evidenced. With the owner's agreement, the iOS 18 runtime download was attempted; Xcode 27 does not offer one.
+- Added `tools/ios-version.sh --check` to the `ios` job, red first, so the iOS version cannot drift from `VERSION`.
+- Prepared M2 at `v0.2.0` (`DEC-121`); the PR description carries the draft note for the range after `v0.1.0`.
+
+Owner actions after merging PR #178:
+- Tag `v0.2.0` on the merge commit and publish the GitHub Release with the APK and the regenerated note.
+- Decide whether M2 is published with `M2-1`/`M2-2`/`M2-4` named as unevidenced (`DEC-117`).
+
+Next is PR #182 (B9 Phase 9.1), prepared on PR #178's head.
 
 ## 2. Completed work
 
