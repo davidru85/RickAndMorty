@@ -10,6 +10,7 @@ import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
 import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
 import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.domain.logging.AppLogger
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
@@ -135,6 +136,13 @@ public object MultiverseBootstrap {
      * so a payload cannot point the app at another host.
      */
     public fun isAllowedImageUrl(url: String): Boolean = RickAndMortyApi.isAllowedImageUrl(url)
+
+    /**
+     * The one logger the shared graph binds (`IC-024`, `OBSERVABILITY.md` §2.1): Swift code logs through
+     * the same validating contract as Kotlin, never through `os.Logger` or `print`, and a case can read
+     * which levels this build lets reach the sink.
+     */
+    public fun logger(): AppLogger = IosGraph.koin.get()
 
     /** The API resource URL of the character [id], which the Detail's Share sends (`DEC-125`). */
     public fun characterUrl(id: String): String = RickAndMortyApi.characterUrl(id)
