@@ -1,5 +1,7 @@
 package io.github.davidru85.multiverse.core.designsystem.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -32,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.image.LocalCharacterAccentPolicy
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -69,7 +75,8 @@ public fun CharacterCard(
     seam: ImageSeam,
     modifier: Modifier = Modifier,
     height: CardHeight = CardHeight.Regular,
-    containerColor: Color = MultiverseColors.surfaceContainerHigh,
+    /** The container; unspecified, the card takes its portrait's accent (`UI_SPEC.md` §5.4). */
+    containerColor: Color = Color.Unspecified,
     portalMark: Painter? = null,
     onClick: (() -> Unit)? = null,
     /** The portrait's shared-element key for the card→Detail transition (`DEC-135`). */
@@ -97,7 +104,8 @@ public fun CharacterCard(
                 },
             )
     val shape = RoundedCornerShape(CardCorner)
-    val colors = CardDefaults.cardColors(containerColor = containerColor)
+    val container = if (containerColor.isSpecified) containerColor else rememberAccent(imageUrl)
+    val colors = CardDefaults.cardColors(containerColor = container)
     val elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     if (onClick != null) {
         Card(onClick = onClick, shape = shape, colors = colors, elevation = elevation, modifier = cardModifier) {
@@ -109,6 +117,24 @@ public fun CharacterCard(
         }
     }
 }
+
+/**
+ * The card's container from its portrait (`UI_SPEC.md` §5.4): Surface Container High until the shell's
+ * accent policy answers, then the portrait's tone-30 accent, animated over 300 ms. The policy computes
+ * off the main thread and remembers each URL, so a card scrolled back into view answers at once.
+ */
+@Composable
+private fun rememberAccent(imageUrl: String): Color {
+    val policy = LocalCharacterAccentPolicy.current
+    val target by produceState(MultiverseColors.surfaceContainerHigh, policy, imageUrl) {
+        if (policy != null) value = policy.accentFor(imageUrl)
+    }
+    val accent by animateColorAsState(targetValue = target, animationSpec = tween(ACCENT_MILLIS), label = "card-accent")
+    return accent
+}
+
+/** The accent's arrival (`UI_SPEC.md` §5.4): 300 ms. */
+private const val ACCENT_MILLIS = 300
 
 /** The portrait with its badge, then the name and the species (`UI_SPEC.md` §4.1). */
 @Composable

@@ -30,6 +30,9 @@ public class MainActivity : ComponentActivity() {
     /** The one image seam (`DEC-097`): the app's Coil loader, adapted to the design system's port. */
     private val imageSeam: ImageSeam by inject()
 
+    /** The one card-accent policy (`UI_SPEC.md` §5.4): every card in the app asks it for its colour. */
+    private val accentPolicy: io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy by inject()
+
     /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()
 
@@ -45,7 +48,7 @@ public class MainActivity : ComponentActivity() {
             // The gate is built once per composition from the graph's repository, so the splash waits on
             // the same first page the Discovery screen will render.
             val gate = remember { SplashGate(characterRepository, Dispatchers.IO) }
-            MultiverseApp(splashGate = gate, imageSeam = imageSeam, detailHandoff = detailHandoff)
+            MultiverseApp(splashGate = gate, imageSeam = imageSeam, detailHandoff = detailHandoff, accentPolicy = accentPolicy)
         }
     }
 }

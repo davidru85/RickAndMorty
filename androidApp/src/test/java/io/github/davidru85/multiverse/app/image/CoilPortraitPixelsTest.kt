@@ -53,7 +53,8 @@ class CoilPortraitPixelsTest {
     @Test
     fun `TEST-UI-034 given_a_served_portrait_when_its_pixels_are_read_then_they_are_its_colours`() =
         runTest {
-            val read = assertNotNull(pixels().pixelsFor("https://example.invalid/avatar/1.jpeg"))
+            val read = pixels().pixelsFor("https://example.invalid/avatar/1.jpeg")
+            assertNotNull("TEST-UI-034: a served portrait yields pixels", read)
 
             assertEquals("TEST-UI-034: the decoded pixels are the portrait's", red, read!!.first())
         }

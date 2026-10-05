@@ -119,4 +119,12 @@ public fun imageLoaderModule(
                 imageLoader = get(),
             )
         }
+        // The card accents of `UI_SPEC.md` §5.4: the pixels come through the same loader, and the
+        // colour work runs off the main thread, memoised per URL for the process.
+        single {
+            io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy(
+                pixels = io.github.davidru85.multiverse.app.image.CoilPortraitPixels(context = context, imageLoader = get()),
+                dispatcher = kotlinx.coroutines.Dispatchers.Default,
+            )
+        }
     }

@@ -33,6 +33,7 @@ import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.core.designsystem.components.MultiverseNavigationBar
 import io.github.davidru85.multiverse.core.designsystem.components.NavigationDestination
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.image.LocalCharacterAccentPolicy
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitTransitionScope
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitVisibilityScope
@@ -66,6 +67,8 @@ public fun MultiverseApp(
     imageSeam: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam = NO_IMAGE_SEAM,
     /** The card-to-detail hand-off (`IC-025`); the shell owns the one instance. */
     detailHandoff: io.github.davidru85.multiverse.core.presentation.DetailHandoff? = null,
+    /** The card accents (`UI_SPEC.md` §5.4); `null` keeps every card Surface Container High. */
+    accentPolicy: io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy? = null,
 ) {
     val handoff =
         detailHandoff
@@ -113,6 +116,7 @@ public fun MultiverseApp(
                         LocalPortraitTransitionScope provides if (reduceMotion) null else this,
                         // The one brand mark every failed portrait shows (`UI_SPEC.md` §5.3, `AC-REQ-FUNC-005-2`).
                         LocalPortalMark provides androidx.compose.ui.res.painterResource(R.drawable.ic_portal_mark),
+                        LocalCharacterAccentPolicy provides accentPolicy,
                     ) {
                         NavHost(
                             navController = navController,
