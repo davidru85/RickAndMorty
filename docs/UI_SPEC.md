@@ -257,9 +257,9 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 
 | Component | Spec | SwiftUI implementation |
 | --- | --- | --- |
-| Large title | "Characters" + "{count} across the multiverse" (Subheadline, secondary). The count comes from `info.count` at runtime and is never hardcoded; the Figma frame shows the value observed on 2026-09-29 | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)` |
-| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters". No trailing `mic.fill` while voice search is deferred (§6.2) | `.searchable(text:placement: .navigationBarDrawer(displayMode: .always))` |
-| Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
+| Large title | "Characters" + "{count} across the multiverse" (Subheadline, secondary). The count comes from `info.count` at runtime and is never hardcoded; the Figma frame shows the value observed on 2026-09-29 | `.navigationTitle` + `.navigationBarTitleDisplayMode(.large)`; the count line is the first row of the scrolling content (`DEC-138`) |
+| Glass search field | 370 × 48 capsule; `magnifyingglass`, placeholder "Search characters". No trailing `mic.fill` while voice search is deferred (§6.2) | The design system's `GlassSearchField` as the second content row, under the count (`DEC-138`): `.searchable`'s drawer sits directly under the title, so the count could precede it only through `.navigationSubtitle`, which iOS 18–25 lack |
+| Glass segmented control | 370 × 44 capsule, 4 pt inset; the selected segment is a clear-glass capsule tinted Portal Green under a white, emphasised label; the others are `Label/Secondary` | Custom control in a `GlassEffectContainer`; `.glassEffect(.regular.tint(.portalGreen.opacity(0.3)).interactive(), in: .capsule)`; selection uses `matchedGeometryEffect` |
 | Glass character card | 177 × 236 pt, continuous corner 26. The portrait fills the card and is overscanned by 14 pt for parallax. Shows exactly photo, name, status and species (§6.2). Glass bar: full width minus a 6 pt inset, corner 20, anchored to the bottom and growing upwards. It holds the name (Headline, up to 2 lines so the full name fits) and a status row (7 pt dot + "Status · Species", Caption 1). Light-catching 1 pt rim; drop shadow y14 b30 @40% | `LazyVGrid(columns: 2, spacing: 16)`; the image uses `.visualEffect`/`.scrollTransition` offset (0.85× scroll); the bar uses `.glassEffect(in: .rect(cornerRadius: 20, style: .continuous))` |
 | Glass tab bar | Floating capsule, 4 tabs in this order: Characters (`person.2.fill`), Episodes (`play.tv.fill`), Favorites (`heart.fill`), Settings (`gearshape.fill`); each tab is an `iOS/Glass tab item` (§1.2); selected tab (symbol + label) in Portal Glow, every unselected tab always in white (`Label/Primary`), never dimmed or black (one variant per selected tab) | `TabView` with `Tab(...)` items (system Liquid Glass tab bar); `.tint(.portalGlow)`; unselected items forced to white through `UITabBarAppearance` (`normal.iconColor` and `normal.titleTextAttributes`), because the system default is a dimmed secondary colour |
 | Glass icon button | 50 pt; Glass (white symbol) or Prominent (Portal Green tint, Space Black symbol). Favorite uses Glass + `heart` when unmarked (as drawn) and Prominent + `heart.fill` when marked | `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent).tint(.portalGreen)` |
@@ -271,7 +271,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Delete favorites row | iOS kit `Row - Button`, Destructive: "Delete favorites" in system red, no symbol | `Button(role: .destructive)` in its own section |
 | Confirmation alert | iOS kit `Alert`, side-by-side buttons, dark: title, message, "Cancel" (cancel role) and "Delete" (destructive role) over a 40% black dimming layer | `.alert(_:isPresented:actions:message:)` with `Button(role: .cancel)` and `Button(role: .destructive)` |
 | Frosted panel | 370 wide, continuous corner 34, 20 pt padding. Stats row (3 columns: Title 2 value, Caption 1 label, 1 pt separators), divider, then 3 `Glass info row`s | `.glassEffect(in: .rect(cornerRadius: 34, style: .continuous))` |
-| Glass info row | 38 pt symbol well (Glass/Tint Green, symbol in Portal Glow) + label (Footnote, secondary) + value (Headline) | `LabeledContent` / custom `HStack` |
+| Glass info row | 38 pt circular symbol well (Glass/Tint Green, symbol in Portal Glow), then the label (Footnote, secondary) above the value (Headline) | Custom `HStack` with a `VStack` for the label and value |
 | Episode count line | Informative only: `play.rectangle.on.rectangle.fill` + "Appears in N episodes", Subheadline in `Label/Secondary`, aligned with the panel content. No glass container, no chevron, not interactive | Plain `Label` below the panel (not a `Button`) |
 
 ## 5. Imagery and dynamic colour
@@ -418,7 +418,7 @@ Data binding (see the domain model in `API_SPECS.md` §3):
 - `First seen in` requires episode enrichment (`episodeSummaries[0]`): shown as "*name* · *code*". Hide the row if enrichment was not requested.
 - Unknown values (`"unknown"`) are displayed as "Unknown", never as raw lowercase API values.
 
-On iOS, the title block, panel and accessory are a bottom-anchored stack, so the layout adapts to Dynamic Type sizes.
+On iOS, the title block, panel and accessory are one stack that starts 162 pt above the hero's bottom — Figma's title position — and grows downwards, scrolling when it outgrows the screen, so it adapts to Dynamic Type sizes and rows that arrive later never move the title (`DEC-142`). At the accessibility sizes the stats row stacks its three values rather than truncating them. The Detail shows neither the tab bar nor the navigation bar; the edge swipe back stays available (`DEC-140`).
 
 Top-control actions (`DEC-125`):
 
@@ -443,7 +443,7 @@ Presentation per platform:
 | | Android (`Android/Empty state`) | iOS (`iOS/Empty state`) |
 | --- | --- | --- |
 | Title | Display Small Emphasized, same position as the Discovery headline | Large Title, same position as Discovery |
-| Illustration | M3 Expressive Cookie-9 (160 dp) with the section's icon (64 dp). Container colour per section: Episodes Secondary Container, Favorites Primary Container | 120 pt glass symbol well (`Liquid Glass/Regular`) with a 48 pt SF Symbol in Portal Glow: `play.tv.fill`, `heart` |
+| Illustration | M3 Expressive Cookie-9 (160 dp) with the section's icon (64 dp). Container colour per section: Episodes Secondary Container, Favorites Primary Container | 120 pt circular glass symbol well (`Liquid Glass/Regular`) with a 48 pt SF Symbol in Portal Glow: `play.tv.fill`, `heart` |
 | Heading / body | Headline Small Emphasized / Body Medium, centred, 320 dp wide | Title 2 / Subheadline (secondary), centred, 320 pt wide |
 | Button | M3 filled button, Medium | `iOS/Glass text button` (glass prominent, Portal Green) |
 | Navigation | Navigation bar with the section's item selected | Glass tab bar variant for the section |

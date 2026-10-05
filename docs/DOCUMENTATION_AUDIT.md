@@ -325,6 +325,7 @@ Next actions, in order: **Block 2 is closed** — all nine rows `Done` (PRs #52,
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-114`: the iOS Data source row shows the `CONF-80` subtitle too, so both platforms render the row Figma draws. | `LOG-0140` |
 | 2026-10-05 | `CONF-80` resolved in `TASK-113`: the Data source subtitle is intended, so its key exists on both platforms and the Android row shows it. | `LOG-0139` |
 | 2026-10-05 | `GAP-034` registered: the release APK measures 12.31 MiB against `PERF-009`'s 12 MiB before `TASK-113` adds its font. | `LOG-0139` |
 | 2026-10-05 | `CONF-87` and `CONF-88` resolved by `DEC-131` (`TASK-112`): the Detail carries gender, and unknown origin and location rows read "Unknown". `CONF-90` registered and escalated: the iOS debug diagnostics sheet needs `:core:ios` to link `:core:diagnostics`, which `R12` forbids and `build-logic/**` is outside the task's authorization. | `LOG-0138` |

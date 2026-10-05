@@ -175,6 +175,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Request logs per protocol and platform | Through the production adapters and repository, a debug logger records `LOG-001` with `protocol=REST`, then `GRAPHQL` on the request after a switch, and each `LOG-002` joins its start through the correlation id; a release logger records neither; the iOS Debug build enables `DEBUG`/`INFO`, its Release build only `ERROR`; the iOS sink survives every level; both sinks print `LOG-### name=value …` in catalogue order (`REQ-OBS-001`, `DEC-039`, `DEC-127`) | `TEST-UNIT-072`…`TEST-UNIT-075` |
 | P1 remediation, data and Detail (`TASK-112`) | Clear filters resets the query and the status in one page-1 request and the search field follows it (`DEC-129`); a protocol switch resets the pager like a filter change, with `isLoading` until the new page publishes (`DEC-130`); a stale first page is revalidated behind the screen and a forced load joins the revalidation in flight; an enriched detail is revalidated whole; unknown origin and location rows read "Unknown"; the Detail carries gender; a not-found Detail recovers with Back, and a headerless failure is the full-surface error (`DEC-131`); every plural form is identical on both platforms (`DEC-132`) | `TEST-UNIT-076`…`082`, `TEST-UI-021`…`023` |
 | P1 remediation, interaction (`TASK-112`) | A manual refresh returns the job that ends with it, a pull on the Android grid sends `Refresh` and the iOS `.refreshable` returns when the shared refresh ends (`DEC-134`); the grid card and the Detail hero share one portrait key, and none with Reduce Motion, on both platforms (`DEC-135`); one splash gate serves both shells, asks for the page the first screen loads, and does not replay after an Android saved-state restore (`DEC-136`) | `TEST-UNIT-083`, `TEST-UNIT-084`, `TEST-UI-024`…`026` |
+| P2-B iOS fidelity (`TASK-114`) | The tabs as glass tab items with their symbols (090); the card portrait's parallax within its overscan, still under Reduce Motion (091); the splash portal's shared rotation curve and the Reduce Motion pulse (092); one fetch per URL in flight and the decoded memory cost (093); the cosmic canvas behind every top-level screen (UI-036); Discovery's and Favorites' 16 pt margins, the portal mark on the empty search and a failed portrait, the white selected segment and the circular empty-state well (UI-037); the Detail's title over the hero, its stats row and circular wells (UI-038); the Detail without the tab bar and navigation bar, with the edge swipe still beginning (UI-039); the Settings subtitle, destructive red and header inset (UI-040) | `TEST-UNIT-090`…`TEST-UNIT-093`, `TEST-UI-036`…`TEST-UI-040` |
 | P2-A Android fidelity (`TASK-113`) | The bundled Roboto Flex type scale with its Emphasized slots (085); the portal turning clockwise at a constant speed after its 1.2 s ease-in (086); the bar only on top-level screens, not a tab itself, and growing back in with the destination change instead of jumping over the leaving Detail (UI-028); a card as one button with no English role word, the status sentence on a standalone badge, the shell's portal mark on a failed portrait and no second crossfade (UI-029); the chips disabled during the initial load (UI-030); every top-level title a heading (UI-031); the Detail's favourite toggle and its overlaid title (UI-032); the Settings rows, header inset and 56 dp action (UI-033); the card accent from its portrait and the pixels read through the one loader (UI-034) | `TEST-UNIT-085`, `TEST-UNIT-086`, `TEST-UI-028`…`TEST-UI-034` |
 | Formatters | Card and detail formatting including `"unknown"` → `"Unknown"`; episode count and dimension derivation; no platform types in signatures (`AC-REQ-NFR-001-2`) | `TEST-UNIT-001`, `TEST-UNIT-002`, `TEST-UNIT-012` |
 | Localisation | Every canonical copy key resolves in `en` and `es` and follows the device locale (`REQ-FUNC-013`) | `TEST-UNIT-008` |
@@ -669,10 +670,10 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-002` — Character detail | Must | `TEST-UNIT-002`, `TEST-UNIT-039`, `TEST-UI-002`, `TEST-CONTRACT-002`, `TEST-UNIT-070`, `TEST-UI-020`, `TEST-UNIT-079`, `TEST-UNIT-080`, `TEST-UNIT-081`, `TEST-UI-022`, `TEST-UI-023`, `TEST-UI-032` |
 | `REQ-FUNC-003` — Name search | Must | `TEST-UNIT-003`, `TEST-UNIT-065` |
 | `REQ-FUNC-004` — Status filter | Must | `TEST-UNIT-003`, `TEST-UI-003`, `TEST-UNIT-065` |
-| `REQ-FUNC-005` — Image-first presentation | Must | `TEST-UI-004`, `TEST-INT-002`, `TEST-UI-029`, `TEST-UI-034` |
+| `REQ-FUNC-005` — Image-first presentation | Must | `TEST-UI-004`, `TEST-INT-002`, `TEST-UI-029`, `TEST-UI-034`, `TEST-UI-037`, `TEST-UI-038` |
 | `REQ-FUNC-006` — Favorites | Must | `TEST-UNIT-004`, `TEST-UNIT-040`, `TEST-INT-003`, `TEST-INT-004`, `TEST-UI-005`, `TEST-UI-013`, `TEST-UNIT-070` |
-| `REQ-FUNC-007` — Splash with branded loading | Must | `TEST-UI-006`, `TEST-A11Y-001`, `TEST-UNIT-084`, `TEST-UI-026` (`IC-026` on both shells, `DEC-136`), `TEST-UNIT-086` |
-| `REQ-FUNC-008` — Navigation and sections | Must | `TEST-UI-007` |
+| `REQ-FUNC-007` — Splash with branded loading | Must | `TEST-UI-006`, `TEST-A11Y-001`, `TEST-UNIT-084`, `TEST-UI-026` (`IC-026` on both shells, `DEC-136`), `TEST-UNIT-086`, `TEST-UNIT-092` |
+| `REQ-FUNC-008` — Navigation and sections | Must | `TEST-UI-007`, `TEST-UNIT-090`, `TEST-UI-039` |
 | `REQ-FUNC-009` — Card-to-detail transition | Must | `TEST-UI-008`, `TEST-A11Y-006`, `TEST-UI-025` (`DEC-135`) |
 | `REQ-FUNC-010` — Empty results state | Must | `TEST-UNIT-005`, `TEST-UI-009`, `TEST-UNIT-076`, `TEST-UI-021` |
 | `REQ-FUNC-011` — Retry | Must | `TEST-UNIT-006`, `TEST-UNIT-066`, `TEST-UNIT-069`, `TEST-UI-019` |
@@ -688,7 +689,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-052` |
 | `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034`, `TEST-UNIT-051` |
-| `REQ-NFR-003` — Performance budgets | Must | `TEST-PERF-001`, `TEST-PERF-002`, `TEST-PERF-003` |
+| `REQ-NFR-003` — Performance budgets | Must | `TEST-PERF-001`, `TEST-PERF-002`, `TEST-PERF-003`, `TEST-UNIT-093` |
 | `REQ-NFR-004` — Resilience | Must | `TEST-CONTRACT-001`, `TEST-CONTRACT-003`, `TEST-CONTRACT-004`, `TEST-CONTRACT-005`, `TEST-UNIT-001` |
 | `REQ-NFR-005` — Verification depth | Must | All `TEST-UNIT-###`, `TEST-CONTRACT-###`, `TEST-INT-###`, `TEST-UI-###` ids in this document, including the test-first discipline check `TEST-UNIT-041`, the Kotlin→Swift parity check `TEST-UNIT-042`, the no-network guard `TEST-UNIT-024` and the live probes `TEST-CONTRACT-006` |
 | `REQ-NFR-006` — Reproducible builds | Must | `TEST-UNIT-014` (exact pins, single catalog/BOM, and — after `TASK-018` — the `VERSION` single source) |
@@ -702,12 +703,12 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-PLAT-004` — Android before iOS, per-platform DoD | Must | `TEST-UNIT-019` |
 | `REQ-PLAT-005` — Offline usability, no account | Must | `TEST-UNIT-009`, `TEST-UNIT-010`, `TEST-UNIT-037`, `TEST-INT-001`, `TEST-UI-011` |
 | `REQ-UX-001` — Single appearance | Must | `TEST-UI-012` |
-| `REQ-UX-002` — Design tokens from the spec | Must | `TEST-UNIT-035` |
+| `REQ-UX-002` — Design tokens from the spec | Must | `TEST-UNIT-035`, `TEST-UI-036`, `TEST-UI-040` |
 | `REQ-UX-003` — Text contrast | Must | `TEST-A11Y-002` |
 | `REQ-UX-004` — Touch target sizes | Must | `TEST-A11Y-003` |
 | `REQ-UX-005` — Status not by colour alone | Must | `TEST-UI-013`, `TEST-A11Y-004` |
 | `REQ-UX-006` — Text scaling and grid collapse | Must | `TEST-UI-014`, `TEST-A11Y-005` |
-| `REQ-UX-007` — Reduce Motion and Reduce Transparency | Must | `TEST-UI-015`, `TEST-A11Y-006` |
+| `REQ-UX-007` — Reduce Motion and Reduce Transparency | Must | `TEST-UI-015`, `TEST-A11Y-006`, `TEST-UNIT-091`, `TEST-UNIT-092` |
 | `REQ-UX-008` — Identical copy on both platforms | Must | `TEST-UNIT-036` (the verifier proved on controlled inputs by `TASK-041`; the apps' real resources are wired by `TASK-013`/`TASK-060`, `CONF-70`), `TEST-UNIT-082` (every plural form, `DEC-132`) |
 | `REQ-UX-009` — Loading, empty, stale, error and partial states | Must | `TEST-UI-016` |
 | `REQ-REL-001` — Cache keyed by complete request identity | Must | `TEST-UNIT-020` |
@@ -785,6 +786,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-114` (P2-B iOS fidelity): `TEST-UNIT-090`…`093` and `TEST-UI-036`…`040` are implemented and traced in §3.2 and §16; every iOS screen baseline and the empty-state component baseline are re-recorded after comparison with their Figma exports, Discovery's inside a navigation stack so the system large title is drawn, and a Settings screen baseline is added. | `TASK-114`, `LOG-0140` |
 | 2026-10-05 | `TASK-113` (P2-A Android fidelity): `TEST-UNIT-085`, `TEST-UNIT-086` and `TEST-UI-028`…`TEST-UI-034` are implemented and traced in §3.2 and §16; every Android screenshot baseline is re-recorded after comparison with its Figma export, and the Discovery snapshots now render on the production Surface. | `TASK-113`, `LOG-0139` |
 | 2026-10-05 | `TASK-112` (P1 of the code-review remediation): `TEST-UNIT-076`…`084` and `TEST-UI-021`…`026` are implemented and traced in §3.2 and §16; `TEST-UI-006` moves with the splash gate into `:core:presentation`, so it also runs on the iOS target; `TEST-UI-027` is reserved for the iOS debug diagnostics sheet, blocked by `CONF-90`. | `TASK-112`, `LOG-0138` |
 | 2026-10-05 | `TASK-116`: `TEST-UNIT-072`…`075` allocated and implemented, and traced in §3.2 and §16. `072` pins existing shared behaviour, and was not a red; `073`, `074` and `075` were each observed red before their fix. | `TASK-116`, `DEC-127` |
