@@ -66,6 +66,17 @@ class ImageCacheTest {
     }
 
     @Test
+    fun `TEST-UI-029 given_the_app_image_loader_when_built_then_it_adds_no_crossfade_of_its_own`() {
+        // The design system's portrait cross-fades placeholder → image itself (`UI_SPEC.md` §5.1);
+        // a second crossfade in the loader drew every portrait in twice (`TASK-113`).
+        assertEquals(
+            "TEST-UI-029: the loader's default transition is none",
+            coil3.transition.Transition.Factory.NONE,
+            loader(client()).defaults.extras[coil3.Extras.Key.transitionFactory] ?: coil3.transition.Transition.Factory.NONE,
+        )
+    }
+
+    @Test
     fun `TEST-INT-002 given_a_served_image_when_it_is_loaded_twice_then_the_second_load_issues_no_request`() =
         runTest {
             val loader = loader(client())
