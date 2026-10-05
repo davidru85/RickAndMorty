@@ -6,8 +6,4 @@
 -->
 <resources>
     <string name="app_name" translatable="false">Multiverse Explorer</string>
-
-    <!-- Debug-only panel copy (OBSERVABILITY.md §5): never shipped in a release build. -->
-    <string name="debug_panel_title" translatable="false">Diagnostics</string>
-    <string name="debug_panel_read_only" translatable="false">Read-only: this panel triggers no request and exports nothing.</string>
 </resources>
