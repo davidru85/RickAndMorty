@@ -9,7 +9,6 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
-import coil3.request.crossfade
 import coil3.size.Size
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
@@ -22,8 +21,8 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
  * wires the cache budget), keyed by the image URL verbatim, which is the cache key `IC-016` requires.
  *
  * The requested decode size is the one the component asked for — never above the 300 px the
- * specification allows — and the crossfade is Coil's own, with the design system's duration, so the
- * placeholder and the failure state stay the component's business.
+ * specification allows. The request adds no crossfade: the component's own 200 ms `Crossfade` is the
+ * one transition, and the placeholder and the failure state stay the component's business.
  */
 public class CoilImageSeam(
     private val context: Context,
@@ -41,9 +40,7 @@ public class CoilImageSeam(
                     .Builder(context)
                     .data(url)
                     .size(Size(widthPx, heightPx))
-                    .crossfade(
-                        durationMillis = io.github.davidru85.multiverse.core.designsystem.components.PortraitCrossfadeMillis,
-                    ).build()
+                    .build()
             }
         val painter = rememberAsyncImagePainter(model = request, imageLoader = imageLoader)
         // Coil 3 exposes the load state as a `StateFlow`; reading it as Compose state keeps the

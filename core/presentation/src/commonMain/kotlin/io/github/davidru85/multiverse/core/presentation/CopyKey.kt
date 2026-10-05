@@ -63,6 +63,9 @@ public object CopyKeys {
     public val STATUS_DEAD: CopyKey = key("status_dead")
     public val VALUE_UNKNOWN: CopyKey = key("value_unknown")
 
+    /** A standalone badge's announcement, "Status: <label>" (`UI_SPEC.md` §9, `TASK-113`). */
+    public val STATUS_ANNOUNCEMENT: CopyKey = key("status_announcement")
+
     // The gender labels (`IC-017`, `DEC-131`); an unknown or unrecognised gender is `value_unknown`.
     public val GENDER_FEMALE: CopyKey = key("gender_female")
     public val GENDER_MALE: CopyKey = key("gender_male")
@@ -120,6 +123,9 @@ public object CopyKeys {
     public val SETTINGS_SOUND_TITLE: CopyKey = key("settings_sound_title")
     public val SETTINGS_SOUND_BODY: CopyKey = key("settings_sound_body")
     public val SETTINGS_DATA_SOURCE_TITLE: CopyKey = key("settings_data_source_title")
+
+    /** The Data source row's supporting text (`UI_SPEC.md` §6.5; resolves `CONF-80`). */
+    public val SETTINGS_DATA_SOURCE_BODY: CopyKey = key("settings_data_source_body")
     public val SETTINGS_DATA_REST: CopyKey = key("settings_data_rest")
     public val SETTINGS_DATA_GRAPHQL: CopyKey = key("settings_data_graphql")
     public val SETTINGS_DELETE_ACTION: CopyKey = key("settings_delete_action")

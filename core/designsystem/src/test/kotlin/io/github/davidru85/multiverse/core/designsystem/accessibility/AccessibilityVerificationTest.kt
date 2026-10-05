@@ -127,7 +127,7 @@ class AccessibilityVerificationTest {
         // documented patterns are 172 dp and 224 dp tall, so this asserts the property rather than a
         // literal, and the measured on-device value is carried by the recorded checklist of DEC-023.
         compose
-            .onNodeWithContentDescription("Rick Sanchez, Alive, Human, button")
+            .onNodeWithContentDescription("Rick Sanchez, Alive, Human")
             .assertHeightIsAtLeast(48.dp)
     }
 
@@ -155,9 +155,9 @@ class AccessibilityVerificationTest {
         }
         compose.waitForIdle()
 
-        val matches = compose.onAllNodesWithContentDescription("Rick Sanchez, Alive, Human, button").fetchSemanticsNodes()
+        val matches = compose.onAllNodesWithContentDescription("Rick Sanchez, Alive, Human").fetchSemanticsNodes()
         assertEquals("the card is one merged node, announced once", 1, matches.size)
-        val node = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human, button")
+        val node = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human")
         node.assertIsDisplayed()
         assertEquals("the card exposes the button role", Role.Button, node.fetchSemanticsNode().config[SemanticsProperties.Role])
     }
@@ -353,7 +353,7 @@ class AccessibilityVerificationTest {
         }
         compose.waitForIdle()
 
-        val node = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human, button").fetchSemanticsNode()
+        val node = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human").fetchSemanticsNode()
         assertTrue(
             "without a callback the card carries no click action, so it is not an interactive target",
             SemanticsActions.OnClick !in node.config,

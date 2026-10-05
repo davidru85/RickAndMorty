@@ -47,6 +47,7 @@
 "nav_settings" = "Ajustes";
 "search_characters" = "Buscar personajes";
 "settings_data_graphql" = "GraphQL";
+"settings_data_source_body" = "Cómo obtiene la app los personajes";
 "settings_data_rest" = "API REST";
 "settings_data_source_title" = "Fuente de datos";
 "settings_delete_action" = "Borrar favoritos";
@@ -63,5 +64,6 @@
 "splash_wordmark_sub" = "EXPLORER";
 "state_stale_banner" = "Mostrando resultados guardados";
 "status_alive" = "Vivo";
+"status_announcement" = "Estado: %1$@";
 "status_dead" = "Muerto";
 "value_unknown" = "Desconocido";

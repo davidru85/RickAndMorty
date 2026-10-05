@@ -3,12 +3,15 @@ package io.github.davidru85.multiverse.app.navigation
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 
 /**
@@ -51,6 +54,18 @@ public object PortraitMotion {
             fadeIn(tween(REDUCED_MOTION_CROSSFADE_MILLIS)) to fadeOut(tween(REDUCED_MOTION_CROSSFADE_MILLIS))
         } else {
             fadeIn(tween(TRANSITION_MILLIS, easing = Easing)) to fadeOut(tween(TRANSITION_MILLIS, easing = Easing))
+        }
+
+    /**
+     * How the navigation bar leaves for the Detail and comes back (Figma `21:1217`): it shrinks and
+     * grows from its top edge with the destination change, or, with Reduce Motion, at once.
+     */
+    public fun barTransition(reduceMotion: Boolean): Pair<EnterTransition, ExitTransition> =
+        if (reduceMotion) {
+            EnterTransition.None to ExitTransition.None
+        } else {
+            expandVertically(tween(TRANSITION_MILLIS, easing = Easing), expandFrom = Alignment.Top) to
+                shrinkVertically(tween(TRANSITION_MILLIS, easing = Easing), shrinkTowards = Alignment.Top)
         }
 }
 

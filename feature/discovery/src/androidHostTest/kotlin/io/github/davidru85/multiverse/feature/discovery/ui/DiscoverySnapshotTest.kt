@@ -1,9 +1,11 @@
 package io.github.davidru85.multiverse.feature.discovery.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,7 +18,9 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
@@ -74,7 +78,7 @@ class DiscoverySnapshotTest {
         }
 
     /** The illustration the empty and error surfaces draw; transparent, so it performs no I/O. */
-    private val illustration: Painter = ColorPainter(Color.Transparent)
+    private val illustration: Painter = ColorPainter(Color.White)
 
     /** The three cards the `Content` variants render, matching the fixture shapes of the module. */
     private val cards =
@@ -165,14 +169,17 @@ class DiscoverySnapshotTest {
         val gridHolder = mutableStateOf(LazyStaggeredGridState(first.firstVisibleItemIndex))
         compose.setContent {
             MultiverseTheme {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    DiscoveryScreen(
-                        state = holder.value,
-                        onIntent = {},
-                        seam = seam,
-                        illustration = illustration,
-                        gridState = gridHolder.value,
-                    )
+                // The shell provides the portal mark; a stand-in shows where the empty and error states draw it.
+                CompositionLocalProvider(LocalPortalMark provides illustration) {
+                    // The shell's own Surface, so the baseline shows the screen as the app draws it.
+                    Box(modifier = Modifier.fillMaxSize().background(MultiverseColors.surface)) {
+                        DiscoveryScreen(
+                            state = holder.value,
+                            onIntent = {},
+                            seam = seam,
+                            gridState = gridHolder.value,
+                        )
+                    }
                 }
             }
         }

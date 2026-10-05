@@ -48,8 +48,14 @@ kotlin {
      * `CopyResolver.copy(...)` cannot resolve in `TEST-UI-017`. The convention plugin already created
      * the compilation, so it is configured here rather than created again; `compilations.withType` is
      * the plugin's documented way to do that.
+     *
+     * `androidResources.enable` is `false` for a multiplatform library by default; it is enabled so the
+     * module's own bundled row glyphs under `androidMain/res/drawable` ship (`TASK-113`).
      */
     extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget> {
+        androidResources {
+            enable = true
+        }
         compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java).configureEach {
             isIncludeAndroidResources = true
         }
@@ -120,6 +126,8 @@ kotlin {
             // geometry types it returns.
             implementation(libs.androidx.compose.ui.test)
             implementation(libs.androidx.compose.ui.geometry)
+            // The layout case measures heights and widths in `Dp` (`TEST-UI-033`).
+            implementation(libs.androidx.compose.ui.unit)
             // The JUnit 4 runner adapter, the concurrency runtime the cases use, and Robolectric's
             // annotation and shadow artifacts, each declared where it is used instead of reached
             // transitively (`DEC-077`).

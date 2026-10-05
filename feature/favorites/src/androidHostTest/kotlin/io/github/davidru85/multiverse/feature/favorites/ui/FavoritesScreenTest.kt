@@ -134,12 +134,12 @@ class FavoritesScreenTest {
             onCharacterSelected = { selected = it },
         )
 
-        compose.onNodeWithText("Rick Sanchez").assertIsDisplayed()
-        compose.onNodeWithText("Morty Smith").assertIsDisplayed()
-        // The status is announced as a text label, never by colour alone (REQ-UX-005).
-        compose.onNodeWithContentDescription(copy("status_dead")).assertIsDisplayed()
+        // Each card is one node whose sentence names the character, its status and its species, so the
+        // status is announced as words, never by colour alone (REQ-UX-005, TEST-UI-029).
+        compose.onNodeWithContentDescription("Rick Sanchez", substring = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Morty Smith, ${copy("status_dead")}", substring = true).assertIsDisplayed()
 
-        compose.onNodeWithContentDescription("Rick Sanchez, ${copy("status_alive")}, Human, button").performClick()
+        compose.onNodeWithContentDescription("Rick Sanchez, ${copy("status_alive")}, Human").performClick()
         compose.runOnIdle {
             assert(selected == rick) { "TEST-UI-005: tapping a card hands that card to the shell's navigation callback" }
         }
@@ -173,7 +173,7 @@ class FavoritesScreenTest {
         )
 
         compose
-            .onNodeWithContentDescription("Rick Sanchez, ${copy("status_alive")}, ${copy("value_unknown")}, button")
+            .onNodeWithContentDescription("Rick Sanchez, ${copy("status_alive")}, ${copy("value_unknown")}")
             .assertIsDisplayed()
     }
 

@@ -133,7 +133,7 @@ class CharacterPortraitTest {
     }
 
     @Test
-    fun `TEST-UI-004 given_a_card_when_it_renders_then_its_one_merged_node_names_name_status_species_and_button`() {
+    fun `TEST-UI-004 given_a_card_when_it_renders_then_its_one_merged_node_names_name_status_and_species`() {
         val seam = RecordingSeam(ImageSeamResult.Loading)
         compose.setContent {
             MultiverseTheme {
@@ -150,6 +150,6 @@ class CharacterPortraitTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human, button").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human").assertIsDisplayed()
     }
 }

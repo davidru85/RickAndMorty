@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -75,7 +76,7 @@ class DiscoveryBannerTest {
     fun `TEST-UI-019 given_a_failed_append_over_content_when_rendered_then_its_message_and_a_working_retry_show`() {
         val intents = render(content(contentFailure = ApiFailure.Offline))
 
-        compose.onNodeWithText("Rick Sanchez").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Rick Sanchez", substring = true).assertIsDisplayed()
         compose.onNodeWithText("You're offline. Reconnect to continue exploring the multiverse.").assertIsDisplayed()
         compose.onNodeWithText("Retry").performClick()
         compose.waitForIdle()

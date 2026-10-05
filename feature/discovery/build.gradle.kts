@@ -49,7 +49,12 @@ kotlin {
     // the module's committed host-test manifest (the `androidx.activity.ComponentActivity` the Compose
     // rule hosts its content in) and the Android copy set `:core:designsystem` ships are merged into
     // the packaged manifest and resource APK the host run is pointed at (`TEST-UI-003`).
+    // `androidResources.enable` is `false` for a multiplatform library by default; it is enabled so the
+    // module's own bundled search and check glyphs under `androidMain/res/drawable` ship (`TASK-113`).
     extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget> {
+        androidResources {
+            enable = true
+        }
         compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java).configureEach {
             isIncludeAndroidResources = true
         }
@@ -103,8 +108,11 @@ kotlin {
             // The grid and the scroll container compose over `foundation-layout` primitives, which the
             // module uses (`DEC-077`).
             implementation(libs.androidx.compose.foundation.layout)
-            // The `SharedTransitionLayout` the screen composes for the card transition (`DEC-077`).
+            // The search field's animated colour and the grid's item animations use the animation
+            // primitives and the `animation` composables, which the module uses rather than exposes
+            // (`DEC-077`).
             implementation(libs.androidx.compose.animation.core)
+            implementation(libs.androidx.compose.animation)
             // Material 3 components are the screen's own composition, not its exposed surface; the
             // design system exports the alpha, so the feature never pins it (ADR-0008 rule 2).
             implementation(libs.androidx.compose.material3)

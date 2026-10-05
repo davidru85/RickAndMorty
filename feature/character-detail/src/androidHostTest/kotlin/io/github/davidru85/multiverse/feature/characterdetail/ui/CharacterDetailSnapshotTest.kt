@@ -113,6 +113,7 @@ class CharacterDetailSnapshotTest {
     private fun loading(): CharacterDetailUiState =
         CharacterDetailUiState(
             header = header,
+            gender = CopyKeys.GENDER_MALE,
             episodeCount = 51,
             dimension = "C-137",
             info =
@@ -132,6 +133,7 @@ class CharacterDetailSnapshotTest {
     private fun content(): CharacterDetailUiState =
         CharacterDetailUiState(
             header = header,
+            gender = CopyKeys.GENDER_MALE,
             episodeCount = 51,
             dimension = "C-137",
             info =

@@ -12,7 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -34,13 +37,16 @@ public enum class StatusTone { Alive, Dead, Unknown }
  * Container Highest at 90 %, overlaid at (10, 10) on a card.
  *
  * Status is never colour-only (`REQ-UX-005`): the dot always carries its text, and the whole pill is
- * one semantics node that announces "Status: <label>" rather than reading the dot.
+ * one semantics node that reads [announcement] — the caller's resolved "Status: <label>" sentence
+ * (`UI_SPEC.md` §9) — rather than the dot. Inside a card the card's own sentence names the status, so
+ * the card clears the badge's node. The Alive dot glows (`UI_SPEC.md` §4.1).
  */
 @Composable
 public fun StatusBadge(
     tone: StatusTone,
     label: String,
     modifier: Modifier = Modifier,
+    announcement: String = label,
 ) {
     val dot = tone.dotColor()
     Row(
@@ -49,7 +55,7 @@ public fun StatusBadge(
                 .clip(CircleShape)
                 .background(MultiverseColors.surfaceContainerHighest.copy(alpha = 0.9f))
                 .padding(horizontal = 10.dp, vertical = 5.dp)
-                .clearAndSetSemantics { contentDescription = label },
+                .clearAndSetSemantics { contentDescription = announcement },
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -57,6 +63,7 @@ public fun StatusBadge(
             modifier =
                 Modifier
                     .size(8.dp)
+                    .then(if (tone == StatusTone.Alive) Modifier.drawBehind { drawGlow(dot) } else Modifier)
                     .clip(CircleShape)
                     .background(dot),
         )
@@ -67,6 +74,15 @@ public fun StatusBadge(
             color = MultiverseColors.onSurface,
         )
     }
+}
+
+/** A soft halo around the Alive dot: the dot's colour fading out to twice its radius. */
+private fun DrawScope.drawGlow(color: Color) {
+    val radius = size.minDimension
+    drawCircle(
+        brush = Brush.radialGradient(listOf(color.copy(alpha = 0.55f), Color.Transparent), center = center, radius = radius),
+        radius = radius,
+    )
 }
 
 /** The dot colour of `UI_SPEC.md` §3.2's status family. */

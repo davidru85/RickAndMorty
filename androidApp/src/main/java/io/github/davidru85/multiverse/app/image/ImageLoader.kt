@@ -6,8 +6,6 @@ import coil3.PlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
-import coil3.request.crossfade
-import io.github.davidru85.multiverse.core.designsystem.components.PortraitCrossfadeMillis
 import okio.Path.Companion.toOkioPath
 import io.ktor.client.HttpClient
 
@@ -48,7 +46,9 @@ public fun imageLoader(
                 .directory(diskCacheDirectory.toOkioPath())
                 .maxSizeBytes(diskCacheBytes)
                 .build()
-        }.crossfade(PortraitCrossfadeMillis)
+        }
+        // No crossfade here: the design system's portrait cross-fades placeholder → image itself,
+        // and a second one drew every portrait in twice (`UI_SPEC.md` §5.1, `TASK-113`).
         .build()
 
 /** The directory the image disk cache uses, inside the app's private storage (`SECURITY.md` §3). */

@@ -1,5 +1,7 @@
 package io.github.davidru85.multiverse.core.designsystem.image
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -91,9 +93,12 @@ class CharacterAccentPolicyTest {
     fun `TEST-UNIT-035 given_a_portrait_that_cannot_be_read_when_the_accent_resolves_then_it_falls_back_to_portal_green`() =
         runTest {
             val accent = policy(pixelsOf()).accentFor("missing")
+            // `UI_SPEC.md` §5.4 step 1 falls back to Portal Green as the **source** colour, so the
+            // container is its tone 30 like every other card's — never the raw, bright token under
+            // On Surface text (`TASK-113`).
             assertEquals(
-                "an unreadable portrait falls back to the Portal Green token, never an invented colour",
-                MultiverseBrandColors.portalGreen,
+                "an unreadable portrait falls back to Portal Green's tone-30 container, never an invented colour",
+                Color(TonalPalette.container(MultiverseBrandColors.portalGreen.toArgb())),
                 accent,
             )
         }

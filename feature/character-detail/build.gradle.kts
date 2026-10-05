@@ -115,6 +115,11 @@ kotlin {
             // Text and unit types are Compose's own; the module uses them (`DEC-077`).
             implementation(libs.androidx.compose.ui.text)
             implementation(libs.androidx.compose.ui.unit)
+            // The favourite action's animated heart and the hero's parallax use the animation
+            // primitives; the shared portrait transition's scopes come from `animation`, which the
+            // screen's public surface names, so that edge is `api` (`DEC-077`, `DEC-135`).
+            implementation(libs.androidx.compose.animation.core)
+            api(libs.androidx.compose.animation)
         }
         commonTest.dependencies {
             // `DEC-089`: the harness is a test source set's dependency only.

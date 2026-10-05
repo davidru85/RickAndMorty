@@ -13,6 +13,7 @@ import io.ktor.http.headersOf
 import io.ktor.http.HttpHeaders
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.test.runTest
+import coil3.request.transitionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -62,6 +63,17 @@ class ImageCacheTest {
             context = context,
             client = client,
             diskCacheDirectory = imageCacheDirectory(context),
+        )
+    }
+
+    @Test
+    fun `TEST-UI-029 given_the_app_image_loader_when_built_then_it_adds_no_crossfade_of_its_own`() {
+        // The design system's portrait cross-fades placeholder → image itself (`UI_SPEC.md` §5.1);
+        // a second crossfade in the loader drew every portrait in twice (`TASK-113`).
+        assertEquals(
+            "TEST-UI-029: the loader's default transition is none",
+            coil3.transition.Transition.Factory.NONE,
+            loader(client()).defaults.extras[coil3.Extras.Key.transitionFactory] ?: coil3.transition.Transition.Factory.NONE,
         )
     }
 

@@ -571,6 +571,7 @@ The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but un
 | `error_message_unknown` | Something went wrong on the way to this dimension. Try again. |
 | `detail_error_inline` | Couldn't load these details. Retry. |
 | `status_alive` · `status_dead` · `value_unknown` | Alive · Dead · Unknown |
+| `status_announcement` | Status: %1$s — a standalone badge's announcement (§9); Spanish "Estado: %1$s" |
 | `gender_female` · `gender_male` · `gender_genderless` | Female · Male · Genderless (`DEC-131`; an unknown gender is `value_unknown`) |
 | `detail_appears_in_episodes` (plural, `DEC-132`) | one: Appears in %d episode · other: Appears in %d episodes |
 

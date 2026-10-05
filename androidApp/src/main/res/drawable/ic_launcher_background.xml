@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The adaptive icon's background layer (`UI_SPEC.md` §10.1, Figma `59:242`, exported as SVG): Space Black
+  with a Cosmic Violet and a Portal Green nebula and sparse stars, full bleed on the 108 dp canvas.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="432"
+    android:viewportHeight="432">
+    <path android:fillColor="#FF07060B" android:pathData="M0,0h432v432h-432Z" />
+    <path android:pathData="M130 370C284.64 370 410 244.64 410 90C410 -64.6397 284.64 -190 130 -190C-24.6397 -190 -150 -64.6397 -150 90C-150 244.64 -24.6397 370 130 370Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="130" android:centerY="90" android:gradientRadius="280">
+                <item android:offset="0" android:color="#997B4DFF" />
+                <item android:offset="0.45" android:color="#457B4DFF" />
+                <item android:offset="1" android:color="#007B4DFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M370 610C491.503 610 590 511.503 590 390C590 268.497 491.503 170 370 170C248.497 170 150 268.497 150 390C150 511.503 248.497 610 370 610Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="370" android:centerY="390" android:gradientRadius="220">
+                <item android:offset="0" android:color="#5297CE4C" />
+                <item android:offset="0.45" android:color="#2597CE4C" />
+                <item android:offset="1" android:color="#0097CE4C" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#90FFFFFF" android:pathData="M329.311,375.852a1.000,1.000 0 1,0 2.001,0a1.000,1.000 0 1,0 -2.001,0Z" />
+    <path android:fillColor="#60FFFFFF" android:pathData="M258.398,428.071a1.282,1.282 0 1,0 2.564,0a1.282,1.282 0 1,0 -2.564,0Z" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M271.534,24.529a1.398,1.398 0 1,0 2.796,0a1.398,1.398 0 1,0 -2.796,0Z" />
+    <path android:fillColor="#50FFFFFF" android:pathData="M313.639,54.679a1.675,1.675 0 1,0 3.351,0a1.675,1.675 0 1,0 -3.351,0Z" />
+    <path android:fillColor="#73FFFFFF" android:pathData="M69.838,23.488a1.141,1.141 0 1,0 2.282,0a1.141,1.141 0 1,0 -2.282,0Z" />
+    <path android:fillColor="#84FFFFFF" android:pathData="M182.402,161.347a2.151,2.151 0 1,0 4.302,0a2.151,2.151 0 1,0 -4.302,0Z" />
+    <path android:fillColor="#9DFFFFFF" android:pathData="M28.298,404.460a2.154,2.154 0 1,0 4.309,0a2.154,2.154 0 1,0 -4.309,0Z" />
+    <path android:fillColor="#41FFFFFF" android:pathData="M313.201,52.535a2.104,2.104 0 1,0 4.208,0a2.104,2.104 0 1,0 -4.208,0Z" />
+    <path android:fillColor="#B2FFFFFF" android:pathData="M430.598,199.502a1.767,1.767 0 1,0 3.535,0a1.767,1.767 0 1,0 -3.535,0Z" />
+    <path android:fillColor="#95FFFFFF" android:pathData="M382.156,352.119a1.428,1.428 0 1,0 2.856,0a1.428,1.428 0 1,0 -2.856,0Z" />
+    <path android:fillColor="#A8FFFFFF" android:pathData="M273.696,77.257a1.282,1.282 0 1,0 2.563,0a1.282,1.282 0 1,0 -2.563,0Z" />
+    <path android:fillColor="#8AFFFFFF" android:pathData="M227.406,116.213a2.023,2.023 0 1,0 4.046,0a2.023,2.023 0 1,0 -4.046,0Z" />
+    <path android:fillColor="#44FFFFFF" android:pathData="M71.124,43.731a2.090,2.090 0 1,0 4.181,0a2.090,2.090 0 1,0 -4.181,0Z" />
+    <path android:fillColor="#7FFFFFFF" android:pathData="M333.955,237.742a2.490,2.490 0 1,0 4.980,0a2.490,2.490 0 1,0 -4.980,0Z" />
+    <path android:fillColor="#62FFFFFF" android:pathData="M367.538,41.661a1.325,1.325 0 1,0 2.651,0a1.325,1.325 0 1,0 -2.651,0Z" />
+    <path android:fillColor="#99FFFFFF" android:pathData="M257.031,366.297a2.497,2.497 0 1,0 4.993,0a2.497,2.497 0 1,0 -4.993,0Z" />
+</vector>

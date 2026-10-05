@@ -39,6 +39,7 @@
     <string name="settings_sound_title">Sounds</string>
     <string name="settings_sound_body">Play sound effects in the app</string>
     <string name="settings_data_source_title">Data source</string>
+    <string name="settings_data_source_body">How the app fetches characters</string>
     <string name="settings_data_rest">REST API</string>
     <string name="settings_data_graphql">GraphQL</string>
     <string name="settings_delete_action">Delete favorites</string>
@@ -84,6 +85,7 @@
     <!-- Status and value presentation (IC-017) -->
     <string name="status_alive">Alive</string>
     <string name="status_dead">Dead</string>
+    <string name="status_announcement">Status: %1$s</string>
     <string name="value_unknown">Unknown</string>
 
     <!-- Gender presentation (IC-017, DEC-131) -->

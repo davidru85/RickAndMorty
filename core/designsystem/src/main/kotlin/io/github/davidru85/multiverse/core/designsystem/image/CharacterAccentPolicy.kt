@@ -1,7 +1,11 @@
 package io.github.davidru85.multiverse.core.designsystem.image
 
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import io.github.davidru85.multiverse.core.designsystem.color.AccentPipeline
+import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
@@ -27,8 +31,9 @@ public fun interface PortraitPixels {
  * - the computation runs **off the main thread**, on the injected [dispatcher] — never on the caller's;
  * - the result is memoised **once per URL** in a bounded LRU, so extraction happens at most once per
  *   character per process and the cache evicts in a documented order;
- * - a portrait that cannot be read, or one with nothing scoreable, falls back to **Portal Green**,
- *   which is a token rather than an invented colour.
+ * - a portrait that cannot be read, or one with nothing scoreable, falls back to **Portal Green** as
+ *   the source colour — its tone-30 container, like every other card's — which is a token rather than
+ *   an invented colour, and never the bright token itself under On Surface text.
  *
  * The colour maths lives in [AccentPipeline], which is platform-free, so this class is only the policy:
  * where the work runs and what is remembered.
@@ -60,7 +65,7 @@ public class CharacterAccentPolicy(
             withContext(dispatcher) {
                 val sampled = pixels.pixelsFor(imageUrl)
                 val container = sampled?.let(AccentPipeline::containerFor)
-                container?.let { Color(it) } ?: MultiverseBrandColors.portalGreen
+                Color(container ?: TonalPalette.container(MultiverseBrandColors.portalGreen.toArgb()))
             }
 
         // The counter is part of the memo's state, so it is updated under the same lock that inserts
@@ -91,3 +96,9 @@ public class CharacterAccentPolicy(
         public const val DEFAULT_CAPACITY: Int = 64
     }
 }
+
+/**
+ * The accent policy the shell provides for every card (`UI_SPEC.md` §5.4, `DEC-097`); `null` outside the
+ * shell, where a card keeps Surface Container High.
+ */
+public val LocalCharacterAccentPolicy: ProvidableCompositionLocal<CharacterAccentPolicy?> = staticCompositionLocalOf { null }

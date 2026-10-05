@@ -37,6 +37,10 @@ kotlin {
             // The illustration the caller passes in is a `Painter`, so `ui-graphics` is part of the
             // module's public surface.
             api(libs.androidx.compose.ui.graphics)
+            // The screen title's padding and its units are Compose's own; the module uses them
+            // (`DEC-077`).
+            implementation(libs.androidx.compose.foundation.layout)
+            implementation(libs.androidx.compose.ui.unit)
         }
     }
 }

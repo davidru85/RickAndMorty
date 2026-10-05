@@ -3,11 +3,12 @@ package io.github.davidru85.multiverse.core.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -91,6 +92,9 @@ public fun Cookie9Illustration(
     containerColor: Color = MultiverseColors.primaryContainer,
     size: Dp = 160.dp,
     iconSize: Dp = 64.dp,
+    /** The glyph's tint: the container's matching "on" colour, or `Color.Unspecified` for a brand mark. */
+    iconTint: Color = MultiverseColors.onPrimaryContainer,
+    iconAlpha: Float = 1f,
 ) {
     Box(
         modifier = modifier.size(size).clip(Cookie9).background(containerColor),
@@ -99,13 +103,13 @@ public fun Cookie9Illustration(
         Icon(
             painter = icon,
             contentDescription = contentDescription,
-            tint = MultiverseColors.onPrimaryContainer,
-            modifier = Modifier.size(iconSize),
+            tint = iconTint,
+            modifier = Modifier.size(iconSize).alpha(iconAlpha),
         )
     }
 }
 
-/** A 48 dp circular glyph well, the smaller illustration of a list item or a row. */
+/** A 48 dp glyph well, corner 16 (`UI_SPEC.md` §4.1, Figma `21:1271`): the leading illustration of a list item. */
 @Composable
 public fun SectionGlyph(
     icon: Painter,
@@ -115,7 +119,7 @@ public fun SectionGlyph(
     iconTint: Color = MultiverseColors.onSecondaryContainer,
 ) {
     Box(
-        modifier = modifier.size(48.dp).clip(CircleShape).background(containerColor),
+        modifier = modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
         Icon(painter = icon, contentDescription = contentDescription, tint = iconTint, modifier = Modifier.size(24.dp))
