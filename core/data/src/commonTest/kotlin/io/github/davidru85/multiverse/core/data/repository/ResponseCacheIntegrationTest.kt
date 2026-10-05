@@ -3,6 +3,8 @@ package io.github.davidru85.multiverse.core.data.repository
 import io.github.davidru85.multiverse.core.data.cache.CachePolicy
 import io.github.davidru85.multiverse.core.data.cache.ResponseCache
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
+import io.github.davidru85.multiverse.core.data.remote.RemoteProtocolSource
+import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
@@ -18,6 +20,8 @@ import io.github.davidru85.multiverse.testing.FixedRandom
 import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -153,6 +157,33 @@ class ResponseCacheIntegrationTest {
             val graphQl = pageCacheKey(RemoteProtocol.GraphQl, CharacterFilter(), 1)
 
             assertTrue(rest != graphQl, "TEST-UNIT-020: the protocol is part of the identity (AC-REQ-FUNC-034-4)")
+        }
+
+    @Test
+    fun `TEST-UNIT-020 given_two_graphql_details_when_both_are_loaded_then_each_is_its_own_character`() =
+        TestTime.run {
+            // `GAP-035`: a GraphQL request carries the id in its body, so a key built from the path alone
+            // gave every GraphQL detail one entry, and the first detail cached answered for every other.
+            val remote = FakeRemoteSource(catalogue)
+            val graphQl =
+                object : RemoteProtocolSource {
+                    override suspend fun current(): RemoteProtocol = RemoteProtocol.GraphQl
+
+                    override fun changes(): Flow<RemoteProtocol> = emptyFlow()
+                }
+            val repository =
+                RemoteCharacterRepository(remote, remote, backgroundScope, FixedRandom(0.5), logger, cache(), graphQl)
+
+            val first = repository.details(CharacterId("1"), enrich = true)
+            val second = repository.details(CharacterId("2"), enrich = true)
+
+            assertEquals("Rick 1", assertIs<DataResult.Success<CharacterDetails>>(first).value.name)
+            assertEquals(
+                "Rick 2",
+                assertIs<DataResult.Success<CharacterDetails>>(second).value.name,
+                "TEST-UNIT-020: a GraphQL detail is keyed by its id, so it never answers for another (AC-REQ-REL-001-1)",
+            )
+            assertEquals(2, storage.keys.distinct().size, "TEST-UNIT-020: and the two details are two entries")
         }
 
     @Test

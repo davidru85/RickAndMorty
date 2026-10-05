@@ -1208,6 +1208,31 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - The icon as drawn on a Home Screen: the installed app landed on the simulator's second page, and there is no gesture automation here.
   - The layered Icon Composer variant, which is not built (`DEC-150`).
 
+### LOG-0147 · 2026-10-05 · `TASK-123`: a GraphQL detail is keyed by its id (`GAP-035`), and the owner's decisions on `TASK-120`'s findings
+
+- **Event:** the owner authorized `TASK-123`…`TASK-125` (`DEC-151`). `TASK-123` resolves `GAP-035`.
+- **Decisions:**
+  - `GAP-035` is fixed in `core/data`.
+  - `GAP-036` gets the rule "reduce the value in steps to a floor until it fits, never breaking a word" (`TASK-124`).
+  - `CONF-92` option (a): the size check joins CI's `app-artifacts` job (`TASK-125`).
+- **The change:**
+  - `CacheKeyBuilder.details` adds the character id to a GraphQL detail key. GraphQL posts every request to `/graphql` and names the character in the body, so the key had held only the path and the `enrich` flag.
+  - REST keys are unchanged, because the id is already in their path.
+  - `API_SPECS.md` §7.2 now lists the GraphQL key's parameters per operation.
+- **Red, then green:**
+  - The new `TEST-UNIT-020` case loads details 1 and 2 over GraphQL through the real repository and cache.
+  - It failed with `expected:<Rick [2]> but was:<Rick [1]>`.
+  - With the id in the key, it passes on the Android host and JVM targets, and the two details are two entries.
+- **Effect on installed apps:** entries cached under the old key are never read again and age out under the cache's limits. The next GraphQL Detail of each character is fetched once and then cached under its own key.
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-151`), `docs/API_SPECS.md` §7.2, `docs/TESTING.md`, `docs/DOCUMENTATION_AUDIT.md` (`GAP-035`, `GAP-036`, `CONF-92`), `docs/BACKLOG.md` (`TASK-123`…`TASK-125`), `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 264 test reports hold 1351 tests and 0 failures. The new case ran on the Android host, JVM and iOS simulator targets.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+  - **On the OnePlus A3003 (debug build)**, the data source was confirmed as GraphQL both in Settings and in the stored preference (`remote_protocol = graphql`).
+    - Rick's Detail shows "Masculino", 51 episodes and the GraphQL-only enriched dimension "Dimension C-137". Morty's shows "Masculino" and 51 episodes.
+    - The cache holds two new detail entries, one for id 1 and one for id 2.
+- **Not verified:** the Xcode suite, since no Swift changed. The shared code's iOS target ran the new case in the gate.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
