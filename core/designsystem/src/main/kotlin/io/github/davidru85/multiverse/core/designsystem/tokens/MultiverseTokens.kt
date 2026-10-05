@@ -125,6 +125,9 @@ public object MultiverseComponentDimensions {
     /** The stat tile's least height and vertical padding, and a stat list row's least height. */
     public val statTileMinHeight: Dp = 76.dp
     public val statTilePaddingVertical: Dp = 10.dp
+
+    /** The step a stat value's size takes down toward its Title Medium floor to keep its words whole (`DEC-151`). */
+    public val statValueSizeStep: TextUnit = 2.sp
     public val statRowMinHeight: Dp = 72.dp
 
     /** The character card's inset, the portrait heights of the Regular and Tall variants, and its rest elevation. */

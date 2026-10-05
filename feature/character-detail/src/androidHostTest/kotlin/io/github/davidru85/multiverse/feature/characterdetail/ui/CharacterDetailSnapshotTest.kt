@@ -149,6 +149,12 @@ class CharacterDetailSnapshotTest {
             loadState = LoadState.Content,
         )
 
+    /**
+     * The loaded screen over GraphQL, whose enriched dimension is the long "Dimension C-137": the tile
+     * steps its size down so no word breaks (`UI_SPEC.md` §4.1, `DEC-151`, `GAP-036`).
+     */
+    private fun longDimension(): CharacterDetailUiState = content().copy(dimension = "Dimension C-137")
+
     /** The failure with the header retained: the inline retry replaces the info list only. */
     private fun errorWithHeader(): CharacterDetailUiState =
         CharacterDetailUiState(
@@ -212,6 +218,18 @@ class CharacterDetailSnapshotTest {
     }
 
     @Test
+    @Config(sdk = [36], qualifiers = "en-w412dp-h1600dp-notnight")
+    fun `TEST-UI-016 given_the_system_in_light_when_a_long_dimension_renders_then_it_is_snapshotted`() {
+        capture("detail-long-dimension-light", longDimension())
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-w412dp-h1600dp-night")
+    fun `TEST-UI-016 given_the_system_in_dark_when_a_long_dimension_renders_then_it_is_snapshotted`() {
+        capture("detail-long-dimension-dark", longDimension())
+    }
+
+    @Test
     @Config(sdk = [36], qualifiers = "en-w412dp-h2400dp-notnight")
     fun `TEST-A11Y-005 given_maximum_text_in_light_when_detail_renders_then_it_is_snapshotted`() {
         capture("detail-maximum-text-light", content(), fontScale = 2f)
@@ -229,6 +247,7 @@ class CharacterDetailSnapshotTest {
         listOf(
             "detail-loading",
             "detail-content",
+            "detail-long-dimension",
             "detail-maximum-text",
             "detail-error-with-header",
             "detail-error-without-header",
