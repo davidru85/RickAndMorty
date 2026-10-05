@@ -122,11 +122,14 @@ public object MultiverseComponentDimensions {
     public val badgeGap: Dp = 6.dp
     public val badgeDot: Dp = 8.dp
 
-    /** The stat tile's least height and vertical padding, and a stat list row's least height. */
-    public val statTileMinHeight: Dp = 76.dp
-    public val statTilePaddingVertical: Dp = 10.dp
+    /**
+     * The stat tile's least height and vertical padding (`TASK-133`, `DEC-158`: 56 dp, down from Figma's 76),
+     * and a stat list row's least height.
+     */
+    public val statTileMinHeight: Dp = 56.dp
+    public val statTilePaddingVertical: Dp = 8.dp
 
-    /** The step a stat value's size takes down toward its Title Medium floor to keep its words whole (`DEC-151`). */
+    /** The step a stat value's size takes down toward its Label Large floor to keep its words whole (`DEC-151`, `DEC-158`). */
     public val statValueSizeStep: TextUnit = 2.sp
     public val statRowMinHeight: Dp = 72.dp
 
