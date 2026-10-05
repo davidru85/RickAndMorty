@@ -51,7 +51,8 @@ final class SettingsFidelityTests: XCTestCase {
         // The header is the topmost light thing on the screen; measured in its own 16 pt strip, so the
         // highlight on the panel's rounded corner below it does not count.
         let light = { (red: Int, green: Int, blue: Int) in red > 140 && green > 140 && blue > 140 }
-        let top = try XCTUnwrap(try HostedRendering.matchingPixels(in: image, matches: light).bounds, "the header is painted")
+        let top = try XCTUnwrap(
+            try HostedRendering.matchingPixels(in: image, matches: light).bounds, "the header is painted")
         let header = try HostedRendering.matchingPixels(
             in: image,
             region: CGRect(x: 0, y: top.minY, width: 402, height: 16),

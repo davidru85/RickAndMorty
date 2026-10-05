@@ -17,8 +17,9 @@ final class DetailFidelityTests: XCTestCase {
 
         // The hero's lower part (Figma: the title block spans y 358–479 of the 520 pt hero), clear of
         // the top controls.
-        let title = try HostedRendering.matchingPixels(in: image, region: CGRect(x: 0, y: 300, width: 402, height: 220)) {
-            red, green, blue in red > 200 && green > 200 && blue > 200
+        let heroBottom = CGRect(x: 0, y: 300, width: 402, height: 220)
+        let title = try HostedRendering.matchingPixels(in: image, region: heroBottom) { red, green, blue in
+            red > 200 && green > 200 && blue > 200
         }
         XCTAssertGreaterThan(title.count, 2_000, "the name is painted over the hero, not below it")
     }
@@ -59,14 +60,10 @@ final class DetailFidelityTests: XCTestCase {
         let inside = try HostedRendering.color(in: image, at: CGPoint(x: well.minX + 4, y: well.midY))
         let outside = try HostedRendering.color(in: image, at: CGPoint(x: well.minX - 6, y: well.midY))
         XCTAssertLessThan(
-            distance(corner, outside),
-            distance(corner, inside),
+            corner.distance(to: outside),
+            corner.distance(to: inside),
             "the well's corner is the background, so the well is a circle"
         )
-    }
-
-    private func distance(_ lhs: (red: Int, green: Int, blue: Int), _ rhs: (red: Int, green: Int, blue: Int)) -> Int {
-        abs(lhs.red - rhs.red) + abs(lhs.green - rhs.green) + abs(lhs.blue - rhs.blue)
     }
 
     private func detail(withRows: Bool = true) -> some View {
@@ -81,11 +78,11 @@ final class DetailFidelityTests: XCTestCase {
         var rows: [InfoRowUi] = []
         if withRows {
             rows.append(
-            InfoRowUi(
-                kind: InfoRowKind.origin,
-                copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
-                value: DisplayTextData(value: "Earth (C-137)")
-            )
+                InfoRowUi(
+                    kind: InfoRowKind.origin,
+                    copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
+                    value: DisplayTextData(value: "Earth (C-137)")
+                )
             )
         }
         let state = CharacterDetailUiState(
@@ -97,7 +94,9 @@ final class DetailFidelityTests: XCTestCase {
             isFavorite: false,
             loadState: LoadStateContent.shared
         )
-        return CharacterDetailScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onBack: {}, onShare: {})
-            .environment(\.multiverseGlassPath, .material)
+        return CharacterDetailScreen(
+            state: state, loader: PortraitImageStub(), onIntent: { _ in }, onBack: {}, onShare: {}
+        )
+        .environment(\.multiverseGlassPath, .material)
     }
 }

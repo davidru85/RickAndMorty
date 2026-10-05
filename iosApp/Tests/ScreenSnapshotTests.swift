@@ -31,18 +31,9 @@ final class ScreenSnapshotTests: XCTestCase {
             contentFailure: nil,
             isRefreshing: false
         )
-        // In a navigation stack, as the shell hosts it, so the system large title is drawn (`DEC-138`).
-        record("discovery-grid", dynamicTypeSize: .large) {
-            NavigationStack {
-                DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
-            }
-        }
+        record("discovery-grid", dynamicTypeSize: .large) { discoveryInStack(content) }
         // `AC-REQ-UX-006-1`: at the largest accessibility size the grid is one column.
-        record("discovery-grid-accessibility-text", dynamicTypeSize: .accessibility5) {
-            NavigationStack {
-                DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
-            }
-        }
+        record("discovery-grid-accessibility-text", dynamicTypeSize: .accessibility5) { discoveryInStack(content) }
         let detail = CharacterDetailUiState(
             header: cards[0],
             gender: CopyKeys.shared.GENDER_MALE,
@@ -58,6 +49,10 @@ final class ScreenSnapshotTests: XCTestCase {
         record("detail-accessibility-text", dynamicTypeSize: .accessibility5) {
             detailScreen(detail)
         }
+    }
+
+    /// The other tabs' screens (`UI_SPEC.md` §6.4, §6.5), under the same reference names.
+    func test_TEST_UI_014_tabScreenBaselines() {
         // The designed empty favourites state at the phone width (`UI_SPEC.md` §6.4).
         record("favorites-empty", dynamicTypeSize: .large) {
             FavoritesScreen(
@@ -101,11 +96,7 @@ final class ScreenSnapshotTests: XCTestCase {
                 isRefreshing: false
             )
         }
-        let discovery = { (state: CharacterListUiState) in
-            NavigationStack {
-                DiscoveryScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
-            }
-        }
+        let discovery = { (state: CharacterListUiState) in self.discoveryInStack(state) }
         record("discovery-loading", dynamicTypeSize: .large) {
             discovery(list([], LoadStateLoading.shared, false, false))
         }
@@ -174,6 +165,14 @@ final class ScreenSnapshotTests: XCTestCase {
             testName: "screenBaselines",
             line: line
         )
+    }
+
+    /// Discovery in a navigation stack, as the shell hosts it, so the system large title is drawn
+    /// (`DEC-138`).
+    private func discoveryInStack(_ state: CharacterListUiState) -> some View {
+        NavigationStack {
+            DiscoveryScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+        }
     }
 
     private func detailScreen(_ state: CharacterDetailUiState) -> CharacterDetailScreen {

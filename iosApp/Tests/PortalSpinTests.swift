@@ -9,14 +9,15 @@ import XCTest
 /// ≈900°/s with no restart — the same curve on both platforms — and pulses its opacity instead under
 /// Reduce Motion.
 final class PortalSpinTests: XCTestCase {
-    func test_TEST_UNIT_092_given_the_acceleration_when_the_angle_is_read_then_it_turns_clockwise_to_one_turn_at_1_2_s() {
+    func test_TEST_UNIT_092_given_the_acceleration_when_read_then_it_turns_clockwise_to_one_turn_at_1_2_s() {
         XCTAssertEqual(PortalSpin.angle(elapsed: 0), 0, accuracy: 1e-3)
         XCTAssertGreaterThan(PortalSpin.angle(elapsed: 0.6), 0, "the portal turns clockwise: positive degrees")
-        XCTAssertLessThan(PortalSpin.angle(elapsed: 0.6), 360 * 0.35, "the ease-in has advanced little at mid-acceleration")
+        XCTAssertLessThan(
+            PortalSpin.angle(elapsed: 0.6), 360 * 0.35, "the ease-in has advanced little at mid-acceleration")
         XCTAssertEqual(PortalSpin.angle(elapsed: 1.2), 360, accuracy: 0.5, "one full turn when the acceleration ends")
     }
 
-    func test_TEST_UNIT_092_given_the_end_of_the_acceleration_when_the_speed_is_read_then_it_continues_without_a_jump() {
+    func test_TEST_UNIT_092_given_the_end_of_the_acceleration_when_read_then_the_speed_has_no_jump() {
         let before = (PortalSpin.angle(elapsed: 1.2) - PortalSpin.angle(elapsed: 1.19)) / 0.01
         let after = (PortalSpin.angle(elapsed: 1.21) - PortalSpin.angle(elapsed: 1.2)) / 0.01
         XCTAssertEqual(before, after, accuracy: 60, "the speed is continuous where the acceleration hands over (°/s)")

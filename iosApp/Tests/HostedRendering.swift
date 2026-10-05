@@ -64,7 +64,7 @@ enum HostedRendering {
 
     /// The 8-bit colour of `image` at `point`, in points, so a case can name the spot it samples in the
     /// geometry the specification uses rather than in pixels of a given scale.
-    static func color(in image: UIImage, at point: CGPoint) throws -> (red: Int, green: Int, blue: Int) {
+    static func color(in image: UIImage, at point: CGPoint) throws -> PixelColor {
         let cgImage = try XCTUnwrap(image.cgImage)
         let x = Int(point.x * image.scale)
         let y = Int(point.y * image.scale)
@@ -85,7 +85,7 @@ enum HostedRendering {
             cgImage,
             in: CGRect(x: -x, y: y - cgImage.height + 1, width: cgImage.width, height: cgImage.height)
         )
-        return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
+        return PixelColor(red: Int(pixel[0]), green: Int(pixel[1]), blue: Int(pixel[2]))
     }
 
     /// The bounds, in points, of the pixels of `image` inside `region` (points; the whole image when
@@ -112,9 +112,10 @@ enum HostedRendering {
         )
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         let scale = image.scale
-        let area = region.map {
-            CGRect(x: $0.minX * scale, y: $0.minY * scale, width: $0.width * scale, height: $0.height * scale)
-        } ?? CGRect(x: 0, y: 0, width: width, height: height)
+        let area =
+            region.map {
+                CGRect(x: $0.minX * scale, y: $0.minY * scale, width: $0.width * scale, height: $0.height * scale)
+            } ?? CGRect(x: 0, y: 0, width: width, height: height)
         var count = 0
         var minX = Int.max
         var minY = Int.max
@@ -145,5 +146,17 @@ enum HostedRendering {
         controller.view.setNeedsLayout()
         controller.view.layoutIfNeeded()
         RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+    }
+}
+
+/// One 8-bit RGB sample of a rendered frame.
+struct PixelColor: Equatable {
+    let red: Int
+    let green: Int
+    let blue: Int
+
+    /// The summed per-channel difference to [other]: how far apart two samples are.
+    func distance(to other: PixelColor) -> Int {
+        abs(red - other.red) + abs(green - other.green) + abs(blue - other.blue)
     }
 }

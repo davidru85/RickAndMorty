@@ -12,7 +12,8 @@ import XCTest
 @MainActor
 final class DiscoveryFidelityTests: XCTestCase {
     func test_TEST_UI_037_given_content_when_laid_out_then_the_cards_sit_on_16_pt_margins() throws {
-        let image = try HostedRendering.render(UIHostingController(rootView: discovery(cards: 4, load: LoadStateContent.shared)))
+        let image = try HostedRendering.render(
+            UIHostingController(rootView: discovery(cards: 4, load: LoadStateContent.shared)))
 
         // The stub portraits are solid system green; the cards' outer edges are the grid's margins.
         let cards = try HostedRendering.matchingPixels(in: image) { red, green, blue in
@@ -52,12 +53,14 @@ final class DiscoveryFidelityTests: XCTestCase {
     }
 
     func test_TEST_UI_037_given_an_empty_search_when_rendered_then_the_portal_logo_is_its_illustration() throws {
-        let image = try HostedRendering.render(UIHostingController(rootView: discovery(cards: 0, load: LoadStateEmpty.shared)))
+        let image = try HostedRendering.render(
+            UIHostingController(rootView: discovery(cards: 0, load: LoadStateEmpty.shared)))
 
         // The centre column below the filters, clear of the green glow off the trailing edge; only the
         // dimmed greens of a mark at 40 % count, so the bright "Clear filters" button does not.
-        let logo = try HostedRendering.matchingPixels(in: image, region: CGRect(x: 120, y: 300, width: 162, height: 500)) {
-            red, green, blue in Self.isPortalGreen(red, green, blue) && green < 140
+        let centre = CGRect(x: 120, y: 300, width: 162, height: 500)
+        let logo = try HostedRendering.matchingPixels(in: image, region: centre) { red, green, blue in
+            Self.isPortalGreen(red, green, blue) && green < 140
         }
         XCTAssertGreaterThan(logo.count, 8_000, "the empty search shows the portal logo, not a person symbol")
     }
@@ -69,7 +72,9 @@ final class DiscoveryFidelityTests: XCTestCase {
             .background(Color.black)
         let image = try HostedRendering.render(UIHostingController(rootView: portrait))
 
-        let logo = try HostedRendering.matchingPixels(in: image) { red, green, blue in Self.isPortalGreen(red, green, blue) }
+        let logo = try HostedRendering.matchingPixels(in: image) { red, green, blue in
+            Self.isPortalGreen(red, green, blue)
+        }
         let bounds = try XCTUnwrap(logo.bounds, "a failed portrait shows a mark")
         XCTAssertEqual(bounds.midX, 201, accuracy: 4, "the mark is centred on the portrait")
         // The logo is a filled disc, which covers most of its bounds; the `circle.circle` symbol is two
@@ -98,10 +103,12 @@ final class DiscoveryFidelityTests: XCTestCase {
     }
 
     func test_TEST_UI_037_given_an_empty_state_when_rendered_then_its_illustration_well_is_a_circle() throws {
-        let empty = EmptyState(symbol: "heart", heading: "No favorites yet", body: "Tap the heart.", actionLabel: "Browse") {}
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
-            .environment(\.multiverseGlassPath, .material)
+        let empty = EmptyState(
+            symbol: "heart", heading: "No favorites yet", body: "Tap the heart.", actionLabel: "Browse"
+        ) {}
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
+        .environment(\.multiverseGlassPath, .material)
         let image = try HostedRendering.render(UIHostingController(rootView: empty))
 
         // The well is the topmost painted shape; its rim and material are lighter than the black around

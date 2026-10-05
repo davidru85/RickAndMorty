@@ -13,7 +13,7 @@ import XCTest
 /// a tab view, with a probe for the detail, so no graph or network is involved.
 @MainActor
 final class DetailChromeTests: XCTestCase {
-    func test_TEST_UI_039_given_an_opened_card_when_its_detail_shows_then_the_bars_are_hidden_and_swipe_back_works() throws {
+    func test_TEST_UI_039_given_an_opened_card_when_shown_then_the_bars_hide_and_swipe_back_works() throws {
         let driver = ChromeDriver()
         let host = UIHostingController(rootView: ChromeHarness(driver: driver))
         // Whether the push is the zoom or, with Reduce Motion, the system's own: the edge swipe is

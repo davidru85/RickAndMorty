@@ -17,7 +17,8 @@ final class ShellTabItemsTests: XCTestCase {
         symbols.append("play.tv.fill")
         symbols.append("heart.fill")
         symbols.append("gearshape.fill")
-        XCTAssertEqual(items.map(\.symbol), symbols, "Characters, Episodes, Favorites, Settings, each with its §4.2 symbol")
+        XCTAssertEqual(
+            items.map(\.symbol), symbols, "Characters, Episodes, Favorites, Settings, each with its §4.2 symbol")
         XCTAssertEqual(items.map(\.id), ShellDestination.allCases.map(\.id), "a tab's id is its destination's")
         XCTAssertEqual(
             items.map(\.label),

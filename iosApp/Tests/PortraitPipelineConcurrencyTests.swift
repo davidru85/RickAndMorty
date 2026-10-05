@@ -70,7 +70,8 @@ private final class GatedImageTransport: ImageDataTransport {
         }
         guard
             let requestURL = URL(string: url),
-            let response = HTTPURLResponse(url: requestURL, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil),
+            let response = HTTPURLResponse(
+                url: requestURL, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil),
             let png = Data(
                 base64Encoded:
                     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
