@@ -19,7 +19,7 @@ class ModularWorkflowGateTest {
             ":feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest",
         "app-artifacts" to
             "./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels " +
-            ":androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence",
+            ":androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence :androidApp:verifyReleaseApkSize",
         "build-logic" to "./gradlew :build-logic:convention:check",
         "policies" to "./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyRepositoryHygiene verifyNoLiveHosts verifyWorkflowGate verifyDocumentedGate",
         "dependency-health" to "./gradlew buildHealth",
@@ -139,10 +139,15 @@ class ModularWorkflowGateTest {
 
     @Test
     fun `a dropped release-artifact verification is rejected`() {
-        // TEST-UNIT-061 x TASK-048/TASK-050: the checks that read the real release APK run only where a
-        // worker names them, because the gate runs explicit tasks rather than `:androidApp:check`
-        // (`DEC-112`). Dropping one must fail the guard rather than leave the check unexecuted.
-        listOf(":androidApp:verifyShippedPermissions", ":androidApp:verifyMilestoneIndependence").forEach { removed ->
+        // TEST-UNIT-061 x TASK-048/TASK-050/TASK-126: the checks that read the real release APK run only
+        // where a worker names them, because the gate runs explicit tasks rather than `:androidApp:check`
+        // (`DEC-112`). Dropping one must fail the guard rather than leave the check unexecuted; that
+        // includes `PERF-009`'s size check, which `TASK-125` added to the worker (`DEC-152`).
+        listOf(
+            ":androidApp:verifyShippedPermissions",
+            ":androidApp:verifyMilestoneIndependence",
+            ":androidApp:verifyReleaseApkSize",
+        ).forEach { removed ->
             val reasons = reasons { it.replace(" $removed", "") }
             assertTrue(reasons.any { it.contains(removed) }, "a dropped `$removed` must block")
         }
