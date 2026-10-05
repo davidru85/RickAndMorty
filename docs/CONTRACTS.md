@@ -732,7 +732,12 @@ interface PresentationFormatters {
     fun failureTitle(): CopyKey                                        // TASK-022
     fun retryAction(): CopyKey                                         // TASK-022
     fun isAutomaticallyRetryable(failure: ApiFailure): Boolean          // TASK-022
+    fun recovery(failure: ApiFailure): Recovery                        // TASK-112, DEC-131
+    fun inlineFailureMessage(failure: ApiFailure): FailureMessage      // TASK-112, DEC-131
 }
+
+/** How a failed Detail load is recovered, with the key of its one affordance (DEC-131). */
+enum class Recovery(val actionKey: CopyKey) { Retry(CopyKeys.ACTION_RETRY), Back(CopyKeys.ACTION_BACK) }
 
 /** The copy of one failure: the key, plus the typed values its wording substitutes (GAP-027, DEC-123). */
 data class FailureMessage(val key: CopyKey, val arguments: List<MessageArgument> = emptyList())
@@ -767,6 +772,7 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `rateLimitCountdown(retryAfterSeconds)` is the one formatter for the number in `error_message_rate_limited`: the advised seconds, or `null` when the advice is absent or negative. It `MUST NOT` invent a value, and it is the only place the number is derived, so both platforms render the same countdown (`ERROR_FLOW.md` §4.1, `GAP-027`).
   - `isAutomaticallyRetryable(failure)` states the recovery table's answer rather than a per-surface choice: `Offline`, `Timeout` and `Server` are retried within the bounded budget, and TLS (`Unknown`), another `4xx` (`InvalidRequest`), `NotFound`, `RateLimited`, `GraphQl`, `MalformedResponse` and `EmptyBody` are not retried automatically (`ERROR_FLOW.md` §10, `API_SPECS.md` §6.3, `DEC-084`). A user-initiated retry stays available for every class.
   - `failureTitle()` and `retryAction()` return the shared full-surface title and the retry affordance, so the two keys are named once instead of per surface.
+  - `recovery(failure)` is `Back` for `NotFound` — a detail `404` is terminal for the identifier (`API-ERR-016`) — and `Retry` for every other failure; a Detail surface `MUST NOT` offer Retry for a `NotFound` (`ERROR_FLOW.md` §4, §10, `DEC-131`). `inlineFailureMessage(failure)` is the message of the inline error beside a retained header: `failureMessage(failure)` when the recovery is `Back`, `detail_error_inline` otherwise.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-022`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
 
 ### IC-025 — `DetailHandoff`
@@ -866,7 +872,7 @@ sealed interface CharacterDetailIntent {
 - **Consumed by:** the Android ViewModel in `:feature:character-detail` (its Android UI source set) and the iOS `ObservableObject` in `iosApp/Features/CharacterDetail` (`DEC-013`).
 - **Invariants**
   - `header` is populated from the list-provided `CharacterCardUi` before any detail response and `MUST` be rendered first, so the shared-element/zoom transition has a source (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`, `DESIGN.md` §4.2).
-  - `loadState == Error` `MUST NOT` clear a non-null `header`: a detail failure with list data keeps the known fields and offers the inline retry (`AC-REQ-FUNC-002-3`).
+  - `loadState == Error` `MUST NOT` clear a non-null `header`: a detail failure with list data keeps the known fields and offers the inline error with `IC-017.inlineFailureMessage` and `IC-017.recovery` (`AC-REQ-FUNC-002-3`). With a `null` header there is nothing known to keep, so both platforms render the full-surface error state — `failureTitle()`, `failureMessage(failure)` and the recovery's affordance — never an empty hero (`AC-REQ-UX-009-1`, `DEC-131`).
   - `gender` is `IC-017.genderKey(CharacterDetails.gender)` once a detail has answered, and `null` before that and on a failure, because the list-provided card carries no gender. Android renders the subtitle "Species · Gender · Origin", iOS "Species · Gender" (`REQ-FUNC-002`, `UI_SPEC.md` §6.3, `DEC-131`).
   - `episodeCount` is derived from `CharacterDetails.episodeIds.size` and `MUST NOT` be computed from `episodeSummaries`, so it renders even when enrichment is absent (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`).
   - `InfoRowKind.FirstSeenIn` appears in `info` only when enrichment was requested and `episodeSummaries` is non-null; the row is absent rather than empty (`AC-REQ-FUNC-023-2`).
@@ -1088,6 +1094,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `Recovery`, `recovery(failure)` and `inlineFailureMessage(failure)`; a not-found Detail is recovered by Back, and a failure without a header renders the full-surface error. Additive for the Swift consumer. | `DEC-131` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `genderKey(CharacterGender)` and the keys `gender_female`, `gender_male`, `gender_genderless`; `CharacterDetailUiState.gender: CopyKey?`. Breaking for the Swift consumer (§8.2), whose initialiser gains the parameter; the iOS app and its tests change in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-019` (`TASK-112`): `InfoRowUi.value` becomes `DisplayText`, and an unknown origin or location keeps its row with `value_unknown`; only `FirstSeenIn` stays availability-filtered. Breaking for the Swift consumer (§8.2), which resolves the value through `CharacterPresentation.text` in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-007`/`IC-014` (`TASK-112`): a `ForceNetwork` load joins a revalidation in flight; an enriched detail is revalidated with its episodes; a stale first page is followed by a silent network load that clears the stale state on success. | `DEC-130` |

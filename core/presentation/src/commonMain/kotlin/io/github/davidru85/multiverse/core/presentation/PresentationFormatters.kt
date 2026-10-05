@@ -60,6 +60,19 @@ public interface PresentationFormatters {
     public fun retryAction(): CopyKey
 
     /**
+     * How a failed Detail load is recovered (`ERROR_FLOW.md` §4, §10, `DEC-131`): [Recovery.Back] for
+     * a `NotFound`, which is terminal for the identifier, and [Recovery.Retry] for every other failure.
+     */
+    public fun recovery(failure: ApiFailure): Recovery
+
+    /**
+     * The message of the inline error that replaces the Detail's info list while the header stays
+     * (`AC-REQ-FUNC-002-3`, `DEC-131`): the failure's own message when it is recovered by Back, which
+     * a "Retry" wording would contradict, and `detail_error_inline` otherwise.
+     */
+    public fun inlineFailureMessage(failure: ApiFailure): FailureMessage
+
+    /**
      * Whether the retry policy may re-attempt [failure] automatically (`ERROR_FLOW.md` §10,
      * `API-ERR-003`/`006`/`008`/`009`: never for TLS, another `4xx`, an empty body or a decode failure).
      */
@@ -134,6 +147,19 @@ public object DefaultPresentationFormatters : PresentationFormatters {
     override fun failureTitle(): CopyKey = CopyKeys.ERROR_TITLE
 
     override fun retryAction(): CopyKey = CopyKeys.ACTION_RETRY
+
+    override fun recovery(failure: ApiFailure): Recovery =
+        when (failure) {
+            // API-ERR-016: a detail 404 cannot succeed on another attempt (ERROR_FLOW.md 10).
+            is ApiFailure.NotFound -> Recovery.Back
+            else -> Recovery.Retry
+        }
+
+    override fun inlineFailureMessage(failure: ApiFailure): FailureMessage =
+        when (recovery(failure)) {
+            Recovery.Back -> failureMessage(failure)
+            Recovery.Retry -> FailureMessage(CopyKeys.DETAIL_ERROR_INLINE)
+        }
 
     override fun isAutomaticallyRetryable(failure: ApiFailure): Boolean =
         when (failure) {
