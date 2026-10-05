@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -169,8 +170,9 @@ private fun DataSection(
             ) {
                 Text(CopyResolver.copy(CopyKeys.SETTINGS_DATA_SOURCE_TITLE.value))
             }
-            // The connected single-select picker (`UI_SPEC.md` §4.1): two equal segments, the selected
-            // one Secondary / On Secondary, the other Secondary Container / On Secondary Container.
+            // The connected single-select picker (`UI_SPEC.md` §4.1, `TASK-132`): two equal segments; the
+            // selected one carries a check on Secondary Container — the selection the filter chips show —
+            // and the other is neutral, so the choice never rests on colour alone (`REQ-UX-005`).
             Row(
                 modifier =
                     Modifier
@@ -254,7 +256,10 @@ private fun FavoritesSection(
     )
 }
 
-/** One segment of the data-source picker: a connected `ToggleButton` that is a radio button to TalkBack. */
+/**
+ * One segment of the data-source picker: a connected `ToggleButton` that is a radio button to TalkBack.
+ * The selected segment leads with a check, so the selection does not rest on colour alone (`TASK-132`).
+ */
 @Composable
 private fun RowScope.ProtocolSegment(
     label: String,
@@ -268,16 +273,28 @@ private fun RowScope.ProtocolSegment(
         shapes = shapes,
         colors =
             ToggleButtonDefaults.colors(
-                containerColor = MultiverseColors.secondaryContainer,
-                contentColor = MultiverseColors.onSecondaryContainer,
-                checkedContainerColor = MultiverseColors.secondary,
-                checkedContentColor = MultiverseColors.onSecondary,
+                containerColor = MultiverseColors.surfaceContainerHighest,
+                contentColor = MultiverseColors.onSurfaceVariant,
+                checkedContainerColor = MultiverseColors.secondaryContainer,
+                checkedContentColor = MultiverseColors.onSecondaryContainer,
             ),
         modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
     ) {
+        if (checked) {
+            // Decorative: the segment's own semantics say it is selected.
+            Icon(
+                painter = painterResource(R.drawable.ic_check),
+                contentDescription = null,
+                modifier = Modifier.size(ButtonDefaults.IconSize).testTag(PROTOCOL_CHECK_TAG),
+            )
+            Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+        }
         Text(label)
     }
 }
+
+/** The selected segment's check, for the test that finds where the selection is marked. */
+internal const val PROTOCOL_CHECK_TAG: String = "settings.protocol.check"
 
 /** A row's 24 dp leading glyph in On Surface Variant (`UI_SPEC.md` §6.5); decorative, as the title names the row. */
 @Composable
