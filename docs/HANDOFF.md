@@ -323,6 +323,19 @@ Owner actions after merging PR #182:
 
 Next is PR #186 (B9 Phase 9.2), prepared on PR #182's head.
 
+## 1.20 PR #186 review: B9 Phase 9.2, the completeness gate and the release note (2026-10-05)
+
+PR #186 is prepared on PR #182's head. The review found that both of the phase's deliverables checked less than they claimed (`LOG-0132`):
+- `verifyDocumentedCompleteness` (`TASK-068`) had no tests, and its `DOC6` half had never run. It now has `TEST-UNIT-063` and decides `DOC1`, `DOC2`, `DOC4`, `DOC6` and `DOC8` over table rows and every kind of link. Its first honest run repaired seven audit rows.
+- `tools/release-notes.sh` (`TASK-066`) dropped breaking changes and ignored the previous tag. It now has `TEST-UNIT-064` and renders the `CONTRIBUTING.md` §3.6 note. Running `./gradlew releaseNotes` before tagging `v0.2.0` gives the range since `v0.1.0`, once that tag exists.
+- `TASK-069` is verified in full: all 59 non-deferred requirements have a test row and a task.
+- `TEST-UNIT-060` names only the protocol-switch case again. The 24 merged B4/B5 rows and `TASK-109`/`TASK-110` are `Done`.
+
+Owner actions after merging PR #186:
+- Close the B4/B5 issues the backlog now records as `Done`: #120–#122, #124, #125, #127–#130, #133–#136, #138–#144 and #146–#149.
+
+Next is PR #189 (B9 Phase 9.3), prepared on PR #186's head.
+
 ## 2. Completed work
 
 1. **Documentation baseline.** The specification set exists and each topic has exactly one authoritative owner (`AGENTS.md` §2): requirements, architecture, remote contract, visual specification, internal contracts, failure→state→copy chain, performance, observability, security, testing, gates, guidelines, contribution process, plan, backlog, decision board, this file, and the audit. `README.md` and `README.es.md` are the entry points.

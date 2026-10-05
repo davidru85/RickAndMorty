@@ -74,3 +74,41 @@ configure<com.autonomousapps.DependencyAnalysisExtension> {
 tasks.named("check") {
     dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
 }
+
+/**
+ * `TASK-066` (`DEC-041`, `DEC-042`): generate the release notes for the current `VERSION` from the
+ * Conventional Commits in the range since the previous `v*` tag (`CONTRIBUTING.md` §3.6), so the
+ * release body is derived rather than hand-written and no changelog file exists to drift.
+ *
+ * It writes to `build/releases/notes.md`; tagging and publishing stay human actions (`DEC-049`), and
+ * the workflow guard forbids a release step in CI.
+ *
+ * The subject list is captured as an `@Input` at configuration time rather than run from a captured
+ * `providers.exec` inside the action: a script object in the action makes the task incompatible with
+ * the configuration cache, which the whole build enables.
+ */
+val releaseNotes by tasks.registering {
+    group = "documentation"
+    description = "TASK-066: the release notes for VERSION, generated from Conventional Commits."
+    val versionFile = layout.projectDirectory.file("VERSION")
+    val version = providers.fileContents(versionFile).asText.map { it.trim() }
+    // The commit subjects the notes are built from. A change to any subject in the range re-runs the
+    // task, which is what makes the notes a function of history rather than of a cached list.
+    val subjects =
+        providers.exec {
+            commandLine("bash", "tools/release-notes.sh")
+        }.standardOutput.asText
+
+    inputs.property("version", version)
+    inputs.property("subjects", subjects)
+    val outputFile = layout.buildDirectory.file("releases/notes.md")
+    outputs.file(outputFile)
+    val capturedVersion = version
+    val capturedSubjects = subjects
+    doLast {
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText("# Multiverse Explorer ${capturedVersion.get()}\n\n${capturedSubjects.get()}")
+        logger.lifecycle("release notes written to ${file.absolutePath}")
+    }
+}
