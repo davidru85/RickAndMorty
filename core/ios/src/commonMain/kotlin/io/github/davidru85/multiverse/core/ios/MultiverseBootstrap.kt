@@ -10,13 +10,18 @@ import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
 import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
 import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.diagnostics.DiagnosticsCopy
+import io.github.davidru85.multiverse.core.diagnostics.DiagnosticsRecorder
+import io.github.davidru85.multiverse.core.diagnostics.rows
 import io.github.davidru85.multiverse.core.domain.logging.AppLogger
+import io.github.davidru85.multiverse.core.domain.logging.LogSink
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.observation.StateObserver
 import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
@@ -137,6 +142,27 @@ public object MultiverseBootstrap {
         }
     }
 
+    /** The debug diagnostics sheet's title and its read-only line (`OBSERVABILITY.md` §5). */
+    public val diagnosticsTitle: String = DiagnosticsCopy.TITLE
+    public val diagnosticsReadOnly: String = DiagnosticsCopy.READ_ONLY
+
+    /**
+     * Observes the debug diagnostics as the sheet's rows (`REQ-OBS-002`, `DEC-147`): [onEach] receives
+     * the rows `:core:diagnostics` renders — the same rows the Android panel draws — on the main queue,
+     * now and on every new record, until the returned observation is closed.
+     *
+     * It returns `null` in the release framework, which attaches no recorder (`AC-REQ-OBS-002-1`): the
+     * recorder's class is linked in both binaries, but only the debug binary ever creates one.
+     */
+    public fun observeDiagnostics(onEach: (List<DiagnosticsLine>) -> Unit): DiagnosticsObservation? {
+        val recorder = IosGraph.diagnostics ?: return null
+        val observer =
+            StateObserver(recorder.snapshot, Dispatchers.Main) { snapshot ->
+                onEach(snapshot.rows().map { DiagnosticsLine(it.label, it.value) })
+            }
+        return DiagnosticsObservation(observer)
+    }
+
     /**
      * The Detail screen's dependencies (`IC-019`, `TASK-055`).
      *
@@ -171,6 +197,21 @@ public object MultiverseBootstrap {
             clearFavorites = IosGraph.koin.get(),
             observeFavoriteIds = IosGraph.koin.get(),
         )
+}
+
+/** One row of the debug diagnostics sheet (`DEC-147`): a label and its rendered value. */
+public class DiagnosticsLine(
+    public val label: String,
+    public val value: String,
+)
+
+/** A running diagnostics observation; closing it stops the deliveries. */
+public class DiagnosticsObservation internal constructor(
+    private val observer: StateObserver<*>,
+) {
+    public fun close() {
+        observer.close()
+    }
 }
 
 /** The Detail screen's resolved dependencies (`IC-019`). */
@@ -208,6 +249,16 @@ public class SettingsDependencies(
  */
 public object IosGraph {
     /**
+     * The debug diagnostics recorder (`DEC-147`, `OBSERVABILITY.md` §5): created in the debug binary
+     * only, where the logger writes every validated record to it as well as to the unified log; the
+     * release binary has none, so nothing records and nothing can show it (`AC-REQ-OBS-002-1`).
+     */
+    @OptIn(ExperimentalNativeApi::class)
+    internal val diagnostics: DiagnosticsRecorder? by lazy {
+        if (Platform.isDebugBinary) DiagnosticsRecorder() else null
+    }
+
+    /**
      * The graph, started on first use. `lazy` is synchronised on Kotlin/Native, so two first callers
      * on different threads start it once rather than both calling `startKoin`.
      */
@@ -232,8 +283,20 @@ public object IosGraph {
  * is a property of the compiled binary — the app's Debug and Release configurations link different
  * frameworks — never a runtime flag a release build could carry.
  */
-private fun platformLogger(debugBinary: Boolean): ValidatingAppLogger =
-    if (debugBinary) ValidatingAppLogger.forDebug(OsLogSink) else ValidatingAppLogger.forRelease(OsLogSink)
+private fun platformLogger(debugBinary: Boolean): ValidatingAppLogger {
+    val recorder = IosGraph.diagnostics
+    return if (debugBinary) {
+        // The debug binary also folds every validated record into the diagnostics recorder (`DEC-147`).
+        ValidatingAppLogger.forDebug(
+            LogSink { record ->
+                OsLogSink.write(record)
+                recorder?.write(record)
+            },
+        )
+    } else {
+        ValidatingAppLogger.forRelease(OsLogSink)
+    }
+}
 
 /**
  * The iOS platform inputs (`CoreGraphInputs`).
