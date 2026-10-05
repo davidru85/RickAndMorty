@@ -169,7 +169,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - name: Run this verification scope
-        run: ./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels :androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence --stacktrace
+        run: ./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels :androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence :androidApp:verifyReleaseApkSize --stacktrace
       - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -180,6 +180,7 @@ jobs:
             androidApp/build/reports/verifySdkLevels/**
             androidApp/build/reports/verifyShippedPermissions/**
             androidApp/build/reports/verifyMilestoneIndependence/**
+            androidApp/build/reports/verifyReleaseApkSize/**
             androidApp/build/outputs/apk/**/*.apk
           if-no-files-found: ignore
 

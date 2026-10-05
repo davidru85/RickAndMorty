@@ -1256,6 +1256,17 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 - **Not verified:** iOS, which `GAP-036` does not cover. Its stat row lays out its values with SwiftUI.
 
+### LOG-0149 · 2026-10-05 · `TASK-125`: the `PERF-009` size check runs in CI (`CONF-92`)
+
+- **Event:** `TASK-125` resolves `CONF-92` with the owner's option (a) (`DEC-151`).
+- **The change:** the `app-artifacts` job of `.github/workflows/pull-request.yml` runs `:androidApp:verifyReleaseApkSize` beside `verifyReleaseArtifact`, which already assembles the release APK. It uploads `androidApp/build/reports/verifyReleaseApkSize/**` with the job's evidence. These are the two lines the owner authorized; nothing else under `.github/**` changed.
+- **Verification (a `ci` change, the TDD exception of `CONTRIBUTING.md` §3):**
+  - The job's own command, run locally — `./gradlew :androidApp:assembleDebug :androidApp:verifyReleaseArtifact :androidApp:verifySdkLevels :androidApp:verifyShippedPermissions :androidApp:verifyMilestoneIndependence :androidApp:verifyReleaseApkSize --stacktrace` — BUILD SUCCESSFUL; the release APK measures 2 354 210 B (2.25 MiB) at this head, recorded as a new `PERFORMANCE.md` §5 row.
+  - `./gradlew verifyWorkflowGate verifyDocumentedGate verifyRepositoryHygiene` — BUILD SUCCESSFUL.
+  - The pull request's own CI run is the first execution in the job.
+- **Residual:** `TEST-UNIT-061` (`ModularWorkflowGate`) pins the other `app-artifacts` tasks but not this one, because the guard lives in `build-logic/**`, which `DEC-151` does not open. Removing the line would not fail the workflow guard.
+- **Affected documents:** `docs/TESTING.md` §14, `docs/PERFORMANCE.md` (§5, §7.1), `docs/DOCUMENTATION_AUDIT.md` (`CONF-92`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
