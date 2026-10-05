@@ -228,7 +228,7 @@ struct DiscoveryScreen: View {
     }
 
     /// The grid of glass cards, with the paging indicator as its last item and the non-blocking notice
-    /// at the bottom (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
+    /// at the bottom (`UI_SPEC.md` §8). Every iOS card is the same 177 × 236 pt (`UI_SPEC.md` §4.2).
     private var grid: some View {
         VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
             LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
@@ -267,7 +267,7 @@ struct DiscoveryScreen: View {
         return [GridItem](repeating: GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter), count: 2)
     }
 
-    /// Six skeletons in the Tall/Regular pattern while no load has completed (`UI_SPEC.md` §8).
+    /// Six skeleton cards while no load has completed (`UI_SPEC.md` §8).
     private var skeletonGrid: some View {
         // The skeletons carry identities no card can have, so the grid replaces them when content
         // arrives instead of keeping their cells (`GAP-031`).

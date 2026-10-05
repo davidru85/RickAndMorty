@@ -185,9 +185,7 @@ public fun MultiverseApp(
                                     }
                                 }
                             }
-                            // Characters and Settings render the section title in the Discovery headline
-                            // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
-                            // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
+                            // The Settings screen (`TASK-074`/`TASK-076`) resolves its own state holder.
                             composable<Settings> {
                                 TopLevelInsets {
                                     io.github.davidru85.multiverse.feature.settings.ui
@@ -228,11 +226,6 @@ public fun MultiverseApp(
     }
 }
 
-/**
- * Whether the gate has completed, held across recompositions: the splash waits once per process, so a
- * configuration change does not restart it. The work runs in the composition's scope, which cancels it
- * with the composition rather than leaking a request.
- */
 /**
  * The insets of a top-level destination: it starts below the status bar and clear of a display cutout,
  * and the navigation bar under it takes the bottom inset. The Detail does not use this, because its
