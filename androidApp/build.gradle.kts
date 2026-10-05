@@ -1,4 +1,5 @@
 import java.io.File
+import java.util.Locale
 
 // :androidApp — the Android shell. It is the composition root (`DEC-091`, ADR-0014): it owns the
 // Application, the one activity, the app-wide navigation graph, the splash handoff, the Coil image
@@ -119,6 +120,28 @@ val verifyReleaseArtifact by tasks.registering(io.github.davidru85.multiverse.bu
 }
 
 tasks.named("check") { dependsOn(verifyReleaseArtifact) }
+
+/**
+ * `PERF-009` (`PERFORMANCE.md`, `GAP-034`, `DEC-148`): the single universal release APK stays within
+ * 12 MiB. It reads the size of the artifact the release build produced, so it fails on what would
+ * actually ship rather than on an estimate, and it is wired into `check`.
+ */
+val verifyReleaseApkSize = tasks.register("verifyReleaseApkSize") {
+    val apk = layout.buildDirectory.file("outputs/apk/release/androidApp-release-unsigned.apk")
+    val budgetBytes = 12L * 1024 * 1024
+    inputs.file(apk)
+    dependsOn("assembleRelease")
+    doLast {
+        val size = apk.get().asFile.length()
+        val mebibytes = String.format(Locale.ROOT, "%.2f", size / (1024.0 * 1024.0))
+        check(size <= budgetBytes) {
+            "PERF-009: the release APK is $size B ($mebibytes MiB), over the 12 MiB budget ($budgetBytes B)"
+        }
+        logger.lifecycle("verifyReleaseApkSize: $size B ($mebibytes MiB) within PERF-009's $budgetBytes B")
+    }
+}
+
+tasks.named("check") { dependsOn(verifyReleaseApkSize) }
 
 /**
  * `TEST-UNIT-028`, the artifact half (`AC-REQ-SEC-004-1`, `TASK-048`): the **release APK's** merged
