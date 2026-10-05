@@ -15,9 +15,9 @@ import kotlin.test.assertTrue
 class ImageUrlAllowListTest {
     @Test
     fun `TEST-UNIT-071 given_an_avatar_on_the_configured_host_when_checked_then_it_is_allowed`() {
-        assertTrue(RickAndMortyApi.isAllowedImageUrl("https://rickandmortyapi.com/api/character/avatar/1.jpeg"))
+        assertTrue(RickAndMortyApi.isAllowedImageUrl("https://${RickAndMortyApi.HOST}/api/character/avatar/1.jpeg"))
         assertTrue(
-            RickAndMortyApi.isAllowedImageUrl("https://rickandmortyapi.com:443/api/character/avatar/2.jpeg"),
+            RickAndMortyApi.isAllowedImageUrl("https://${RickAndMortyApi.HOST}:443/api/character/avatar/2.jpeg"),
             "TEST-UNIT-071: the default port, stated explicitly, is still the configured endpoint",
         )
     }
@@ -27,12 +27,12 @@ class ImageUrlAllowListTest {
         val rejected =
             listOf(
                 "https://evil.example/avatar/1.jpeg",
-                "http://rickandmortyapi.com/api/character/avatar/1.jpeg",
-                "https://cdn.rickandmortyapi.com/api/character/avatar/1.jpeg",
-                "https://rickandmortyapi.com.evil.example/api/character/avatar/1.jpeg",
-                "https://rickandmortyapi.com:8443/api/character/avatar/1.jpeg",
-                "https://user@rickandmortyapi.com/api/character/avatar/1.jpeg",
-                "ftp://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                "http://${RickAndMortyApi.HOST}/api/character/avatar/1.jpeg",
+                "https://cdn.${RickAndMortyApi.HOST}/api/character/avatar/1.jpeg",
+                "https://${RickAndMortyApi.HOST}.evil.example/api/character/avatar/1.jpeg",
+                "https://${RickAndMortyApi.HOST}:8443/api/character/avatar/1.jpeg",
+                "https://user@${RickAndMortyApi.HOST}/api/character/avatar/1.jpeg",
+                "ftp://${RickAndMortyApi.HOST}/api/character/avatar/1.jpeg",
                 "not a url",
                 "",
             )
