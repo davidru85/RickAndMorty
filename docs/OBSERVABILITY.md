@@ -30,7 +30,7 @@ The identifiers in this document therefore describe **local diagnostics only**. 
 
 ### 2.1 One interface
 
-Both platforms `MUST` log through a single shared abstraction — one interface with a level set and a fixed field envelope. Platform code `MUST NOT` call `android.util.Log`, `os.Logger`/`print`, or a platform crash reporter directly for app diagnostics; the app shells provide an implementation of the shared interface that writes to the platform sink (`Logcat` on Android, `os.Logger` on iOS). `TEST-UNIT-032` asserts that both platforms use the contract with permitted fields only (`AC-REQ-OBS-001-1`).
+Both platforms `MUST` log through a single shared abstraction — one interface with a level set and a fixed field envelope. Platform code `MUST NOT` call `android.util.Log`, `os.Logger`/`print`, or a platform crash reporter directly for app diagnostics; the app shells provide an implementation of the shared interface that writes to the platform sink (`Logcat` on Android, the unified log through `NSLog` on iOS). `TEST-UNIT-032` asserts that both platforms use the contract with permitted fields only (`AC-REQ-OBS-001-1`).
 
 ```kotlin
 // :core:domain — shape only; the canonical signatures are CONTRACTS.md IC-024 (DEC-087, DEC-093)
@@ -57,6 +57,13 @@ Rules for the interface itself:
 - It `MUST NOT` accept a `Throwable` at release level. Debug builds `MAY` accept an exception **type** (`errorClass`, `cause`), never a stack trace at release level.
 - Levels mean exactly: `DEBUG` — debug-build detail; `INFO` — a normal lifecycle or cache event; `WARN` — a degraded but handled condition; `ERROR` — a user-visible failure. A `LogLevel` mapping `MUST NOT` be inferred from the exception type alone.
 - Release builds emit `ERROR` only (DEC-039); `DEBUG`/`INFO`/`WARN` calls are compiled or filtered out, not merely dropped at runtime.
+
+**Per-platform threshold and line (`TASK-116`, `DEC-127`).**
+
+- **Android.** The debug variant's Application binds `forDebug` over `LogcatSink`, and the release variant `forRelease`.
+- **iOS.** The graph binds `forDebug` in the debug Kotlin framework a Debug build links, and `forRelease` in the release framework. The choice reads `Platform.isDebugBinary`, a property of the compiled binary, so rule 7 of §4.1 holds: nothing at runtime can lower a release build's level.
+- **Swift.** Swift code reaches the same contract through `MultiverseBootstrap.logger()`.
+- **The line.** Both sinks print one line, `LOG-### name=value …`, with the §2.2 wire names in the catalogue's field order. The iOS sink prefixes the level, because the unified log has no level column, and writes through `NSLog` with a single `%s` argument (a `%@` crashed on the first record, `TEST-UNIT-074`). In a debug build, `protocol=REST` and `protocol=GRAPHQL` therefore find the requests of each protocol in Logcat and in the unified log alike (`TEST-UNIT-072`, `TEST-UNIT-073`, `TEST-UNIT-075`).
 
 ### 2.2 Permitted field list
 
@@ -238,6 +245,7 @@ Observability `MUST NOT` become a failure source.
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-05 | §2.1: each platform's threshold and log line stated. iOS now logs every level in a Debug build, through the binary variant, and the sinks share one line with the catalogue's wire names. The iOS sink no longer crashes on a record (it did on the first `ERROR` in release). | `TASK-116`, `DEC-127`, `TEST-UNIT-072`…`075` |
 | 2026-10-05 | §5: the Android panel is reached through a debug-only app shortcut on the one launcher icon, not through a second launcher entry; a debug install had shown two icons. | `TASK-117`, `TEST-UNIT-033`, `TEST-UNIT-057` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-040`): `LOG-018` and `LOG-019` are emitted — the repository logs a written toggle and a write the store could not complete, and each platform store a value it could not read. | `TASK-040` |
 | 2026-10-02 | B3 Phase 3.2 (`TASK-047`): the contract, its validating implementation and the emitters of `LOG-001`…`LOG-004`, `LOG-010`…`LOG-014` and `LOG-022` exist; §2.1's sketch follows `IC-024`; `LOG-010`/`LOG-011` are emitted by the `:core:data` pager, where `DEC-091` placed it; §4.2 names the implementing tests and records that the iOS framework graph joins `TEST-UNIT-034` with `:core:ios`; §5 states what the diagnostic API reports and what is unavailable. | `TASK-047`, `DEC-087`, `DEC-088`, `DEC-091` |

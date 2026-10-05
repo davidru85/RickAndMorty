@@ -10,6 +10,7 @@ import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
 import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
 import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.domain.logging.AppLogger
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
@@ -38,6 +39,8 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
 import platform.Foundation.NSUserDefaults
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.Platform
 import kotlin.time.Clock
 
 /**
@@ -135,6 +138,13 @@ public object MultiverseBootstrap {
      * so a payload cannot point the app at another host.
      */
     public fun isAllowedImageUrl(url: String): Boolean = RickAndMortyApi.isAllowedImageUrl(url)
+
+    /**
+     * The one logger the shared graph binds (`IC-024`, `OBSERVABILITY.md` §2.1): Swift code logs through
+     * the same validating contract as Kotlin, never through `os.Logger` or `print`, and a case can read
+     * which levels this build lets reach the sink.
+     */
+    public fun logger(): AppLogger = IosGraph.koin.get()
 
     /** The API resource URL of the character [id], which the Detail's Share sends (`DEC-125`). */
     public fun characterUrl(id: String): String = RickAndMortyApi.characterUrl(id)
@@ -245,15 +255,26 @@ public object IosGraph {
 }
 
 /**
+ * The logger for this framework's variant (`DEC-039`, `DEC-127`, `OBSERVABILITY.md` §5): every level
+ * in the debug framework a Debug build links, so the REST and GraphQL request events reach the unified
+ * log as the Android debug variant's reach Logcat; `ERROR` only in the release framework. The choice
+ * is a property of the compiled binary — the app's Debug and Release configurations link different
+ * frameworks — never a runtime flag a release build could carry.
+ */
+private fun platformLogger(debugBinary: Boolean): ValidatingAppLogger =
+    if (debugBinary) ValidatingAppLogger.forDebug(OsLogSink) else ValidatingAppLogger.forRelease(OsLogSink)
+
+/**
  * The iOS platform inputs (`CoreGraphInputs`).
  *
  * `NSUserDefaults` is the platform store for both favourites and preferences (`DEC-017`, `ADR-0007`),
  * and the response cache is the app's own caches directory ([`NsFileCacheStorage`]); the HTTP client
  * is the Darwin-engine one the shared data layer already builds for Apple targets.
  */
+@OptIn(ExperimentalNativeApi::class)
 private fun iOSPlatformInputs(): Module {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val logger = ValidatingAppLogger.forRelease(OsLogSink)
+    val logger = platformLogger(debugBinary = Platform.isDebugBinary)
     return CoreGraphInputs(
         client = appleRickAndMortyHttpClient(),
         decodingDispatcher = Dispatchers.Default,

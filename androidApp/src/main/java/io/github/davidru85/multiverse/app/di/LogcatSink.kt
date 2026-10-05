@@ -26,9 +26,13 @@ public val LogcatSink: LogSink =
 /** The one Logcat tag. */
 public const val TAG: String = "Multiverse"
 
-/** One record as a single Logcat line: catalogue id, then the permitted fields in key order. */
+/**
+ * One record as a single Logcat line: catalogue id, then the permitted fields by their wire names in
+ * the catalogue's order (`OBSERVABILITY.md` §2.2). The iOS sink prints the same line after a level
+ * marker, because the unified log has no level column of its own (`TEST-UNIT-075`).
+ */
 private fun LogRecord.render(): String =
     buildString {
         append(catalogueId)
-        fields.keys.sorted().forEach { key -> append(' ').append(key).append('=').append(fields.getValue(key)) }
+        fields.keys.sorted().forEach { key -> append(' ').append(key.wireName).append('=').append(fields.getValue(key)) }
     }
