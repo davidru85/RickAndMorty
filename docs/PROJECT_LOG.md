@@ -1163,6 +1163,30 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - A release signed with a release key: no release keystore exists, and signing is the owner's.
   - The mapping's retention in a published release, since none has been published.
 
+### LOG-0145 · 2026-10-05 · `TASK-121`: the iOS app relinks after a Kotlin-only change (`GAP-033`)
+
+- **Event:** `TASK-121` resolves `GAP-033` (`DEC-149`).
+- **Cause, found while reproducing.**
+  - The linker's dependency info lists the app's object files and its link file list, but not the Kotlin archive it loads through `-framework`. So Xcode had no record that the app depends on the framework's binary.
+  - A first attempt put the framework bundle in the link phase from the products directory. It still never relinked, because Xcode tracks a bundle as a directory, whose changes it does not see.
+- **The change:**
+  - The pre-build script copies the framework's static archive into the products directory as `libMultiverseExplorer.a`. It uses `rsync -a`, so an unchanged framework is not copied.
+  - The app and the test bundle link that file from their link phase, which Xcode tracks itself. The compiler still reads the module from the framework.
+  - Simulator builds exclude `x86_64`.
+- **Red, then green (build behaviour, observed; no test id):**
+  - **Before:** after the framework binary changed, a Debug build ran no `Ld` step and the app's `MultiverseExplorer.debug.dylib` kept its earlier modification time. A Release simulator build failed with `found architecture 'arm64', required architecture 'x86_64'` and undefined symbols for `x86_64`.
+  - **After:**
+    - A build with no change runs no `Ld` step.
+    - After the framework changes, the same build relinks the debug dylib and the executable.
+    - A Kotlin-only change (a probe string in `DiagnosticsCopy`) is in the app binary after one build, and gone after its revert and one more build. The probe was not committed.
+    - The Release simulator build succeeds with an `arm64` app, and a Debug device build (`CODE_SIGNING_ALLOWED=NO`) succeeds.
+    - No linker warning and no duplicate symbol.
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-149`), `docs/DOCUMENTATION_AUDIT.md` (`GAP-033`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, `README.md`, `README.es.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 164 tests, 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** a Release device archive with signing, since no signing identity is configured here.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

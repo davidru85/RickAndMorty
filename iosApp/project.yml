@@ -38,6 +38,10 @@ settings:
     "KOTLIN_FRAMEWORK_TARGET[sdk=iphonesimulator*]": iosSimulatorArm64
     "KOTLIN_FRAMEWORK_TARGET[sdk=iphoneos*]": iosArm64
     KOTLIN_FRAMEWORK_DIR: $(SRCROOT)/../core/ios/build/bin/$(KOTLIN_FRAMEWORK_TARGET)/$(KOTLIN_FRAMEWORK_BUILD)Framework
+    # The simulator framework is `arm64` only (`iosSimulatorArm64`), so no simulator build may ask for
+    # an `x86_64` slice: a Release build, which builds every architecture, failed to link without this
+    # (`GAP-033`).
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
   configs:
     Debug:
       KOTLIN_FRAMEWORK_BUILD: debug
@@ -88,22 +92,25 @@ targets:
         PRODUCT_MODULE_NAME: MultiverseApp
         MARKETING_VERSION: $(MULTIVERSE_VERSION)
         CURRENT_PROJECT_VERSION: 1
-        # The framework search path points at the Gradle-built Kotlin framework (ADR-0012): the app
-        # links exactly one, produced by `:core:ios` for the active SDK and configuration.
+        # The framework search path points at the Gradle-built Kotlin framework (ADR-0012), produced
+        # by `:core:ios` for the active SDK and configuration; the compiler reads its module there.
         FRAMEWORK_SEARCH_PATHS:
           - $(inherited)
           - $(KOTLIN_FRAMEWORK_DIR)
-        # The framework is linked explicitly rather than through a `dependencies: framework:` entry,
-        # because that entry resolves against the device SDK while this target builds for the
-        # simulator; `-framework` with the search path above resolves for whichever SDK is active.
-        OTHER_LDFLAGS:
-          - $(inherited)
-          - -framework
-          - MultiverseExplorer
         SWIFT_EMIT_LOC_STRINGS: YES
         # The asset catalog holds the portal logo only (`DEC-139`); the app icon is not packaged in it
         # (`UI_SPEC.md` §10.2), so the compiler is not told to look for one.
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
+    # The app links exactly one Kotlin framework (ADR-0012): its static archive, which the pre-build
+    # script copies into the products directory as `libMultiverseExplorer.a`. The linker does not
+    # report an archive it loads through `-framework` as one of its inputs, so with the framework
+    # linked that way Xcode never relinked the app when only Kotlin changed (`GAP-033`). A file in
+    # the link phase is an input Xcode tracks itself, and the products directory is per SDK and
+    # configuration, so the reference resolves for whichever build is active.
+    dependencies:
+      - framework: libMultiverseExplorer.a
+        implicit: true
+        embed: false
     preBuildScripts:
       - name: Build the shared Kotlin framework
         script: |
@@ -120,6 +127,10 @@ targets:
             *) BUILD=Debug ;;
           esac
           ./gradlew ":core:ios:link${BUILD}Framework${TARGET}"
+          # Copy the framework's static archive where the link phase reads it. `-a` keeps the
+          # modification time, so an unchanged framework is not copied and does not relink the app,
+          # and a rebuilt one always does.
+          rsync -a "$KOTLIN_FRAMEWORK_DIR/MultiverseExplorer.framework/MultiverseExplorer" "$BUILT_PRODUCTS_DIR/libMultiverseExplorer.a"
         basedOnDependencyAnalysis: false
 
   MultiverseExplorerTests:
@@ -130,6 +141,10 @@ targets:
     dependencies:
       - target: MultiverseExplorer
       - package: SnapshotTesting
+      # The same archive the app links, so a Kotlin-only change relinks this bundle too (`GAP-033`).
+      - framework: libMultiverseExplorer.a
+        implicit: true
+        embed: false
     settings:
       base:
         # The test bundle needs its own Info.plist. XcodeGen does not synthesise one for a unit-test
@@ -142,10 +157,6 @@ targets:
         FRAMEWORK_SEARCH_PATHS:
           - $(inherited)
           - $(KOTLIN_FRAMEWORK_DIR)
-        OTHER_LDFLAGS:
-          - $(inherited)
-          - -framework
-          - MultiverseExplorer
 
 # The one shared scheme, committed so every machine runs the same test configuration. The test action
 # pins the language and region: the screen baselines render the app's own localised copy, so a
