@@ -966,6 +966,39 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Not verified:** a physical device, which the owner allowed and was not needed. An earlier manual iOS check installed a stale DerivedData build; it was discarded and repeated with the build under test.
 - **Affected documents:** `docs/OBSERVABILITY.md` §2.1, `docs/DECISION_BOARD.md` (`DEC-127`), `docs/TESTING.md`, `docs/DOCUMENTATION_AUDIT.md` (`GAP-033`), `docs/BACKLOG.md` (`TASK-116`), `docs/HANDOFF.md`, and this entry.
 
+### LOG-0138 · 2026-10-05 · `TASK-112`: the code-review P1 gaps, and one escalation
+
+- **Event:** `TASK-112` is delivered as one pull request from `feat/task-112-p1`, the first of the stacked `TASK-112`…`TASK-115` pull requests (`DEC-133`). Every increment was observed red, then green, as its own commit pair.
+- **P1-a, data and Detail:**
+  - Clear filters resets the query and the status in one page-1 request, and the Android search field follows the state's query (`DEC-129`).
+  - A protocol switch resets the pager as a filter change does, with `PagerState.isLoading` until the new page publishes (`DEC-130`).
+  - A stale first page is revalidated behind the screen, so the stale banner clears. A forced load joins the revalidation already in flight, and an enriched detail is revalidated whole (`DEC-130`).
+  - Unknown origin and location rows read "Unknown"; the Detail carries the gender; a not-found Detail offers Back with its own message; a headerless failure is the full-surface error (`DEC-131`, resolving `CONF-87` and `CONF-88`).
+  - Plural copy works on both platforms: `<plurals>` and `Localizable.stringsdict`, held identical per quantity form by the parity verifier, first used by "Appears in N episodes" on the iOS Detail (`DEC-132`).
+- **P1-b, interaction:**
+  - Pull to refresh on both platforms (`DEC-134`). The iOS `.refreshable` awaits the job the shared reducer's refresh returns.
+  - The card→Detail transition (`DEC-135`). Android uses a shared element through the shell's `SharedTransitionLayout` and the design system's portrait. iOS uses `.matchedTransitionSource` with `.navigationTransition(.zoom)`. With Reduce Motion, neither is applied.
+  - One splash gate serves both shells (`IC-026`, `DEC-136`). iOS no longer sleeps a fixed 1.2 s, and the Android splash no longer replays after a configuration change.
+- **Found on the way and fixed in their own commits:**
+  - Two Discovery baselines still pinned the desynchronised search field that `DEC-129` fixed.
+  - `MultiverseIconsTest` ran under the manifest's application and leaked its Koin graph into later Robolectric tests of the same sandbox, which failed by execution order.
+- **Escalated, not shipped (`CONF-90`):** P1-c, the iOS debug diagnostics sheet. It needs `:core:ios` to link `:core:diagnostics`, which `R12` forbids, and `build-logic/**` is outside `DEC-122`'s write authorization. Re-folding the records in Swift would be a second implementation of the recorder. The recommendation and the alternatives are in the conflict row; `TEST-UI-027` stays reserved.
+- **Spanish copy added, as the owner approved (`DEC-128`):** `gender_female` "Femenino", `gender_male` "Masculino", `gender_genderless` "Sin género"; `detail_appears_in_episodes` "Aparece en %d episodio" / "Aparece en %d episodios".
+- **Affected documents:** `docs/CONTRACTS.md` (`IC-007`, `IC-014`, `IC-017`, `IC-018`, `IC-019`, `IC-025`, new `IC-026`), `docs/ERROR_FLOW.md` §4 and §9, `docs/UI_SPEC.md` §6.2 and §8, `docs/DESIGN.md` §3 and §4.2, `docs/GUIDELINES.md` §7.2, `docs/DECISION_BOARD.md` (`DEC-128`…`DEC-136`), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-87`, `CONF-88`, `CONF-90`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, both READMEs' dependency inventories, and this entry.
+- **Decision / ADR reference:** `DEC-128`…`DEC-136`; `CONF-87`, `CONF-88` resolved; `CONF-90` open.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL. That is 1199 tasks, whose 246 test reports hold 1308 tests and 0 failures, among them:
+    - `:core:data`: 204 host, 177 JVM and 193 iOS-simulator tests.
+    - `:core:presentation`: 50 host and 32 iOS-simulator tests.
+    - `:androidApp`: 46 tests.
+    - Android Lint is included.
+    - `buildHealth` first asked for `kotlinx-coroutines-core` to be declared directly in `:core:presentation`; it was, and it passed.
+  - Every committed Android screenshot baseline verifies: `:core:designsystem:verifyRoborazziDebug :androidApp:verifyRoborazziDebug :feature:{discovery,character-detail,favorites}:verifyRoborazziAndroidHostTest`.
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 132 tests, 0 failures.
+  - `tools/swift-lint.sh` — 0 violations. SwiftLint and swift-format disagree on trailing commas in multi-line literals, so the new tests build such arrays with `append`, as the existing ones do.
+  - **Manual, iOS simulator:** the splash shows at 0.5 s and Discovery at 4.5 s. The unified log shows the gate's page-1 read (`LOG-005` without `LOG-010`) just before Discovery's.
+- **Not verified:** the rendered card→Detail motion on a device or emulator (the tests pin the shared key at both ends, not the frames); a physical device.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

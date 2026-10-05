@@ -173,6 +173,8 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | iOS Detail adapter | The Swift `DetailStateHolder` starts the shared holder: the detail loads once and the stored set is observed; how the observed set reconciles the flag stays `TEST-UNIT-004`'s, because a set built in Swift cannot hold a boxed `CharacterId` | `TEST-UNIT-070` |
 | Portrait host rule | The shared predicate's accepted and rejected forms, and in the iOS pipeline zero fetches for a URL outside the rule, no cache admission for a non-`2xx` response and a refused foreign redirect (`REQ-SEC-001`, `DEC-126`) | `TEST-UNIT-071` |
 | Request logs per protocol and platform | Through the production adapters and repository, a debug logger records `LOG-001` with `protocol=REST`, then `GRAPHQL` on the request after a switch, and each `LOG-002` joins its start through the correlation id; a release logger records neither; the iOS Debug build enables `DEBUG`/`INFO`, its Release build only `ERROR`; the iOS sink survives every level; both sinks print `LOG-### name=value …` in catalogue order (`REQ-OBS-001`, `DEC-039`, `DEC-127`) | `TEST-UNIT-072`…`TEST-UNIT-075` |
+| P1 remediation, data and Detail (`TASK-112`) | Clear filters resets the query and the status in one page-1 request and the search field follows it (`DEC-129`); a protocol switch resets the pager like a filter change, with `isLoading` until the new page publishes (`DEC-130`); a stale first page is revalidated behind the screen and a forced load joins the revalidation in flight; an enriched detail is revalidated whole; unknown origin and location rows read "Unknown"; the Detail carries gender; a not-found Detail recovers with Back, and a headerless failure is the full-surface error (`DEC-131`); every plural form is identical on both platforms (`DEC-132`) | `TEST-UNIT-076`…`082`, `TEST-UI-021`…`023` |
+| P1 remediation, interaction (`TASK-112`) | A manual refresh returns the job that ends with it, a pull on the Android grid sends `Refresh` and the iOS `.refreshable` returns when the shared refresh ends (`DEC-134`); the grid card and the Detail hero share one portrait key, and none with Reduce Motion, on both platforms (`DEC-135`); one splash gate serves both shells, asks for the page the first screen loads, and does not replay after an Android saved-state restore (`DEC-136`) | `TEST-UNIT-083`, `TEST-UNIT-084`, `TEST-UI-024`…`026` |
 | Formatters | Card and detail formatting including `"unknown"` → `"Unknown"`; episode count and dimension derivation; no platform types in signatures (`AC-REQ-NFR-001-2`) | `TEST-UNIT-001`, `TEST-UNIT-002`, `TEST-UNIT-012` |
 | Localisation | Every canonical copy key resolves in `en` and `es` and follows the device locale (`REQ-FUNC-013`) | `TEST-UNIT-008` |
 | Copy-key parity | Canonical key list (`DEC-020`) ↔ Android resource file ↔ iOS resource file: no key missing, no extra key, no divergent default (`REQ-UX-008`) | `TEST-UNIT-036` |
@@ -663,24 +665,24 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | Requirement | Priority | Test IDs |
 | --- | --- | --- |
 | `REQ-FUNC-001` — Paginated character list | Must | `TEST-UNIT-001`, `TEST-UNIT-016`, `TEST-CONTRACT-001`, `TEST-UI-001`, `TEST-PERF-003` |
-| `REQ-FUNC-002` — Character detail | Must | `TEST-UNIT-002`, `TEST-UNIT-039`, `TEST-UI-002`, `TEST-CONTRACT-002`, `TEST-UNIT-070`, `TEST-UI-020` |
+| `REQ-FUNC-002` — Character detail | Must | `TEST-UNIT-002`, `TEST-UNIT-039`, `TEST-UI-002`, `TEST-CONTRACT-002`, `TEST-UNIT-070`, `TEST-UI-020`, `TEST-UNIT-079`, `TEST-UNIT-080`, `TEST-UNIT-081`, `TEST-UI-022`, `TEST-UI-023` |
 | `REQ-FUNC-003` — Name search | Must | `TEST-UNIT-003`, `TEST-UNIT-065` |
 | `REQ-FUNC-004` — Status filter | Must | `TEST-UNIT-003`, `TEST-UI-003`, `TEST-UNIT-065` |
 | `REQ-FUNC-005` — Image-first presentation | Must | `TEST-UI-004`, `TEST-INT-002` |
 | `REQ-FUNC-006` — Favorites | Must | `TEST-UNIT-004`, `TEST-UNIT-040`, `TEST-INT-003`, `TEST-INT-004`, `TEST-UI-005`, `TEST-UI-013`, `TEST-UNIT-070` |
-| `REQ-FUNC-007` — Splash with branded loading | Must | `TEST-UI-006`, `TEST-A11Y-001` |
+| `REQ-FUNC-007` — Splash with branded loading | Must | `TEST-UI-006`, `TEST-A11Y-001`, `TEST-UNIT-084`, `TEST-UI-026` (`IC-026` on both shells, `DEC-136`) |
 | `REQ-FUNC-008` — Navigation and sections | Must | `TEST-UI-007` |
-| `REQ-FUNC-009` — Card-to-detail transition | Must | `TEST-UI-008`, `TEST-A11Y-006` |
-| `REQ-FUNC-010` — Empty results state | Must | `TEST-UNIT-005`, `TEST-UI-009` |
+| `REQ-FUNC-009` — Card-to-detail transition | Must | `TEST-UI-008`, `TEST-A11Y-006`, `TEST-UI-025` (`DEC-135`) |
+| `REQ-FUNC-010` — Empty results state | Must | `TEST-UNIT-005`, `TEST-UI-009`, `TEST-UNIT-076`, `TEST-UI-021` |
 | `REQ-FUNC-011` — Retry | Must | `TEST-UNIT-006`, `TEST-UNIT-066`, `TEST-UNIT-069`, `TEST-UI-019` |
-| `REQ-FUNC-012` — Manual refresh | Must | `TEST-UNIT-007` (its pager half: `ForceNetwork` over a fresh cached entry, a failed refresh keeps the items, `TASK-039`), `TEST-UNIT-038`, `TEST-UNIT-066` |
-| `REQ-FUNC-013` — Localisation | Must | `TEST-UNIT-008`, `TEST-UNIT-036` |
+| `REQ-FUNC-012` — Manual refresh | Must | `TEST-UNIT-007` (its pager half: `ForceNetwork` over a fresh cached entry, a failed refresh keeps the items, `TASK-039`), `TEST-UNIT-038`, `TEST-UNIT-066`, `TEST-UNIT-083`, `TEST-UI-024` (the gesture on both platforms, `DEC-134`) |
+| `REQ-FUNC-013` — Localisation | Must | `TEST-UNIT-008`, `TEST-UNIT-036`, `TEST-UNIT-082` (plural copy, `DEC-132`) |
 | `REQ-FUNC-020` — Response caching | Should | `TEST-UNIT-009`, `TEST-UNIT-020`, `TEST-UNIT-023`, `TEST-UNIT-037`, `TEST-INT-001` |
 | `REQ-FUNC-021` — Image caching | Should | `TEST-INT-002` |
 | `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010`, `TEST-UNIT-067`, `TEST-UNIT-068`, `TEST-UI-018`, `TEST-UI-019` |
 | `REQ-FUNC-023` — Detail enrichment | Should | `TEST-UNIT-011`, `TEST-CONTRACT-002` |
 | `REQ-FUNC-033` — Settings screen and sounds preference | Should | `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`; `AC-REQ-FUNC-033-3` by the manifest/`Info.plist` and dependency checks `TEST-UNIT-028` |
-| `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017` |
+| `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017`, `TEST-UNIT-077` |
 | `REQ-FUNC-035` — Delete all favorites | Should | `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017` |
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-052` |
@@ -705,10 +707,10 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-UX-005` — Status not by colour alone | Must | `TEST-UI-013`, `TEST-A11Y-004` |
 | `REQ-UX-006` — Text scaling and grid collapse | Must | `TEST-UI-014`, `TEST-A11Y-005` |
 | `REQ-UX-007` — Reduce Motion and Reduce Transparency | Must | `TEST-UI-015`, `TEST-A11Y-006` |
-| `REQ-UX-008` — Identical copy on both platforms | Must | `TEST-UNIT-036` (the verifier proved on controlled inputs by `TASK-041`; the apps' real resources are wired by `TASK-013`/`TASK-060`, `CONF-70`) |
+| `REQ-UX-008` — Identical copy on both platforms | Must | `TEST-UNIT-036` (the verifier proved on controlled inputs by `TASK-041`; the apps' real resources are wired by `TASK-013`/`TASK-060`, `CONF-70`), `TEST-UNIT-082` (every plural form, `DEC-132`) |
 | `REQ-UX-009` — Loading, empty, stale, error and partial states | Must | `TEST-UI-016` |
 | `REQ-REL-001` — Cache keyed by complete request identity | Must | `TEST-UNIT-020` |
-| `REQ-REL-002` — Concurrent request deduplication | Must | `TEST-UNIT-021` |
+| `REQ-REL-002` — Concurrent request deduplication | Must | `TEST-UNIT-021`, `TEST-UNIT-078` |
 | `REQ-REL-003` — Bounded retries and non-retryable outcomes | Must | `TEST-UNIT-022` |
 | `REQ-REL-004` — Stale marking and clock-change resilience | Must | `TEST-UNIT-023`, `TEST-UNIT-009` |
 | `REQ-SEC-001` — HTTPS-only, configured host only | Must | `TEST-UNIT-025`, `TEST-UNIT-071` (the portrait host rule, `DEC-126`); the adapter's rejection of foreign pagination and relation URLs is also asserted by `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` (`TASK-037`), and `TASK-038` completes the transport-wide half |
@@ -719,7 +721,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-SEC-006` — Dependency advisory monitoring | Must | `TEST-UNIT-030` |
 | `REQ-SEC-007` — Vulnerability reporting route documented | Must | `TEST-UNIT-031` |
 | `REQ-OBS-001` — One logging contract, permitted fields only | Must | `TEST-UNIT-032`, `TEST-UNIT-072`, `TEST-UNIT-073`, `TEST-UNIT-074`, `TEST-UNIT-075` |
-| `REQ-OBS-002` — Debug-only diagnostic surface | Must | `TEST-UNIT-033` |
+| `REQ-OBS-002` — Debug-only diagnostic surface | Must | `TEST-UNIT-033`; on iOS `TEST-UI-027` is reserved and blocked by `CONF-90` |
 | `REQ-OBS-003` — No analytics SDK | Must | `TEST-UNIT-034` |
 
 ### 16.1 Gaps and boundaries
@@ -768,7 +770,7 @@ The complete set of allocated ids and the module that owns each. Level names mat
 | `TEST-UI-001`…`016` | `:feature:*` Android unit test source sets and the iOS feature packages | ui | Semantics assertions (001–009, 011, 013), appearance and platform variants (010, 012, 014, 015), state rendering (016) |
 | `TEST-UI-018`…`020` | `:feature:discovery`, `:feature:favorites`, `:androidApp` and `iosApp/Tests` | ui | Failure messages rendered in `en` and `es` with every placeholder resolved (018); the content-failure and stale banner with a working Retry (019); Detail Back and Share (020) (`TASK-111`) |
 | `TEST-UI-021`…`023` | `:feature:discovery`, `:feature:character-detail` and `iosApp/Tests` | ui | Clear filters and the state-driven search field (021); the Detail's gender, Unknown rows and failure recovery on both platforms (022); "Appears in N episodes" on iOS (023) (`TASK-112`) |
-| `TEST-UI-024`…`027` | `:feature:discovery`, `:androidApp` and `iosApp/Tests` | ui | The pull-to-refresh / `.refreshable` gesture (024); the card→Detail shared element and zoom with their Reduce Motion fallback (025); the splash gate surviving a configuration change on Android and gating iOS (026); the iOS debug diagnostics sheet, absent from Release (027) (`TASK-112` P1-b, P1-c) |
+| `TEST-UI-024`…`027` | `:feature:discovery`, `:androidApp` and `iosApp/Tests` | ui | The pull-to-refresh / `.refreshable` gesture (024); the card→Detail shared element and zoom with their Reduce Motion fallback (025); the splash gate surviving a configuration change on Android, with its policy run on the iOS target by `TEST-UI-006`/`TEST-UNIT-084` (026); the iOS debug diagnostics sheet, absent from Release (027, reserved: blocked by `CONF-90`) (`TASK-112` P1-b, P1-c) |
 | `TEST-A11Y-001`…`006` | Both platforms | a11y | Splash progress semantics, contrast record, target sizes, accessibility tree, text scaling, Reduce Motion/Transparency |
 | `TEST-PERF-001`…`003` | `:androidApp` (001–003) plus the iOS procedure | perf | Cold start (001), scroll frame timing (002), zero-network cached render (003) |
 
@@ -778,6 +780,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-112` (P1 of the code-review remediation): `TEST-UNIT-076`…`084` and `TEST-UI-021`…`026` are implemented and traced in §3.2 and §16; `TEST-UI-006` moves with the splash gate into `:core:presentation`, so it also runs on the iOS target; `TEST-UI-027` is reserved for the iOS debug diagnostics sheet, blocked by `CONF-90`. | `TASK-112`, `LOG-0138` |
 | 2026-10-05 | `TASK-116`: `TEST-UNIT-072`…`075` allocated and implemented, and traced in §3.2 and §16. `072` pins existing shared behaviour, and was not a red; `073`, `074` and `075` were each observed red before their fix. | `TASK-116`, `DEC-127` |
 | 2026-10-05 | `TASK-111` (P0 of the code-review remediation): `TEST-UNIT-065`…`071` and `TEST-UI-018`…`020` are allocated and implemented, `TEST-UNIT-050` gains the double-tapped Delete case, §3.2 and §16 trace them. Each was observed red before its fix. | `TASK-111`, `DEC-122`…`DEC-126` |
 | 2026-10-05 | PR #186 review: `TEST-UNIT-063` (the documentation completeness gate) and `TEST-UNIT-064` (the release note) are allocated and implemented; the second allocation of `TEST-UNIT-060` (2026-10-04, the `GAP-028` exclusion, which the code asserts under `TEST-UNIT-044`) is folded into `TEST-UNIT-044`, so `TEST-UNIT-060` names only the protocol switch case `TASK-075` gave it on 2026-10-03; `REQ-NFR-007` gains `TEST-UNIT-063` | `DEC-110`, `DEC-042` |
