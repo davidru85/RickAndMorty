@@ -42,6 +42,28 @@ final class ImagePipelineHostRuleTests: XCTestCase {
         XCTAssertEqual(transport.requestedUrls.count, 2, "each load had to go back to the transport")
     }
 
+    func test_TEST_UNIT_071_given_a_redirect_when_the_policy_decides_then_only_allowed_hosts_follow() async throws {
+        let policy = ImageRedirectPolicy(isAllowed: portraitHostRule)
+        let origin = try XCTUnwrap(URL(string: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"))
+        let session = URLSession(configuration: .ephemeral)
+        let task = session.dataTask(with: origin)
+        defer { task.cancel() }
+        let redirect = try XCTUnwrap(
+            HTTPURLResponse(url: origin, statusCode: 302, httpVersion: "HTTP/1.1", headerFields: nil)
+        )
+        let foreign = URLRequest(url: try XCTUnwrap(URL(string: "https://evil.example/avatar/1.jpeg")))
+        let allowedURL = try XCTUnwrap(URL(string: "https://rickandmortyapi.com/api/character/avatar/2.jpeg"))
+        let allowed = URLRequest(url: allowedURL)
+
+        let refused = await policy.urlSession(
+            session, task: task, willPerformHTTPRedirection: redirect, newRequest: foreign)
+        let followed = await policy.urlSession(
+            session, task: task, willPerformHTTPRedirection: redirect, newRequest: allowed)
+
+        XCTAssertNil(refused, "a redirect to a foreign host is refused before transport")
+        XCTAssertEqual(followed?.url, allowed.url, "a redirect that stays on the configured host is followed")
+    }
+
     /// A disk cache in a directory no other case — and not the app on this simulator — shares, so a
     /// hit can only come from this case's own loads (`TESTING.md` §4.4).
     private static func isolatedCache() -> URLCache {
@@ -65,7 +87,8 @@ private final class RecordingImageTransport: ImageDataTransport {
         requestedUrls.append(url)
         guard
             let requestURL = URL(string: url),
-            let response = HTTPURLResponse(url: requestURL, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)
+            let response = HTTPURLResponse(
+                url: requestURL, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)
         else {
             return nil
         }

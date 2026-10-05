@@ -7,6 +7,7 @@ import io.github.davidru85.multiverse.core.data.di.coreModule
 import io.github.davidru85.multiverse.core.data.favorites.UserDefaultsFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.logging.OsLogSink
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
+import io.github.davidru85.multiverse.core.data.remote.RickAndMortyApi
 import io.github.davidru85.multiverse.core.data.remote.appleRickAndMortyHttpClient
 import io.github.davidru85.multiverse.core.data.settings.UserDefaultsAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -127,6 +128,13 @@ public object MultiverseBootstrap {
     public fun cancelScope(scope: CoroutineScope) {
         scope.cancel()
     }
+
+    /**
+     * Whether a portrait URL may be fetched at all (`REQ-SEC-001`, `DEC-126`): the one host rule of
+     * `:core:data`, which the iOS image pipeline applies before its memory, disk and network layers,
+     * so a payload cannot point the app at another host.
+     */
+    public fun isAllowedImageUrl(url: String): Boolean = RickAndMortyApi.isAllowedImageUrl(url)
 
     /**
      * The pager one iOS screen's state holder runs on (`IC-014`, `TASK-055`).
