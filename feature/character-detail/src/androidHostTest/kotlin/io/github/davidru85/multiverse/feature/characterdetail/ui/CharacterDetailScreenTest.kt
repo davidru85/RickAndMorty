@@ -200,6 +200,22 @@ class CharacterDetailScreenTest {
     }
 
     @Test
+    fun `TEST-UI-022 given_a_loaded_detail_when_the_subtitle_renders_then_it_reads_species_gender_and_origin`() {
+        show(
+            CharacterDetailUiState(
+                header = header,
+                gender = CopyKeys.GENDER_MALE,
+                episodeCount = 51,
+                info = listOf(InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)"))),
+                loadState = LoadState.Content,
+            ),
+        )
+
+        // `REQ-FUNC-002`, `DEC-131`, `UI_SPEC.md` §6.3: "Species · Gender · Origin" on Android.
+        assertVisible("Human · ${copy("gender_male")} · Earth (C-137)")
+    }
+
+    @Test
     @Config(sdk = [36], qualifiers = "en-w412dp-h891dp", application = android.app.Application::class)
     fun `TEST-A11Y-005 given_maximum_text_size_when_detail_is_read_then_every_stat_and_info_value_fits`() {
         show(

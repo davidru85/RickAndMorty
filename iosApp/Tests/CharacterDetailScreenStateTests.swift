@@ -119,15 +119,17 @@ final class CharacterDetailScreenStateTests: XCTestCase {
 
     // MARK: - The shared derivations
 
-    func test_UI_SPEC_6_3_given_an_origin_when_the_subtitle_renders_then_it_joins_species_and_origin() {
+    func test_TEST_UI_022_given_a_gender_when_the_subtitle_renders_then_it_joins_species_and_gender() {
+        // `UI_SPEC.md` §6.3: iOS reads "Species · Gender"; the origin has its own row (`DEC-131`).
         XCTAssertEqual(
-            CharacterPresentation.subtitle(species: "Human", info: allRows(enriched: true)),
-            "Human · Earth (C-137)"
+            CharacterPresentation.subtitle(species: "Human", gender: CopyKeys.shared.GENDER_MALE),
+            "Human · \(LocalizedCopy.shared.text(for: "gender_male"))"
         )
     }
 
-    func test_UI_SPEC_6_3_given_a_missing_origin_when_the_subtitle_renders_then_it_is_the_species_alone() {
-        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", info: []), "Human")
+    func test_TEST_UI_022_given_no_gender_yet_when_the_subtitle_renders_then_it_is_the_species_alone() {
+        // The list card carries no gender, so the subtitle before the detail answers is the species.
+        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", gender: nil), "Human")
     }
 
     // MARK: - TEST-UI-022: Unknown rows (DEC-131)
@@ -148,11 +150,6 @@ final class CharacterDetailScreenStateTests: XCTestCase {
             ),
             "the detail with an unknown origin and location"
         )
-    }
-
-    func test_TEST_UI_022_given_an_unknown_origin_when_the_subtitle_renders_then_it_names_no_place() {
-        // "Human · Unknown" would read as a place called Unknown; the Origin row already says it.
-        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", info: unknownRows()), "Human")
     }
 
     func test_UI_SPEC_6_3_given_an_info_row_when_its_symbol_is_resolved_then_it_is_the_specified_glyph() {
@@ -187,6 +184,7 @@ final class CharacterDetailScreenStateTests: XCTestCase {
 
     private func makeState(
         header: CharacterCardUi?,
+        gender: Any? = nil,
         episodeCount: Int32? = nil,
         dimension: String? = nil,
         info: [InfoRowUi] = [],
@@ -195,6 +193,7 @@ final class CharacterDetailScreenStateTests: XCTestCase {
     ) -> CharacterDetailUiState {
         CharacterDetailUiState(
             header: header,
+            gender: gender,
             episodeCount: episodeCount.map { KotlinInt(int: $0) },
             dimension: dimension,
             info: info,
