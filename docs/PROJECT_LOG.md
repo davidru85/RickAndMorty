@@ -1267,6 +1267,18 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Residual:** `TEST-UNIT-061` (`ModularWorkflowGate`) pins the other `app-artifacts` tasks but not this one, because the guard lives in `build-logic/**`, which `DEC-151` does not open. Removing the line would not fail the workflow guard.
 - **Affected documents:** `docs/TESTING.md` §14, `docs/PERFORMANCE.md` (§5, §7.1), `docs/DOCUMENTATION_AUDIT.md` (`CONF-92`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0150 · 2026-10-05 · The code-review remediation programme is merged
+
+- **Event:** the owner merged `TASK-120`…`TASK-125`:
+  - PR #213 as `ee6cf4e`, PR #214 as `6f5ed54`, PR #215 as `e84a25e`.
+  - PR #219 as `fff3046`, PR #220 as `3bf423a`, PR #221 as `92ea3b3`.
+  - With PRs #192–#212 before them, every task of the programme (`TASK-111`…`TASK-125`, under `DEC-122`, `DEC-146` and `DEC-151`) is `Done`. Issues #208–#210 and #216–#218 are closed.
+- **Observed in CI:** PR #221's run (`37355907851`, success at `15aa70b`) executed `:androidApp:verifyReleaseApkSize` in the `app-artifacts` job. It printed `2354210 B (2.25 MiB) within PERF-009's 12582912 B`, the same size measured locally (`LOG-0149`).
+- **Open from the programme, recorded rather than pending:**
+  - `TEST-UNIT-061` does not pin the size check (`LOG-0149`). Pinning it needs a `build-logic/**` change and a new authorization.
+  - The older open gaps of `DOCUMENTATION_AUDIT.md` §6.2 (for example `GAP-029` and `GAP-030`) are outside the programme.
+- **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
