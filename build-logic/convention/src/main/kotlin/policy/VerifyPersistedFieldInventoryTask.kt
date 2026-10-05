@@ -2,9 +2,11 @@ package io.github.davidru85.multiverse.buildlogic.policy
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -15,7 +17,9 @@ import org.gradle.work.DisableCachingByDefault
  * `TEST-UNIT-027` — the persisted-field inventory (`REQ-SEC-003`, `AC-REQ-SEC-003-1`).
  *
  * Every store source and both documents are declared inputs, so a key added in code or a field
- * removed from the classification re-runs the check instead of surviving a cached pass.
+ * removed from the classification re-runs the check instead of surviving a cached pass. Every
+ * Kotlin and Swift source is an input too, because a store added outside the inventoried files is
+ * exactly what the persistence-site pass exists to catch.
  */
 @DisableCachingByDefault(because = "verification task with no outputs")
 abstract class VerifyPersistedFieldInventoryTask : DefaultTask() {
@@ -52,6 +56,11 @@ abstract class VerifyPersistedFieldInventoryTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val imageLoader: RegularFileProperty
 
+    /** Every Kotlin and Swift source the persistence-site pass searches; unshipped ones are skipped by the rule. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val candidateSources: ConfigurableFileCollection
+
     @get:Internal
     abstract val rootDirectory: DirectoryProperty
 
@@ -68,13 +77,14 @@ abstract class VerifyPersistedFieldInventoryTask : DefaultTask() {
                 PersistedFieldInventory.IMAGE_LOADER to imageLoader.get().asFile,
             )
         val violations =
-            PersistedFieldInventory
-                .scan(securityDocument.get().asFile, contractsDocument.get().asFile, sources, root)
-                .sortedBy { it.toString() }
+            (
+                PersistedFieldInventory.scan(securityDocument.get().asFile, contractsDocument.get().asFile, sources, root) +
+                    PersistedFieldInventory.scanPersistenceSites(candidateSources.files, sources, root)
+            ).sortedBy { it.toString() }
         if (violations.isNotEmpty()) throw GradleException(render(violations))
         logger.lifecycle(
-            "verifyPersistedFieldInventory passed: every store key is classified in SECURITY.md 3 and matches IC-021 " +
-                "(${PersistedFieldInventory.TEST_ID}).",
+            "verifyPersistedFieldInventory passed: every store key is classified in SECURITY.md 3 and matches IC-021, " +
+                "and no shipped source persists outside those stores (${PersistedFieldInventory.TEST_ID}).",
         )
     }
 

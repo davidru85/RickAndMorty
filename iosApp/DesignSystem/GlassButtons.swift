@@ -51,9 +51,13 @@ public struct GlassIconButton: View {
                 // it scales with Dynamic Type and no raw size appears in the view.
                 .font(MultiverseType.title3Semibold)
                 .foregroundStyle(symbolColor)
+                // A minimum, not a fixed, frame: the symbol scales with Dynamic Type, and at the
+                // accessibility sizes a fixed 50 pt frame let it spill over its own glass shape
+                // (`REQ-UX-006`). At the default sizes the frame is the specified 50 pt.
+                .padding(MultiverseDimensions.spaceXs)
                 .frame(
-                    width: MultiverseDimensions.glassIconButton,
-                    height: MultiverseDimensions.glassIconButton
+                    minWidth: MultiverseDimensions.glassIconButton,
+                    minHeight: MultiverseDimensions.glassIconButton
                 )
                 .contentShape(Capsule())
         }

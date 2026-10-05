@@ -76,9 +76,9 @@ tasks.named("check") {
 }
 
 /**
- * `TASK-066` (`DEC-041`, `DEC-042`): generate the release notes for the current `VERSION` from
- * Conventional Commits, so the release body is derived rather than hand-written and no changelog
- * file exists to drift.
+ * `TASK-066` (`DEC-041`, `DEC-042`): generate the release notes for the current `VERSION` from the
+ * Conventional Commits in the range since the previous `v*` tag (`CONTRIBUTING.md` §3.6), so the
+ * release body is derived rather than hand-written and no changelog file exists to drift.
  *
  * It writes to `build/releases/notes.md`; tagging and publishing stay human actions (`DEC-049`), and
  * the workflow guard forbids a release step in CI.
@@ -96,7 +96,7 @@ val releaseNotes by tasks.registering {
     // task, which is what makes the notes a function of history rather than of a cached list.
     val subjects =
         providers.exec {
-            commandLine("bash", "tools/release-notes.sh", "--all")
+            commandLine("bash", "tools/release-notes.sh")
         }.standardOutput.asText
 
     inputs.property("version", version)

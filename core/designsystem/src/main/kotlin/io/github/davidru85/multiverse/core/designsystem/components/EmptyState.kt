@@ -3,7 +3,10 @@ package io.github.davidru85.multiverse.core.designsystem.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,7 +45,7 @@ public fun EmptyState(
     illustrationSize: androidx.compose.ui.unit.Dp = 160.dp,
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -65,7 +68,7 @@ public fun EmptyState(
             color = MultiverseColors.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        TextButton(onClick = onAction) {
+        TextButton(onClick = onAction, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(
                 text = actionLabel,
                 style = MaterialTheme.typography.labelLarge,

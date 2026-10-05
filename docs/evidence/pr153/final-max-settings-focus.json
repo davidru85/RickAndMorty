@@ -1,0 +1,225 @@
+[
+  {
+    "step": 0,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 2,
+    "text": "Settings",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 204 525 357",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "Preferences",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 429 479 541",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Preferences"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "48 565 1232 975",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Sounds",
+      "Play sound effects in the app",
+      "Sounds"
+    ]
+  },
+  {
+    "step": 5,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "1028 571 1184 715",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Sounds"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "Data",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 1047 212 1159",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Data"
+    ]
+  },
+  {
+    "step": 7,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "48 1183 1232 1369",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Data source"
+    ]
+  },
+  {
+    "step": 8,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "96 1369 637 1529",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "REST API"
+    ]
+  },
+  {
+    "step": 9,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "643 1369 1184 1529",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "GraphQL"
+    ]
+  },
+  {
+    "step": 10,
+    "text": "Favorites",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "48 1649 376 1761",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorites"
+    ]
+  },
+  {
+    "step": 11,
+    "text": "Remove every character you've saved. This can't be undone.",
+    "desc": "null",
+    "class": "android.widget.TextView",
+    "bounds": "96 1833 1184 2148",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Remove every character you've saved. This can't be undone."
+    ]
+  },
+  {
+    "step": 12,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "96 2196 1184 2304",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Delete favorites"
+    ]
+  },
+  {
+    "step": 13,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2304 640 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Characters"
+    ]
+  },
+  {
+    "step": 14,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2304 1268 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Episodes"
+    ]
+  },
+  {
+    "step": 15,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2544 640 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorites"
+    ]
+  },
+  {
+    "step": 16,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  }
+]

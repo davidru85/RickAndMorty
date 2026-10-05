@@ -1,0 +1,93 @@
+[
+  {
+    "step": 0,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "48 2088 554 2256",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorite"
+    ]
+  },
+  {
+    "step": 1,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2304 640 2544",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Characters"
+    ]
+  },
+  {
+    "step": 2,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2304 1268 2544",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Episodes"
+    ]
+  },
+  {
+    "step": 3,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "12 2544 640 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Favorites"
+    ]
+  },
+  {
+    "step": 4,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 5,
+    "text": "null",
+    "desc": "null",
+    "class": "android.view.View",
+    "bounds": "640 2544 1268 2784",
+    "clickable": "true",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Settings"
+    ]
+  },
+  {
+    "step": 6,
+    "text": "null",
+    "desc": "Morty Smith",
+    "class": "android.view.View",
+    "bounds": "0 156 1280 427",
+    "clickable": "false",
+    "focus": "true",
+    "visible": "true",
+    "labels": [
+      "Morty Smith"
+    ]
+  }
+]

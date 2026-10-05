@@ -33,9 +33,9 @@ A client for the public [Rick and Morty API](https://rickandmortyapi.com/) that 
 | ID | Item | Decision | Re-entry condition |
 | --- | --- | --- | --- |
 | DEF-001 | Voice search (speech-to-text) | DEC-002 | Only if a platform speech path is required; carry `REQ-FUNC-030`. **Re-read 2026-10-04:** no speech path is required and the manifest holds no microphone permission (`DEC-118`). |
-| DEF-002 | Real Episodes list and detail screens | DEC-005 | **Condition met 2026-10-04** (M2 released, `DEC-118`): re-admissible but not started — `REQ-FUNC-031` is Could-have, so starting it needs a new accepted decision. Endpoints already documented (`API-EPI-*`). |
+| DEF-002 | Real Episodes list and detail screens | DEC-005 | After M2, using `API-EPI-*` batch endpoints already documented. **Re-read 2026-10-05 (`DEC-118`):** not yet met — M2 is prepared at `v0.2.0` (`DEC-121`) and is released by the owner's tag; even then `REQ-FUNC-031` is Could-have, so starting it needs a new accepted decision. |
 | DEF-003 | Real Locations screens | DEC-005, DEC-055 | Same as `DEF-002`, plus a decision on where Locations is reached from: it has no navigation destination since `DEC-055`. |
-| DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. **Re-read 2026-10-04:** it is still Alpha, and the roadmap's next milestone is Alpha→Beta (`DEC-118`). |
+| DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. **Re-read 2026-10-05:** it is still Alpha (kotlinlang.org `native-swift-export.html`, page dated 2026-08-28; `DEC-118`). |
 | DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. Until then the Sounds preference (`REQ-FUNC-033`) is stored but plays nothing. **Re-read 2026-10-04:** no sound set is specified (`DEC-118`). |
 
 ## 2. Actors and journeys
@@ -428,6 +428,7 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | §1.3 re-read against the tree (`TASK-071`): `DEF-001`, `DEF-004` and `DEF-005` stay deferred with their conditions checked; `DEF-002`/`DEF-003` wait for M2's release by the owner's tag and a new decision; `DEF-004` re-verified on kotlinlang.org (Swift export Alpha) | `DEC-118` |
 | 2026-10-01 | `REQ-FUNC-014`'s task citation corrected from `TASK-014` to `TASK-028` (`CONF-36`); `AC-REQ-NFR-006-2`/`-3` split by `DEC-067` and `AC-REQ-NFR-009-3` restated under the `DEC-066` amendment; the `REQ-NFR-008` identifier gap recorded as deliberate. | `TASK-019`, `DEC-066`, `DEC-067` |
 | 2026-09-29 | Rewritten from the initial 27-line draft: stable IDs, acceptance criteria, MoSCoW rebuilt against `assessment.md`, scope/non-goals, platform, UX, security and observability requirements added. | DEC-002, DEC-004, DEC-007, DEC-046 |
 | 2026-09-30 | Settings replaces Locations as the fourth destination (`REQ-FUNC-008`); `REQ-FUNC-033`…`REQ-FUNC-035` added as Should-have (sounds preference, REST/GraphQL selection, delete all favorites), not traceable to `assessment.md` but to owner decisions; `REQ-FUNC-036` and `DEF-005` defer the sound set; `REQ-NFR-009` module list updated. | DEC-055, DEC-056 |

@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-05
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -257,7 +257,7 @@ Since `TASK-047` the read-only API exists in `:core:diagnostics` and the exclusi
 - Exported entry points are minimised: the launcher entry point on Android and no exported component that accepts a remote-host URL. The app `MUST NOT` declare a deep link or intent filter that hands an arbitrary URL to the network layer without the §5.1 allow-list checks.
 - No permission `MUST` be added for a convenience reason. A new permission is a decision plus a security review (`../AGENTS.md` §15).
 
-Verification: `TEST-UNIT-028` asserts the absence of microphone and speech permission entries in both shipped apps (`AC-REQ-SEC-004-1`).
+Verification: `TEST-UNIT-028` asserts the absence of microphone and speech permission entries in both shipped apps (`AC-REQ-SEC-004-1`): `verifyNoMicSpeechPermission` reads every source manifest and plist, and `:androidApp:verifyShippedPermissions` reads the release APK's merged permission table, so a permission a library manifest merges in is caught as well.
 
 ### 8.2 What the app never asks for
 
@@ -280,7 +280,7 @@ Location, contacts, photos, camera, files, notifications, device identifiers and
 
 - Every dependency `MUST` be pinned to an exact version; dynamic ranges (`+`, `latest.release`) are forbidden (`REQ-NFR-006`, `AC-REQ-NFR-006-1`).
 - Every dependency `MUST` carry a recorded justification in `DESIGN.md` §3 or an ADR, and no concern `MUST` have more than two solutions (`REQ-NFR-002`).
-- Advisory monitoring `MUST` be automated with Dependabot or Renovate on the Gradle version catalog, the Swift package manifests and the GitHub Actions workflows (DEC-037).
+- Advisory monitoring `MUST` be automated with Dependabot or Renovate on the Gradle version catalog, the Swift package manifests and the GitHub Actions workflows (DEC-037). `.github/dependabot.yml` configures Dependabot on the Gradle catalog and the GitHub Actions with version updates off (`open-pull-requests-limit: 0`), so only security updates are raised; Dependabot alerts themselves are a repository setting the owner enables (`DEC-049`). The Swift packages are covered by the manual review of §9.3, because Dependabot reads them only from a `Package.swift`.
 - GitHub Actions `MUST` be pinned by full commit SHA, never by a moving tag or branch (DEC-037). Pinning is security-relevant because workflow definitions execute with repository permissions.
 - A dependency-analysis check (`buildHealth`, DEC-032) `MUST` run in the gate so that unused or undeclared dependency edges are surfaced rather than accumulated.
 - Repositories `SHOULD` be limited to the platform and package sources actually needed (`google()`, `mavenCentral()`) rather than an aggregating mirror, so a typo-squatted artifact cannot be resolved from an unintended source.
@@ -301,8 +301,10 @@ Mitigations for the pinned-alpha surface are those of `RISK-002`: exact pins, a 
 
 ### 9.3 Known gaps, stated as gaps
 
-- No Gradle dependency-verification metadata (checksums) and no dependency lockfile is configured. The build exists (TASK-014, merged in PR #6) and TASK-015 pinned the catalog, but the adoption is unowned and recorded as `GAP-010`; the version catalog pins versions, not artifact bytes. Owner: Security Reviewer, dated 2026-09-30. Target state: verification metadata or a lockfile for the Gradle dependency graph, so a re-pointed or tampered artifact fails resolution.
-- - No CI exists yet, so none of §9.1's automated checks are running today; they are target state and are tracked as work in `BACKLOG.md` (`TASK-025`). Two do execute locally in the root `check` on every build today: `verifyRepositoryHygiene` (`TEST-UNIT-026`, §4) and `verifyDependencyPolicy` (`TEST-UNIT-013`/`014`/`051`). Nothing else should be read as a claim that it already runs.
+- No Gradle dependency-verification metadata (checksums) and no dependency lockfile is configured; the version catalog pins versions, not artifact bytes. The adoption is unowned and recorded as `GAP-010`. Owner: Security Reviewer, dated 2026-09-30. Target state: verification metadata or a lockfile for the Gradle dependency graph, so a re-pointed or tampered artifact fails resolution.
+- Dependabot alerts are disabled on the repository (observed 2026-10-05: `gh api repos/davidru85/RickAndMorty/dependabot/alerts` answers "Dependabot alerts are disabled for this repository"). Until the owner enables them, `.github/dependabot.yml` raises nothing, and advisory monitoring rests on the manual review below.
+- The test target's Swift packages (swift-snapshot-testing and its three transitive pins, `README.md` §15) are declared in the Xcode project, which Dependabot does not read; they are covered by the manual review.
+- **Manual advisory review, 2026-10-05 (`TASK-067`):** every resolved coordinate of the shipped Android release runtime classpath and of the iOS framework's `iosArm64` compile closure (262 Maven artifacts, from `./gradlew :androidApp:dependencies --configuration releaseRuntimeClasspath` and `./gradlew :core:ios:dependencies --configuration iosArm64CompileKlibraries`), the four Swift package pins of `Package.resolved` and the four pinned GitHub Actions were queried against the OSV.dev database (`POST https://api.osv.dev/v1/querybatch` and `/v1/query`): 270 packages, **0 advisories**. No row is added to §11.3, because §11.1 admits only a real finding.
 
 ## 10. Vulnerability reporting
 
@@ -330,7 +332,7 @@ This section is the advisory register (DEC-036). It is a section of this documen
 
 ### 11.1 The table is empty, and must be
 
-**There are zero rows in this register as of 2026-09-29. No vulnerability has been found, reported or accepted in this project.** The table below is intentionally empty. Any row added to it `MUST` be a **real, evidenced finding**: a row is allowed only when a specific advisory, report or scan result exists that can be cited in the `Detection source` and `Verification evidence` columns. A hypothetical, illustrative, "for example", or template row `MUST NOT` be committed. A row with no evidence is a defect in this document and is removed, not reworded.
+**There are zero rows in this register as of 2026-10-05. No vulnerability has been found, reported or accepted in this project; the manual advisory review of that date (§9.3) found none in the 270 pinned packages.** The table below is intentionally empty. Any row added to it `MUST` be a **real, evidenced finding**: a row is allowed only when a specific advisory, report or scan result exists that can be cited in the `Detection source` and `Verification evidence` columns. A hypothetical, illustrative, "for example", or template row `MUST NOT` be committed. A row with no evidence is a defect in this document and is removed, not reworded.
 
 ### 11.2 Columns
 
@@ -424,6 +426,8 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-05 | B9 Phase 9.1 review (`TASK-067`): §9.1 names `.github/dependabot.yml` (security updates only) and the owner's alert setting; §9.3 replaces the stale "no CI exists" bullet with the observed gaps and records the manual OSV review of the 270 pinned packages (0 advisories); §11.1 dates the empty register to that review. | `TASK-067`, `DEC-037`, `LOG-0131` |
+| 2026-10-04 | B6 Phase 6.2 review: §8.1 names both halves of `TEST-UNIT-028` — the source manifests and plists, and the release APK's merged permission table. `TEST-UNIT-027` also fails on a persistence site outside the inventoried stores, so a new store cannot persist a field §3 does not classify. No classification, rule or register row changed. | `TASK-048`, `LOG-0127` |
 | 2026-10-03 | B3 Phase 3.3: §3 row 4 names the persisted key on each platform and row 10 the implemented correlation-id form (`CONF-77`); §6.1 names the two stores; §6.3 records how an unreadable store or a failed write degrades. | `TASK-040`, `DEC-017` |
 | 2026-10-02 | B3 Phase 3.2: §5.2 records the transport-wide host enforcement of `TASK-038` and the `LOG-004` redaction; §7.1, §7.3 and §7.4 record what `TASK-047` implements — the redaction proof on the real search path, the validated correlation id and the graph-level release exclusion of the diagnostic API. | `TASK-038`, `TASK-047`, `DEC-088`, `DEC-094` |
 | 2026-10-01 | §9.3 states the observed position: the two policy checks that run locally in `check` are named, `GAP-010` is indexed as `TASK-084`, and the CI prerequisite for artifact verification is recorded (`TASK-034`, DOC1–DOC8 audit). | `TASK-034`, `DEC-046`, `TASK-084` |

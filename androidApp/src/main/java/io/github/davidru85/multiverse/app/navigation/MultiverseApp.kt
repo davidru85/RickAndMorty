@@ -1,17 +1,20 @@
 package io.github.davidru85.multiverse.app.navigation
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -19,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.core.designsystem.components.MultiverseNavigationBar
 import io.github.davidru85.multiverse.core.designsystem.components.NavigationDestination
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
@@ -28,7 +32,6 @@ import io.github.davidru85.multiverse.feature.characterdetail.navigation.Charact
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
 import io.github.davidru85.multiverse.feature.episodes.navigation.Episodes
 import io.github.davidru85.multiverse.feature.favorites.navigation.Favorites
-import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 
 /**
@@ -56,7 +59,10 @@ public fun MultiverseApp(
 ) {
     val handoff =
         detailHandoff
-            ?: androidx.compose.runtime.remember { io.github.davidru85.multiverse.core.presentation.DetailHandoff() }
+            ?: androidx.compose.runtime.remember {
+                io.github.davidru85.multiverse.core.presentation
+                    .DetailHandoff()
+            }
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
             // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
@@ -67,21 +73,31 @@ public fun MultiverseApp(
             val currentDestination = backStackEntry?.destination
             val destinations = topLevelDestinations()
             val selectedKey =
-                destinations.firstOrNull { destination ->
-                    when (destination.key) {
-                        KEY_CHARACTERS -> currentDestination?.hasRoute(CharacterList::class) == true
-                        KEY_EPISODES -> currentDestination?.hasRoute(Episodes::class) == true
-                        KEY_FAVORITES -> currentDestination?.hasRoute(Favorites::class) == true
-                        KEY_SETTINGS -> currentDestination?.hasRoute(Settings::class) == true
-                        else -> false
-                    }
-                }?.key ?: KEY_CHARACTERS
+                destinations
+                    .firstOrNull { destination ->
+                        when (destination.key) {
+                            KEY_CHARACTERS -> currentDestination?.hasRoute(CharacterList::class) == true
+                            KEY_EPISODES -> currentDestination?.hasRoute(Episodes::class) == true
+                            KEY_FAVORITES -> currentDestination?.hasRoute(Favorites::class) == true
+                            KEY_SETTINGS -> currentDestination?.hasRoute(Settings::class) == true
+                            else -> false
+                        }
+                    }?.key ?: KEY_CHARACTERS
 
-            Column(modifier = Modifier.fillMaxSize()) {
+            val (enterMotion, exitMotion) =
+                PortraitMotion.transition(
+                    io.github.davidru85.multiverse.app.splash
+                        .rememberReduceMotion(),
+                )
+            Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
                 NavHost(
                     navController = navController,
                     startDestination = CharacterList,
                     modifier = Modifier.weight(1f),
+                    enterTransition = { enterMotion },
+                    exitTransition = { exitMotion },
+                    popEnterTransition = { enterMotion },
+                    popExitTransition = { exitMotion },
                 ) {
                     composable<CharacterList> {
                         io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryRoute(
@@ -96,7 +112,9 @@ public fun MultiverseApp(
                     }
                     composable<CharacterDetail> { entry ->
                         val route = entry.toRoute<CharacterDetail>()
-                        val id = io.github.davidru85.multiverse.core.domain.model.CharacterId(route.id)
+                        val id =
+                            io.github.davidru85.multiverse.core.domain.model
+                                .CharacterId(route.id)
                         io.github.davidru85.multiverse.feature.characterdetail.ui.CharacterDetailRoute(
                             id = id,
                             seam = imageSeam,
@@ -111,7 +129,9 @@ public fun MultiverseApp(
                     composable<Episodes> {
                         io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
-                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_play_circle),
+                            illustration =
+                                androidx.compose.ui.res
+                                    .painterResource(R.drawable.ic_play_circle),
                         )
                     }
                     composable<Favorites> {
@@ -120,13 +140,18 @@ public fun MultiverseApp(
                             handoff = handoff,
                             onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
                             onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
-                            illustration = androidx.compose.ui.res.painterResource(R.drawable.ic_heart_outline),
+                            illustration =
+                                androidx.compose.ui.res
+                                    .painterResource(R.drawable.ic_heart_outline),
                         )
                     }
                     // Characters and Settings render the section title in the Discovery headline
                     // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
                     // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
-                    composable<Settings> { io.github.davidru85.multiverse.feature.settings.ui.SettingsRoute() }
+                    composable<Settings> {
+                        io.github.davidru85.multiverse.feature.settings.ui
+                            .SettingsRoute()
+                    }
                 }
                 MultiverseNavigationBar(
                     destinations = destinations,
@@ -146,7 +171,8 @@ public fun MultiverseApp(
                             ),
                     ),
             ) {
-                io.github.davidru85.multiverse.app.splash.BrandedSplash()
+                io.github.davidru85.multiverse.app.splash
+                    .BrandedSplash()
             }
         }
     }
@@ -176,8 +202,18 @@ private fun rememberSplashReady(gate: io.github.davidru85.multiverse.app.splash.
 internal fun topLevelDestinations(): List<NavigationDestination> =
     listOf(
         NavigationDestination(KEY_CHARACTERS, CopyResolver.copy("nav_characters"), MultiverseIcons.Groups, MultiverseIcons.Groups),
-        NavigationDestination(KEY_EPISODES, CopyResolver.copy("nav_episodes"), MultiverseIcons.PlayArrow, MultiverseIcons.PlayArrowOutlined),
-        NavigationDestination(KEY_FAVORITES, CopyResolver.copy("nav_favorites"), MultiverseIcons.Favorite, MultiverseIcons.FavoriteOutlined),
+        NavigationDestination(
+            KEY_EPISODES,
+            CopyResolver.copy("nav_episodes"),
+            MultiverseIcons.PlayArrow,
+            MultiverseIcons.PlayArrowOutlined,
+        ),
+        NavigationDestination(
+            KEY_FAVORITES,
+            CopyResolver.copy("nav_favorites"),
+            MultiverseIcons.Favorite,
+            MultiverseIcons.FavoriteOutlined,
+        ),
         NavigationDestination(KEY_SETTINGS, CopyResolver.copy("nav_settings"), MultiverseIcons.Settings, MultiverseIcons.SettingsOutlined),
     )
 

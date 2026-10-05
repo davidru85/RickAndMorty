@@ -2,4 +2,4 @@
 //
 // Do not edit by hand: `VERSION` is the single source (`DEC-067`, `AC-REQ-NFR-006-3`), and
 // `tools/ios-version.sh --check` fails when this file disagrees with it.
-MULTIVERSE_VERSION = 0.1.0
+MULTIVERSE_VERSION = 0.2.0
