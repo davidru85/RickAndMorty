@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.core.designsystem.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -50,41 +51,51 @@ public fun EmptyState(
     illustrationTint: Color = MultiverseColors.onPrimaryContainer,
     illustrationAlpha: Float = 1f,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = MultiverseDimensions.spaceL),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
-    ) {
-        Cookie9Illustration(
-            icon = illustration,
-            contentDescription = null,
-            containerColor = containerColor,
-            size = illustrationSize,
-            iconTint = illustrationTint,
-            iconAlpha = illustrationAlpha,
-        )
-        Text(
-            text = heading,
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-            color = MultiverseColors.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        // An empty body adds no blank line and no spacing of its own.
-        if (body.isNotBlank()) {
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MultiverseColors.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(max = BodyWidth),
-            )
-        }
-        Button(
-            onClick = onAction,
-            modifier = Modifier.heightIn(min = ButtonDefaults.MediumContainerHeight),
-            contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
+    // Centred in the area it is given (`TASK-131`): the column scrolls, so long copy at the largest text
+    // sizes stays reachable, and it is at least as tall as that area, so a short one sits in its middle
+    // rather than stacking from the top. An unbounded parent gives no area to centre in.
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .then(if (constraints.hasBoundedHeight) Modifier.heightIn(min = maxHeight) else Modifier)
+                    .padding(horizontal = MultiverseDimensions.spaceL),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM, Alignment.CenterVertically),
         ) {
-            Text(text = actionLabel, style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight))
+            Cookie9Illustration(
+                icon = illustration,
+                contentDescription = null,
+                containerColor = containerColor,
+                size = illustrationSize,
+                iconTint = illustrationTint,
+                iconAlpha = illustrationAlpha,
+            )
+            Text(
+                text = heading,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
+                color = MultiverseColors.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            // An empty body adds no blank line and no spacing of its own.
+            if (body.isNotBlank()) {
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MultiverseColors.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.widthIn(max = BodyWidth),
+                )
+            }
+            Button(
+                onClick = onAction,
+                modifier = Modifier.heightIn(min = ButtonDefaults.MediumContainerHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
+            ) {
+                Text(text = actionLabel, style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight))
+            }
         }
     }
 }

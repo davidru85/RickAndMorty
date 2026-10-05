@@ -3,6 +3,7 @@ package io.github.davidru85.multiverse.core.designsystem.snapshots
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -156,6 +157,9 @@ class ComponentSnapshotTest {
             illustration = ColorPainter(MultiverseBrandColors.portalGreen),
             actionLabel = "Browse characters",
             onAction = {},
+            // The empty state fills the area its screen gives it and centres in it (`TASK-131`); the
+            // catalogue gives it one, as the Episodes and Favorites screens give it the space below their title.
+            modifier = Modifier.height(EMPTY_STATE_AREA),
         )
     }
 
@@ -228,5 +232,10 @@ class ComponentSnapshotTest {
                 dark.readBytes(),
             )
         }
+    }
+
+    private companion object {
+        /** The area the catalogue gives the empty state: its content plus room above and below. */
+        val EMPTY_STATE_AREA = 520.dp
     }
 }
