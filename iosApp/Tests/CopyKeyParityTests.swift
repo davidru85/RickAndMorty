@@ -11,12 +11,21 @@ import XCTest
 /// every template with typed arguments.
 @MainActor
 final class CopyKeyParityTests: XCTestCase {
-    func test_TEST_UNIT_097_given_the_swift_enum_when_compared_then_it_names_exactly_the_shared_keys() {
-        let shared = Set(CopyKeys.shared.all.map { CharacterPresentation.key($0) })
+    /// The enum is compared with the keys the shipped `Localizable.strings` carries. `TEST-UNIT-036`
+    /// holds that file's keys identical to `CopyKeys.all`, so the enum matches the shared list through
+    /// it; a `Set` of Kotlin value-class keys crosses the boundary boxed, not as strings, so the shared
+    /// set cannot be read here directly.
+    func test_TEST_UNIT_097_given_the_swift_enum_when_compared_then_it_names_exactly_the_shared_keys() throws {
+        let path = try XCTUnwrap(
+            Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: "en"),
+            "the app ships its English strings"
+        )
+        let entries = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
+        let shipped = Set(entries.keys)
         let swift = Set(CopyKey.allCases.map(\.rawValue))
 
-        XCTAssertEqual(swift.subtracting(shared), [], "a Swift case names a key the shared list does not")
-        XCTAssertEqual(shared.subtracting(swift), [], "a shared key has no Swift case")
+        XCTAssertEqual(swift.subtracting(shipped), [], "a Swift case names a key the shared list does not")
+        XCTAssertEqual(shipped.subtracting(swift), [], "a shared key has no Swift case")
     }
 
     func test_TEST_UNIT_098_given_typed_arguments_when_a_template_is_filled_then_each_lands_in_its_specifier() {
