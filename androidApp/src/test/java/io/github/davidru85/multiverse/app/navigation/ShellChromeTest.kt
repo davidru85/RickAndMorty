@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -123,5 +124,26 @@ class ShellChromeTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Settings").assertDoesNotExist()
+    }
+
+    @Test
+    fun `TEST-UI-028 given_the_detail_when_popped_then_the_bar_grows_in_instead_of_jumping`() {
+        val controller = shell()
+        val bar = SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup)
+        val fullHeight = compose.onNode(bar).fetchSemanticsNode().boundsInRoot.height
+        compose.runOnIdle { controller.navigate(CharacterDetail("1")) }
+        compose.waitForIdle()
+
+        // Two frames into the pop: the bar has started to show, but has not pushed the leaving Detail
+        // up by its whole height in one frame.
+        compose.mainClock.autoAdvance = false
+        compose.runOnIdle { controller.popBackStack() }
+        repeat(2) { compose.mainClock.advanceTimeByFrame() }
+        val earlyHeight = compose.onNode(bar).fetchSemanticsNode().boundsInRoot.height
+        assertTrue("TEST-UI-028: the bar grows in over the transition (was $earlyHeight of $fullHeight)", earlyHeight < fullHeight)
+
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals(fullHeight, compose.onNode(bar).fetchSemanticsNode().boundsInRoot.height)
     }
 }
