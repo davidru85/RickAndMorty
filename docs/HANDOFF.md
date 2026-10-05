@@ -1,13 +1,30 @@
 # HANDOFF.md — Current State and Continuation Guide
 
 - **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### Owner audit remediation — 2026-10-06
+
+The owner's manual audit of 2026-10-05 listed eight Android defects and two iOS defects. Each was reproduced on the API 37 emulator or the iOS 27 simulator on 2026-10-06 and registered as a gap (`GAP-037`…`GAP-046`). Each is one task with its own issue and pull request. The branches are stacked: each starts from the previous task's head, every pull request targets `main`, and the owner reviews them together and merges them in order (`DEC-153`).
+
+| Work | Branch | State |
+| --- | --- | --- |
+| `TASK-127` — a single splash on Android (`GAP-037`) | `fix/task-127-single-splash`, from `main` at `cd06fa7` | In progress (issue #226) |
+| `TASK-128` — a smooth Discovery scroll on Android (`GAP-038`) | `fix/task-128-smooth-scroll`, from `TASK-127`'s head | Not started (issue #227) |
+| `TASK-129` — the Android count line keeps its space (`GAP-039`) | `fix/task-129-count-line-space`, from `TASK-128`'s head | Not started (issue #228) |
+| `TASK-130` — Material Symbols glyphs in the Android navigation bar (`GAP-040`) | `fix/task-130-nav-glyphs`, from `TASK-129`'s head | Not started (issue #229) |
+| `TASK-131` — the Episodes placeholder centred on Android (`GAP-041`) | `fix/task-131-centred-placeholder`, from `TASK-130`'s head | Not started (issue #230) |
+| `TASK-132` — REST API shown as the selected data source on Android (`GAP-042`) | `fix/task-132-selected-protocol`, from `TASK-131`'s head | Not started (issue #231) |
+| `TASK-133` — smaller Detail stat tiles on Android (`GAP-043`) | `fix/task-133-smaller-stat-tiles`, from `TASK-132`'s head | Not started (issue #232) |
+| `TASK-134` — a smaller favourite button with the right heart on Android (`GAP-044`) | `fix/task-134-favorite-button`, from `TASK-133`'s head | Not started (issue #233) |
+| `TASK-135` — the iOS count line keeps its space (`GAP-045`) | `fix/task-135-ios-count-line-space`, from `TASK-134`'s head | Not started (issue #234) |
+| `TASK-136` — the iOS list pages as the user scrolls (`GAP-046`) | `fix/task-136-ios-paging`, from `TASK-135`'s head | Not started (issue #235) |
 
 ### Code-review remediation — 2026-10-05
 
