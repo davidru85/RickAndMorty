@@ -17,7 +17,9 @@ import org.robolectric.annotation.Config
  * A glyph that parses to nothing fails too, so an empty or whitespace path cannot pass.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+// A plain `Application`: the manifest's own starts the global Koin graph and never stops it, which
+// leaked into every later test of the same Robolectric sandbox that starts its own graph.
+@Config(sdk = [36], application = android.app.Application::class)
 class MultiverseIconsTest {
     @Test
     fun `TEST-UNIT-058 given_every_bundled_glyph_when_it_is_parsed_then_it_yields_a_drawable_vector`() {
