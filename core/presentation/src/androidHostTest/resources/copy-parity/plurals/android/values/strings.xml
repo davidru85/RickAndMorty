@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controlled parity input for TEST-UNIT-082 (DEC-132): one plain key and one plural key. -->
+<resources>
+    <string name="action_retry">Retry</string>
+    <plurals name="probe_items">
+        <item quantity="one">Appears in %d item</item>
+        <item quantity="other">Appears in %d items</item>
+    </plurals>
+</resources>

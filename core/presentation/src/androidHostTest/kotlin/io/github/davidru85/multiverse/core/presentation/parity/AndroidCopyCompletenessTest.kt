@@ -21,7 +21,11 @@ class AndroidCopyCompletenessTest {
     fun `TEST-UNIT-036 given_the_shipped_android_copy_set_when_verified_then_every_canonical_key_resolves_in_both_locales`() {
         val issues =
             CopyParity.verifyAndroid(
-                canonical = CopyKeys.all.map { it.value }.toSet(),
+                canonical =
+                    CopyParity.canonical(
+                        plain = CopyKeys.all.map { it.value }.toSet(),
+                        plurals = CopyKeys.plurals.map { it.value }.toSet(),
+                    ),
                 androidResources = androidResourcesRoot(),
             )
         assertEquals(

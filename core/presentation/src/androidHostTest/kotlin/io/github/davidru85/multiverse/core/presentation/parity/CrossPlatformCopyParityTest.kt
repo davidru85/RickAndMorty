@@ -25,15 +25,19 @@ class CrossPlatformCopyParityTest {
     fun `TEST-UNIT-036 given_both_shipped_copy_sets_when_verified_then_the_platforms_agree_in_every_locale`() {
         val issues =
             CopyParity.verify(
-                canonical = CopyKeys.all.map { it.value }.toSet(),
+                canonical =
+                    CopyParity.canonical(
+                        plain = CopyKeys.all.map { it.value }.toSet(),
+                        plurals = CopyKeys.plurals.map { it.value }.toSet(),
+                    ),
                 androidResources = androidResourcesRoot(),
                 appleResources = appleResourcesRoot(),
             )
         assertEquals(
             emptyList(),
             issues,
-            "the Android and Apple copy sets must carry exactly the canonical keys, once each, " +
-                "with identical values per locale",
+            "the Android and Apple copy sets must carry exactly the canonical keys and every plural form, " +
+                "once each, with identical values per locale (DEC-132)",
         )
     }
 
