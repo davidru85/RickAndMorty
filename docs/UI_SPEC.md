@@ -375,6 +375,7 @@ Behaviour:
   | Species | The API `species` field, never `type`; "unknown" is shown as "Unknown" |
 
   No gender, type or origin on the cards.
+- **Manual refresh** (`REQ-FUNC-012`, `DEC-134`): pulling the grid down revalidates page 1 over the network. Android uses Material 3's `PullToRefreshBox` with its default indicator, shown while `isRefreshing`; iOS uses `.refreshable`, whose system spinner holds until the shared refresh ends. A failed refresh keeps the items on screen and surfaces through the notice of §8.
 - **Prototype content:** both prototypes show the same six characters in the same order: Rick Sanchez, Morty Smith, Birdperson, Krombopulos Michael, Mr. Meeseeks, Squanchy. At runtime both apps render the same API data.
 - **Filters are identical on both platforms:**
   - the same four single-select options (All · Alive · Dead · Unknown)

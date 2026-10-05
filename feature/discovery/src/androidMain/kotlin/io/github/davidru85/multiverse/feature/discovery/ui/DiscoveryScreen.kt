@@ -29,6 +29,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -112,14 +113,22 @@ public fun DiscoveryScreen(
                         illustration = illustration,
                     )
 
+                // The refresh gesture is bound to the shared state: a pull sends `Refresh`, and the
+                // indicator holds while `isRefreshing` (`REQ-FUNC-012`, `DEC-134`).
                 LoadState.Loading, LoadState.Content ->
-                    CharacterGrid(
-                        state = state,
-                        onIntent = onIntent,
-                        seam = seam,
-                        gridState = gridState,
-                        onOpenDetail = onOpenDetail,
-                    )
+                    PullToRefreshBox(
+                        isRefreshing = state.isRefreshing,
+                        onRefresh = { onIntent(CharacterListIntent.Refresh) },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        CharacterGrid(
+                            state = state,
+                            onIntent = onIntent,
+                            seam = seam,
+                            gridState = gridState,
+                            onOpenDetail = onOpenDetail,
+                        )
+                    }
             }
         }
         DiscoveryNotice(state = state, onIntent = onIntent, modifier = Modifier.align(Alignment.BottomCenter))

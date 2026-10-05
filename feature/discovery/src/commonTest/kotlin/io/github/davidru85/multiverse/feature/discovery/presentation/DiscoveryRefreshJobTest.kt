@@ -31,7 +31,12 @@ class DiscoveryRefreshJobTest {
             val repository =
                 FakeCharacterRepository(FakeCatalogue((1..3).map { FakeCatalogue.character("$it") }), latency = 300.milliseconds)
             val reducer =
-                DiscoveryReducer(FakeCharacterPager(repository, backgroundScope), backgroundScope, dispatcher, DefaultPresentationFormatters)
+                DiscoveryReducer(
+                    FakeCharacterPager(repository, backgroundScope),
+                    backgroundScope,
+                    dispatcher,
+                    DefaultPresentationFormatters,
+                )
             reducer.start()
             advanceTimeBy(400.milliseconds)
             runCurrent()

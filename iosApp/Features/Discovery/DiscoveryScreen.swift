@@ -23,6 +23,10 @@ struct DiscoveryScreen: View {
     let onIntent: (any CharacterListIntent) -> Void
     let onOpenDetail: (CharacterCardUi) -> Void
 
+    /// The manual refresh (`REQ-FUNC-012`, `DEC-134`): `.refreshable` awaits it, so it returns when
+    /// the shared refresh ends. A preview or a case that does not refresh passes nothing.
+    let onRefresh: () async -> Void
+
     /// The one image seam (`TASK-058`, `UI_SPEC.md` §5.1): a card's portrait resolves through it, so a
     /// test substitutes an in-memory loader and never touches the network. `nil` uses the app's own
     /// pipeline, which is the only implementation the shipped app resolves.
@@ -32,12 +36,14 @@ struct DiscoveryScreen: View {
         state: CharacterListUiState,
         loader: (any PortraitImageLoading)? = nil,
         onIntent: @escaping (any CharacterListIntent) -> Void,
-        onOpenDetail: @escaping (CharacterCardUi) -> Void
+        onOpenDetail: @escaping (CharacterCardUi) -> Void,
+        onRefresh: @escaping () async -> Void = {}
     ) {
         self.state = state
         self.loader = loader
         self.onIntent = onIntent
         self.onOpenDetail = onOpenDetail
+        self.onRefresh = onRefresh
     }
 
     /// The typed query, held by the view only until the intent leaves.
@@ -213,6 +219,8 @@ struct DiscoveryScreen: View {
             }
             .padding(MultiverseDimensions.spaceM)
         }
+        // Pull to refresh revalidates page 1 over the network; the spinner holds until it ends.
+        .refreshable { await onRefresh() }
         .safeAreaInset(edge: .bottom) {
             if let notice = DiscoveryNotice.make(for: state) {
                 noticeBanner(notice)

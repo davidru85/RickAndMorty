@@ -70,6 +70,16 @@ public final class DiscoveryStateHolder: ObservableObject {
         reducer.onIntent(intent: intent)
     }
 
+    /// The manual refresh `.refreshable` runs (`REQ-FUNC-012`, `DEC-134`): it starts the shared
+    /// reducer's refresh and returns when that refresh ends — the moment `isRefreshing` clears — so
+    /// the system spinner holds exactly as long as the network revalidation, with no state polled.
+    public func refresh() async {
+        let job = reducer.refresh()
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            _ = job.invokeOnCompletion { _ in continuation.resume() }
+        }
+    }
+
     deinit {
         // Swift 6 does not allow a nonisolated `deinit` to touch a non-Sendable stored property, so
         // the observation carries the cancellation: ending it cancels the reducer's scope.

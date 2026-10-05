@@ -175,11 +175,18 @@ public class DiscoveryReducer(
         }
     }
 
-    /** Revalidates page 1 over the network; [refreshing] holds until the newest refresh ends. */
-    private fun refresh() {
+    /**
+     * The `Refresh` intent (`REQ-FUNC-012`, `DEC-134`): revalidates page 1 over the network, and
+     * `isRefreshing` holds until the newest refresh ends. It returns the job of the refresh it starts,
+     * for a platform control that awaits its own work — iOS `.refreshable` holds its spinner until the
+     * job ends — while a state-bound control (Android's pull-to-refresh) reads `isRefreshing`. The
+     * refresh runs in the reducer's own scope, never in the caller's frame, so it supersedes and is
+     * superseded exactly as one sent through [onIntent].
+     */
+    public fun refresh(): Job {
         val generation = refreshGeneration.updateAndGet { it + 1 }
         refreshing.value = true
-        scope.launch(dispatcher) {
+        return scope.launch(dispatcher) {
             try {
                 pager.refresh()
             } finally {

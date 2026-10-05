@@ -37,7 +37,8 @@ struct DiscoveryHost: View {
         DiscoveryScreen(
             state: holder.state,
             onIntent: { holder.onIntent($0) },
-            onOpenDetail: onOpenDetail
+            onOpenDetail: onOpenDetail,
+            onRefresh: { await holder.refresh() }
         )
     }
 }
