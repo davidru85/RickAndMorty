@@ -1,62 +1,43 @@
 package io.github.davidru85.multiverse.app.splash
 
-import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * `TEST-UI-006`'s rotation half (`TASK-007`, `UI_SPEC.md` §7): the portal's angle is a pure
- * function of the cycle fraction, so the prototype keyframes are asserted exactly, with no
- * clock in the case.
+ * `TEST-UNIT-086` — the portal's rotation (`UI_SPEC.md` §7, `REQ-FUNC-007`, `AC-REQ-FUNC-007-3`,
+ * `TASK-113`): the angle is a pure function of the elapsed time, so the motion is asserted exactly
+ * with no clock in the case.
  *
- * The specification states 0° → −360° over 1.2 s on the ease-in cubic, then a constant ≈900°/s
- * sweep to −1080° at 2 s. The first draft of this surface restarted a 1.2 s ease-in cycle from 0°,
- * which made the portal visibly stop at the instant the acceleration ended — the defect this set
- * of cases pins and the rewrite removes.
+ * The specification turns the portal **clockwise** — positive degrees in Compose — from 0° to 360°
+ * over 1.2 s on the ease-in cubic, then at a constant ≈900°/s. The earlier curve copied Figma's
+ * negative keyframes, so the portal turned anticlockwise, and it restarted the ease-in every 2 s, so
+ * the speed dropped from ≈900°/s to 0 at each restart: a visible stutter where the spec asks for
+ * constant speed.
  */
 class PortalRotationTest {
     @Test
-    fun `TEST-UI-006 given_the_acceleration_phase_when_the_angle_is_read_then_it_follows_the_documented_easing`() {
-        // Halfway through the acceleration the ease-in cubic has advanced little (0.32,0,0.67,0);
-        // the value is pinned so a silent easing swap fails here.
-        val half = portalAngleAt(0.25f)
-        assertTrue(
-            "early in the cycle the eased sweep is small (UI_SPEC.md §7)",
-            -360f * 0.2f < half && half <= 0f,
-        )
-        assertEquals(
-            "the acceleration ends at −360° at 1.2 s",
-            -360f,
-            portalAngleAt(ACCELERATION_MILLIS.toFloat() / CYCLE_MILLIS),
-        )
+    fun `TEST-UNIT-086 given_the_acceleration_when_the_angle_is_read_then_it_turns_clockwise_to_one_turn_at_1_2_s`() {
+        assertEquals(0f, portalAngleAt(0), 1e-3f)
+        assertTrue("the portal turns clockwise: positive degrees in Compose", portalAngleAt(600) > 0f)
+        assertTrue("the ease-in has advanced little at mid-acceleration", portalAngleAt(600) < 360f * 0.35f)
+        assertEquals("one full turn when the acceleration ends", 360f, portalAngleAt(ACCELERATION_MILLIS.toLong()), 0.5f)
     }
 
     @Test
-    fun `TEST-UI-006 given_the_constant_phase_when_the_angle_is_read_then_the_sweep_rate_is_the_documented_one`() {
-        // 0.8 s covering 720° is exactly the ≈900°/s the specification names.
-        val perSecond = (portalAngleAt(1f) - portalAngleAt(ACCELERATION_MILLIS.toFloat() / CYCLE_MILLIS + 0.01f)) / (0.8f - 0.01f) * -1f
-        assertEquals(
-            "the constant phase sweeps the documentation's ≈900°/s (UI_SPEC.md §7)",
-            900f,
-            perSecond,
-            15f,
-        )
+    fun `TEST-UNIT-086 given_the_end_of_the_acceleration_when_the_speed_is_read_then_it_continues_without_a_jump`() {
+        val end = ACCELERATION_MILLIS.toLong()
+        val before = (portalAngleAt(end) - portalAngleAt(end - 10)) / 0.010f
+        val after = (portalAngleAt(end + 10) - portalAngleAt(end)) / 0.010f
+        assertEquals("the speed is continuous where the acceleration hands over (°/s)", before, after, 60f)
     }
 
     @Test
-    fun `TEST-UI-006 given_the_cycle_wrap_when_the_angle_loops_then_the_image_is_continuous`() {
-        // −1080° ≡ 0° (mod 360°): the restart draws the same image, so the portal never stops.
-        assertTrue(
-            "the cycle ends a whole number of turns below zero",
-            abs(portalAngleAt(1f) % 360f) < 1e-3f,
-        )
-        assertEquals(0f, portalAngleAt(0f), 1e-6f)
-    }
-
-    @Test
-    fun `TEST-UI-006 given_the_documented_bounds_when_they_are_read_then_the_cycle_is_two_seconds`() {
-        assertEquals(2_000, CYCLE_MILLIS)
-        assertEquals(1_200, ACCELERATION_MILLIS)
+    fun `TEST-UNIT-086 given_the_constant_phase_when_the_angle_is_read_then_it_keeps_the_documented_speed_and_never_restarts`() {
+        listOf(2_000L, 5_000L, 60_000L).forEach { at ->
+            val perSecond = portalAngleAt(at + 1_000) - portalAngleAt(at)
+            assertEquals("≈900°/s from $at ms on (UI_SPEC.md §7)", 900f, perSecond, 15f)
+        }
+        assertTrue("no restart: the angle only grows", portalAngleAt(2_010) > portalAngleAt(1_990))
     }
 }
