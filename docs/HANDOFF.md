@@ -17,7 +17,7 @@ The owner's manual audit of 2026-10-05 listed eight Android defects and two iOS 
 | --- | --- | --- |
 | `TASK-127` — a single splash on Android (`GAP-037`) | `fix/task-127-single-splash`, from `main` at `cd06fa7` | In review (PR #236; issue #226; `LOG-0152`) |
 | `TASK-128` — a smooth Discovery scroll on Android (`GAP-038`) | `fix/task-128-smooth-scroll`, from `TASK-127`'s head | In review (PR #237; issue #227; `LOG-0153`) |
-| `TASK-129` — the Android count line keeps its space (`GAP-039`) | `fix/task-129-count-line-space`, from `TASK-128`'s head | Not started (issue #228) |
+| `TASK-129` — the Android count line keeps its space (`GAP-039`) | `fix/task-129-count-line-space`, from `TASK-128`'s head | In review (issue #228; `LOG-0154`) |
 | `TASK-130` — Material Symbols glyphs in the Android navigation bar (`GAP-040`) | `fix/task-130-nav-glyphs`, from `TASK-129`'s head | Not started (issue #229) |
 | `TASK-131` — the Episodes placeholder centred on Android (`GAP-041`) | `fix/task-131-centred-placeholder`, from `TASK-130`'s head | Not started (issue #230) |
 | `TASK-132` — REST API shown as the selected data source on Android (`GAP-042`) | `fix/task-132-selected-protocol`, from `TASK-131`'s head | Not started (issue #231) |

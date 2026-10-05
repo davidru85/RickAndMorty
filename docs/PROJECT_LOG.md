@@ -1346,6 +1346,29 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 - **Not verified:** a physical device, or the `TEST-PERF-002` harness, which `PERF-Q1` leaves undecided.
 
+### LOG-0154 · 2026-10-06 · `TASK-129`: the Android count line keeps its space (`GAP-039`)
+
+- **Event:** the owner reported that the "N characters" line disappears and reappears, moving the list.
+- **The cause:**
+  - `RepositoryCharacterPager.reset()` clears `totalCount` on every filter change, which is right: the new filter's total is unknown until its page answers.
+  - `DiscoveryScreen.Headline` composed the line only inside `totalCount?.let`, so for that time the line took no space, and the chips and the grid moved up one line and back.
+- **The change:**
+  - The line is always composed (`CountLine`). While the count is unknown, it keeps the last count's text (`0` before any count is known) at zero opacity, fading over 150 ms. It is cleared from semantics, so a screen reader never hears a number that no longer applies.
+  - The reducer and the pager are unchanged, so the state stays truthful and the reserved line is presentation only.
+  - `UI_SPEC.md` §6.2 states the rule.
+- **Red, then green:**
+  - `TEST-UI-042` failed with `the chips stay where they were while the count is unknown expected:<174.0> but was:<139.0>`, and the inverse when the first count arrives.
+  - Its third case, no hidden count announced, passed before the fix and still passes.
+  - All 46 `:feature:discovery` host tests pass after the fix.
+- **Baselines:**
+  - `TEST-UI-016`'s `discovery-loading`, `discovery-empty` and `discovery-error-*` pairs carry no count, so they re-record with the reserved line. Their compare images show only the one-line shift.
+  - The stale and content baselines are unchanged.
+- **Device:** on the emulator, a recording while switching to "Dead" shows the skeleton frame with the count line empty and the chips and the grid at the same height, then "287 characters across the multiverse" fading in.
+- **Affected documents:** `docs/UI_SPEC.md` §6.2, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-039`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 267 test reports hold 1361 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
