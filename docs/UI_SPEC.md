@@ -622,6 +622,7 @@ The masters are 432 px, which is the 108 dp canvas at xxxhdpi. Launchers show on
 
 - **One appearance only (decision):** the app ships no Dark, Clear or Tinted variants. The icon is already dark, so it is used on both light and dark Home Screens. If the user picks the Clear or Tinted Home Screen style, iOS derives those versions from this icon automatically.
 - **Build with Icon Composer (Xcode 26):** create a `.icon` file with three layers: Background, Portal and Dome. Icon Composer adds the real Liquid Glass lighting. The Figma master is the source for each layer. If you use an `AppIcon` asset catalog instead, fill only the Any slot.
+- **Implemented (`TASK-122`, `DEC-150`):** as an `AppIcon` asset catalog with the 1024 × 1024 master in the Any slot only. The layered Icon Composer file is not built: it is authored in Icon Composer's own app, which this repository's tooling cannot drive.
 - **Previews on the board:**
   - a squircle-masked tile
   - a Home Screen row using the iOS 27 kit `App Icon/iPhone` template, placing the icon next to the Photos, Weather and Music icons
