@@ -130,6 +130,31 @@ final class CharacterDetailScreenStateTests: XCTestCase {
         XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", info: []), "Human")
     }
 
+    // MARK: - TEST-UI-022: Unknown rows (DEC-131)
+
+    func test_TEST_UI_022_given_an_unknown_origin_and_location_when_rendered_then_both_rows_read_unknown() {
+        let rows = unknownRows()
+        XCTAssertEqual(
+            rows.map { CharacterPresentation.text($0.value) },
+            [LocalizedCopy.shared.text(for: "value_unknown"), LocalizedCopy.shared.text(for: "value_unknown")],
+            "an unknown origin and location keep their rows and read Unknown (AC-REQ-FUNC-002-2)"
+        )
+        assertRenders(
+            state: makeState(
+                header: card(id: "1", name: "Rick Sanchez"),
+                episodeCount: 1,
+                info: rows,
+                loadState: LoadStateContent.shared
+            ),
+            "the detail with an unknown origin and location"
+        )
+    }
+
+    func test_TEST_UI_022_given_an_unknown_origin_when_the_subtitle_renders_then_it_names_no_place() {
+        // "Human · Unknown" would read as a place called Unknown; the Origin row already says it.
+        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", info: unknownRows()), "Human")
+    }
+
     func test_UI_SPEC_6_3_given_an_info_row_when_its_symbol_is_resolved_then_it_is_the_specified_glyph() {
         XCTAssertEqual(CharacterPresentation.infoSymbol(for: InfoRowKind.origin), "globe.americas.fill")
         XCTAssertEqual(CharacterPresentation.infoSymbol(for: InfoRowKind.lastknownlocation), "mappin.and.ellipse")
@@ -186,14 +211,14 @@ final class CharacterDetailScreenStateTests: XCTestCase {
             InfoRowUi(
                 kind: InfoRowKind.origin,
                 copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
-                value: "Earth (C-137)"
+                value: DisplayTextData(value: "Earth (C-137)")
             )
         )
         rows.append(
             InfoRowUi(
                 kind: InfoRowKind.lastknownlocation,
                 copyKey: CopyKeys.shared.DETAIL_INFO_LAST_KNOWN_LOCATION,
-                value: "Citadel of Ricks"
+                value: DisplayTextData(value: "Citadel of Ricks")
             )
         )
         if enriched {
@@ -201,11 +226,27 @@ final class CharacterDetailScreenStateTests: XCTestCase {
                 InfoRowUi(
                     kind: InfoRowKind.firstseenin,
                     copyKey: CopyKeys.shared.DETAIL_INFO_FIRST_SEEN_IN,
-                    value: "Pilot · S01E01"
+                    value: DisplayTextData(value: "Pilot · S01E01")
                 )
             )
         }
         return rows
+    }
+
+    /// The two rows the shared reducer keeps for an origin and a location the API reports as unknown.
+    private func unknownRows() -> [InfoRowUi] {
+        [
+            InfoRowUi(
+                kind: InfoRowKind.origin,
+                copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
+                value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
+            ),
+            InfoRowUi(
+                kind: InfoRowKind.lastknownlocation,
+                copyKey: CopyKeys.shared.DETAIL_INFO_LAST_KNOWN_LOCATION,
+                value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
+            ),
+        ]
     }
 
     private func card(id: String, name: String) -> CharacterCardUi {

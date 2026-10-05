@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -145,9 +146,9 @@ class CharacterDetailScreenTest {
                 dimension = "C-137",
                 info =
                     listOf(
-                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)"),
-                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, "Citadel of Ricks"),
-                        InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, "Pilot · S01E01"),
+                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
+                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, DisplayText.Data("Citadel of Ricks")),
+                        InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                     ),
                 loadState = LoadState.Content,
             ),
@@ -167,6 +168,34 @@ class CharacterDetailScreenTest {
     }
 
     @Test
+    fun `TEST-UI-022 given_an_unknown_origin_and_location_when_the_detail_renders_then_both_rows_read_Unknown_and_the_subtitle_names_no_place`() {
+        val unknown = DisplayText.Copy(CopyKeys.VALUE_UNKNOWN)
+        show(
+            CharacterDetailUiState(
+                header = header,
+                episodeCount = 1,
+                info =
+                    listOf(
+                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, unknown),
+                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, unknown),
+                    ),
+                loadState = LoadState.Content,
+            ),
+        )
+
+        // `AC-REQ-FUNC-002-2`, `DEC-131`: the rows stay and read the one Unknown presentation.
+        assertVisible(copy("detail_info_origin"))
+        assertVisible(copy("detail_info_last_known_location"))
+        org.junit.Assert.assertEquals(
+            "TEST-UI-022: each unknown row shows the resolved Unknown copy; the status is Alive, so nothing else does",
+            2,
+            compose.onAllNodesWithText(copy("value_unknown"), useUnmergedTree = true).fetchSemanticsNodes().size,
+        )
+        // The subtitle names a place or nothing: "Human · Unknown" would read as a place called Unknown.
+        compose.onNodeWithText("Human · ${copy("value_unknown")}").assertDoesNotExist()
+    }
+
+    @Test
     @Config(sdk = [36], qualifiers = "en-w412dp-h891dp", application = android.app.Application::class)
     fun `TEST-A11Y-005 given_maximum_text_size_when_detail_is_read_then_every_stat_and_info_value_fits`() {
         show(
@@ -176,9 +205,9 @@ class CharacterDetailScreenTest {
                 dimension = "C-137",
                 info =
                     listOf(
-                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)"),
-                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, "Citadel of Ricks"),
-                        InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, "Pilot · S01E01"),
+                        InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
+                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, DisplayText.Data("Citadel of Ricks")),
+                        InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                     ),
                 loadState = LoadState.Content,
             ),
@@ -241,7 +270,7 @@ class CharacterDetailScreenTest {
             CharacterDetailUiState(
                 header = header,
                 episodeCount = 3,
-                info = listOf(InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)")),
+                info = listOf(InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)"))),
                 loadState = LoadState.Content,
             ),
         )
