@@ -9,9 +9,10 @@ import SwiftUI
 /// arrives (`AC-REQ-FUNC-002-1`). A failure never clears that header: the inline retry appears in
 /// place of the info rows while the known fields stay (`AC-REQ-FUNC-002-3`, `ERROR_FLOW.md` §7).
 ///
-/// The info rows are exactly the rows the state carries, in the state's fixed order, so a row whose
-/// value is absent is **absent** rather than empty — the `First seen in` row does not exist when
-/// the episode enrichment was not requested (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`). [episodeCount]
+/// The info rows are exactly the rows the state carries, in the state's fixed order: an unknown
+/// origin or location reads "Unknown" (`AC-REQ-FUNC-002-2`, `DEC-131`), and the `First seen in` row
+/// is **absent** rather than empty when the episode enrichment was not requested
+/// (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`). [episodeCount]
 /// comes from `episodeIds.size`, so the Episodes tile renders with or without the enrichment.
 ///
 /// The screen owns only the platform concerns: the layout, the SF Symbols, the glass controls and the
@@ -234,8 +235,8 @@ struct CharacterDetailScreen: View {
     ///
     /// On a failure the list is replaced by `detail_error_inline` and its Retry — never by a
     /// full-surface error, because the header above it is still the list's data
-    /// (`AC-REQ-FUNC-002-3`). Otherwise the rows are exactly the ones the state carries, so an absent
-    /// value is an absent row.
+    /// (`AC-REQ-FUNC-002-3`). Otherwise the rows are exactly the ones the state carries, each value
+    /// resolved by the shared boundary mapping (`DEC-131`).
     @ViewBuilder
     private var info: some View {
         if state.loadState is LoadStateError {
@@ -246,7 +247,7 @@ struct CharacterDetailScreen: View {
                     GlassInfoRow(
                         symbol: CharacterPresentation.infoSymbol(for: row.kind),
                         label: copy(CharacterPresentation.key(row.copyKey)),
-                        value: row.value
+                        value: CharacterPresentation.text(row.value)
                     )
                 }
             }

@@ -6,8 +6,8 @@ import io.github.davidru85.multiverse.core.data.remote.rickAndMortyDefaults
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
-import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
 import io.github.davidru85.multiverse.testing.FixtureCatalog
 import io.github.davidru85.multiverse.testing.MockHttp

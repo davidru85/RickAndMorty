@@ -848,7 +848,7 @@ enum class InfoRowKind { Origin, LastKnownLocation, FirstSeenIn }
 data class InfoRowUi(
     val kind: InfoRowKind,
     val copyKey: CopyKey,
-    val value: String,
+    val value: DisplayText,
 )
 
 sealed interface CharacterDetailIntent {
@@ -866,7 +866,7 @@ sealed interface CharacterDetailIntent {
   - `dimension == null` means "hide the dimension tile"; it is produced by `IC-017.dimensionText` and `MUST NOT` be replaced by a placeholder (`UI_SPEC.md` §6.3).
   - `copyKey` on a row is a `CopyKey`; the row `MUST NOT` carry an English label (`REQ-FUNC-013`, `REQ-UX-008`).
   - `isFavorite` reflects the stored set and updates immediately on `ToggleFavorite`, before the write completes, then reconciles with `ObserveFavoriteIds` emissions; the control therefore never shows a stale toggled state (`REQ-FUNC-006`, `AC-REQ-FUNC-006-1`).
-  - `info` order is fixed as `Origin`, `LastKnownLocation`, `FirstSeenIn`, filtered by availability.
+  - `info` order is fixed as `Origin`, `LastKnownLocation`, `FirstSeenIn`. Once a detail has answered, the `Origin` and `LastKnownLocation` rows are always present, and their `value` is `IC-017.valueText` of the location name: an absent, blank or `unknown` name is `DisplayText.Copy(value_unknown)`, never a dropped row (`AC-REQ-FUNC-002-2`, `DEC-131`). Only `FirstSeenIn` is filtered by availability; its `value` is `DisplayText.Data`.
   - Only `ToggleFavorite` and `Retry` are intents; `Retry` starts a fresh attempt budget (`REQ-FUNC-011`).
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-006`, `REQ-FUNC-011`, `REQ-FUNC-023`, `REQ-UX-009`, `DEC-013`, `DEC-015`.
 
@@ -1081,6 +1081,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-019` (`TASK-112`): `InfoRowUi.value` becomes `DisplayText`, and an unknown origin or location keeps its row with `value_unknown`; only `FirstSeenIn` stays availability-filtered. Breaking for the Swift consumer (§8.2), which resolves the value through `CharacterPresentation.text` in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-007`/`IC-014` (`TASK-112`): a `ForceNetwork` load joins a revalidation in flight; an enriched detail is revalidated with its episodes; a stale first page is followed by a silent network load that clears the stale state on success. | `DEC-130` |
 | 2026-10-05 | `IC-014` (`TASK-112`): `PagerState.isLoading` added, and a protocol switch resets like `setFilter`. The Swift initialiser of `PagerState` gains the parameter; no Swift code constructs one. | `DEC-130` |
 | 2026-10-05 | `IC-018` (`TASK-112`): `CharacterListIntent.ClearFilters` clears both filter dimensions in one request. Additive for the Swift consumer. | `DEC-129` |

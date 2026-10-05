@@ -147,7 +147,11 @@ class CharacterDetailScreenTest {
                 info =
                     listOf(
                         InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
-                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, DisplayText.Data("Citadel of Ricks")),
+                        InfoRowUi(
+                            InfoRowKind.LastKnownLocation,
+                            CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION,
+                            DisplayText.Data("Citadel of Ricks"),
+                        ),
                         InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                     ),
                 loadState = LoadState.Content,
@@ -168,7 +172,7 @@ class CharacterDetailScreenTest {
     }
 
     @Test
-    fun `TEST-UI-022 given_an_unknown_origin_and_location_when_the_detail_renders_then_both_rows_read_Unknown_and_the_subtitle_names_no_place`() {
+    fun `TEST-UI-022 given_an_unknown_origin_and_location_when_rendered_then_the_rows_read_Unknown_and_the_subtitle_names_no_place`() {
         val unknown = DisplayText.Copy(CopyKeys.VALUE_UNKNOWN)
         show(
             CharacterDetailUiState(
@@ -206,7 +210,11 @@ class CharacterDetailScreenTest {
                 info =
                     listOf(
                         InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
-                        InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, DisplayText.Data("Citadel of Ricks")),
+                        InfoRowUi(
+                            InfoRowKind.LastKnownLocation,
+                            CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION,
+                            DisplayText.Data("Citadel of Ricks"),
+                        ),
                         InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                     ),
                 loadState = LoadState.Content,

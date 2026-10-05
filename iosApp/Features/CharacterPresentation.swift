@@ -128,12 +128,13 @@ enum CharacterPresentation {
     /// The detail subtitle: `Species · Origin`, joined from parts the state already carries.
     ///
     /// The screen joins the parts it is given rather than deriving any of them: the origin row's
-    /// value is the shared derivation, and a part that is absent is left out. `nil` means "no
-    /// subtitle", never an empty line (`IC-019`, `UI_SPEC.md` §6.3).
+    /// value is the shared derivation, and a part that is absent is left out. An unknown origin is
+    /// left out too: the Origin row already reads "Unknown", and the subtitle names a place or
+    /// nothing (`DEC-131`). `nil` means "no subtitle", never an empty line (`IC-019`, `UI_SPEC.md` §6.3).
     static func subtitle(species: String, info: [InfoRowUi]) -> String? {
         var parts: [String] = [species]
-        if let origin = info.first(where: { $0.kind == InfoRowKind.origin })?.value {
-            parts.append(origin)
+        if let origin = info.first(where: { $0.kind == InfoRowKind.origin })?.value as? DisplayTextData {
+            parts.append(origin.value)
         }
         let joined = parts.filter { !$0.isEmpty }.joined(separator: " · ")
         return joined.isEmpty ? nil : joined

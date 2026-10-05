@@ -192,22 +192,17 @@ private fun TitleBlock(state: CharacterDetailUiState) {
 /**
  * `Species · Gender · Origin` joined from data-derived parts only. The screen joins the parts it is
  * given rather than deriving any of them: [CharacterDetailUiState.dimension] and the origin row's
- * value already carry the shared derivations, and a part that is absent is left out.
+ * value already carry the shared derivations, and a part that is absent is left out. An unknown
+ * origin is left out too: the Origin row below already reads "Unknown", and the subtitle names a
+ * place or nothing (`DEC-131`).
  */
 @Composable
 private fun Subtitle(
     state: CharacterDetailUiState,
     species: DisplayText,
 ): String? {
-    val origin = state.info.firstOrNull { it.kind == InfoRowKind.Origin }?.value
-    val parts =
-        listOfNotNull(
-            when (species) {
-                is DisplayText.Data -> species.value
-                is DisplayText.Copy -> CopyResolver.copy(species.key.value)
-            },
-            origin,
-        )
+    val origin = (state.info.firstOrNull { it.kind == InfoRowKind.Origin }?.value as? DisplayText.Data)?.value
+    val parts = listOfNotNull(species.text(), origin)
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
@@ -236,14 +231,9 @@ private fun Stats(state: CharacterDetailUiState) {
                     ),
                 )
             }
-            val species =
-                when (val text = header.species) {
-                    is DisplayText.Data -> text.value
-                    is DisplayText.Copy -> CopyResolver.copy(text.key.value)
-                }
             add(
                 Triple(
-                    species,
+                    header.species.text(),
                     CopyResolver.copy(CopyKeys.DETAIL_STAT_SPECIES.value),
                     MultiverseColors.secondaryFixedDim to MultiverseColors.onSecondaryFixed,
                 ),
@@ -276,7 +266,7 @@ private fun Info(
             state.info.forEach { row ->
                 InfoListItem(
                     label = CopyResolver.copy(row.copyKey.value),
-                    value = row.value,
+                    value = row.value.text(),
                     icon = painterResource(row.kind.glyph()),
                 )
             }
@@ -337,6 +327,14 @@ private fun CharacterStatus.tone(): StatusTone =
         CharacterStatus.Alive -> StatusTone.Alive
         CharacterStatus.Dead -> StatusTone.Dead
         CharacterStatus.Unknown, is CharacterStatus.Unsupported -> StatusTone.Unknown
+    }
+
+/** A [DisplayText] resolved for the design system, which takes primitives only (`DESIGN.md` §3.4). */
+@Composable
+private fun DisplayText.text(): String =
+    when (this) {
+        is DisplayText.Data -> value
+        is DisplayText.Copy -> CopyResolver.copy(key.value)
     }
 
 /** The bundled glyph for an info row (`UI_SPEC.md` §6.3): Origin, LastKnownLocation, FirstSeenIn. */
