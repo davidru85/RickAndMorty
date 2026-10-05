@@ -11,9 +11,10 @@ import SwiftUI
 /// pager, a repository or a use case (`ERROR_FLOW.md` §3 invariant 4): every interaction leaves as a
 /// `CharacterListIntent`.
 ///
-/// The content order is the specification's: the glass search field, the large title with its count,
-/// the glass segmented control, then the grid — or, in its place, the designed empty or error
-/// surface. Every state in `ERROR_FLOW.md` §8 renders here: the initial skeleton, the paging
+/// The content order is Figma `29:381`'s (`DEC-138`): the system large title, which collapses into the
+/// inline title on scroll, then the count line, the glass search field and the glass segmented control
+/// as the first rows of the scrolling content, then the grid on 16 pt margins — or, in its place, the
+/// designed empty or error surface. Every state in `ERROR_FLOW.md` §8 renders here: the initial skeleton, the paging
 /// indicator, the empty search, the full-surface error with Retry and the stale banner over content.
 ///
 /// The search field carries no microphone (`REQ-SEC-004`, `DEC-002`): voice search is deferred, so
@@ -58,13 +59,33 @@ struct DiscoveryScreen: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
-            searchField
-            headline
-            filterRow
-            content
+        ScrollView {
+            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+                countLine
+                searchField
+                filterRow
+                content
+                    .padding(.top, MultiverseDimensions.spaceXs)
+            }
+            // Figma's 16 pt margins: two 177 pt cards and a 16 pt gutter fill the 402 pt width.
+            .padding(.horizontal, MultiverseDimensions.spaceL)
+            .padding(.bottom, MultiverseDimensions.spaceL)
         }
+        // Pull to refresh revalidates page 1 over the network; the spinner holds until it ends.
+        .refreshable { await onRefresh() }
+        .safeAreaInset(edge: .bottom) {
+            // Over the grid only, as before the header joined the scroll: the empty and error surfaces
+            // state their own recovery.
+            if let notice = DiscoveryNotice.make(for: state), showsGrid {
+                noticeBanner(notice)
+            }
+        }
+        // The system large title (`UI_SPEC.md` §4.2, §6.2): it collapses into the inline title as the
+        // content scrolls under it.
+        .navigationTitle(copy("nav_characters"))
+        .navigationBarTitleDisplayMode(.large)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .cosmicCanvas()
         .onAppear { query = state.filter.query }
         .onChange(of: state.filter.query) { _, next in query = next }
     }
@@ -83,26 +104,20 @@ struct DiscoveryScreen: View {
             ),
             placeholder: copy("search_characters")
         )
-        .padding(.horizontal, MultiverseDimensions.spaceL)
     }
 
-    // MARK: - Headline
+    // MARK: - Count line
 
-    /// The large title and its count line (`AC-REQ-FUNC-001-3`). The number is the shared formatter's
+    /// The count line under the large title (`AC-REQ-FUNC-001-3`). The number is the shared formatter's
     /// output over the state's `totalCount`, so both platforms render the same template.
-    private var headline: some View {
-        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceXs) {
-            Text(copy("nav_characters"))
-                .font(MultiverseType.largeTitleBold)
-                .foregroundStyle(MultiverseLabelColors.primary)
-            if let count = state.totalCount {
-                Text(countLine(count: count.int32Value))
-                    .font(MultiverseType.subheadline)
-                    .foregroundStyle(MultiverseLabelColors.secondary)
-            }
+    @ViewBuilder
+    private var countLine: some View {
+        if let count = state.totalCount {
+            Text(countLine(count: count.int32Value))
+                .font(MultiverseType.subheadline)
+                .foregroundStyle(MultiverseLabelColors.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, MultiverseDimensions.spaceL)
     }
 
     private func countLine(count: Int32) -> String {
@@ -127,7 +142,6 @@ struct DiscoveryScreen: View {
             ),
             options: filterOptions
         )
-        .padding(.horizontal, MultiverseDimensions.spaceL)
     }
 
     private var filterOptions: [GlassSegmentedControl.Option] {
@@ -161,11 +175,17 @@ struct DiscoveryScreen: View {
     }
 
     /// The stated empty-results surface (`UI_SPEC.md` §8, iOS column: "Same content in
-    /// `ContentUnavailableView`"): the message with the active query and "Clear filters"
-    /// (`AC-REQ-FUNC-010-2`).
+    /// `ContentUnavailableView`"): the portal logo at 40 % (`DEC-139`), the message with the active
+    /// query and "Clear filters" (`AC-REQ-FUNC-010-2`).
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(emptySearchMessage, systemImage: "person.2.fill")
+            Label {
+                Text(emptySearchMessage)
+            } icon: {
+                PortalLogo()
+                    .frame(width: DiscoveryLayout.emptyMarkSize, height: DiscoveryLayout.emptyMarkSize)
+                    .opacity(0.4)
+            }
         } actions: {
             GlassTextButton(label: copy("action_clear_filters")) {
                 // Both dimensions in one intent (`DEC-129`); the field and the segments follow the
@@ -173,7 +193,7 @@ struct DiscoveryScreen: View {
                 onIntent(CharacterListIntentClearFilters.shared)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: DiscoveryLayout.fullSurfaceMinHeight)
     }
 
     private var emptySearchMessage: String {
@@ -199,32 +219,27 @@ struct DiscoveryScreen: View {
                 onIntent(CharacterListIntentRetry.shared)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, minHeight: DiscoveryLayout.fullSurfaceMinHeight)
+    }
+
+    /// Whether the content is the grid rather than the empty or error surface that replaces it.
+    private var showsGrid: Bool {
+        !(state.loadState is LoadStateEmpty) && !(state.loadState is LoadStateError)
     }
 
     /// The grid of glass cards, with the paging indicator as its last item and the non-blocking notice
     /// at the bottom (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
     private var grid: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
-                LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
-                    if state.loadState is LoadStateLoading {
-                        skeletonGrid
-                    } else {
-                        cardGrid
-                    }
+        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+            LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
+                if state.loadState is LoadStateLoading {
+                    skeletonGrid
+                } else {
+                    cardGrid
                 }
-                if state.isAppending { pagingIndicator }
-                pagingSentinel
             }
-            .padding(MultiverseDimensions.spaceM)
-        }
-        // Pull to refresh revalidates page 1 over the network; the spinner holds until it ends.
-        .refreshable { await onRefresh() }
-        .safeAreaInset(edge: .bottom) {
-            if let notice = DiscoveryNotice.make(for: state) {
-                noticeBanner(notice)
-            }
+            if state.isAppending { pagingIndicator }
+            pagingSentinel
         }
     }
 
@@ -324,4 +339,11 @@ enum DiscoveryLayout {
 
     /// One identity per skeleton, disjoint from every card's `CharacterPresentation.gridIdentity`.
     static let skeletonIdentities = (0..<skeletonCount).map { "skeleton-\($0)" }
+
+    /// The portal logo's size on the empty search (`UI_SPEC.md` §8): the empty-state well's.
+    static let emptyMarkSize: CGFloat = MultiverseDimensions.emptyStateWell
+
+    /// The height the empty and error surfaces keep inside the scrolling content, so they sit in the
+    /// screen's middle rather than collapsing against the filters.
+    static let fullSurfaceMinHeight: CGFloat = 420
 }

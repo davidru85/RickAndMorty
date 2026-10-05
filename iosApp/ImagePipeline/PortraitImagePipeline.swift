@@ -137,9 +137,12 @@ public let imageDiskCacheBytes: Int = 200 * 1024 * 1024
 /// is answered without a transport call whatever the origin's `Cache-Control` says
 /// (`AC-REQ-FUNC-021-1`).
 ///
-/// The pipeline is `@MainActor` because its seam is called from the view's main-actor context and the
-/// images it hands back are `SwiftUI`/`UIKit` values; the URL session underneath performs its own
-/// work off the main thread.
+/// **Concurrency (`DEC-141`).** The seam is `@MainActor`, because a view calls it and gets SwiftUI
+/// values back, but the work is not done there: the disk read and the decode run in a detached task
+/// that prepares the bitmap for display, so a scrolling grid never decodes on the main thread, and the
+/// main actor only publishes the result. A URL already loading is not fetched again: every caller that
+/// asks for it meanwhile awaits the one in-flight load. The memory cache's cost is the decoded
+/// bitmap's bytes, so its budget bounds the memory it actually holds.
 @MainActor
 public final class PortraitImagePipeline: PortraitImageLoading {
     /// The one instance the app resolves; a test injects its own loader instead.
@@ -155,6 +158,9 @@ public final class PortraitImagePipeline: PortraitImageLoading {
 
     /// The host rule every URL passes before any layer touches it (`DEC-126`).
     private let isAllowed: @Sendable (String) -> Bool
+
+    /// The loads in flight, by URL, so a second caller joins the first instead of fetching again.
+    private var inFlight: [String: Task<UIImage?, Never>] = [:]
 
     public init(
         memoryCapacity: Int = imageMemoryCacheBytes,
@@ -192,31 +198,46 @@ public final class PortraitImagePipeline: PortraitImageLoading {
         // 1. Memory: the synchronous hit a second render takes.
         if let cached = memory.object(forKey: url as NSString) { return Image(uiImage: cached) }
 
+        // A load of this URL is already running: join it rather than fetch again.
+        if let running = inFlight[url] {
+            return await running.value.map { Image(uiImage: $0) }
+        }
+        let load = Task { await self.load(url) }
+        inFlight[url] = load
+        let image = await load.value
+        inFlight[url] = nil
+        return image.map { Image(uiImage: $0) }
+    }
+
+    /// The disk → network path for one URL, whose bytes are read and decoded off the main actor.
+    private func load(_ url: String) async -> UIImage? {
         // A URL the pipeline cannot parse is a load failure, not a crash.
         guard let parsed = URL(string: url) else { return nil }
         let request = URLRequest(url: parsed)
+        let cache = self.cache
 
-        // 2. Disk, keyed by the URL verbatim (`AC-REQ-FUNC-021-1`).
-        if let stored = cache.cachedResponse(for: request), let image = decode(stored.data) {
-            store(image, data: stored.data, for: url)
-            return Image(uiImage: image)
+        // 2. Disk, keyed by the URL verbatim (`AC-REQ-FUNC-021-1`), read and decoded off the main actor.
+        let stored = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard let response = cache.cachedResponse(for: request) else { return nil }
+            return Self.decode(response.data)
+        }.value
+        if let stored {
+            store(stored, for: url)
+            return stored
         }
 
         // 3. Network: the only path that issues a request. Only a successful HTTP response that ended
         // on an allowed URL is a portrait; anything else is neither shown nor cached.
-        guard
-            let fetched = await transport.fetch(url),
-            isAdmissible(fetched.response),
-            let image = decode(fetched.data)
-        else {
+        guard let fetched = await transport.fetch(url), isAdmissible(fetched.response) else { return nil }
+        let data = fetched.data
+        guard let image = await Task.detached(priority: .userInitiated, operation: { Self.decode(data) }).value else {
             return nil
         }
         // Re-store under the request's own URL so the key is the image URL, independent of the
         // origin's caching headers.
-        let cached = CachedURLResponse(response: fetched.response, data: fetched.data)
-        cache.storeCachedResponse(cached, for: request)
-        store(image, data: fetched.data, for: url)
-        return Image(uiImage: image)
+        cache.storeCachedResponse(CachedURLResponse(response: fetched.response, data: data), for: request)
+        store(image, for: url)
+        return image
     }
 
     /// Whether [response] may enter the caches: an HTTP `2xx` whose final URL — after any redirect the
@@ -227,17 +248,25 @@ public final class PortraitImagePipeline: PortraitImageLoading {
         return isAllowed(finalURL)
     }
 
-    /// The decoded portrait of [data], or `nil` when the bytes are not a decodable image.
+    /// The decoded portrait of [data], prepared for display, or `nil` when the bytes are not a
+    /// decodable image. It runs off the main actor, so the first draw does not decode either.
     ///
     /// The decode is at the source resolution the API provides (300 × 300, `UI_SPEC.md` §5.1); the
     /// pipeline never upscales and never claims a higher resolution (`AC-REQ-FUNC-005-3`).
-    private func decode(_ data: Data) -> UIImage? {
-        guard !data.isEmpty else { return nil }
-        return UIImage(data: data)
+    nonisolated private static func decode(_ data: Data) -> UIImage? {
+        guard !data.isEmpty, let image = UIImage(data: data) else { return nil }
+        return image.preparingForDisplay() ?? image
     }
 
-    private func store(_ image: UIImage, data: Data, for url: String) {
-        memory.setObject(image, forKey: url as NSString, cost: data.count)
+    /// The memory a decoded [image] holds: its pixel width × height × 4 bytes, at its own scale. It is
+    /// the memory cache's cost, so the 50 MB budget bounds decoded bitmaps rather than compressed
+    /// bodies (`DEC-141`).
+    nonisolated static func memoryCost(of image: UIImage) -> Int {
+        Int(image.size.width * image.scale) * Int(image.size.height * image.scale) * 4
+    }
+
+    private func store(_ image: UIImage, for url: String) {
+        memory.setObject(image, forKey: url as NSString, cost: Self.memoryCost(of: image))
     }
 
     /// The pipeline's own disk-cache directory, inside the app's private caches

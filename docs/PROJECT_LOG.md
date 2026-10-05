@@ -1029,6 +1029,32 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - **Manual, OnePlus 3 (Android 9), debug build:** the splash, Discovery with per-portrait card accents, the card→Detail push, the Detail before and after its details arrive, the collapsed favourite action on scroll, the favourite toggle, the pop back with the bar growing in, Favorites and Settings, all in Spanish. The favourite added for the check was removed afterwards.
 - **Not verified:** the rendered motion frame by frame (the tests pin the shared key, the angle function and the bar's height on the second frame, not every frame); an Android 15+ device for edge-to-edge enforcement. The release APK still exceeds `PERF-009` (`GAP-034` stays open).
 
+### LOG-0140 · 2026-10-05 · `TASK-114`: the code-review P2 iOS fidelity items
+
+- **Event:** `TASK-114` is delivered as PR #204 from `feat/task-114-p2b`, which starts from `TASK-113`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; where a first criterion proved not to discriminate, it was replaced in its own `test:` commit and observed red again on the old code before the fix.
+- **Shell and canvas:**
+  - The tab bar renders through the design system's glass tab items: each tab carries its SF Symbol, the selected one in Portal Glow and the others white (`TEST-UNIT-090`).
+  - The four top-level screens draw on the cosmic canvas — Space Black with Figma's Cosmic Violet and Portal Green glows — instead of the system background or the M3 Surface (`TEST-UI-036`).
+- **Discovery, Favorites and the card:**
+  - The system large title collapses on scroll, and the count, the glass search field and the segmented control follow it as scrolling rows, in Figma `29:381`'s order on every supported OS (`DEC-138`).
+  - The grids sit on 16 pt margins; the selected segment is a white label on green glass; the empty search and a failed portrait show the portal logo at 40 %, from a new asset catalog (`DEC-139`); the empty state's well is a circle (`TEST-UI-037`).
+  - The card portrait is overscanned by 14 pt and moves at 0.85× the scroll, still under Reduce Motion (`TEST-UNIT-091`).
+- **Detail:** the blurred, dimmed portrait with the Detail's glows is the backdrop; the sharp hero dissolves into it from 55 %; the title in SF Pro Expanded Heavy starts over the hero's lower part (`DEC-142`); the frosted panel holds a stats row with the Episodes value in Portal Glow and info rows with circular wells (`TEST-UI-038`); the tab bar and the navigation bar are hidden, with the edge swipe still able to begin (`DEC-140`, `TEST-UI-039`); the favourite bounces and gives the success haptic; at the accessibility sizes the stats stack instead of truncating.
+- **Splash:** the portal logo turns behind a 212 pt clear-glass lens over three drifting aurora orbs and a seeded starfield, with the editorial wordmark, the tracked "EXPLORER" and the tagline, on Android's curve (`TEST-UNIT-092`); Reduce Motion pulses the logo and stills the orbs.
+- **Settings:** the Data source row shows its subtitle and reads as one element; Delete favorites is system red; headers and footers sit 16 pt in; the picker is the kit's Large control and the delete row the 52 pt button row (`TEST-UI-040`).
+- **Portrait pipeline:** the disk read and the decode run off the main actor, a URL in flight is fetched once, and the memory cost is the decoded bitmap's bytes (`DEC-141`, `TEST-UNIT-093`).
+- **Already closed before this task:** item 62 (the bottom glass banner with Retry, `TASK-111`) and item 66 (the "Appears in N episodes" line, `TASK-112`).
+- **Found on the way:** the iOS search drawer the spec named cannot put the count above the field on iOS 18–25 (`DEC-138`); a bottom-anchored Detail stack moved the title below the hero with fewer than three rows (`DEC-142`); `DEC-140` first cited `REQ-UX-003`, which is text contrast, and now cites `REQ-FUNC-008`. A test-harness change, the Discovery navigation stack and the first Settings baseline, entered with the red commit `1856803`; history was not rewritten.
+- **Affected documents:** `docs/UI_SPEC.md` §4.2, §6.3, §6.4, `docs/DESIGN.md` §3.5, `docs/DECISION_BOARD.md` (`DEC-138`…`DEC-142`), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md`, `docs/BACKLOG.md`, `docs/HANDOFF.md`, `iosApp/DesignSystem/README.md`, both READMEs' iOS test row, and this entry.
+- **Decision / ADR reference:** `DEC-138`…`DEC-142`.
+- **Validation (observed on the branch head):**
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 159 tests, 0 failures, with every iOS screen and design-system baseline re-recorded after comparison with its Figma export.
+  - `tools/swift-lint.sh` — 0 violations in 71 files.
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1207 tasks, whose 255 test reports hold 1329 tests and 0 failures. No Kotlin source changed in this task; the gate covers the shared code the iOS app links and the documentation checks.
+  - **Manual, iOS simulator (Debug, Spanish):** the splash and Discovery compared with `01-splash-ios.png` and `02-discovery-ios.png`; the regular glass lens first frosted the logo into a blur, which `9165e81` fixed with the clear variant.
+  - With the simulator's Reduce Motion on, `TEST-UI-039` passed on the plain push as well as on the zoom; the setting was turned off again afterwards.
+- **Not verified:** a performed edge swipe (the pop recogniser's delegate is asked whether it may begin); the Detail, Favorites and Settings on the simulator by hand (no tap automation here; their layouts are covered by the hosted-render tests and the baselines); a physical iPhone; iOS 18, where the material fallback draws the glass.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

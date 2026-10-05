@@ -45,6 +45,26 @@ public enum ShellDestination: String, CaseIterable, Identifiable, Hashable, Send
         }
     }
 
+    /// This destination as an `iOS/Glass tab item` (`UI_SPEC.md` §4.2, Figma `102:255`): its id, its
+    /// SF Symbol and its label, in the order `allCases` fixes.
+    public var tabItem: GlassTabBarItem {
+        GlassTabBarItem(id: id, symbol: symbol, label: LocalizedCopy.shared.text(for: labelKey))
+    }
+
+    /// The destination a tab id names, or `nil` when it names none.
+    public init?(tabID: String) {
+        self.init(rawValue: tabID)
+    }
+
+    private var symbol: GlassTabBarItem.Symbol {
+        switch self {
+        case .characters: return .characters
+        case .episodes: return .episodes
+        case .favorites: return .favorites
+        case .settings: return .settings
+        }
+    }
+
     /// The destination a "Browse characters" action selects (`AC-REQ-FUNC-008-2`).
     ///
     /// It is a **selection**, not a push: the action exists on the Episodes and Favorites

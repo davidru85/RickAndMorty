@@ -36,12 +36,15 @@ Every component carries this mapping in its own doc comment; this table is the i
 | `GlassTextButton` | §4.2, §6.4 | `iOS/Glass text button` (`102:197`) |
 | `GlassTabBar` / `GlassTabBarItem` | §4.2, §6.4 | `iOS/Glass tab bar` (`102:255`), `iOS/Glass tab item` (`117:1369`) |
 | `EmptyState` | §6.4 | `iOS/Empty state` (`102:256`) |
+| `CosmicCanvas` / `cosmicCanvas(_:)` | §3.2 | the screens' glows (`29:383`, `29:385`; Detail `26:456`, `26:458`) |
+| `PortalLogo` | §5.1, §6.1, §8 | `Brand/Portal logo` (`16:13`), from `Resources/Assets.xcassets` (`DEC-139`) |
+| `CardParallax` | §4.2, §7 | — (the card portrait's 0.85× scroll parallax) |
 | `MultiverseColors` | §3.1 | `Multiverse · M3 Scheme` |
 | `MultiverseBrandColors`, `MultiverseGlassColors`, `MultiverseLabelColors` | §3.2 | `Multiverse · Brand` |
 | `MultiverseDimensions` | §3.3 | `Multiverse · Dimensions` |
 | `MultiverseType` | §3.4 | — (SF Pro, Dynamic Type) |
 
-`GlassShape`, `glassSurface(_:tint:shadow:)`, `glassButton(_:tint:shape:)` and `GlassContainer` are
+`GlassShape`, `GlassVariant`, `glassSurface(_:variant:tint:shadow:)`, `glassButton(_:tint:shape:)` and `GlassContainer` are
 the shared mechanism of §3.5/§4.2, not standalone components.
 
 ## Tokens and parity

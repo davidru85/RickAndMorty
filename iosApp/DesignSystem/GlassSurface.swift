@@ -86,11 +86,20 @@ extension EnvironmentValues {
     }
 }
 
+/// The two Liquid Glass variants a surface draws (`UI_SPEC.md` §3.5): `Liquid Glass/Regular`, which
+/// frosts what is behind it, and `Liquid Glass/Clear`, which refracts it and keeps it legible — the
+/// splash lens over the portal.
+public enum GlassVariant: Sendable {
+    case regular
+    case clear
+}
+
 /// Draws a component's container in whichever glass path applies.
 ///
 /// Not used directly by a component; `glassSurface(_:tint:shadow:)` is the call site.
 private struct MultiverseGlassModifier: ViewModifier {
     let shape: GlassShape
+    let variant: GlassVariant
     let tint: Color?
     let shadow: Color?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -122,7 +131,7 @@ private struct MultiverseGlassModifier: ViewModifier {
 
     @available(iOS 26.0, *)
     private var glass: Glass {
-        var glass = Glass.regular
+        var glass = variant == .clear ? Glass.clear : Glass.regular
         if let tint {
             glass = glass.tint(tint)
         }
@@ -167,9 +176,11 @@ private struct MultiverseGlassModifier: ViewModifier {
         }
     }
 
-    /// `.thickMaterial` with Reduce Transparency, `.regularMaterial` otherwise (`UI_SPEC.md` §9).
+    /// `.thickMaterial` with Reduce Transparency, otherwise `.regularMaterial`, or `.ultraThinMaterial`
+    /// for the clear variant (`UI_SPEC.md` §9).
     private var baseFillStyle: AnyShapeStyle {
-        AnyShapeStyle(path.isOpaque ? Material.thickMaterial : Material.regularMaterial)
+        if path.isOpaque { return AnyShapeStyle(Material.thickMaterial) }
+        return AnyShapeStyle(variant == .clear ? Material.ultraThinMaterial : Material.regularMaterial)
     }
 }
 
@@ -180,15 +191,17 @@ extension View {
     /// - Parameters:
     ///   - shape: the container shape; `.capsule` for a glass control, `.rounded` for a card, bar or
     ///     panel (`UI_SPEC.md` §3.3).
+    ///   - variant: regular glass, or the clear glass that keeps what is behind it legible.
     ///   - tint: the glass tint colour (`Glass/Tint Green`, `Glass/Tint Violet`) when the surface is
     ///     a selected segment or a symbol well.
     ///   - shadow: the drop-shadow colour; the default is `Glass/Shadow`.
     public func glassSurface(
         _ shape: GlassShape,
+        variant: GlassVariant = .regular,
         tint: Color? = nil,
         shadow: Color? = nil
     ) -> some View {
-        modifier(MultiverseGlassModifier(shape: shape, tint: tint, shadow: shadow))
+        modifier(MultiverseGlassModifier(shape: shape, variant: variant, tint: tint, shadow: shadow))
     }
 }
 

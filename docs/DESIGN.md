@@ -326,6 +326,8 @@ The package root and the Android application id are declared exactly once, as `m
 
 **Bundled assets, outside the catalog (`DEC-103`, `DEC-137`).** The Android type scale uses Roboto Flex from `core/designsystem/src/main/res/font/roboto_flex.ttf` (66 088 B, SHA-256 `38afa348…3dc43c20`). It is derived from `googlefonts/roboto-flex` at commit `739e06d` (`fonts/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf`, SHA-256 `94a7ea95…7ffe63`) with fontTools 4.60.1: `fonttools varLib.instancer` pins every axis except `wght` to its default (`opsz=14 GRAD=0 wdth=100 slnt=0 XOPQ=96 YOPQ=79 XTRA=468 YTUC=712 YTLC=514 YTAS=750 YTDE=-203 YTFI=738`), and `pyftsubset --unicodes="U+0020-007E,U+00A0-00FF,U+0131,U+0152-0153,U+2010-2027,U+2030-203A,U+20AC,U+2122,U+2212" --layout-features='*'` keeps the Latin the two locales need. The licence is the SIL Open Font License 1.1, committed beside the module as `core/designsystem/licenses/roboto-flex-OFL.txt`; the font is modified (instanced and subset), which the licence permits, and it declares no Reserved Font Name. The full 13-axis file (1.77 MB) is not bundled, because the release APK already exceeds `PERF-009` (`GAP-034`).
 
+The iOS app's one image asset is the brand's portal logo (`DEC-139`): `iosApp/Resources/Assets.xcassets/PortalLogo.imageset/PortalLogo.pdf` (22 292 B, SHA-256 `4f447e27…3952ae6`), the Figma component `Brand/Portal logo` (`16:13`) exported as a 160 × 160 pt PDF with its vector data preserved, so it is sharp at every size it is drawn. The catalog holds no app icon, so the target's `ASSETCATALOG_COMPILER_APPICON_NAME` is empty.
+
 ## 4. Presentation layer
 
 ### 4.1 UI state contract (shared)
@@ -601,6 +603,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 | Date | Change | Decision |
 | --- | --- | --- |
 | 2026-10-05 | §3.1: the `:core:designsystem` row names the three `CompositionLocal`s the shell provides — the portal mark, the card-accent policy and the transition scopes (`TASK-113`). | `DEC-097`, `DEC-135` |
+| 2026-10-05 | §3.5 records the iOS asset catalog and its portal logo PDF (`TASK-114`). | `DEC-139` |
 | 2026-10-05 | §3.5 records the bundled Roboto Flex subset: its source, commands, checksum and licence (`TASK-113`). | `DEC-103`, `DEC-137` |
 | 2026-10-03 | B5 Phase 5.1: §4.6 lists `ResponseCache` in the data-source inventory — the application-level response cache of `IC-012`, with the freshness policy and the never-cache rule that `DEC-012`/`DEC-018` decide (`TASK-020`). | `TASK-020`, `DEC-012`, `DEC-018` |
 | 2026-10-03 | B3 Phase 3.3: §3.1 describes `:core:presentation` as implemented (`DEC-095`); §3.5's DataStore row records the dependency-analysis bundle; §5 states how a composition root builds the favourites store on each platform. | `TASK-040`, `TASK-041`, `DEC-095` |

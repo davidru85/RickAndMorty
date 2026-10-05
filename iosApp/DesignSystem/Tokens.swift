@@ -221,6 +221,8 @@ public enum MultiverseDimensions {
     public static let settingsPanelCorner: CGFloat = 26
     /// A settings row's height (`UI_SPEC.md` §4.2, "Settings row": the iOS kit `Row`, Tall, 68 pt).
     public static let settingsRowHeight: CGFloat = 68
+    /// The iOS kit's `Row - Button` height, the destructive Settings action (Figma `123:473`).
+    public static let settingsButtonRowHeight: CGFloat = 52
     /// The 1 pt light-catching rim (`UI_SPEC.md` §3.2).
     public static let rimWidth: CGFloat = 1
 }
@@ -246,11 +248,13 @@ public enum MultiverseType {
 
     /// The editorial display (`UI_SPEC.md` §3.4): SF Pro Expanded Heavy at 40 pt — the one fixed
     /// size in the scale, which a view scales through `@ScaledMetric` at its call site.
-    public static let editorialDisplay: Font = Font.system(
-        size: editorialDisplaySize,
-        weight: editorialDisplayWeight,
-        design: .default
-    ).width(.expanded)
+    public static let editorialDisplay: Font = editorialDisplay(size: editorialDisplaySize)
+
+    /// The editorial display at [size] — the `@ScaledMetric` value a call site scales the 40 pt token
+    /// to — so the scaled name keeps the Expanded width and the Heavy weight.
+    public static func editorialDisplay(size: CGFloat) -> Font {
+        Font.system(size: size, weight: editorialDisplayWeight, design: .default).width(.expanded)
+    }
 
     /// The empty state's illustrated symbol (`UI_SPEC.md` §6.4): 48 pt. It follows font scale like
     /// the rest of the type scale (`REQ-UX-006`), so it belongs with the type tokens rather than the

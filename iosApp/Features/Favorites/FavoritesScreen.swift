@@ -57,7 +57,7 @@ struct FavoritesScreen: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(MultiverseColors.surface)
+        .cosmicCanvas()
     }
 
     /// The section's large title, at the same position as Discovery's (`UI_SPEC.md` §6.4).
@@ -139,7 +139,10 @@ struct FavoritesScreen: View {
                     )
                 }
             }
-            .padding(MultiverseDimensions.spaceM)
+            // Discovery's 16 pt margins (Figma `102:375`): two 177 pt cards and a 16 pt gutter fill
+            // the 402 pt width.
+            .padding(.horizontal, MultiverseDimensions.spaceL)
+            .padding(.vertical, MultiverseDimensions.spaceM)
         }
     }
 

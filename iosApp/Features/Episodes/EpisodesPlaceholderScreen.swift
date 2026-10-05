@@ -37,7 +37,7 @@ struct EpisodesPlaceholderScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(MultiverseColors.surface)
+        .cosmicCanvas()
     }
 
     /// The section's large title, at the same position as Discovery's and Favorites' (`UI_SPEC.md`

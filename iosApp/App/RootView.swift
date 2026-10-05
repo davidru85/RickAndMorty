@@ -24,13 +24,16 @@ struct RootView: View {
     @State private var openedCards: [ShellDestination: CharacterCardUi] = [:]
 
     var body: some View {
-        TabView(
+        // The design system's glass tab bar (`UI_SPEC.md` §4.2): each tab its SF Symbol and label, the
+        // selected one in Portal Glow and every other one white through the installed appearance.
+        GlassTabBar(
             selection: Binding(
-                get: { navigation.selected },
-                set: { navigation.select($0) }
-            )
-        ) {
-            ForEach(ShellDestination.allCases) { destination in
+                get: { navigation.selected.id },
+                set: { id in ShellDestination(tabID: id).map(navigation.select) }
+            ),
+            items: ShellDestination.allCases.map(\.tabItem)
+        ) { item in
+            if let destination = ShellDestination(tabID: item.id) {
                 DestinationView(
                     destination: destination,
                     navigation: navigation,
@@ -39,13 +42,8 @@ struct RootView: View {
                         set: { openedCards[destination] = $0 }
                     )
                 )
-                .tabItem {
-                    Text(LocalizedCopy.shared.text(for: destination.labelKey))
-                }
-                .tag(destination)
             }
         }
-        .tint(MultiverseBrandColors.portalGlow)
         .overlay {
             if splashVisible {
                 BrandedSplashView(reduceMotion: UIAccessibility.isReduceMotionEnabled)
@@ -68,11 +66,9 @@ struct RootView: View {
     }
 }
 
-/// The splash's motion timing (`UI_SPEC.md` §6.1, `TASK-007`): the portal's 1.2 s cycle — the shared
-/// gate's minimum, so one full acceleration always plays — and the exit crossfade the Android shell
-/// uses. How long the splash stays is the shared gate's decision (`IC-026`), not a constant here.
+/// The splash's exit crossfade (`UI_SPEC.md` §6.1, `TASK-007`), the one the Android shell uses. How long
+/// the splash stays is the shared gate's decision (`IC-026`), and the portal's motion is `PortalSpin`'s.
 enum SplashTiming {
-    static let minimumSeconds: Double = 1.2
     static let exitCrossfadeSeconds: Double = 0.38
 }
 
@@ -105,6 +101,10 @@ struct DestinationView<Detail: View>: View {
                 // (`AC-REQ-FUNC-002-1`).
                 .navigationDestination(item: $opened) { card in
                     detail(card)
+                        // Figma `26:452` draws the Detail with neither bar (`DEC-140`): its glass
+                        // controls replace them, and the edge swipe stays a way back.
+                        .toolbar(.hidden, for: .tabBar)
+                        .toolbar(.hidden, for: .navigationBar)
                         .modifier(
                             ZoomDestination(
                                 sourceID: PortraitMotion.zoomSourceID(
