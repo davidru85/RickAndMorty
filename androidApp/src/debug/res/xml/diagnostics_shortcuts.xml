@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The debug build's one app shortcut (`TASK-117`, `OBSERVABILITY.md` §5): a long-press on the app's
+  launcher icon offers the diagnostics panel, so the panel needs no launcher icon of its own. The
+  file lives in the debug source set only, so a release artifact carries neither it nor its target.
+  `targetPackage` is the application id, which the debug variant does not suffix.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="diagnostics"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/diagnostics_label"
+        android:shortcutLongLabel="@string/diagnostics_label">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.davidru85.multiverse"
+            android:targetClass="io.github.davidru85.multiverse.app.debug.DiagnosticsActivity" />
+    </shortcut>
+</shortcuts>
