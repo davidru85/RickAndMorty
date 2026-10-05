@@ -5,6 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.toExportHex
 
 /**
  * The app's single appearance (`UI_SPEC.md` §3.1, §9, `REQ-UX-001`).
@@ -85,17 +86,7 @@ public object MultiverseThemeValues {
      */
     public fun roleValues(): Map<String, String> = ROLE_VALUES
 
-    /** The export-form hex of a token colour, so the role record compares with the export. */
-    private fun Color.exportHex(): String {
-        val red = (red * 255f).toInt()
-        val green = (green * 255f).toInt()
-        val blue = (blue * 255f).toInt()
-        val alpha = (alpha * 255f).toInt()
-        val base = "#%02X%02X%02X".format(red, green, blue)
-        return if (alpha == 255) base else base + "%02X".format(alpha)
-    }
-
-    private fun hex(color: Color): String = color.exportHex()
+    private fun hex(color: Color): String = color.toExportHex()
 
     private val ROLE_VALUES: Map<String, String> =
         buildMap {

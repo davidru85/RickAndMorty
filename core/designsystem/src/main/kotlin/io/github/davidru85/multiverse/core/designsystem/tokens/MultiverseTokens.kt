@@ -110,6 +110,73 @@ public object MultiverseDimensions {
 }
 
 /**
+ * The Android components' own measurements (`UI_SPEC.md` §4.1, §6, `REQ-UX-002`, `AC-REQ-UX-002-1`): the
+ * sizes and insets Figma draws for one component and that no spacing or corner token names. UI code
+ * takes every measurement from here or from [MultiverseDimensions], never from an inline literal, so a
+ * value is changed in one place and a reviewer can trace it to its Figma node.
+ */
+public object MultiverseComponentDimensions {
+    /** The status badge's padding, its dot and the gap between them (`StatusBadge`, Figma `16:7`). */
+    public val badgePaddingHorizontal: Dp = 10.dp
+    public val badgePaddingVertical: Dp = 5.dp
+    public val badgeGap: Dp = 6.dp
+    public val badgeDot: Dp = 8.dp
+
+    /** The stat tile's least height and vertical padding, and a stat list row's least height. */
+    public val statTileMinHeight: Dp = 76.dp
+    public val statTilePaddingVertical: Dp = 10.dp
+    public val statRowMinHeight: Dp = 72.dp
+
+    /** The character card's inset, the portrait heights of the Regular and Tall variants, and its rest elevation. */
+    public val cardInset: Dp = 6.dp
+    public val cardPortraitRegular: Dp = 172.dp
+    public val cardPortraitTall: Dp = 224.dp
+    public val cardElevation: Dp = 1.dp
+
+    /** The badge's inset from the portrait's corner on a card. */
+    public val cardBadgeInset: Dp = 10.dp
+
+    /** The empty state's illustration and the width its body text wraps at (`UI_SPEC.md` §6.4). */
+    public val emptyStateIllustration: Dp = 160.dp
+    public val emptyStateBodyWidth: Dp = 320.dp
+
+    /** A Cookie-9 illustration's section icon and a section glyph's container and icon. */
+    public val illustrationIcon: Dp = 64.dp
+    public val sectionGlyphContainer: Dp = 48.dp
+    public val icon: Dp = 24.dp
+
+    /** The portal mark a failed portrait shows (`UI_SPEC.md` §5.3). */
+    public val portraitErrorMark: Dp = 48.dp
+
+    /** The Detail's hero, its top scrim and bottom fade, and the room the favourite action keeps clear (Figma `21:1217`). */
+    public val detailHeroHeight: Dp = 468.dp
+    public val detailTopScrimHeight: Dp = 160.dp
+    public val detailBottomFadeHeight: Dp = 200.dp
+    public val detailFabClearance: Dp = 112.dp
+    public val detailTitleInset: Dp = 20.dp
+
+    /** The Detail's controls bar and one control's container and touch target. */
+    public val detailControlsBarHeight: Dp = 64.dp
+    public val detailControlContainer: Dp = 40.dp
+    public val detailControlTarget: Dp = 48.dp
+
+    /** The favourite action's glow: its blur radius and its downward offset. */
+    public val fabGlowRadius: Dp = 28.dp
+    public val fabGlowOffset: Dp = 8.dp
+
+    /** Discovery's app bar, the gap above its chips and above its grid, and the paging indicator. */
+    public val appBarHeight: Dp = 64.dp
+    public val chipsTopGap: Dp = 18.dp
+    public val gridTopGap: Dp = 20.dp
+    public val pagingIndicator: Dp = 48.dp
+
+    /** The splash's Cookie-9, its portal and the portal's glow radius (`UI_SPEC.md` §6.1). */
+    public val splashCookie: Dp = 240.dp
+    public val splashPortal: Dp = 160.dp
+    public val splashGlowRadius: Dp = 48.dp
+}
+
+/**
  * The type scale `UI_SPEC.md` §3.4 uses, on the bundled Roboto Flex (`DEC-103`).
  *
  * Sizes are `sp` so they follow the user's font scale (`REQ-UX-006`); weights come from the
@@ -204,24 +271,28 @@ public object MultiverseTokens {
             "Status/Unknown" to MultiverseBrandColors.statusUnknown,
         )
 
+    /**
+     * The dimension tokens the UI uses, read from [MultiverseDimensions] itself rather than restated, so
+     * a changed `Dp` is a changed export value and `TEST-UNIT-035` sees it.
+     */
     private val floats: Map<String, Float> =
         mapOf(
-            "Space/XS" to 4f,
-            "Space/S" to 8f,
-            "Space/M" to 12f,
-            "Space/L" to 16f,
-            "Space/XL" to 24f,
-            "Space/2XL" to 32f,
-            "Space/3XL" to 48f,
-            "Shape/Corner Extra Small" to 4f,
-            "Shape/Corner Small" to 8f,
-            "Shape/Corner Medium" to 12f,
-            "Shape/Corner Large" to 16f,
-            "Shape/Corner Large Increased" to 20f,
-            "Shape/Corner Extra Large" to 28f,
-            "Shape/Corner Extra Large Increased" to 32f,
-            "Shape/Corner Extra Extra Large" to 48f,
-            "Shape/Corner Full" to 999f,
+            "Space/XS" to MultiverseDimensions.spaceXs.value,
+            "Space/S" to MultiverseDimensions.spaceS.value,
+            "Space/M" to MultiverseDimensions.spaceM.value,
+            "Space/L" to MultiverseDimensions.spaceL.value,
+            "Space/XL" to MultiverseDimensions.spaceXl.value,
+            "Space/2XL" to MultiverseDimensions.space2Xl.value,
+            "Space/3XL" to MultiverseDimensions.space3Xl.value,
+            "Shape/Corner Extra Small" to MultiverseDimensions.cornerExtraSmall.value,
+            "Shape/Corner Small" to MultiverseDimensions.cornerSmall.value,
+            "Shape/Corner Medium" to MultiverseDimensions.cornerMedium.value,
+            "Shape/Corner Large" to MultiverseDimensions.cornerLarge.value,
+            "Shape/Corner Large Increased" to MultiverseDimensions.cornerLargeIncreased.value,
+            "Shape/Corner Extra Large" to MultiverseDimensions.cornerExtraLarge.value,
+            "Shape/Corner Extra Large Increased" to MultiverseDimensions.cornerExtraLargeIncreased.value,
+            "Shape/Corner Extra Extra Large" to MultiverseDimensions.cornerExtraExtraLarge.value,
+            "Shape/Corner Full" to MultiverseDimensions.cornerFull.value,
         )
 
     /** Every mapped token, keyed by its export variable name, with its value in export form. */
@@ -232,14 +303,15 @@ public object MultiverseTokens {
     /** The export variable names the token objects map. */
     public fun mappedNames(): Set<String> = colors.keys + floats.keys
 
-    private fun Color.toExportHex(): String {
-        val red = (red * 255f).toInt()
-        val green = (green * 255f).toInt()
-        val blue = (blue * 255f).toInt()
-        val alpha = (alpha * 255f).toInt()
-        val base = "#%02X%02X%02X".format(red, green, blue)
-        return if (alpha == 255) base else base + "%02X".format(alpha)
-    }
-
     private fun Float.toExportNumber(): String = if (this == toInt().toFloat()) toInt().toString() else toString()
+}
+
+/** A colour in the export's hex form, `#RRGGBB` or `#RRGGBBAA`: the one helper both parity records use. */
+internal fun Color.toExportHex(): String {
+    val red = (red * 255f).toInt()
+    val green = (green * 255f).toInt()
+    val blue = (blue * 255f).toInt()
+    val alpha = (alpha * 255f).toInt()
+    val base = "#%02X%02X%02X".format(red, green, blue)
+    return if (alpha == 255) base else base + "%02X".format(alpha)
 }

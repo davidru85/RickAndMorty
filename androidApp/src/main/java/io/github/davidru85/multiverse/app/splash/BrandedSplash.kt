@@ -54,6 +54,8 @@ import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import kotlin.random.Random
 import kotlinx.coroutines.isActive
@@ -111,14 +113,14 @@ public fun BrandedSplash(
         Column(
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
         ) {
             Box(
                 modifier =
                     Modifier
-                        .size(240.dp)
+                        .size(MultiverseComponentDimensions.splashCookie)
                         // The Portal Glow around the cookie (`UI_SPEC.md` §6.1).
-                        .dropShadow(Cookie9, Shadow(radius = 48.dp, color = MultiverseBrandColors.portalGlow.copy(alpha = 0.45f)))
+                        .dropShadow(Cookie9, Shadow(radius = MultiverseComponentDimensions.splashGlowRadius, color = MultiverseBrandColors.portalGlow.copy(alpha = 0.45f)))
                         .clip(Cookie9)
                         .background(MultiverseColors.primaryContainer),
                 contentAlignment = Alignment.Center,
@@ -126,7 +128,7 @@ public fun BrandedSplash(
                 PortalMark(
                     modifier =
                         Modifier
-                            .size(160.dp)
+                            .size(MultiverseComponentDimensions.splashPortal)
                             .rotate(rotation)
                             .alpha(pulse),
                 )

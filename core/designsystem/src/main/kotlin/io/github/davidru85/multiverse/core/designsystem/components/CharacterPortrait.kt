@@ -25,12 +25,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.portraitSharedElement
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import androidx.compose.animation.core.tween as animationTween
 
 /** The crossfade of `UI_SPEC.md` §5.3: the image appears over 200 ms once it is decoded. */
@@ -168,7 +169,7 @@ private fun PortraitError(
                 contentDescription = null,
                 modifier =
                     Modifier
-                        .size(48.dp)
+                        .size(MultiverseComponentDimensions.portraitErrorMark)
                         .alpha(PortraitErrorMarkAlpha),
             )
         }
@@ -176,7 +177,7 @@ private fun PortraitError(
 }
 
 /** The corner radius of a card's portrait (`UI_SPEC.md` §4.1): outer 28 minus the 6 dp inset. */
-public val PortraitCorner: Dp = 20.dp
+public val PortraitCorner: Dp = MultiverseDimensions.cornerLargeIncreased
 
 /** The modifier a portrait inside a card uses: its concentric corner. */
 public fun Modifier.portraitCorner(): Modifier =

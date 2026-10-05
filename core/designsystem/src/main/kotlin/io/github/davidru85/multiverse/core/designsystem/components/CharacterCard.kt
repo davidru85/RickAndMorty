@@ -34,22 +34,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.image.LocalCharacterAccentPolicy
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /** The two portrait heights a card offers (`UI_SPEC.md` §4.1): Regular 172 dp, Tall 224 dp. */
 public enum class CardHeight { Regular, Tall }
 
 /** The card's inset and corner (`UI_SPEC.md` §4.1): 6 dp and 28; the card fills its grid cell. */
-private val CardInset = 6.dp
-private val CardCorner = 28.dp
-private val RegularPortrait = 172.dp
-private val TallPortrait = 224.dp
+private val CardInset = MultiverseComponentDimensions.cardInset
+private val CardCorner = MultiverseDimensions.cornerExtraLarge
+private val RegularPortrait = MultiverseComponentDimensions.cardPortraitRegular
+private val TallPortrait = MultiverseComponentDimensions.cardPortraitTall
 
 /**
  * The character card (`UI_SPEC.md` §4.1): photo, name, status badge and species, and nothing else.
@@ -106,7 +106,7 @@ public fun CharacterCard(
     val shape = RoundedCornerShape(CardCorner)
     val container = if (containerColor.isSpecified) containerColor else rememberAccent(imageUrl)
     val colors = CardDefaults.cardColors(containerColor = container)
-    val elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    val elevation = CardDefaults.cardElevation(defaultElevation = MultiverseComponentDimensions.cardElevation)
     if (onClick != null) {
         Card(onClick = onClick, shape = shape, colors = colors, elevation = elevation, modifier = cardModifier) {
             CardContent(name, species, statusTone, statusLabel, imageUrl, seam, portalMark, sharedKey, portraitHeight)
@@ -166,10 +166,17 @@ private fun CardContent(
         StatusBadge(
             tone = statusTone,
             label = statusLabel,
-            modifier = Modifier.padding(10.dp).align(Alignment.TopStart),
+            modifier = Modifier.padding(MultiverseComponentDimensions.cardBadgeInset).align(Alignment.TopStart),
         )
     }
-    Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+    Column(
+        modifier =
+            Modifier.padding(
+                start = MultiverseDimensions.spaceM,
+                end = MultiverseDimensions.spaceM,
+                bottom = MultiverseDimensions.spaceM,
+            ),
+    ) {
         Text(
             text = name,
             style = MaterialTheme.typography.titleMediumEmphasized,
@@ -215,7 +222,14 @@ public fun CharacterCardSkeleton(
                         .shimmer(),
             )
         }
-        Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+        Column(
+            modifier =
+                Modifier.padding(
+                    start = MultiverseDimensions.spaceM,
+                    end = MultiverseDimensions.spaceM,
+                    bottom = MultiverseDimensions.spaceM,
+                ),
+        ) {
             Box(
                 modifier =
                     Modifier
@@ -249,8 +263,8 @@ private fun CharacterCardPreview() {
 @Composable
 private fun CardPreviewRow() {
     Row(
-        modifier = Modifier.padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(MultiverseDimensions.spaceM),
+        horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
     ) {
         CharacterCard(
             name = "Rick Sanchez",

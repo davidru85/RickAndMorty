@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 
 /**
  * The app's icons (`DEC-103`): only the Material Symbols Rounded glyphs the B4 surfaces render, as
@@ -36,8 +37,8 @@ public object MultiverseIcons {
         ImageVector
             .Builder(
                 name = name,
-                defaultWidth = 24.dp,
-                defaultHeight = 24.dp,
+                defaultWidth = MultiverseComponentDimensions.icon,
+                defaultHeight = MultiverseComponentDimensions.icon,
                 viewportWidth = 24f,
                 viewportHeight = 24f,
             ).apply {

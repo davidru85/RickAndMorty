@@ -20,8 +20,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -86,8 +87,8 @@ public fun Cookie9Illustration(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     containerColor: Color = MultiverseColors.primaryContainer,
-    size: Dp = 160.dp,
-    iconSize: Dp = 64.dp,
+    size: Dp = MultiverseComponentDimensions.emptyStateIllustration,
+    iconSize: Dp = MultiverseComponentDimensions.illustrationIcon,
     /** The glyph's tint: the container's matching "on" colour, or `Color.Unspecified` for a brand mark. */
     iconTint: Color = MultiverseColors.onPrimaryContainer,
     iconAlpha: Float = 1f,
@@ -115,9 +116,19 @@ public fun SectionGlyph(
     iconTint: Color = MultiverseColors.onSecondaryContainer,
 ) {
     Box(
-        modifier = modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(containerColor),
+        modifier =
+            modifier
+                .size(
+                    MultiverseComponentDimensions.sectionGlyphContainer,
+                ).clip(RoundedCornerShape(MultiverseDimensions.cornerLarge))
+                .background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painter = icon, contentDescription = contentDescription, tint = iconTint, modifier = Modifier.size(24.dp))
+        Icon(
+            painter = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(MultiverseComponentDimensions.icon),
+        )
     }
 }

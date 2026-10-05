@@ -24,10 +24,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /** One destination of the app-wide navigation bar (`UI_SPEC.md` §4.1). */
 public data class NavigationDestination(
@@ -74,7 +74,7 @@ public fun MultiverseNavigationBar(
         Column {
             rows.forEach { rowDestinations ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = MultiverseDimensions.spaceXs),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     rowDestinations.forEach { destination ->
