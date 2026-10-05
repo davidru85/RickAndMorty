@@ -31,12 +31,17 @@ final class ScreenSnapshotTests: XCTestCase {
             contentFailure: nil,
             isRefreshing: false
         )
+        // In a navigation stack, as the shell hosts it, so the system large title is drawn (`DEC-138`).
         record("discovery-grid", dynamicTypeSize: .large) {
-            DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            NavigationStack {
+                DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            }
         }
         // `AC-REQ-UX-006-1`: at the largest accessibility size the grid is one column.
         record("discovery-grid-accessibility-text", dynamicTypeSize: .accessibility5) {
-            DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            NavigationStack {
+                DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            }
         }
         let detail = CharacterDetailUiState(
             header: cards[0],
@@ -63,6 +68,18 @@ final class ScreenSnapshotTests: XCTestCase {
                 onBrowseCharacters: {}
             )
         }
+        // The Settings screen of Figma `102:322` (`TASK-114`): subtitle, destructive red, inset headers.
+        record("settings", dynamicTypeSize: .large) {
+            SettingsScreen(
+                state: SettingsUiState(
+                    soundsEnabled: false,
+                    remoteProtocol: RemoteProtocol.rest,
+                    canDeleteFavorites: true,
+                    isConfirmingDelete: false
+                ),
+                onIntent: { _ in }
+            )
+        }
     }
 
     /// `TEST-UI-016` on iOS: the seven rendered states of `ERROR_FLOW.md` §12, each a committed
@@ -85,7 +102,9 @@ final class ScreenSnapshotTests: XCTestCase {
             )
         }
         let discovery = { (state: CharacterListUiState) in
-            DiscoveryScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            NavigationStack {
+                DiscoveryScreen(state: state, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
+            }
         }
         record("discovery-loading", dynamicTypeSize: .large) {
             discovery(list([], LoadStateLoading.shared, false, false))

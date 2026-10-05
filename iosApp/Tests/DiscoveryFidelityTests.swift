@@ -97,6 +97,29 @@ final class DiscoveryFidelityTests: XCTestCase {
         XCTAssertGreaterThan(label.count, 60, "the selected label is white (Figma 29:419), not Space Black")
     }
 
+    func test_TEST_UI_037_given_an_empty_state_when_rendered_then_its_illustration_well_is_a_circle() throws {
+        let empty = EmptyState(symbol: "heart", heading: "No favorites yet", body: "Tap the heart.", actionLabel: "Browse") {}
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black)
+            .environment(\.multiverseGlassPath, .material)
+        let image = try HostedRendering.render(UIHostingController(rootView: empty))
+
+        // The well is the topmost painted shape; its rim and material are lighter than the black around
+        // it. 10 pt in from its bounds' top-leading corner is inside a 28 pt rounded square but outside
+        // a 120 pt circle (Figma `102:256`).
+        let painted = try HostedRendering.matchingPixels(in: image) { red, green, blue in red + green + blue > 60 }
+        let top = try XCTUnwrap(painted.bounds)
+        let well = try XCTUnwrap(
+            try HostedRendering.matchingPixels(
+                in: image,
+                region: CGRect(x: 0, y: top.minY, width: 402, height: MultiverseDimensions.emptyStateWell)
+            ) { red, green, blue in red + green + blue > 60 }.bounds
+        )
+        XCTAssertEqual(well.width, MultiverseDimensions.emptyStateWell, accuracy: 4)
+        let corner = try HostedRendering.color(in: image, at: CGPoint(x: well.minX + 10, y: well.minY + 10))
+        XCTAssertLessThan(corner.red + corner.green + corner.blue, 30, "the well's corner is the black behind it")
+    }
+
     /// The portal logo's greens at 40 % over the dark canvas: green leads red and blue clearly.
     private static func isPortalGreen(_ red: Int, _ green: Int, _ blue: Int) -> Bool {
         green > 50 && green > red + 15 && green > blue + 30
