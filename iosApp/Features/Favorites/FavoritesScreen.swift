@@ -139,7 +139,10 @@ struct FavoritesScreen: View {
                     )
                 }
             }
-            .padding(MultiverseDimensions.spaceM)
+            // Discovery's 16 pt margins (Figma `102:375`): two 177 pt cards and a 16 pt gutter fill
+            // the 402 pt width.
+            .padding(.horizontal, MultiverseDimensions.spaceL)
+            .padding(.vertical, MultiverseDimensions.spaceM)
         }
     }
 
