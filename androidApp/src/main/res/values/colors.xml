@@ -2,5 +2,4 @@
 <!-- The system splash background and the window background: Surface #0F0E12 (`UI_SPEC.md` §3.1). -->
 <resources>
     <color name="surface">#FF0F0E12</color>
-    <color name="ic_launcher_background">#FF497401</color>
 </resources>
