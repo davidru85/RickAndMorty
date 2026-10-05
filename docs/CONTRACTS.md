@@ -463,6 +463,7 @@ data class PagerState(
     val isEndReached: Boolean,
     val isStale: Boolean,
     val failure: ApiFailure?,
+    val isLoading: Boolean = false,   // DEC-130
 )
 ```
 
@@ -471,6 +472,8 @@ data class PagerState(
 - **Invariants**
   - `state` is hot with replay of the current value: a new collector receives the current `PagerState` as its first emission and never triggers a load by collecting.
   - `setFilter` resets to page 1 and cancels any in-flight page load; the items of the previous filter are not carried into the new filter's accumulation (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-003-2`).
+  - A change of the active protocol resets exactly as `setFilter` does, keeping the filter. Items, total, end flag, failure and staleness clear, and the load in flight is cancelled, so nothing the previous protocol loaded stays on screen while page 1 of the new one loads (`AC-REQ-FUNC-034-2`, `DEC-130`).
+  - `isLoading` is `true` from a reset (`setFilter` or a protocol switch) until the first page of the new identity is published, whatever its outcome, so a consumer never reads an empty reset as an empty result (`DEC-130`).
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
   - `next()` while `failure != null` performs no request: a failed load suppresses further speculative loads, so repeated scroll triggers cannot become a request storm while the service is failing (`DEC-092`). `retry()`, `refresh()` and `setFilter` are the ways out.
@@ -1076,6 +1079,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-014` (`TASK-112`): `PagerState.isLoading` added, and a protocol switch resets like `setFilter`. The Swift initialiser of `PagerState` gains the parameter; no Swift code constructs one. | `DEC-130` |
 | 2026-10-05 | `IC-018` (`TASK-112`): `CharacterListIntent.ClearFilters` clears both filter dimensions in one request. Additive for the Swift consumer. | `DEC-129` |
 | 2026-10-05 | `IC-018` (`TASK-111`): `CharacterListUiState` gains `contentFailure` (the failure carried beside displayable content) and `isRefreshing`; `Retry` revalidates stale content when there is no failure; no intent awaits a load inside the intent loop. Breaking for the Swift consumer (§8.2), whose initialiser gains the two parameters; the iOS app and its tests change in the same commit. | `DEC-124` |
 | 2026-10-05 | `IC-017` (`TASK-111`): `FailureMessage.arguments` becomes `List<MessageArgument>` (`Number`/`Text`) with `formatArguments()`, `rateLimitCountdown` returns `Long?`, and a rate limit without usable advice maps to the new placeholder-free key `error_message_rate_limited_no_countdown`. Breaking for the Swift consumer (§8.2), which changes in the same commit: Android crashed formatting `%d` with a `String`, and iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123` |

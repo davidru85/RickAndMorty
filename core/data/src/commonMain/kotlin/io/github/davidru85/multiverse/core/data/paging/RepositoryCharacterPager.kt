@@ -90,15 +90,35 @@ public class RepositoryCharacterPager(
     private val protocolObserver: Job =
         scope.launch { protocolChanges.collect { switchProtocol() } }
 
-    /** Resets to page 1 of the current filter and reloads, cancelling the superseded load. */
+    /**
+     * Resets to page 1 of the current filter and reloads, cancelling the superseded load. The reset is
+     * the one [setFilter] performs: nothing the previous protocol loaded stays on screen while the new
+     * page loads (`DEC-130`).
+     */
     private suspend fun switchProtocol() {
         val load =
             lock.withLock {
                 startGeneration()
-                nextPage = FIRST_PAGE
+                reset(mutableState.value.filter)
                 start(Load(FIRST_PAGE, PageLoadPolicy.Default))
             }
         load.join()
+    }
+
+    /** Empties the state for a new identity of [filter] and marks its first page as loading. Called under [lock]. */
+    private fun reset(filter: CharacterFilter) {
+        nextPage = FIRST_PAGE
+        mutableState.value =
+            PagerState(
+                filter = filter,
+                items = emptyList(),
+                totalCount = null,
+                isAppending = false,
+                isEndReached = false,
+                isStale = false,
+                failure = null,
+                isLoading = true,
+            )
     }
 
     /** One page request: page 1 replaces the collection, any later page appends to it. */
@@ -113,17 +133,7 @@ public class RepositoryCharacterPager(
         val load =
             lock.withLock {
                 startGeneration()
-                nextPage = FIRST_PAGE
-                mutableState.value =
-                    PagerState(
-                        filter = filter,
-                        items = emptyList(),
-                        totalCount = null,
-                        isAppending = false,
-                        isEndReached = false,
-                        isStale = false,
-                        failure = null,
-                    )
+                reset(filter)
                 start(Load(FIRST_PAGE, PageLoadPolicy.Default))
             }
         load.join()
@@ -212,6 +222,7 @@ public class RepositoryCharacterPager(
                         isEndReached = page.nextPage == null,
                         isStale = result.isStale || (!load.replaces && current.isStale),
                         failure = null,
+                        isLoading = false,
                     )
                 }
             }
@@ -222,13 +233,13 @@ public class RepositoryCharacterPager(
                     logger.log(LogLevel.DEBUG) { LogEvent.PaginationExhausted(load.page - 1) }
                     failedLoad = null
                     nextPage = null
-                    mutableState.update { it.copy(isAppending = false, isEndReached = true, failure = null) }
+                    mutableState.update { it.copy(isAppending = false, isEndReached = true, failure = null, isLoading = false) }
                 } else {
                     logger.log(LogLevel.DEBUG) {
                         LogEvent.PageLoaded(load.page, LogOutcome.FAILURE, durationMs, result.source, correlationId)
                     }
                     failedLoad = load
-                    mutableState.update { it.copy(isAppending = false, failure = result.failure) }
+                    mutableState.update { it.copy(isAppending = false, failure = result.failure, isLoading = false) }
                 }
         }
     }

@@ -4,6 +4,8 @@ import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.paging.PagerState
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.LoadState
+import io.github.davidru85.multiverse.testing.FakeCatalogue
+import io.github.davidru85.multiverse.testing.FakeCharacterRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,10 +20,12 @@ import kotlin.test.assertEquals
  * it: only the pager's `isLoading` can tell an empty reset from an empty result.
  */
 class DiscoveryProtocolResetTest {
+    private val scope = CoroutineScope(Job())
+
     private val reducer =
         DiscoveryReducer(
-            pager = FakeCharacterPager(io.github.davidru85.multiverse.testing.FakeCharacterRepository(io.github.davidru85.multiverse.testing.FakeCatalogue(emptyList())), CoroutineScope(Job())),
-            scope = CoroutineScope(Job()),
+            pager = FakeCharacterPager(FakeCharacterRepository(FakeCatalogue(emptyList())), scope),
+            scope = scope,
             dispatcher = Dispatchers.Unconfined,
             formatters = DefaultPresentationFormatters,
         )

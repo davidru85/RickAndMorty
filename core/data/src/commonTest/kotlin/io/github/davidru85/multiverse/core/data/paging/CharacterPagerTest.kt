@@ -173,9 +173,13 @@ class CharacterPagerTest {
             pager.next()
             pager.refresh()
 
+            // A reset also flips `isLoading` (DEC-130), which this projection does not show; consecutive
+            // equal projections are therefore one step of the sequence.
             assertEquals(
                 listOf(0 to false, 20 to false, 20 to true, 40 to false, 20 to false),
-                states.map { it.items.size to it.isAppending },
+                states.map { it.items.size to it.isAppending }.fold(emptyList<Pair<Int, Boolean>>()) { steps, step ->
+                    if (steps.lastOrNull() == step) steps else steps + step
+                },
                 "TEST-UNIT-016: only an append sets isAppending, and a refresh keeps the items until it succeeds (ADR-0009 rule 5)",
             )
         }
@@ -207,6 +211,8 @@ class CharacterPagerTest {
                     isEndReached = false,
                     isStale = false,
                     failure = null,
+                    // The reset says its first page is loading, so it is never read as an empty result (DEC-130).
+                    isLoading = true,
                 ),
                 states[reset],
                 "TEST-UNIT-016: the new filter and the cleared accumulation arrive in one emission (AC-REQ-FUNC-003-2)",

@@ -244,7 +244,8 @@ public class DiscoveryReducer(
         val displayable = state.items.isNotEmpty()
         val loadState =
             when {
-                !displayable && isLoading -> LoadState.Loading
+                // The pager's own flag covers a reset this holder did not ask for: a protocol switch.
+                !displayable && (isLoading || state.isLoading) -> LoadState.Loading
                 !displayable && state.failure != null -> LoadState.Error(requireNotNull(state.failure))
                 !displayable -> LoadState.Empty
                 else -> LoadState.Content

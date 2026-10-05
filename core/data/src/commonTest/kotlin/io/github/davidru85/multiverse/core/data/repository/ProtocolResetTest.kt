@@ -84,7 +84,11 @@ class ProtocolResetTest {
                 assertTrue(during.isLoading, "TEST-UNIT-077: the pager says a first page is loading, so the screen shows Loading")
 
                 advanceUntilIdle()
-                assertEquals((1..20).map { "GraphQl $it" }, pager.state.value.items.map { it.name })
+                assertEquals(
+                    (1..20).map { "GraphQl $it" },
+                    pager.state.value.items
+                        .map { it.name },
+                )
                 assertEquals(false, pager.state.value.isLoading, "TEST-UNIT-077: and stops saying so once it is published")
             } finally {
                 owner.cancel()
