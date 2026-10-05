@@ -1,5 +1,8 @@
 package io.github.davidru85.multiverse.feature.discovery.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
@@ -15,19 +19,21 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberSearchBarState
@@ -43,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.CardHeight
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
@@ -52,6 +59,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
@@ -64,6 +72,7 @@ import io.github.davidru85.multiverse.core.presentation.DefaultPresentationForma
 import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
 import io.github.davidru85.multiverse.core.presentation.formatArguments
+import io.github.davidru85.multiverse.feature.discovery.R
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListIntent
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListUiState
 
@@ -88,8 +97,6 @@ public fun DiscoveryScreen(
     modifier: Modifier = Modifier,
     /** The image seam the cards draw with; the composition root supplies the one allow-listed loader. */
     seam: ImageSeam = PreviewSeam,
-    /** The painter the empty and error surfaces draw; the shell passes the app's own illustration. */
-    illustration: Painter = ColorPainter(Color.Transparent),
     /**
      * The card the user tapped, so the caller publishes it to the `IC-025` hand-off and navigates
      * (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`). The screen does not navigate itself, and it does not know
@@ -100,17 +107,20 @@ public fun DiscoveryScreen(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SearchField(state = state, onIntent = onIntent)
+            // The app bar takes Surface Container once the grid has scrolled under it (`UI_SPEC.md` §6.2).
+            val scrolled by remember(gridState) {
+                derivedStateOf { gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0 }
+            }
+            SearchField(state = state, onIntent = onIntent, scrolled = scrolled)
             Headline(state = state)
             FilterRow(state = state, onIntent = onIntent)
             when (val loadState = state.loadState) {
-                is LoadState.Empty -> DiscoveryEmptyState(state = state, onIntent = onIntent, illustration = illustration)
+                is LoadState.Empty -> DiscoveryEmptyState(state = state, onIntent = onIntent)
 
                 is LoadState.Error ->
                     DiscoveryErrorState(
                         failure = loadState.failure,
                         onRetry = { onIntent(CharacterListIntent.Retry) },
-                        illustration = illustration,
                     )
 
                 // The refresh gesture is bound to the shared state: a pull sends `Refresh`, and the
@@ -135,25 +145,50 @@ public fun DiscoveryScreen(
     }
 }
 
-/** The search field of `UI_SPEC.md` §4.1: the spec's placeholder, and no mic (`DEC-002`). */
+/**
+ * The 64 dp top app bar holding the M3 search bar (`UI_SPEC.md` §4.1, §6.2, Figma `20:1752`): a leading
+ * search glyph and the spec's placeholder, and no mic and no avatar (`DEC-002`). Its container is
+ * Surface, animating to Surface Container once the grid has scrolled under it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchField(
     state: CharacterListUiState,
     onIntent: (CharacterListIntent) -> Unit,
+    scrolled: Boolean,
 ) {
     val searchBarState = rememberSearchBarState()
     val textFieldState = remember { TextFieldState(state.filter.query) }
     // The text the state last wrote into the field. Its echo through the edit stream is not a user
     // edit, so it is not sent back as a `QueryChanged` (`DEC-129`); every other edit is.
     val stateWritten = remember { mutableStateOf<String?>(state.filter.query) }
-    Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxWidth()) {
-        SearchBarDefaults.InputField(
-            textFieldState = textFieldState,
-            searchBarState = searchBarState,
-            onSearch = { onIntent(CharacterListIntent.QueryChanged(it)) },
-            placeholder = { Text(CopyResolver.copy(CopyKeys.SEARCH_CHARACTERS.value)) },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    val appBar by animateColorAsState(
+        targetValue = if (scrolled) MultiverseColors.surfaceContainer else MultiverseColors.surface,
+        label = "app-bar-container",
+    )
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(AppBarHeight)
+                .background(appBar)
+                .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        SearchBar(
+            state = searchBarState,
+            inputField = {
+                SearchBarDefaults.InputField(
+                    textFieldState = textFieldState,
+                    searchBarState = searchBarState,
+                    onSearch = { onIntent(CharacterListIntent.QueryChanged(it)) },
+                    placeholder = { Text(CopyResolver.copy(CopyKeys.SEARCH_CHARACTERS.value)) },
+                    // Decorative: the field's own semantics name it (`UI_SPEC.md` §9).
+                    leadingIcon = { Icon(painter = painterResource(R.drawable.ic_search), contentDescription = null) },
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = SearchBarDefaults.colors(containerColor = MultiverseColors.surfaceContainerHigh),
         )
     }
     LaunchedEffect(state.filter.query) {
@@ -181,7 +216,8 @@ private fun SearchField(
 /** The headline and its count line, whose number is the server's `info.count` (`AC-REQ-FUNC-001-3`). */
 @Composable
 private fun Headline(state: CharacterListUiState) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    // 16 dp below the app bar (Figma `20:1842`).
+    Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
         Text(
             text = CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value),
             style = MaterialTheme.typography.displaySmallEmphasized,
@@ -217,15 +253,32 @@ private fun FilterRow(
             StatusFilter.Dead to CopyKeys.STATUS_DEAD,
             StatusFilter.Unknown to CopyKeys.VALUE_UNKNOWN,
         )
+    // The chips wait for the first page: a tap during the initial load would reset a load that has not
+    // answered yet (`UI_SPEC.md` §8, "filters disabled").
+    val enabled = state.loadState != LoadState.Loading
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        // 18 dp below the headline, 8 dp apart (Figma `20:1845`). On a narrow screen or at a large font
+        // scale the row scrolls rather than wrapping a label onto several lines.
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         options.forEach { (status, key) ->
+            val selected = state.filter.status == status
             ElevatedFilterChip(
-                selected = state.filter.status == status,
+                selected = selected,
+                enabled = enabled,
                 onClick = { onIntent(CharacterListIntent.StatusSelected(status)) },
-                label = { Text(CopyResolver.copy(key.value)) },
+                label = { Text(CopyResolver.copy(key.value), maxLines = 1) },
+                leadingIcon =
+                    if (selected) {
+                        { Icon(painter = painterResource(R.drawable.ic_check), contentDescription = null) }
+                    } else {
+                        null
+                    },
             )
         }
     }
@@ -236,7 +289,6 @@ private fun FilterRow(
 private fun DiscoveryEmptyState(
     state: CharacterListUiState,
     onIntent: (CharacterListIntent) -> Unit,
-    illustration: Painter,
 ) {
     EmptyState(
         heading =
@@ -244,7 +296,9 @@ private fun DiscoveryEmptyState(
                 .copy(CopyKeys.EMPTY_SEARCH_MESSAGE.value)
                 .format(state.filter.query),
         body = "",
-        illustration = illustration,
+        illustration = portalMark(),
+        illustrationTint = Color.Unspecified,
+        illustrationAlpha = PORTAL_MARK_ALPHA,
         actionLabel = CopyResolver.copy(CopyKeys.ACTION_CLEAR_FILTERS.value),
         // Both dimensions in one intent; the field and the chips follow the state (`DEC-129`).
         onAction = { onIntent(CharacterListIntent.ClearFilters) },
@@ -257,14 +311,15 @@ private fun DiscoveryEmptyState(
 private fun DiscoveryErrorState(
     failure: ApiFailure,
     onRetry: () -> Unit,
-    illustration: Painter,
 ) {
     val message = DefaultPresentationFormatters.failureMessage(failure)
     EmptyState(
         heading = CopyResolver.copy(DefaultPresentationFormatters.failureTitle().value),
         // The typed arguments go to the resource formatter unchanged (`DEC-123`).
         body = CopyResolver.copy(message.key.value, *message.formatArguments()),
-        illustration = illustration,
+        illustration = portalMark(),
+        illustrationTint = Color.Unspecified,
+        illustrationAlpha = PORTAL_MARK_ALPHA,
         actionLabel = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value),
         onAction = onRetry,
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -290,7 +345,8 @@ private fun CharacterGrid(
             columns = MultiverseGrid.columns(),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(12.dp),
+            // 16 dp screen margins and 12 dp gutters, 20 dp below the chips (Figma `20:1868`, `UI_SPEC.md` §3.3).
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalItemSpacing = 12.dp,
         ) {
@@ -298,8 +354,11 @@ private fun CharacterGrid(
                 // Six skeletons in the Tall/Regular pattern while no load has completed (§8).
                 items(SKELETON_COUNT) { index -> CharacterCardSkeleton(height = heightOf(index)) }
             } else {
-                itemsIndexed(items) { index, card ->
+                // Keyed by the canonical id, so a filter change animates the cards that stay rather than
+                // re-binding them by position (`UI_SPEC.md` §7, "Chips / filters").
+                itemsIndexed(items, key = { _, card -> card.id.value }, contentType = { _, _ -> CARD_CONTENT_TYPE }) { index, card ->
                     CharacterCard(
+                        modifier = Modifier.animateItem(),
                         name = card.name,
                         species = card.species.text(),
                         statusTone = card.status.tone(),
@@ -392,6 +451,19 @@ private fun DiscoveryNotice(
     }
     SnackbarHost(hostState = host, modifier = modifier.padding(16.dp))
 }
+
+/** The brand mark the shell provides for the empty and error states, or nothing in a bare preview. */
+@Composable
+private fun portalMark(): Painter = LocalPortalMark.current ?: ColorPainter(Color.Transparent)
+
+/** The portal mark's opacity on the empty and error states (`UI_SPEC.md` §8: "Portal logo (40%)"). */
+private const val PORTAL_MARK_ALPHA = 0.4f
+
+/** The single content type of the grid's cards, so the lazy layout reuses their compositions. */
+private const val CARD_CONTENT_TYPE = "character-card"
+
+/** The top app bar's height (`UI_SPEC.md` §4.1): 64 dp. */
+private val AppBarHeight = 64.dp
 
 /** Tall when `index % 4` is 0 or 3, Regular otherwise (`UI_SPEC.md` §4.1). */
 private fun heightOf(index: Int): CardHeight = if (index % 4 == 0 || index % 4 == 3) CardHeight.Tall else CardHeight.Regular

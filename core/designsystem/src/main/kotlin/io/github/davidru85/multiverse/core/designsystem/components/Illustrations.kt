@@ -8,6 +8,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -91,6 +92,9 @@ public fun Cookie9Illustration(
     containerColor: Color = MultiverseColors.primaryContainer,
     size: Dp = 160.dp,
     iconSize: Dp = 64.dp,
+    /** The glyph's tint: the container's matching "on" colour, or `Color.Unspecified` for a brand mark. */
+    iconTint: Color = MultiverseColors.onPrimaryContainer,
+    iconAlpha: Float = 1f,
 ) {
     Box(
         modifier = modifier.size(size).clip(Cookie9).background(containerColor),
@@ -99,8 +103,8 @@ public fun Cookie9Illustration(
         Icon(
             painter = icon,
             contentDescription = contentDescription,
-            tint = MultiverseColors.onPrimaryContainer,
-            modifier = Modifier.size(iconSize),
+            tint = iconTint,
+            modifier = Modifier.size(iconSize).alpha(iconAlpha),
         )
     }
 }

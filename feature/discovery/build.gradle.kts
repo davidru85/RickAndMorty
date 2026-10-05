@@ -49,7 +49,12 @@ kotlin {
     // the module's committed host-test manifest (the `androidx.activity.ComponentActivity` the Compose
     // rule hosts its content in) and the Android copy set `:core:designsystem` ships are merged into
     // the packaged manifest and resource APK the host run is pointed at (`TEST-UI-003`).
+    // `androidResources.enable` is `false` for a multiplatform library by default; it is enabled so the
+    // module's own bundled search and check glyphs under `androidMain/res/drawable` ship (`TASK-113`).
     extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget> {
+        androidResources {
+            enable = true
+        }
         compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java).configureEach {
             isIncludeAndroidResources = true
         }

@@ -3,8 +3,6 @@ package io.github.davidru85.multiverse.feature.discovery.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -23,7 +21,6 @@ public fun DiscoveryRoute(
     seam: ImageSeam,
     onOpenDetail: (CharacterCardUi) -> Unit,
     modifier: Modifier = Modifier,
-    illustration: Painter = TransparentPainter,
     viewModel: DiscoveryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -32,12 +29,6 @@ public fun DiscoveryRoute(
         onIntent = viewModel::onIntent,
         modifier = modifier,
         seam = seam,
-        illustration = illustration,
         onOpenDetail = onOpenDetail,
     )
 }
-
-/** The painter a preview or a case passes when it has no illustration of its own. */
-private val TransparentPainter: Painter =
-    androidx.compose.ui.graphics.painter
-        .ColorPainter(Color.Transparent)
