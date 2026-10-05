@@ -24,13 +24,16 @@ struct RootView: View {
     @State private var openedCards: [ShellDestination: CharacterCardUi] = [:]
 
     var body: some View {
-        TabView(
+        // The design system's glass tab bar (`UI_SPEC.md` §4.2): each tab its SF Symbol and label, the
+        // selected one in Portal Glow and every other one white through the installed appearance.
+        GlassTabBar(
             selection: Binding(
-                get: { navigation.selected },
-                set: { navigation.select($0) }
-            )
-        ) {
-            ForEach(ShellDestination.allCases) { destination in
+                get: { navigation.selected.id },
+                set: { id in ShellDestination(tabID: id).map(navigation.select) }
+            ),
+            items: ShellDestination.allCases.map(\.tabItem)
+        ) { item in
+            if let destination = ShellDestination(tabID: item.id) {
                 DestinationView(
                     destination: destination,
                     navigation: navigation,
@@ -39,13 +42,8 @@ struct RootView: View {
                         set: { openedCards[destination] = $0 }
                     )
                 )
-                .tabItem {
-                    Text(LocalizedCopy.shared.text(for: destination.labelKey))
-                }
-                .tag(destination)
             }
         }
-        .tint(MultiverseBrandColors.portalGlow)
         .overlay {
             if splashVisible {
                 BrandedSplashView(reduceMotion: UIAccessibility.isReduceMotionEnabled)
