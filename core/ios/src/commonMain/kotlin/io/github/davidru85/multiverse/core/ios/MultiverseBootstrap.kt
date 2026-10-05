@@ -39,6 +39,8 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
 import platform.Foundation.NSUserDefaults
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.Platform
 import kotlin.time.Clock
 
 /**
@@ -253,15 +255,26 @@ public object IosGraph {
 }
 
 /**
+ * The logger for this framework's variant (`DEC-039`, `DEC-127`, `OBSERVABILITY.md` §5): every level
+ * in the debug framework a Debug build links, so the REST and GraphQL request events reach the unified
+ * log as the Android debug variant's reach Logcat; `ERROR` only in the release framework. The choice
+ * is a property of the compiled binary — the app's Debug and Release configurations link different
+ * frameworks — never a runtime flag a release build could carry.
+ */
+private fun platformLogger(debugBinary: Boolean): ValidatingAppLogger =
+    if (debugBinary) ValidatingAppLogger.forDebug(OsLogSink) else ValidatingAppLogger.forRelease(OsLogSink)
+
+/**
  * The iOS platform inputs (`CoreGraphInputs`).
  *
  * `NSUserDefaults` is the platform store for both favourites and preferences (`DEC-017`, `ADR-0007`),
  * and the response cache is the app's own caches directory ([`NsFileCacheStorage`]); the HTTP client
  * is the Darwin-engine one the shared data layer already builds for Apple targets.
  */
+@OptIn(ExperimentalNativeApi::class)
 private fun iOSPlatformInputs(): Module {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val logger = ValidatingAppLogger.forRelease(OsLogSink)
+    val logger = platformLogger(debugBinary = Platform.isDebugBinary)
     return CoreGraphInputs(
         client = appleRickAndMortyHttpClient(),
         decodingDispatcher = Dispatchers.Default,
