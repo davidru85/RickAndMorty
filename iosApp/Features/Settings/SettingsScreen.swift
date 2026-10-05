@@ -50,7 +50,7 @@ struct SettingsScreen: View {
             .padding(.bottom, MultiverseDimensions.spaceXl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(MultiverseColors.surface)
+        .cosmicCanvas()
         .alert(
             copy(SettingsCopy.deleteConfirmTitle),
             isPresented: confirmingDelete,

@@ -65,6 +65,7 @@ struct DiscoveryScreen: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .cosmicCanvas()
         .onAppear { query = state.filter.query }
         .onChange(of: state.filter.query) { _, next in query = next }
     }

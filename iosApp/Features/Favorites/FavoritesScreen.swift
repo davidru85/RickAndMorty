@@ -57,7 +57,7 @@ struct FavoritesScreen: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(MultiverseColors.surface)
+        .cosmicCanvas()
     }
 
     /// The section's large title, at the same position as Discovery's (`UI_SPEC.md` §6.4).
