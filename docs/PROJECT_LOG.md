@@ -1279,6 +1279,20 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - The older open gaps of `DOCUMENTATION_AUDIT.md` §6.2 (for example `GAP-029` and `GAP-030`) are outside the programme.
 - **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0151 · 2026-10-05 · `TASK-126`: the workflow guard pins the `PERF-009` size check
+
+- **Event:** the owner authorized the residual of `LOG-0149`/`LOG-0150` (`DEC-152`). `TASK-126` makes `ModularWorkflowGate` (`TEST-UNIT-061`) require `:androidApp:verifyReleaseApkSize` among the `app-artifacts` worker's executed tasks, as it already required the other release-APK checks.
+- **Red, then green:**
+  - `ModularWorkflowGateTest`'s fixture names the task, and its "dropped release-artifact verification" case drops each check in turn.
+  - It failed with ``a dropped `:androidApp:verifyReleaseApkSize` must block``, because the guard did not pin it.
+  - With the task in the guard's required set, it passes.
+- **Scope:** only `ModularWorkflowGate.kt` and its test changed under `build-logic/**`. The workflow itself is unchanged, since it already runs the task (`TASK-125`).
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-152`), `docs/TESTING.md` §14, `docs/DOCUMENTATION_AUDIT.md` (`CONF-92`), `docs/BACKLOG.md` (`TASK-126`), `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew :build-logic:convention:check verifyWorkflowGate verifyDocumentedGate` — BUILD SUCCESSFUL; the build-logic suite holds 231 tests, 0 failures, and the real workflow passes the guard.
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1231 tasks, whose 265 test reports hold 1355 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
