@@ -8,8 +8,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
@@ -21,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * `TEST-UI-029` — the card, the status badge and the portrait's failure mark (`UI_SPEC.md` §4.1, §5.3,
@@ -31,6 +34,7 @@ import org.robolectric.annotation.Config
  * for "Status: Alive"; and no caller supplied the portal mark, so every failed portrait was an empty box.
  */
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [36], qualifiers = "en")
 class CardBadgePortraitTest {
     @get:Rule
@@ -95,7 +99,8 @@ class CardBadgePortraitTest {
                 }
             }
         }
-        compose.waitForIdle()
+        // Drawing happens when a frame is captured, so the case captures one rather than reading pixels.
+        compose.onRoot().captureToImage()
 
         assertTrue("TEST-UI-029: a failed portrait shows the portal mark the shell provides (AC-REQ-FUNC-005-2)", mark.drawn)
     }

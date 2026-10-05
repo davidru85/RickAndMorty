@@ -237,9 +237,12 @@ private fun TitleBlock(state: CharacterDetailUiState) {
         modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceL),
         verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
     ) {
+        val status = CopyResolver.copy(header.statusLabel.value)
         StatusBadge(
             tone = header.status.tone(),
-            label = CopyResolver.copy(header.statusLabel.value),
+            label = status,
+            // Standalone, so it announces the status sentence (`UI_SPEC.md` §9).
+            announcement = CopyResolver.copy(CopyKeys.STATUS_ANNOUNCEMENT.value, status),
         )
         Text(
             text = header.name,

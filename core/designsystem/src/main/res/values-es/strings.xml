@@ -80,6 +80,7 @@
     <!-- Status and value presentation (IC-017) -->
     <string name="status_alive">Vivo</string>
     <string name="status_dead">Muerto</string>
+    <string name="status_announcement">Estado: %1$s</string>
     <string name="value_unknown">Desconocido</string>
 
     <!-- Gender presentation (IC-017, DEC-131) -->

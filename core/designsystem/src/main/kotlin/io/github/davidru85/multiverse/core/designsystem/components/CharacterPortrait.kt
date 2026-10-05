@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.portraitSharedElement
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import androidx.compose.animation.core.tween as animationTween
@@ -99,7 +101,8 @@ public fun CharacterPortrait(
 
                 is ImageSeamResult.Failure ->
                     PortraitError(
-                        portalMark = portalMark,
+                        // The caller's own mark, or the one the shell provides for every portrait.
+                        portalMark = portalMark ?: LocalPortalMark.current,
                         modifier = Modifier.fillMaxSize(),
                     )
             }
@@ -110,7 +113,18 @@ public fun CharacterPortrait(
 /** The placeholder: Surface Container High with a 1 s shimmer (`UI_SPEC.md` §5.1). */
 @Composable
 private fun PortraitPlaceholder(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "portrait-shimmer")
+    Box(modifier = modifier.shimmer())
+}
+
+/**
+ * The 1 s shimmer of `UI_SPEC.md` §5.1 and §8: a Surface Container Highest band sweeping across
+ * Surface Container High over the **measured** width. A gradient's `startX`/`endX` are pixels, so the
+ * band is placed from the drawn size; and the progress is read in the draw phase only, so the
+ * animation redraws without recomposing. The skeleton card's blocks use the same shimmer.
+ */
+@Composable
+internal fun Modifier.shimmer(): Modifier {
+    val transition = rememberInfiniteTransition(label = "shimmer")
     val progress by
         transition.animateFloat(
             initialValue = 0f,
@@ -120,20 +134,20 @@ private fun PortraitPlaceholder(modifier: Modifier = Modifier) {
                     animation = tween(PortraitShimmerMillis, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart,
                 ),
-            label = "portrait-shimmer-progress",
+            label = "shimmer-progress",
         )
     val base = MultiverseColors.surfaceContainerHigh
     val highlight = MultiverseColors.surfaceContainerHighest
-    val sweep = 0.35f
-    val start = progress * 2f - 1f
-    val brush =
-        Brush.horizontalGradient(
-            colors = listOf(base, highlight, base),
-            startX = start,
-            endX = start + sweep,
-        )
-    Box(modifier = modifier.background(brush))
+    return drawBehind {
+        val band = size.width * SHIMMER_BAND_FRACTION
+        // From fully left of the box to fully right of it, so the band enters and leaves.
+        val start = -band + progress * (size.width + band)
+        drawRect(Brush.horizontalGradient(colors = listOf(base, highlight, base), startX = start, endX = start + band))
+    }
 }
+
+/** The highlight band's width, as a fraction of the shimmering box's width. */
+private const val SHIMMER_BAND_FRACTION = 0.35f
 
 /**
  * The error state: the same container with the portal mark at 40 % (`UI_SPEC.md` §5.3). It never

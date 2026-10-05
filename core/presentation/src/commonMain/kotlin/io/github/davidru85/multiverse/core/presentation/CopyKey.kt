@@ -63,6 +63,9 @@ public object CopyKeys {
     public val STATUS_DEAD: CopyKey = key("status_dead")
     public val VALUE_UNKNOWN: CopyKey = key("value_unknown")
 
+    /** A standalone badge's announcement, "Status: <label>" (`UI_SPEC.md` §9, `TASK-113`). */
+    public val STATUS_ANNOUNCEMENT: CopyKey = key("status_announcement")
+
     // The gender labels (`IC-017`, `DEC-131`); an unknown or unrecognised gender is `value_unknown`.
     public val GENDER_FEMALE: CopyKey = key("gender_female")
     public val GENDER_MALE: CopyKey = key("gender_male")

@@ -93,8 +93,8 @@ class ComponentSnapshotTest {
         }
         compose.waitForIdle()
         if (name.startsWith("components")) {
-            val regular = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human, button").fetchSemanticsNode().boundsInRoot
-            val tall = compose.onNodeWithContentDescription("Morty Smith, Unknown, Human, button").fetchSemanticsNode().boundsInRoot
+            val regular = compose.onNodeWithContentDescription("Rick Sanchez, Alive, Human").fetchSemanticsNode().boundsInRoot
+            val tall = compose.onNodeWithContentDescription("Morty Smith, Unknown, Human").fetchSemanticsNode().boundsInRoot
             assertTrue("both cards must be visible without covering each other in the catalogue", !regular.overlaps(tall))
         }
         compose.onRoot().captureRoboImage(

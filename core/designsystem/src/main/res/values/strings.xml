@@ -84,6 +84,7 @@
     <!-- Status and value presentation (IC-017) -->
     <string name="status_alive">Alive</string>
     <string name="status_dead">Dead</string>
+    <string name="status_announcement">Status: %1$s</string>
     <string name="value_unknown">Unknown</string>
 
     <!-- Gender presentation (IC-017, DEC-131) -->

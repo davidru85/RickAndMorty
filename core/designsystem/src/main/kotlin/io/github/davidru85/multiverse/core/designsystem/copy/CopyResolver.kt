@@ -144,6 +144,7 @@ public object CopyResolver {
             put("status_alive", R.string.status_alive)
             put("status_dead", R.string.status_dead)
             put("value_unknown", R.string.value_unknown)
+            put("status_announcement", R.string.status_announcement)
             put("gender_female", R.string.gender_female)
             put("gender_male", R.string.gender_male)
             put("gender_genderless", R.string.gender_genderless)

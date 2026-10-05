@@ -160,7 +160,8 @@ class CharacterDetailScreenTest {
         )
 
         assertVisible("Rick Sanchez")
-        compose.onNodeWithContentDescription(copy("status_alive")).assertIsDisplayed()
+        // The standalone badge announces the status sentence (`UI_SPEC.md` §9, `TEST-UI-029`).
+        compose.onNodeWithContentDescription("Status: ${copy("status_alive")}").assertIsDisplayed()
         assertVisible(copy("detail_stat_episodes"))
         assertVisible("51")
         assertVisible(copy("detail_stat_dimension"))

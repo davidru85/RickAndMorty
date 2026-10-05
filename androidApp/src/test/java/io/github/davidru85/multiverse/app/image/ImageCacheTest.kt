@@ -13,6 +13,7 @@ import io.ktor.http.headersOf
 import io.ktor.http.HttpHeaders
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.test.runTest
+import coil3.request.transitionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

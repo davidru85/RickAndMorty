@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.feature.discovery.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -69,7 +70,7 @@ class DiscoveryScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Rick Sanchez").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Rick Sanchez", substring = true).assertIsDisplayed()
     }
 
     @Test

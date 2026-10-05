@@ -63,5 +63,6 @@
 "splash_wordmark_sub" = "EXPLORER";
 "state_stale_banner" = "Showing saved results";
 "status_alive" = "Alive";
+"status_announcement" = "Status: %1$@";
 "status_dead" = "Dead";
 "value_unknown" = "Unknown";

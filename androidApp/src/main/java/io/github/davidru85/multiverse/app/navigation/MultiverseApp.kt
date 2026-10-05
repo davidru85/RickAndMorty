@@ -33,6 +33,7 @@ import io.github.davidru85.multiverse.app.R
 import io.github.davidru85.multiverse.core.designsystem.components.MultiverseNavigationBar
 import io.github.davidru85.multiverse.core.designsystem.components.NavigationDestination
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitTransitionScope
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitVisibilityScope
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
@@ -108,7 +109,11 @@ public fun MultiverseApp(
                 // the design system's portraits through a CompositionLocal, and Reduce Motion withholds
                 // it, so the destination change is the cross-fade alone (`AC-REQ-FUNC-009-2`).
                 SharedTransitionLayout(modifier = Modifier.weight(1f)) {
-                    CompositionLocalProvider(LocalPortraitTransitionScope provides if (reduceMotion) null else this) {
+                    CompositionLocalProvider(
+                        LocalPortraitTransitionScope provides if (reduceMotion) null else this,
+                        // The one brand mark every failed portrait shows (`UI_SPEC.md` §5.3, `AC-REQ-FUNC-005-2`).
+                        LocalPortalMark provides androidx.compose.ui.res.painterResource(R.drawable.ic_portal_mark),
+                    ) {
                         NavHost(
                             navController = navController,
                             startDestination = CharacterList,
