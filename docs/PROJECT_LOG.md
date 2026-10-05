@@ -999,6 +999,36 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - **Manual, iOS simulator:** the splash shows at 0.5 s and Discovery at 4.5 s. The unified log shows the gate's page-1 read (`LOG-005` without `LOG-010`) just before Discovery's.
 - **Not verified:** the rendered card→Detail motion on a device or emulator (the tests pin the shared key at both ends, not the frames); a physical device.
 
+### LOG-0139 · 2026-10-05 · `TASK-113`: the code-review P2 Android fidelity items
+
+- **Event:** `TASK-113` is delivered as one pull request from `feat/task-113-p2a`, which starts from `TASK-112`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; every Android screenshot baseline it changes was re-recorded only after comparison with its Figma export.
+- **Type and chrome:**
+  - Roboto Flex is bundled as a 66 KB weight-axis Latin subset with its OFL licence (`DEC-137`), and the M3 Expressive `*Emphasized` slots carry the heavier styles, so `titleMedium` and `labelLarge` are Medium again (`TEST-UNIT-085`).
+  - The shell draws edge to edge; the navigation bar shows on top-level screens only, is a selectable group rather than a fifth tab, and grows in and out with the destination change (`TEST-UI-028`).
+  - Every top-level screen opens with the design system's `ScreenTitle`, a heading (`TEST-UI-031`).
+- **Discovery, card and portrait:**
+  - The search bar, the chips (disabled during the initial load, with a check on the selected one), the grid insets and item animations, and the empty and error states follow Figma (`TEST-UI-030`).
+  - A card is one button whose label carries no English role word; a standalone badge announces "Status: …"; a failed portrait shows the shell's portal mark; the image is not cross-faded twice; the shimmer spans the measured width (`TEST-UI-029`).
+  - Each card takes its accent from its own portrait, read at 64 px through the one Coil loader, with the Portal Green tonal container as the fallback (`TEST-UI-034`).
+- **Detail, Favorites, Episodes and Settings:**
+  - The Detail lays out as Figma `21:1217`: a 468 dp hero under the status bar with parallax, scrims and the overlaid title; weighted stat tiles; the info card; floating controls; and a Medium extended favourite action that collapses on scroll and announces its toggle state (`TEST-UI-032`).
+  - Favorites and Episodes share the titled layout and the full-surface states; the Settings rows, the connected protocol picker, the switch thumb, the header inset and the 56 dp delete action follow Figma `101:568` (`TEST-UI-033`).
+- **Splash and launcher:** the Figma spiral turns clockwise, 360° over the 1.2 s ease-in and then at a constant 900°/s with no restart (`TEST-UNIT-086`), over the nebulae and a seeded starfield; the launcher icon is drawn from Figma's adaptive layers.
+- **Found on the way and fixed in their own commits:**
+  - On the attached OnePlus 3 (Android 9), leaving the Detail showed the navigation bar at full height in one frame, so the fading Detail and its favourite action jumped up by 80 dp. The bar now grows in on the transition's duration and curve; `TEST-UI-028` pins it (red: 80 of 80 dp on the second frame).
+  - `buildHealth` asked the redesigned features to declare the animation, layout and unit artifacts they now use, and Favorites to drop Material 3 and `ui-text`; both README inventories follow.
+- **Spanish copy added, for the owner's review:** `status_announcement` "Estado: %1$s" and `settings_data_source_body` "Cómo obtiene la app los personajes", in both platforms' string sets.
+- **Affected documents:** `docs/UI_SPEC.md` (copy rows), `docs/DESIGN.md` §3.1 and §3.5, `docs/DECISION_BOARD.md` (`DEC-137`), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-80` resolved, `GAP-034`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, both READMEs' dependency inventories, and this entry.
+- **Decision / ADR reference:** `DEC-137`; `CONF-80` resolved; `GAP-034` open.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1211 tasks, whose 255 test reports hold 1329 tests and 0 failures, Android Lint included; among them `:androidApp` 52, `:core:designsystem` 51, `:feature:character-detail` 49, `:feature:discovery` 41, `:feature:favorites` 38 and `:feature:settings` 29 host tests. The first run failed only on `buildHealth` (the dependency advice above); the second run is the one quoted.
+  - `:androidApp:verifyReleaseArtifact` — the unsigned release APK measures 12 975 640 B (12.37 MiB), 65 392 B more than at `9514c98`; the font accounts for that growth (`GAP-034`).
+  - Every committed Android screenshot baseline verifies: `:core:designsystem:verifyRoborazziDebug :androidApp:verifyRoborazziDebug :feature:{discovery,character-detail,favorites,settings}:verifyRoborazziAndroidHostTest`.
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 132 tests, 0 failures (the iOS string sets changed).
+  - `tools/swift-lint.sh` — 0 violations in 59 files.
+  - **Manual, OnePlus 3 (Android 9), debug build:** the splash, Discovery with per-portrait card accents, the card→Detail push, the Detail before and after its details arrive, the collapsed favourite action on scroll, the favourite toggle, the pop back with the bar growing in, Favorites and Settings, all in Spanish. The favourite added for the check was removed afterwards.
+- **Not verified:** the rendered motion frame by frame (the tests pin the shared key, the angle function and the bar's height on the second frame, not every frame); an Android 15+ device for edge-to-edge enforcement. The release APK still exceeds `PERF-009` (`GAP-034` stays open).
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
