@@ -121,7 +121,7 @@ class VerifyDocumentedCompletenessTaskTest {
 
     @Test
     fun `TEST-UNIT-063 an html line break and an autolink are not templates`() {
-        assertNull(verify("docs/A.md" to document("| A<br>B | <https://rickandmortyapi.com> |")))
+        assertNull(verify("docs/A.md" to document("| A<br>B | <https://example.org> |")))
     }
 
     @Test
