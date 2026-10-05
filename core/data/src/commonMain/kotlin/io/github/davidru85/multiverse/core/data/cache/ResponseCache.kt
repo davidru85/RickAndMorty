@@ -14,6 +14,7 @@ import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.domain.result.DataSource
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 
 /** A stored entry: the record plus the freshness it was classified with. */
@@ -46,7 +47,7 @@ public class CacheHit(
  *
  * **An unreadable entry is a miss.** A record that cannot be decoded is discarded with `LOG-009` and
  * the caller fetches: a corrupt file never reaches a screen as a failure (`IC-012`). A `put` failure
- * is contained the same way.
+ * is contained the same way, and a cancellation is never contained: it propagates to the caller.
  *
  * Every read logs `LOG-005` (hit) or `LOG-006` (miss) with the catalogue's fields
  * (`OBSERVABILITY.md` §3) — never the key, a query or a body.
@@ -74,7 +75,7 @@ public class ResponseCache(
         val record = decode(entry.payload)
         if (record == null) {
             logger.log(LogLevel.WARN) { LogEvent.CacheEntryDiscarded(currentCorrelationId()) }
-            runCatching { storage.evict(key) }
+            contained { storage.evict(key) }
             return null
         }
         val freshness = classify(entry)
@@ -130,12 +131,12 @@ public class ResponseCache(
         record: CachedPayloadRecord,
     ) {
         val entry = CacheEntry(encode(record), clock.now())
-        runCatching { storage.put(key, entry) }
+        contained { storage.put(key, entry) }
     }
 
     /** Drops an entry this read found unusable, so the next read is a clean miss. */
     public suspend fun evict(key: CacheKey) {
-        runCatching { storage.evict(key) }
+        contained { storage.evict(key) }
     }
 
     /** Where [entry] stands against the policy, evaluated on the injected clock. */
@@ -152,7 +153,22 @@ public class ResponseCache(
         }
     }
 
-    private suspend fun readEntry(key: CacheKey): CacheEntry? = runCatching { storage.get(key) }.getOrNull()
+    private suspend fun readEntry(key: CacheKey): CacheEntry? = contained { storage.get(key) }
+
+    /**
+     * Runs one storage operation whose failure costs a miss, never an exception (`IC-012`). A
+     * `CancellationException` is not a storage failure: it is how the caller is stopped, so it reaches
+     * the caller unchanged (`AGENTS.md` §8, `AC-REQ-FUNC-022-2`) instead of letting a cancelled load
+     * continue as if the store were merely empty.
+     */
+    private inline fun <T> contained(operation: () -> T): T? =
+        try {
+            operation()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            null
+        }
 
     private fun encode(record: CachedPayloadRecord): ByteArray =
         CACHE_JSON.encodeToString(CachedPayloadRecord.serializer(), record).encodeToByteArray()
