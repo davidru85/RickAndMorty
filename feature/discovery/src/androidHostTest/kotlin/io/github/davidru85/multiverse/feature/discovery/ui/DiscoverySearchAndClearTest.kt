@@ -49,7 +49,10 @@ class DiscoverySearchAndClearTest {
         compose.onNodeWithText("Clear filters").performClick()
         compose.waitForIdle()
 
-        assertEquals(listOf<CharacterListIntent>(CharacterListIntent.ClearFilters), intents.filter { it !is CharacterListIntent.LoadNextPage })
+        assertEquals(
+            listOf<CharacterListIntent>(CharacterListIntent.ClearFilters),
+            intents.filter { it !is CharacterListIntent.LoadNextPage },
+        )
     }
 
     @Test

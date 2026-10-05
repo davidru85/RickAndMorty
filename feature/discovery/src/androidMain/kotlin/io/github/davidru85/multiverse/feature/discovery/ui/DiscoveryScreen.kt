@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -133,6 +135,9 @@ private fun SearchField(
 ) {
     val searchBarState = rememberSearchBarState()
     val textFieldState = remember { TextFieldState(state.filter.query) }
+    // The text the state last wrote into the field. Its echo through the edit stream is not a user
+    // edit, so it is not sent back as a `QueryChanged` (`DEC-129`); every other edit is.
+    val stateWritten = remember { mutableStateOf<String?>(state.filter.query) }
     Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxWidth()) {
         SearchBarDefaults.InputField(
             textFieldState = textFieldState,
@@ -142,12 +147,24 @@ private fun SearchField(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
+    LaunchedEffect(state.filter.query) {
+        // A query the state changed — Clear filters — is shown in the field.
+        val query = state.filter.query
+        if (textFieldState.text.toString() != query) {
+            stateWritten.value = query
+            textFieldState.setTextAndPlaceCursorAtEnd(query)
+        }
+    }
     LaunchedEffect(textFieldState) {
         // The field holds the raw text and reports every edit; the reducer owns the 300 ms debounce, so
         // nothing here decides when a request happens (`REQ-FUNC-003`, `DEC-002`: a dictated query takes
         // the same path).
         snapshotFlow { textFieldState.text.toString() }.collect { query ->
-            onIntent(CharacterListIntent.QueryChanged(query))
+            if (query == stateWritten.value) {
+                stateWritten.value = null
+            } else {
+                onIntent(CharacterListIntent.QueryChanged(query))
+            }
         }
     }
 }
@@ -221,9 +238,8 @@ private fun DiscoveryEmptyState(
         body = "",
         illustration = illustration,
         actionLabel = CopyResolver.copy(CopyKeys.ACTION_CLEAR_FILTERS.value),
-        // Clearing both dimensions is what "clear filters" means, and the query is the one dimension a
-        // chip cannot clear; the chip row follows the state on the next frame (`AC-REQ-FUNC-010-2`).
-        onAction = { onIntent(CharacterListIntent.QueryChanged("")) },
+        // Both dimensions in one intent; the field and the chips follow the state (`DEC-129`).
+        onAction = { onIntent(CharacterListIntent.ClearFilters) },
         modifier = Modifier.padding(top = 16.dp),
     )
 }

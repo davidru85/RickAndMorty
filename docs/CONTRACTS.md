@@ -798,6 +798,7 @@ data class CharacterListUiState(
 sealed interface CharacterListIntent {
     data class QueryChanged(val query: String) : CharacterListIntent
     data class StatusSelected(val status: StatusFilter) : CharacterListIntent
+    data object ClearFilters : CharacterListIntent      // DEC-129
     data object LoadNextPage : CharacterListIntent
     data object Refresh : CharacterListIntent
     data object Retry : CharacterListIntent
@@ -816,6 +817,7 @@ sealed interface CharacterListIntent {
   - `isStale == true` implies `loadState == Content` and a cache source for the displayed items (`IC-003`); stale content is displayed, never replaced by an error, while it exists.
   - `totalCount` is `null` until the server establishes it and is never `0` as a placeholder (`AC-REQ-FUNC-001-3`).
   - `QueryChanged` and `StatusSelected` reset paging to page 1; `StatusSelected` preserves the active query and `QueryChanged` preserves the active status (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-004-1`).
+  - `ClearFilters` resets the query **and** the status to their defaults in one page-1 request, and cancels a query still settling, so the result is the unfiltered first page (`AC-REQ-FUNC-010-2`, `DEC-129`). A platform's search field follows a query the state changed and does not send it back as `QueryChanged`.
   - `Retry` starts a fresh attempt budget and clears the error on success: with a failure it re-attempts the failed load through `IC-014.retry()` — the failed append as that page, a failed refresh as a refresh — and with no failure but `isStale` content it revalidates page 1 through `IC-014.refresh()` (`ForceNetwork`), which is the stale banner's action (`ERROR_FLOW.md` §9); with neither it does nothing. `Refresh` revalidates over the network even when the cache is fresh and keeps the previous items if it fails (`REQ-FUNC-011`, `REQ-FUNC-012`, `AC-REQ-FUNC-011-1`, `DEC-124`).
   - No intent awaits a load inside the holder's intent loop: `LoadNextPage`, `Refresh` and `Retry` start their pager call in a child of the holder's scope, so a `QueryChanged` or `StatusSelected` that arrives during a load is handled at once and supersedes the load through `IC-014`'s generation guard (`AC-REQ-FUNC-003-2`, `AC-REQ-FUNC-004-1`, `DEC-124`).
   - An intent `MUST` be the only write path: a view `MUST NOT` call a repository or use case directly (`ERROR_FLOW.md` §3 invariant 4).
@@ -1074,6 +1076,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-018` (`TASK-112`): `CharacterListIntent.ClearFilters` clears both filter dimensions in one request. Additive for the Swift consumer. | `DEC-129` |
 | 2026-10-05 | `IC-018` (`TASK-111`): `CharacterListUiState` gains `contentFailure` (the failure carried beside displayable content) and `isRefreshing`; `Retry` revalidates stale content when there is no failure; no intent awaits a load inside the intent loop. Breaking for the Swift consumer (§8.2), whose initialiser gains the two parameters; the iOS app and its tests change in the same commit. | `DEC-124` |
 | 2026-10-05 | `IC-017` (`TASK-111`): `FailureMessage.arguments` becomes `List<MessageArgument>` (`Number`/`Text`) with `formatArguments()`, `rateLimitCountdown` returns `Long?`, and a rate limit without usable advice maps to the new placeholder-free key `error_message_rate_limited_no_countdown`. Breaking for the Swift consumer (§8.2), which changes in the same commit: Android crashed formatting `%d` with a `String`, and iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-041`): `IC-015`…`IC-017` are implemented. `IC-016`'s `species` becomes `DisplayText` and gains `statusLabel` and the `from` mapping, because a `String` could not carry "Unknown" through `IC-017`'s key without an English literal (`CONF-74`); `IC-017` gains the `CopyKeys` registry, `DisplayText`, `valueText` and `DefaultPresentationFormatters`, and states where the strings live. No consumer existed, so nothing breaks (§8). | `TASK-041`, `DEC-015`, `DEC-020` |

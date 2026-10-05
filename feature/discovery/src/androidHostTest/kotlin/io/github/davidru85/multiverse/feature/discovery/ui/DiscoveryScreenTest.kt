@@ -106,9 +106,13 @@ class DiscoveryScreenTest {
         compose.onNodeWithText("Clear filters").assertIsDisplayed().performClick()
         compose.waitForIdle()
 
-        org.junit.Assert.assertTrue(
+        // One intent clears the query and the status together (`DEC-129`); `QueryChanged("")` alone
+        // kept the status, and it was also sent by the field's first emission whether or not the
+        // button was tapped.
+        org.junit.Assert.assertEquals(
             "clearing the filters asks for the unfiltered first page",
-            sent.any { it is CharacterListIntent.QueryChanged && it.query.isEmpty() },
+            listOf<CharacterListIntent>(CharacterListIntent.ClearFilters),
+            sent.filter { it !is CharacterListIntent.LoadNextPage },
         )
     }
 }

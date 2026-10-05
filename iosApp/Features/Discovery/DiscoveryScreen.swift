@@ -162,10 +162,9 @@ struct DiscoveryScreen: View {
             Label(emptySearchMessage, systemImage: "person.2.fill")
         } actions: {
             GlassTextButton(label: copy("action_clear_filters")) {
-                // Clearing both dimensions is what "clear filters" means, and the query is the one
-                // dimension a segment cannot clear; the row follows the state on the next frame.
-                query = ""
-                onIntent(CharacterListIntentQueryChanged(query: ""))
+                // Both dimensions in one intent (`DEC-129`); the field and the segments follow the
+                // state's filter.
+                onIntent(CharacterListIntentClearFilters.shared)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

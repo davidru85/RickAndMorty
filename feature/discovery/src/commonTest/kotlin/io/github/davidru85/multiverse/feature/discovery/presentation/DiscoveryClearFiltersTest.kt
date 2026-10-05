@@ -29,7 +29,13 @@ class DiscoveryClearFiltersTest {
     fun `TEST-UNIT-076 given_a_query_and_a_status_when_filters_are_cleared_then_one_request_loads_the_unfiltered_first_page`() =
         TestTime.run { dispatcher ->
             val repository = FakeCharacterRepository(FakeCatalogue((1..3).map { FakeCatalogue.character("$it") }))
-            val reducer = DiscoveryReducer(FakeCharacterPager(repository, backgroundScope), backgroundScope, dispatcher, DefaultPresentationFormatters)
+            val reducer =
+                DiscoveryReducer(
+                    FakeCharacterPager(repository, backgroundScope),
+                    backgroundScope,
+                    dispatcher,
+                    DefaultPresentationFormatters,
+                )
             reducer.start()
             runCurrent()
             reducer.onIntent(CharacterListIntent.StatusSelected(StatusFilter.Unknown))
@@ -54,7 +60,13 @@ class DiscoveryClearFiltersTest {
     fun `TEST-UNIT-076 given_a_query_still_settling_when_filters_are_cleared_then_the_superseded_query_is_never_requested`() =
         TestTime.run { dispatcher ->
             val repository = FakeCharacterRepository(FakeCatalogue((1..3).map { FakeCatalogue.character("$it") }))
-            val reducer = DiscoveryReducer(FakeCharacterPager(repository, backgroundScope), backgroundScope, dispatcher, DefaultPresentationFormatters)
+            val reducer =
+                DiscoveryReducer(
+                    FakeCharacterPager(repository, backgroundScope),
+                    backgroundScope,
+                    dispatcher,
+                    DefaultPresentationFormatters,
+                )
             reducer.start()
             runCurrent()
             reducer.onIntent(CharacterListIntent.StatusSelected(StatusFilter.Dead))

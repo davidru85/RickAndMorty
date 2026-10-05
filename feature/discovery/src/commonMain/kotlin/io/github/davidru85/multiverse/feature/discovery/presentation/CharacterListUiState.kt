@@ -48,6 +48,12 @@ public sealed interface CharacterListIntent {
         public val status: StatusFilter,
     ) : CharacterListIntent
 
+    /**
+     * The user cleared the filters: the query **and** the status reset to their defaults in one
+     * page-1 request, and a query still settling is dropped (`DEC-129`, `AC-REQ-FUNC-010-2`).
+     */
+    public data object ClearFilters : CharacterListIntent
+
     /** The grid approached its end; the next page is requested unless the pager refuses. */
     public data object LoadNextPage : CharacterListIntent
 
