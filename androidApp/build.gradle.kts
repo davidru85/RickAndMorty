@@ -21,6 +21,17 @@ android {
     buildFeatures {
         compose = true
     }
+    buildTypes {
+        // `PERF-009`/`GAP-034` (`DEC-148`): the release build shrinks, optimises and obfuscates its code
+        // with R8 and drops the resources nothing references, which is what brings the universal APK
+        // under 12 MiB. The libraries ship their own consumer rules; `proguard-rules.pro` holds only
+        // what this app adds.
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
