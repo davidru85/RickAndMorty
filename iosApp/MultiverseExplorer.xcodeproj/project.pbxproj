@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		018519D577A37AF86013F980 /* CardParallaxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5C6FB8DEACCA0A47BEBC50 /* CardParallaxTests.swift */; };
 		019ABE37706606927178094F /* screenBaselines.detail-error-with-header.png in Resources */ = {isa = PBXBuildFile; fileRef = 794AA193E0A2853472E012B4 /* screenBaselines.detail-error-with-header.png */; };
 		02AA4EE4B61CA66FE7108B2E /* CharacterShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57D2D84B85606DF292D49CB /* CharacterShare.swift */; };
 		03799CADB26684FA3A11FA87 /* EpisodesPlaceholderScreenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE23E0A175A7DE6DA1332D18 /* EpisodesPlaceholderScreenTests.swift */; };
@@ -169,6 +170,7 @@
 		B54C460E27588DBDEF1A64F0 /* ShellNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigationTests.swift; sourceTree = "<group>"; };
 		B7D1117B9C8B775F120F5587 /* ShellTabItemsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTabItemsTests.swift; sourceTree = "<group>"; };
 		B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BB5C6FB8DEACCA0A47BEBC50 /* CardParallaxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardParallaxTests.swift; sourceTree = "<group>"; };
 		BDD5576C72E67327399FEB9E /* DiscoveryRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryRefreshTests.swift; sourceTree = "<group>"; };
 		C1D580C831031AFF7FA9569E /* ImagePipelineHostRuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePipelineHostRuleTests.swift; sourceTree = "<group>"; };
 		C67960F9F6BE4BB97F32F96E /* screenBaselines.detail-error-without-header.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "screenBaselines.detail-error-without-header.png"; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 			children = (
 				FD8C1D9D24CE0F5B34058C0C /* AccessibilityLayoutTests.swift */,
 				F217F29258E9937278C812DC /* CardNameRenderTests.swift */,
+				BB5C6FB8DEACCA0A47BEBC50 /* CardParallaxTests.swift */,
 				24FF4D9A7EBDABB12D9C6588 /* CharacterDetailScreenStateTests.swift */,
 				A3B5184B79465D6C5C39614A /* CharacterShareTests.swift */,
 				8FDEA3D848390B36234727A4 /* CosmicCanvasTests.swift */,
@@ -604,6 +607,7 @@
 			files = (
 				880D16A3F50A63B47588519B /* AccessibilityLayoutTests.swift in Sources */,
 				D234ED5A0CC85BE7DDCCA2BA /* CardNameRenderTests.swift in Sources */,
+				018519D577A37AF86013F980 /* CardParallaxTests.swift in Sources */,
 				E9D37ED185F65C1CDAB30C6C /* CharacterDetailScreenStateTests.swift in Sources */,
 				F64DB43E4086D835E303FD26 /* CharacterShareTests.swift in Sources */,
 				A5DF3D099BB5C1F1F9B856AF /* CosmicCanvasTests.swift in Sources */,
