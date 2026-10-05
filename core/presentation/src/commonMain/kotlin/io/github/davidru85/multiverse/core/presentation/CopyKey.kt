@@ -34,6 +34,9 @@ public object CopyKeys {
     public val ERROR_MESSAGE_NOT_FOUND: CopyKey = key("error_message_not_found")
     public val ERROR_MESSAGE_INVALID_REQUEST: CopyKey = key("error_message_invalid_request")
     public val ERROR_MESSAGE_RATE_LIMITED: CopyKey = key("error_message_rate_limited")
+
+    /** The rate-limit message when the server advised no usable countdown (`DEC-123`). */
+    public val ERROR_MESSAGE_RATE_LIMITED_NO_COUNTDOWN: CopyKey = key("error_message_rate_limited_no_countdown")
     public val ERROR_MESSAGE_SERVER: CopyKey = key("error_message_server")
     public val ERROR_MESSAGE_GRAPHQL: CopyKey = key("error_message_graphql")
     public val ERROR_MESSAGE_MALFORMED: CopyKey = key("error_message_malformed")

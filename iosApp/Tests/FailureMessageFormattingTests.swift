@@ -27,4 +27,22 @@ final class FailureMessageFormattingTests: XCTestCase {
         XCTAssertEqual(text, "Too many jumps. Try again shortly.")
         XCTAssertFalse(text.contains("%"), "a missing countdown must not leave its specifier behind")
     }
+
+    func test_TEST_UI_018_given_spanish_copy_when_rate_limit_messages_render_then_placeholders_resolve() throws {
+        let path = try XCTUnwrap(Bundle.main.path(forResource: "es", ofType: "lproj"), "the app bundle ships es")
+        let spanish = LocalizedCopy(bundle: try XCTUnwrap(Bundle(path: path)))
+        let formatters = DefaultPresentationFormatters.shared
+
+        let withAdvice = CharacterPresentation.message(
+            formatters.failureMessage(failure: ApiFailureRateLimited(retryAfterSeconds: KotlinLong(longLong: 30))),
+            copy: spanish
+        )
+        let withoutAdvice = CharacterPresentation.message(
+            formatters.failureMessage(failure: ApiFailureRateLimited(retryAfterSeconds: nil)),
+            copy: spanish
+        )
+
+        XCTAssertEqual(withAdvice, "Demasiados saltos. Inténtalo de nuevo en 30 s.")
+        XCTAssertEqual(withoutAdvice, "Demasiados saltos. Inténtalo de nuevo en un momento.")
+    }
 }

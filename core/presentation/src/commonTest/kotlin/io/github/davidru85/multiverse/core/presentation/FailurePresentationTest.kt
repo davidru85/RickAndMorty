@@ -18,9 +18,9 @@ import kotlin.test.assertTrue
 class FailurePresentationTest {
     @Test
     fun `TEST-UNIT-010 given_a_rate_limit_with_advice_when_the_countdown_is_formatted_then_it_is_the_identical_number_everywhere`() {
-        assertEquals("30", DefaultPresentationFormatters.rateLimitCountdown(30L), "delta-seconds reaches the message unchanged")
-        assertEquals("60", DefaultPresentationFormatters.rateLimitCountdown(60L), "the largest advised value is rendered")
-        assertEquals("0", DefaultPresentationFormatters.rateLimitCountdown(0L), "a date in the past reads as now (API_SPECS.md 6.3)")
+        assertEquals(30L, DefaultPresentationFormatters.rateLimitCountdown(30L), "delta-seconds reaches the message unchanged")
+        assertEquals(60L, DefaultPresentationFormatters.rateLimitCountdown(60L), "the largest advised value is rendered")
+        assertEquals(0L, DefaultPresentationFormatters.rateLimitCountdown(0L), "a date in the past reads as now (API_SPECS.md 6.3)")
     }
 
     @Test
@@ -60,17 +60,17 @@ class FailurePresentationTest {
     @Test
     fun `TEST-UNIT-010 given_a_rate_limited_failure_when_it_is_mapped_then_the_countdown_is_bound_into_the_message`() {
         assertEquals(
-            listOf("30"),
+            listOf(MessageArgument.Number(30)),
             DefaultPresentationFormatters.failureMessage(ApiFailure.RateLimited(30)).arguments,
             "the rate-limit message carries its number as an argument, never interpolated in shared code",
         )
         assertEquals(
-            listOf("1"),
+            listOf(MessageArgument.Number(1)),
             DefaultPresentationFormatters.failureMessage(ApiFailure.RateLimited(1)).arguments,
             "and a one-second advice is one argument, not a formatted sentence",
         )
         assertEquals(
-            listOf("0"),
+            listOf(MessageArgument.Number(0)),
             DefaultPresentationFormatters.failureMessage(ApiFailure.RateLimited(0)).arguments,
         )
     }

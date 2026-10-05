@@ -72,6 +72,7 @@
     <string name="error_message_not_found">That character isn\'t in this dimension.</string>
     <string name="error_message_invalid_request">That request doesn\'t fit this dimension. Adjust it and try again.</string>
     <string name="error_message_rate_limited">Too many jumps. Try again in %d s.</string>
+    <string name="error_message_rate_limited_no_countdown">Too many jumps. Try again shortly.</string>
     <string name="error_message_server">The portal is glitching on its side. Try again shortly.</string>
     <string name="error_message_graphql">The portal didn\'t understand that request. Try again.</string>
     <string name="error_message_malformed">The portal sent back something unreadable. Try again.</string>

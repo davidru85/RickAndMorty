@@ -56,6 +56,7 @@ import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
+import io.github.davidru85.multiverse.core.presentation.formatArguments
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListIntent
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListUiState
 
@@ -230,12 +231,8 @@ private fun DiscoveryErrorState(
     val message = DefaultPresentationFormatters.failureMessage(failure)
     EmptyState(
         heading = CopyResolver.copy(DefaultPresentationFormatters.failureTitle().value),
-        body =
-            if (message.arguments.isEmpty()) {
-                CopyResolver.copy(message.key.value)
-            } else {
-                CopyResolver.copy(message.key.value).format(*message.arguments.toTypedArray())
-            },
+        // The typed arguments go to the resource formatter unchanged (`DEC-123`).
+        body = CopyResolver.copy(message.key.value, *message.formatArguments()),
         illustration = illustration,
         actionLabel = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value),
         onAction = onRetry,

@@ -68,6 +68,7 @@
     <string name="error_message_not_found">Ese personaje no está en esta dimensión.</string>
     <string name="error_message_invalid_request">Esa petición no encaja en esta dimensión. Ajústala e inténtalo de nuevo.</string>
     <string name="error_message_rate_limited">Demasiados saltos. Inténtalo de nuevo en %d s.</string>
+    <string name="error_message_rate_limited_no_countdown">Demasiados saltos. Inténtalo de nuevo en un momento.</string>
     <string name="error_message_server">El portal está fallando en su lado. Inténtalo de nuevo en un momento.</string>
     <string name="error_message_graphql">El portal no entendió esa petición. Inténtalo de nuevo.</string>
     <string name="error_message_malformed">El portal devolvió algo ilegible. Inténtalo de nuevo.</string>

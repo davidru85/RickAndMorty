@@ -541,7 +541,7 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 
 #### Canonical failure-chain copy (`DEC-101`)
 
-The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but unenumerated; these are the approved English strings. They are canonical here and carried by the platform resource files (`CopyKeys` registers the names, never the values). The rate-limit message takes the countdown as a number.
+The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but unenumerated; these are the approved English strings. They are canonical here and carried by the platform resource files (`CopyKeys` registers the names, never the values). The rate-limit message takes the countdown as a number; when the server advised none, `error_message_rate_limited_no_countdown` is shown instead (`DEC-123`).
 
 | Key | English string |
 | --- | --- |
@@ -556,6 +556,7 @@ The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but un
 | `error_message_not_found` | That character isn't in this dimension. |
 | `error_message_invalid_request` | That request doesn't fit this dimension. Adjust it and try again. |
 | `error_message_rate_limited` | Too many jumps. Try again in %d s. |
+| `error_message_rate_limited_no_countdown` | Too many jumps. Try again shortly. |
 | `error_message_server` | The portal is glitching on its side. Try again shortly. |
 | `error_message_graphql` | The portal didn't understand that request. Try again. |
 | `error_message_malformed` | The portal sent back something unreadable. Try again. |

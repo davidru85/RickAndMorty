@@ -1,7 +1,7 @@
 # CONTRACTS.md — Internal Kotlin Contract Baseline
 
 - **Status:** Active — mixed, **accepted as the internal interface baseline** (`TASK-019`, `TECHNICAL_PLAN.md` §5 S1). B3 Phase 3.1 implements the `:core:domain` declarations (`IC-001`…`IC-004`, `IC-007`, `IC-008` and `IC-021` as interfaces, `IC-010`) and `IC-011`'s REST adapter; every other row is target state. The `Flow`-based seams are coherent with the `DEC-066` amendment of ADR-0001. See `DOCUMENTATION_AUDIT.md` §5 for the drift rule
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-05
 - **Owner:** System Architect (see `AGENTS.md` §3)
 - **Authoritative for:** the internal Kotlin contracts `IC-###` — the source-level declarations that cross a module boundary (repository, data-source, cache, storage and pager seams), the shared UI-state types both platforms consume, and the invariants, ownership, reference and compatibility rules attached to each of them.
 - **Not authoritative for:** the remote-facing and domain model declarations (`API_SPECS.md` §3, §4.7, §5, §6), the failure → state → copy chain (`ERROR_FLOW.md`), module composition and dependency direction (`DESIGN.md` §3, `adr/0001-module-boundaries.md`), requirement ids and acceptance criteria (`REQUIREMENTS.md`), visual specification (`UI_SPEC.md`), test ids, layers and tooling (`TESTING.md`), user-visible copy strings (`UI_SPEC.md` §6.4, §8).
@@ -718,15 +718,22 @@ interface PresentationFormatters {
     fun valueText(raw: String?): DisplayText
     fun dimensionText(origin: LocationSummary, enrichRequested: Boolean): String?
     fun firstSeenText(summaries: List<EpisodeSummary>?): String?
-    fun rateLimitCountdown(retryAfterSeconds: Long?): String?          // TASK-022, GAP-027
+    fun rateLimitCountdown(retryAfterSeconds: Long?): Long?            // TASK-022, GAP-027, DEC-123
     fun failureMessage(failure: ApiFailure): FailureMessage            // TASK-022
     fun failureTitle(): CopyKey                                        // TASK-022
     fun retryAction(): CopyKey                                         // TASK-022
     fun isAutomaticallyRetryable(failure: ApiFailure): Boolean          // TASK-022
 }
 
-/** The copy of one failure: the key, plus the values its wording substitutes (GAP-027). */
-data class FailureMessage(val key: CopyKey, val arguments: List<String> = emptyList())
+/** The copy of one failure: the key, plus the typed values its wording substitutes (GAP-027, DEC-123). */
+data class FailureMessage(val key: CopyKey, val arguments: List<MessageArgument> = emptyList())
+
+sealed interface MessageArgument {
+    data class Number(val value: Long) : MessageArgument     // substituted by %d / %1$ld
+    data class Text(val value: String) : MessageArgument     // substituted by %s / %1$@
+}
+
+fun FailureMessage.formatArguments(): Array<Any>             // Long or String per argument, in order
 
 object DefaultPresentationFormatters : PresentationFormatters
 ```
@@ -745,7 +752,9 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `dimensionText` prefers the enriched `origin.dimension` when enrichment was requested, then the designation in parentheses at the end of `origin.name` ("Earth (C-137)" → "C-137"); an unknown value is not a dimension.
   - Every `CopyKey` value produced by these formatters `MUST` exist in both the Android resource file and the iOS resource file; the parity test fails on a missing or extra key (`REQ-UX-008`, `AC-REQ-UX-008-1`, `DEC-020`).
   - `failureMessage(failure)` maps every `ApiFailure` of `ERROR_FLOW.md` §4 to its own key, so a failure class can never render another class's copy (`REQ-FUNC-022`, `AC-REQ-FUNC-022-1`). The rate-limit message carries its countdown as an **argument** rather than interpolated text, because the wording and its placeholder live in the platform resource file (`GAP-027`).
-  - `rateLimitCountdown(retryAfterSeconds)` is the one formatter for the number in `error_message_rate_limited`: the advised seconds, or `null` when the advice is absent or negative. It `MUST NOT` invent a value, and it is the only place the number is turned into text, so both platforms render the same countdown (`ERROR_FLOW.md` §4.1, `GAP-027`).
+  - Every argument is **typed** (`DEC-123`): `MessageArgument.Number` for a number, `MessageArgument.Text` for data-derived text, in the order of the key's positional specifiers. A platform substitutes each with the specifier its type needs through its own resource formatter (`stringResource(id, *formatArguments())` on Android, `String(format:locale:arguments:)` with an `Int64` or `NSString` on iOS) and `MUST NOT` parse a string or inspect the template to choose a type; `String.format` over a resolved resource is not a substitution path.
+  - A key with a placeholder is never paired with fewer arguments than it substitutes: `RateLimited` maps to `error_message_rate_limited` with exactly one `Number` when `rateLimitCountdown` yields a value, and to `error_message_rate_limited_no_countdown`, which has no placeholder, otherwise (`DEC-123`).
+  - `rateLimitCountdown(retryAfterSeconds)` is the one formatter for the number in `error_message_rate_limited`: the advised seconds, or `null` when the advice is absent or negative. It `MUST NOT` invent a value, and it is the only place the number is derived, so both platforms render the same countdown (`ERROR_FLOW.md` §4.1, `GAP-027`).
   - `isAutomaticallyRetryable(failure)` states the recovery table's answer rather than a per-surface choice: `Offline`, `Timeout` and `Server` are retried within the bounded budget, and TLS (`Unknown`), another `4xx` (`InvalidRequest`), `NotFound`, `RateLimited`, `GraphQl`, `MalformedResponse` and `EmptyBody` are not retried automatically (`ERROR_FLOW.md` §10, `API_SPECS.md` §6.3, `DEC-084`). A user-initiated retry stays available for every class.
   - `failureTitle()` and `retryAction()` return the shared full-surface title and the retry affordance, so the two keys are named once instead of per surface.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-022`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
@@ -1060,6 +1069,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-017` (`TASK-111`): `FailureMessage.arguments` becomes `List<MessageArgument>` (`Number`/`Text`) with `formatArguments()`, `rateLimitCountdown` returns `Long?`, and a rate limit without usable advice maps to the new placeholder-free key `error_message_rate_limited_no_countdown`. Breaking for the Swift consumer (§8.2), which changes in the same commit: Android crashed formatting `%d` with a `String`, and iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-041`): `IC-015`…`IC-017` are implemented. `IC-016`'s `species` becomes `DisplayText` and gains `statusLabel` and the `from` mapping, because a `String` could not carry "Unknown" through `IC-017`'s key without an English literal (`CONF-74`); `IC-017` gains the `CopyKeys` registry, `DisplayText`, `valueText` and `DefaultPresentationFormatters`, and states where the strings live. No consumer existed, so nothing breaks (§8). | `TASK-041`, `DEC-015`, `DEC-020` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-040`): `IC-013` states its two platform implementations, their keys and the read-failure degradation. | `TASK-040`, `DEC-017` |
 | 2026-10-02 | B3 Phase 3.3 (`TASK-040`): `IC-008` states its implementation and its failure semantics (a write the store cannot complete is logged, not thrown); `IC-009`'s `ObserveFavoriteIds` is implemented; `IC-013` names its package and how the `expect/actual` split is realised; `IC-024` gains `LOG-018`/`LOG-019` and the `LogComponent` set with their emitter. | `TASK-040`, `DEC-017`, `DEC-090` |
