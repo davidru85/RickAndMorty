@@ -4,12 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,19 +53,17 @@ public fun StatTile(
     Column(
         modifier =
             modifier
-                .width(120.dp)
                 .heightIn(min = 76.dp)
                 .clip(position.shape())
                 .background(containerColor)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.Center,
     ) {
+        // The value wraps rather than truncating: the 76 dp minimum grows with its text (`UI_SPEC.md` §4.1).
         Text(
             text = value,
             style = MaterialTheme.typography.headlineSmallEmphasized,
             color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = label,
@@ -75,35 +75,48 @@ public fun StatTile(
     }
 }
 
-/** The row of three connected tiles (`UI_SPEC.md` §4.1): 4 dp gaps. */
+/**
+ * The row of three connected tiles (`UI_SPEC.md` §4.1, Figma `21:1258`): equal shares of the width with
+ * 4 dp gaps, all as tall as the tallest, so the group reads as one shape at any text size.
+ */
 @Composable
 public fun StatTileRow(
     tiles: List<Triple<String, String, Pair<Color, Color>>>,
     modifier: Modifier = Modifier,
 ) {
     val stacked = MultiverseGrid.columnsFor(LocalDensity.current.fontScale) == 1
-    val content: @Composable () -> Unit = {
-        tiles.forEachIndexed { index, (value, label, colors) ->
-            val position =
-                when (index) {
-                    0 -> TilePosition.Start
-                    tiles.lastIndex -> TilePosition.End
-                    else -> TilePosition.Middle
-                }
-            StatTile(
-                value = value,
-                label = label,
-                containerColor = colors.first,
-                contentColor = colors.second,
-                position = position,
-                modifier = if (stacked) Modifier.fillMaxWidth() else Modifier,
-            )
+    if (stacked) {
+        Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Tiles(tiles = tiles) { Modifier.fillMaxWidth() }
+        }
+    } else {
+        Row(modifier = modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Tiles(tiles = tiles) { Modifier.weight(1f).fillMaxHeight() }
         }
     }
-    if (stacked) {
-        Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) { content() }
-    } else {
-        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) { content() }
+}
+
+/** The tiles in their connected positions, each laid out by [tileModifier] in its row or column. */
+@Composable
+private fun Tiles(
+    tiles: List<Triple<String, String, Pair<Color, Color>>>,
+    tileModifier: () -> Modifier,
+) {
+    tiles.forEachIndexed { index, (value, label, colors) ->
+        val position =
+            when (index) {
+                0 -> TilePosition.Start
+                tiles.lastIndex -> TilePosition.End
+                else -> TilePosition.Middle
+            }
+        StatTile(
+            value = value,
+            label = label,
+            containerColor = colors.first,
+            contentColor = colors.second,
+            position = position,
+            modifier = tileModifier(),
+        )
     }
 }
 

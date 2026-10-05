@@ -3,7 +3,7 @@ package io.github.davidru85.multiverse.core.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -109,7 +109,7 @@ public fun Cookie9Illustration(
     }
 }
 
-/** A 48 dp circular glyph well, the smaller illustration of a list item or a row. */
+/** A 48 dp glyph well, corner 16 (`UI_SPEC.md` §4.1, Figma `21:1271`): the leading illustration of a list item. */
 @Composable
 public fun SectionGlyph(
     icon: Painter,
@@ -119,7 +119,7 @@ public fun SectionGlyph(
     iconTint: Color = MultiverseColors.onSecondaryContainer,
 ) {
     Box(
-        modifier = modifier.size(48.dp).clip(CircleShape).background(containerColor),
+        modifier = modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
         Icon(painter = icon, contentDescription = contentDescription, tint = iconTint, modifier = Modifier.size(24.dp))

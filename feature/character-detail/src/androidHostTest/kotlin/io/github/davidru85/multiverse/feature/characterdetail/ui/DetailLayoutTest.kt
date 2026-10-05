@@ -96,7 +96,8 @@ class DetailLayoutTest {
         compose.waitForIdle()
     }
 
-    private fun favoriteAction() = compose.onNode(hasText(copy("detail_action_favorite")), useUnmergedTree = false)
+    /** The favourite action: the one node named "Favorite". */
+    private fun favoriteAction() = compose.onNodeWithContentDescription(copy("detail_action_favorite"))
 
     @Test
     fun `TEST-UI-032 given_a_character_that_is_not_a_favourite_when_the_action_is_read_then_it_is_an_unchecked_toggle_named_once`() {
@@ -109,7 +110,8 @@ class DetailLayoutTest {
             ToggleableState.Off,
             node.config[SemanticsProperties.ToggleableState],
         )
-        compose.onNodeWithContentDescription(copy("detail_action_favorite")).assertDoesNotExist()
+        // Named once: no node also carries the label as text, which TalkBack would read a second time.
+        compose.onNode(hasText(copy("detail_action_favorite"))).assertDoesNotExist()
         favoriteAction().performClick()
         compose.runOnIdle { assertEquals(listOf<CharacterDetailIntent>(CharacterDetailIntent.ToggleFavorite), sent) }
     }
