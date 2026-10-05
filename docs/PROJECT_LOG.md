@@ -1001,7 +1001,7 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 
 ### LOG-0139 · 2026-10-05 · `TASK-113`: the code-review P2 Android fidelity items
 
-- **Event:** `TASK-113` is delivered as one pull request from `feat/task-113-p2a`, which starts from `TASK-112`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; every Android screenshot baseline it changes was re-recorded only after comparison with its Figma export.
+- **Event:** `TASK-113` is delivered as PR #203 from `feat/task-113-p2a`, which starts from `TASK-112`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; every Android screenshot baseline it changes was re-recorded only after comparison with its Figma export.
 - **Type and chrome:**
   - Roboto Flex is bundled as a 66 KB weight-axis Latin subset with its OFL licence (`DEC-137`), and the M3 Expressive `*Emphasized` slots carry the heavier styles, so `titleMedium` and `labelLarge` are Medium again (`TEST-UNIT-085`).
   - The shell draws edge to edge; the navigation bar shows on top-level screens only, is a selectable group rather than a fifth tab, and grows in and out with the destination change (`TEST-UI-028`).

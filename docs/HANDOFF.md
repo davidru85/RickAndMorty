@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112` (P1) awaits review in PR #202 and `TASK-113` (P2-A Android fidelity) on `feat/task-113-p2a`, the first two of the stacked `TASK-112`…`TASK-115` pull requests (`DEC-133`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112` (P1) awaits review in PR #202 and `TASK-113` (P2-A Android fidelity) in PR #203, the first two of the stacked `TASK-112`…`TASK-115` pull requests (`DEC-133`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -18,7 +18,7 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 | `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | **Merged** (PR #192, `63d0652`; issue #194 closed) |
 | `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | **Merged** (PR #193, `9599434`; issue #200 closed) |
 | `TASK-112` P1 — Clear filters, protocol reset, visible revalidation, complete Detail and its recovery, plurals, manual refresh, card→Detail transitions, shared splash gate | `feat/task-112-p1` (from `main` at `b457a71`) | Implemented and verified locally; awaits review in **PR #202** (issue #195, `LOG-0138`). P1-c, the iOS debug diagnostics sheet, is **not shipped**: it is escalated as `CONF-90` |
-| `TASK-113` P2-A — Android fidelity to Figma: Roboto Flex, edge to edge, Discovery, card and accent, Detail, Favorites/Episodes titles, Settings, splash, launcher icon | `feat/task-113-p2a` (from `TASK-112`'s head) | Implemented and verified locally; awaits review (issue #196, `LOG-0139`) |
+| `TASK-113` P2-A — Android fidelity to Figma: Roboto Flex, edge to edge, Discovery, card and accent, Detail, Favorites/Episodes titles, Settings, splash, launcher icon | `feat/task-113-p2a` (from `TASK-112`'s head) | Awaits review in PR #203, after PR #202 (issue #196, `LOG-0139`) |
 | `TASK-114` P2-B, `TASK-115` P3 | each from the previous task's head (`DEC-133`) | `Proposed`; next in that order |
 | `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | **Merged** (PR #201, `b457a71`; issue #199; `LOG-0137`). It also fixed a latent iOS crash: the log sink passed Kotlin strings to `%@` |
 
