@@ -1,6 +1,13 @@
 import Foundation
+import MultiverseExplorer
 import SwiftUI
 import UIKit
+
+/// The one host rule a portrait URL must pass before any layer touches it (`REQ-SEC-001`, `DEC-126`):
+/// the shared `:core:data` predicate, so iOS and the Android allow-listed client cannot disagree.
+public let portraitHostRule: @Sendable (String) -> Bool = { url in
+    MultiverseBootstrap.shared.isAllowedImageUrl(url: url)
+}
 
 /// The portrait-seam a card renders through (`UI_SPEC.md` §5.1, `TASK-058`, `REQ-FUNC-021`).
 ///
@@ -52,18 +59,23 @@ public struct ImageFetchResponse {
 /// The session is built from an ephemeral configuration whose `urlCache` is the pipeline's cache
 /// instance and whose cookies are never set, so the image path cannot write into, or read from, the
 /// process-wide `URLCache.shared` that another part of the app might consult
-/// (`AC-REQ-FUNC-021-2`).
+/// (`AC-REQ-FUNC-021-2`). Its delegate is the [ImageRedirectPolicy], so a redirect cannot carry a
+/// fetch to a host the rule rejects (`DEC-126`).
 @MainActor
 public final class URLSessionImageDataTransport: ImageDataTransport {
     private let session: URLSession
 
-    public init(cache: URLCache) {
+    public init(cache: URLCache, isAllowed: @escaping @Sendable (String) -> Bool = portraitHostRule) {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = cache
         configuration.requestCachePolicy = .useProtocolCachePolicy
         configuration.httpShouldSetCookies = false
         configuration.httpCookieAcceptPolicy = .never
-        self.session = URLSession(configuration: configuration)
+        self.session = URLSession(
+            configuration: configuration,
+            delegate: ImageRedirectPolicy(isAllowed: isAllowed),
+            delegateQueue: nil
+        )
     }
 
     public func fetch(_ url: String) async -> ImageFetchResponse? {
@@ -75,6 +87,27 @@ public final class URLSessionImageDataTransport: ImageDataTransport {
             // A failed load is the error state, not a thrown error (`UI_SPEC.md` §5.1).
             return nil
         }
+    }
+}
+
+/// The redirect rule of the image session (`REQ-SEC-001`, `DEC-126`): a redirect is followed only when
+/// its target passes the host rule, and refused otherwise, so the fetch ends with the redirect
+/// response itself — which the pipeline never admits, because it is not a `2xx`.
+public final class ImageRedirectPolicy: NSObject, URLSessionTaskDelegate, Sendable {
+    private let isAllowed: @Sendable (String) -> Bool
+
+    public init(isAllowed: @escaping @Sendable (String) -> Bool) {
+        self.isAllowed = isAllowed
+    }
+
+    public func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest
+    ) async -> URLRequest? {
+        guard let target = request.url?.absoluteString, isAllowed(target) else { return nil }
+        return request
     }
 }
 
@@ -120,11 +153,15 @@ public final class PortraitImagePipeline: PortraitImageLoading {
 
     private let transport: any ImageDataTransport
 
+    /// The host rule every URL passes before any layer touches it (`DEC-126`).
+    private let isAllowed: @Sendable (String) -> Bool
+
     public init(
         memoryCapacity: Int = imageMemoryCacheBytes,
         diskCapacity: Int = imageDiskCacheBytes,
         cache: URLCache? = nil,
-        transport: (any ImageDataTransport)? = nil
+        transport: (any ImageDataTransport)? = nil,
+        isAllowed: @escaping @Sendable (String) -> Bool = portraitHostRule
     ) {
         let resolvedCache =
             cache
@@ -134,7 +171,8 @@ public final class PortraitImagePipeline: PortraitImageLoading {
                 directory: Self.cacheDirectory
             )
         self.cache = resolvedCache
-        self.transport = transport ?? URLSessionImageDataTransport(cache: resolvedCache)
+        self.isAllowed = isAllowed
+        self.transport = transport ?? URLSessionImageDataTransport(cache: resolvedCache, isAllowed: isAllowed)
 
         let memory = NSCache<NSString, UIImage>()
         memory.totalCostLimit = memoryCapacity
@@ -142,12 +180,14 @@ public final class PortraitImagePipeline: PortraitImageLoading {
     }
 
     public func cachedImage(for url: String) -> Image? {
-        guard !url.isEmpty, let image = memory.object(forKey: url as NSString) else { return nil }
+        guard !url.isEmpty, isAllowed(url), let image = memory.object(forKey: url as NSString) else { return nil }
         return Image(uiImage: image)
     }
 
     public func image(for url: String) async -> Image? {
-        guard !url.isEmpty else { return nil }
+        // The host rule comes first: a URL it rejects reaches no cache and no transport, and the
+        // portrait renders its error state (`REQ-SEC-001`, `DEC-126`).
+        guard !url.isEmpty, isAllowed(url) else { return nil }
 
         // 1. Memory: the synchronous hit a second render takes.
         if let cached = memory.object(forKey: url as NSString) { return Image(uiImage: cached) }
@@ -162,8 +202,13 @@ public final class PortraitImagePipeline: PortraitImageLoading {
             return Image(uiImage: image)
         }
 
-        // 3. Network: the only path that issues a request.
-        guard let fetched = await transport.fetch(url), let image = decode(fetched.data) else {
+        // 3. Network: the only path that issues a request. Only a successful HTTP response that ended
+        // on an allowed URL is a portrait; anything else is neither shown nor cached.
+        guard
+            let fetched = await transport.fetch(url),
+            isAdmissible(fetched.response),
+            let image = decode(fetched.data)
+        else {
             return nil
         }
         // Re-store under the request's own URL so the key is the image URL, independent of the
@@ -172,6 +217,14 @@ public final class PortraitImagePipeline: PortraitImageLoading {
         cache.storeCachedResponse(cached, for: request)
         store(image, data: fetched.data, for: url)
         return Image(uiImage: image)
+    }
+
+    /// Whether [response] may enter the caches: an HTTP `2xx` whose final URL — after any redirect the
+    /// policy followed — still passes the host rule (`DEC-126`).
+    private func isAdmissible(_ response: URLResponse) -> Bool {
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return false }
+        guard let finalURL = http.url?.absoluteString else { return true }
+        return isAllowed(finalURL)
     }
 
     /// The decoded portrait of [data], or `nil` when the bytes are not a decodable image.

@@ -1,6 +1,6 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
-- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
+- **Status:** Active — implemented on both platforms with known visual deviations, which the code reviews of 2026-10-05 list and `TASK-113` (Android) and `TASK-114` (iOS) remediate; the drift rule is `DOCUMENTATION_AUDIT.md` §5
 - **Last verified:** 2026-09-30
 - **Owner:** UI/UX Designer (see `AGENTS.md`)
 - **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
@@ -419,6 +419,11 @@ Data binding (see the domain model in `API_SPECS.md` §3):
 
 On iOS, the title block, panel and accessory are a bottom-anchored stack, so the layout adapts to Dynamic Type sizes.
 
+Top-control actions (`DEC-125`):
+
+- **Back** returns to the screen that opened the Detail (`popBackStack` on Android; the navigation stack's `dismiss` on iOS).
+- **Share** offers one line through the platform's own sheet (an `ACTION_SEND` chooser on Android, the system share sheet on iOS): `share_character_text` = "%1$s on Multiverse Explorer: %2$s", with the character's name and its API resource URL `https://rickandmortyapi.com/api/character/{id}`, which `:core:data` builds from the configured host. Share names the character, so on Android it is disabled (M3 disabled colours) while a deep-linked Detail has no header yet. Spanish value, approved by the owner 2026-10-05: "%1$s en Multiverse Explorer: %2$s" (`LOG-0135`).
+
 ### 6.4 Episodes and Favorites (placeholders)
 
 These two tabs don't have their final content yet:
@@ -535,13 +540,14 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 | Paging | Contained loading indicator as the last grid item | `ProgressView` in a glass capsule as the last item |
 | Empty search | Portal logo (40%) + "No one in this dimension matches “query”" + "Clear filters" button | Same content in `ContentUnavailableView` |
 | Offline / error (no cache) | Portal logo + "Portal link lost" + `ApiFailure`-specific message + "Retry" | `ContentUnavailableView` + Retry glass button |
-| Stale / offline with cache | Content visible; snackbar "Showing saved results" with Retry | Content visible; glass banner in the bottom accessory |
+| Stale / offline with cache | Content visible; snackbar "Showing saved results" with Retry | Content visible; glass banner at the bottom with the same copy and Retry |
+| Failed page or refresh over content (`DEC-124`) | Content visible; the same snackbar with the failure's own message (`ERROR_FLOW.md` §4.1) and Retry | Content visible; the same bottom glass banner with the failure's message and Retry |
 | Detail load failure | Keep list data (name, image, status) and show inline retry in place of the info list | Same, inside the frosted panel |
 | Settings: no favorites | "Delete favorites" button in the M3 disabled colours; the explanation stays | `Row - Button` `Disabled` value (`.disabled(true)`); the footer stays |
 
 #### Canonical failure-chain copy (`DEC-101`)
 
-The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but unenumerated; these are the approved English strings. They are canonical here and carried by the platform resource files (`CopyKeys` registers the names, never the values). The rate-limit message takes the countdown as a number.
+The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but unenumerated; these are the approved English strings. They are canonical here and carried by the platform resource files (`CopyKeys` registers the names, never the values). The rate-limit message takes the countdown as a number; when the server advised none, `error_message_rate_limited_no_countdown` is shown instead (`DEC-123`).
 
 | Key | English string |
 | --- | --- |
@@ -556,6 +562,7 @@ The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but un
 | `error_message_not_found` | That character isn't in this dimension. |
 | `error_message_invalid_request` | That request doesn't fit this dimension. Adjust it and try again. |
 | `error_message_rate_limited` | Too many jumps. Try again in %d s. |
+| `error_message_rate_limited_no_countdown` | Too many jumps. Try again shortly. |
 | `error_message_server` | The portal is glitching on its side. Try again shortly. |
 | `error_message_graphql` | The portal didn't understand that request. Try again. |
 | `error_message_malformed` | The portal sent back something unreadable. Try again. |

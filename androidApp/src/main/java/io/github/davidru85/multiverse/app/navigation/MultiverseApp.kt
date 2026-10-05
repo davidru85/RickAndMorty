@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -63,6 +64,7 @@ public fun MultiverseApp(
                 io.github.davidru85.multiverse.core.presentation
                     .DetailHandoff()
             }
+    val context = LocalContext.current
     MultiverseTheme {
         Surface(color = MultiverseColors.surface, modifier = Modifier.fillMaxSize()) {
             // The splash is an overlay that leaves with a 380 ms crossfade once the gate completes
@@ -120,7 +122,7 @@ public fun MultiverseApp(
                             seam = imageSeam,
                             header = handoff.consume(id),
                             onBack = { navController.popBackStack() },
-                            onShare = {},
+                            onShare = { card -> context.startActivity(shareCharacterIntent(context, card)) },
                         )
                     }
                     // Episodes and Favorites render their specified placeholder screens (`TASK-008`);

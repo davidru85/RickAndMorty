@@ -8,6 +8,7 @@
 "action_delete" = "Delete";
 "action_retry" = "Retry";
 "action_share" = "Share";
+"share_character_text" = "%1$@ on Multiverse Explorer: %2$@";
 "app_name" = "Multiverse Explorer";
 "browse_characters" = "Browse characters";
 "characters_count" = "%1$@ characters across the multiverse";
@@ -29,6 +30,7 @@
 "error_message_not_found" = "That character isn't in this dimension.";
 "error_message_offline" = "You're offline. Reconnect to continue exploring the multiverse.";
 "error_message_rate_limited" = "Too many jumps. Try again in %1$ld s.";
+"error_message_rate_limited_no_countdown" = "Too many jumps. Try again shortly.";
 "error_message_server" = "The portal is glitching on its side. Try again shortly.";
 "error_message_timeout" = "The portal took too long to answer. Give it another try.";
 "error_message_unknown" = "Something went wrong on the way to this dimension. Try again.";

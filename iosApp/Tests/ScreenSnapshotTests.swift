@@ -27,7 +27,9 @@ final class ScreenSnapshotTests: XCTestCase {
             totalCount: KotlinInt(int: 826),
             loadState: LoadStateContent.shared,
             isAppending: false,
-            isStale: false
+            isStale: false,
+            contentFailure: nil,
+            isRefreshing: false
         )
         record("discovery-grid", dynamicTypeSize: .large) {
             DiscoveryScreen(state: content, loader: PortraitImageStub(), onIntent: { _ in }, onOpenDetail: { _ in })
@@ -76,7 +78,9 @@ final class ScreenSnapshotTests: XCTestCase {
                 totalCount: KotlinInt(int: 826),
                 loadState: loadState,
                 isAppending: appending,
-                isStale: stale
+                isStale: stale,
+                contentFailure: nil,
+                isRefreshing: false
             )
         }
         let discovery = { (state: CharacterListUiState) in

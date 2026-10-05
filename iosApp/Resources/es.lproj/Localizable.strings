@@ -8,6 +8,7 @@
 "action_delete" = "Borrar";
 "action_retry" = "Reintentar";
 "action_share" = "Compartir";
+"share_character_text" = "%1$@ en Multiverse Explorer: %2$@";
 "app_name" = "Multiverse Explorer";
 "browse_characters" = "Explorar personajes";
 "characters_count" = "%1$@ personajes en el multiverso";
@@ -29,6 +30,7 @@
 "error_message_not_found" = "Ese personaje no está en esta dimensión.";
 "error_message_offline" = "Estás sin conexión. Reconéctate para seguir explorando el multiverso.";
 "error_message_rate_limited" = "Demasiados saltos. Inténtalo de nuevo en %1$ld s.";
+"error_message_rate_limited_no_countdown" = "Demasiados saltos. Inténtalo de nuevo en un momento.";
 "error_message_server" = "El portal está fallando en su lado. Inténtalo de nuevo en un momento.";
 "error_message_timeout" = "El portal tardó demasiado en responder. Inténtalo de nuevo.";
 "error_message_unknown" = "Algo falló de camino a esta dimensión. Inténtalo de nuevo.";

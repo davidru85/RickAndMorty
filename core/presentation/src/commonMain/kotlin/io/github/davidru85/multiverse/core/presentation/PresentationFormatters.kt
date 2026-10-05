@@ -32,10 +32,11 @@ public interface PresentationFormatters {
     /**
      * The countdown `error_message_rate_limited` substitutes (`GAP-027`, `ERROR_FLOW.md` §4.1).
      *
-     * `null` when the server advised nothing usable, so the message renders without an invented
-     * number; otherwise the advised seconds, which both platforms substitute identically.
+     * `null` when the server advised nothing usable, so the message without a countdown renders
+     * instead of an invented number; otherwise the advised seconds, which both platforms substitute
+     * identically as a number (`DEC-123`).
      */
-    public fun rateLimitCountdown(retryAfterSeconds: Long?): String?
+    public fun rateLimitCountdown(retryAfterSeconds: Long?): Long?
 
     /**
      * The number `characters_count` substitutes (`UI_SPEC.md` §6.2, `AC-REQ-FUNC-001-3`).
@@ -95,7 +96,7 @@ public object DefaultPresentationFormatters : PresentationFormatters {
         return listOf(first.name, first.code).filter { it.isNotBlank() }.joinToString(SEPARATOR).ifEmpty { null }
     }
 
-    override fun rateLimitCountdown(retryAfterSeconds: Long?): String? = retryAfterSeconds?.takeIf { it >= 0 }?.toString()
+    override fun rateLimitCountdown(retryAfterSeconds: Long?): Long? = retryAfterSeconds?.takeIf { it >= 0 }
 
     override fun charactersCount(count: Int): String = count.toString()
 
@@ -105,11 +106,12 @@ public object DefaultPresentationFormatters : PresentationFormatters {
             ApiFailure.Timeout -> FailureMessage(CopyKeys.ERROR_MESSAGE_TIMEOUT)
             is ApiFailure.NotFound -> FailureMessage(CopyKeys.ERROR_MESSAGE_NOT_FOUND)
             is ApiFailure.InvalidRequest -> FailureMessage(CopyKeys.ERROR_MESSAGE_INVALID_REQUEST)
+            // A countdown key is never paired with nothing to substitute: without usable advice the
+            // message that carries no placeholder is chosen instead (`DEC-123`).
             is ApiFailure.RateLimited ->
-                FailureMessage(
-                    CopyKeys.ERROR_MESSAGE_RATE_LIMITED,
-                    listOfNotNull(rateLimitCountdown(failure.retryAfterSeconds)),
-                )
+                rateLimitCountdown(failure.retryAfterSeconds)
+                    ?.let { seconds -> FailureMessage(CopyKeys.ERROR_MESSAGE_RATE_LIMITED, listOf(MessageArgument.Number(seconds))) }
+                    ?: FailureMessage(CopyKeys.ERROR_MESSAGE_RATE_LIMITED_NO_COUNTDOWN)
             is ApiFailure.Server -> FailureMessage(CopyKeys.ERROR_MESSAGE_SERVER)
             is ApiFailure.GraphQl -> FailureMessage(CopyKeys.ERROR_MESSAGE_GRAPHQL)
             ApiFailure.MalformedResponse -> FailureMessage(CopyKeys.ERROR_MESSAGE_MALFORMED)

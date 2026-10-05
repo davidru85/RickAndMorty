@@ -101,9 +101,19 @@ public class CharacterDetailStateHolder(
         return load()
     }
 
-    /** Starts one detail request in [scope]; the repository gives each call a fresh attempt budget. */
-    private fun load(): Job =
-        scope.launch(dispatcher) {
-            result.value = getDetails(id, enrich)
-        }
+    /** The load in flight; the next load cancels it, so an older attempt can never publish late. */
+    private var inFlight: Job? = null
+
+    /**
+     * Starts one detail request in [scope], superseding the one in flight: two concurrent loads would
+     * race, and the one that finished last — possibly an older failure — would overwrite a newer
+     * success. The repository gives each call a fresh attempt budget.
+     */
+    private fun load(): Job {
+        inFlight?.cancel()
+        return scope
+            .launch(dispatcher) {
+                result.value = getDetails(id, enrich)
+            }.also { inFlight = it }
+    }
 }

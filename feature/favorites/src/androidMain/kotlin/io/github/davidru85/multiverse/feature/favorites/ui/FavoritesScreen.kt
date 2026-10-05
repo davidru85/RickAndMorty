@@ -32,6 +32,7 @@ import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
+import io.github.davidru85.multiverse.core.presentation.formatArguments
 import io.github.davidru85.multiverse.feature.favorites.presentation.FavoritesIntent
 import io.github.davidru85.multiverse.feature.favorites.presentation.FavoritesUiState
 
@@ -161,7 +162,8 @@ private fun FullSurfaceError(
             textAlign = TextAlign.Center,
         )
         Text(
-            text = CopyResolver.copy(message.key.value),
+            // The typed arguments go to the resource formatter unchanged (`DEC-123`).
+            text = CopyResolver.copy(message.key.value, *message.formatArguments()),
             style = MaterialTheme.typography.bodyMedium,
             color = MultiverseColors.onSurfaceVariant,
             textAlign = TextAlign.Center,

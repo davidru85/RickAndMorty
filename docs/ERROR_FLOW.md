@@ -1,7 +1,7 @@
 # ERROR_FLOW.md - Failure to State to Copy Chain
 
 - **Status:** Active - target state (DEC-046; the Gradle/KMP build skeleton exists as of TASK-014, no error path is implemented yet, see `AGENTS.md` §1)
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-05
 - **Owner:** System Architect (see `AGENTS.md` §3.3)
 - **Authoritative for:** the canonical chain from a remote/transport failure to a domain failure (`ApiFailure`), to a UI-state field, to an on-screen state, to the copy key and the retry affordance. This is the only place where that chain is stated (DEC-021).
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) · [`API_SPECS.md`](API_SPECS.md) §6, §7, §8 · [`DESIGN.md`](DESIGN.md) §4, §7 · [`UI_SPEC.md`](UI_SPEC.md) §8 · [`DECISION_BOARD.md`](DECISION_BOARD.md) · [`TESTING.md`](TESTING.md) · [`OBSERVABILITY.md`](OBSERVABILITY.md) · [`SECURITY.md`](SECURITY.md)
@@ -101,7 +101,7 @@ Chain invariants:
 | `Timeout` | `Content` + `isStale = true` + stale banner | `Error` full-surface state | Yes, bounded automatic | Banner: `state_stale_banner` = "Showing saved results" · Error: `error_title` = "Portal link lost", `error_message_timeout`, `action_retry` = "Retry" | Banner Retry · error Retry | `TEST-UNIT-010`, `TEST-CONTRACT-001` |
 | `NotFound` on a detail request | Keep the pre-filled `header`, inline error in place of the info list | `Error` state with Back, no Retry | No | `error_message_not_found`, `detail_error_inline`, `action_back` | Back navigation | `TEST-UNIT-002`, `TEST-UI-002` |
 | `InvalidRequest` (includes `API-ERR-006`, `API-ERR-012`, `API-ERR-013`) | Keep content, non-blocking error | `Error` full-surface state | No automatic; user-initiated Retry permitted | `error_message_invalid_request`, `action_retry` = "Retry" | Error Retry (fresh budget, §10) | `TEST-UNIT-010`, `TEST-CONTRACT-001`, `TEST-CONTRACT-003` |
-| `RateLimited(retryAfterSeconds)` | Keep content; automatic retry after `Retry-After` | `Error` full-surface state with the countdown inside the message | Only after `Retry-After`, when present | `error_message_rate_limited` (parameterised with the countdown), `action_retry` = "Retry" | Error Retry (enabled at once; the automatic attempt waits `Retry-After`) | `TEST-UNIT-010`, `TEST-UNIT-022` |
+| `RateLimited(retryAfterSeconds)` | Keep content; automatic retry after `Retry-After` | `Error` full-surface state with the countdown inside the message | Only after `Retry-After`, when present | `error_message_rate_limited` (parameterised with the countdown), or `error_message_rate_limited_no_countdown` when no usable `Retry-After` was advised (`DEC-123`); `action_retry` = "Retry" | Error Retry (enabled at once; the automatic attempt waits `Retry-After`) | `TEST-UNIT-010`, `TEST-UNIT-022` |
 | `Server(statusCode)` | Keep content, non-blocking error | `Error` full-surface state | Yes, bounded automatic | `error_message_server`, `action_retry` = "Retry" | Error Retry | `TEST-UNIT-010`, `TEST-CONTRACT-001` |
 | `GraphQl(codes, messages)` | Keep content, non-blocking error | `Error` full-surface state | No automatic | `error_message_graphql`, `action_retry` = "Retry" | Error Retry | `TEST-UNIT-010`, `TEST-CONTRACT-003` |
 | `MalformedResponse` | Keep content, non-blocking error | `Error` full-surface state | No | `error_message_malformed`, `action_retry` = "Retry" | Error Retry | `TEST-UNIT-010`, `TEST-CONTRACT-003` |
@@ -118,7 +118,7 @@ Rendered-state mapping ([`UI_SPEC.md`](UI_SPEC.md) §8 keeps the visuals):
 | `LoadState.Empty` | "Empty search" | List: see §5.1 | `TEST-UNIT-005`, `TEST-UI-009` |
 | `LoadState.Loading`, `isAppending` | "Initial loading", "Paging" | List: skeleton cards, contained loading indicator | Rendered by `TEST-UI-016`; the pager transitions that produce `Loading`/`isAppending` are covered by `TEST-UNIT-016` |
 
-"Non-blocking error" in the table means: the previously rendered content stays and the failure is surfaced alongside it; the exact affordance is owned by [`UI_SPEC.md`](UI_SPEC.md) §8.
+"Non-blocking error" in the table means: the previously rendered content stays and the failure is surfaced alongside it; the exact affordance is owned by [`UI_SPEC.md`](UI_SPEC.md) §8. On the list surface the failure travels as `IC-018.contentFailure` and is rendered by the same banner as the stale state — its class-specific message from §4.1 and a Retry that re-attempts the failed load: the failed page for an append, a refresh for a refresh, never discarding loaded pages (§10 rule 4, `DEC-124`).
 
 ### 4.1 Copy key register
 
@@ -137,6 +137,7 @@ The key names below are the canonical binding owned by this file, and every one 
 | `error_message_not_found` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That character isn't in this dimension." | Fixed |
 | `error_message_invalid_request` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That request doesn't fit this dimension. Adjust it and try again." | Fixed |
 | `error_message_rate_limited` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again in %d s." (number substituted by the countdown formatter, `IC-017`) | Fixed |
+| `error_message_rate_limited_no_countdown` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again shortly." — the rate-limit message when no usable `Retry-After` was advised, so no placeholder is left unfilled (`DEC-123`) | Fixed; Spanish value approved by the owner 2026-10-05 (`LOG-0135`) |
 | `error_message_server` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal is glitching on its side. Try again shortly." | Fixed |
 | `error_message_graphql` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal didn't understand that request. Try again." | Fixed |
 | `error_message_malformed` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal sent back something unreadable. Try again." | Fixed |
@@ -148,7 +149,7 @@ Rules for this register:
 
 - A key `MUST` exist in every shipped locale before the state that uses it renders; a missing key fails the copy parity test (`AC-REQ-FUNC-013-1`, `AC-REQ-UX-008-1`).
 - This file `MUST NOT` gain a second English string table: strings are quoted, never authored, here.
-- The countdown in `error_message_rate_limited` is formatted by a `:core:presentation` formatter (DEC-015), so both platforms render the same number. **Delivered by `TASK-022`:** `IC-017.rateLimitCountdown` is the one formatter, `FailureMessage` carries the number as an argument of the key rather than as interpolated text, and a missing or negative `Retry-After` yields no countdown at all instead of an invented zero (`GAP-027`).
+- The countdown in `error_message_rate_limited` is formatted by a `:core:presentation` formatter (DEC-015), so both platforms render the same number. **Delivered by `TASK-022`:** `IC-017.rateLimitCountdown` is the one formatter, `FailureMessage` carries the number as an argument of the key rather than as interpolated text, and a missing or negative `Retry-After` yields no countdown at all instead of an invented zero (`GAP-027`). **Typed since `DEC-123`:** the countdown is a `MessageArgument.Number` that each platform passes to its own resource formatter as a number, and without a countdown the message is `error_message_rate_limited_no_countdown`, which has no placeholder — a template is never rendered with a specifier left in it.
 
 ## 5. Non-error outcomes
 
@@ -208,7 +209,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 ## 9. Stale and offline rendering with cache
 
 - `isStale = true` means "the rendered value came from the cache and the freshness window has passed" ([`API_SPECS.md`](API_SPECS.md) §3, §7.3). It is set by the data layer, never by a view.
-- The stale banner binds `state_stale_banner` ("Showing saved results") and carries the Retry action; per [`UI_SPEC.md`](UI_SPEC.md) §8 it is a snackbar on Android and a bottom glass banner on iOS.
+- The stale banner binds `state_stale_banner` ("Showing saved results") and carries the Retry action; per [`UI_SPEC.md`](UI_SPEC.md) §8 it is a snackbar on Android and a bottom glass banner on iOS. With no failure to re-attempt, that Retry revalidates page 1 over the network (`refresh()`, `ForceNetwork`), so the banner's action always reaches the network rather than doing nothing; while that refresh is in flight the banner is withheld (`IC-018.isRefreshing`, `DEC-124`).
 - Stale content is still content: it renders the full grid or detail, never the error surface, while the entry is inside the 30-day offline window.
 - Outside the 30-day window the entry is not usable and the state degrades to the class-specific error for the failure that prevented revalidation.
 - An offline detail screen with a cached entry renders and shows the same banner; the header still comes from the list data for an immediate transition.
@@ -281,3 +282,5 @@ A test identifier is never cited here as evidence for copy wording. The failure-
 | 2026-09-29 | Module references updated to the feature-per-module layout: `:shared:data` → `:core:data`, `:shared:presentation` → `:core:presentation` (DEC-052, supersedes DEC-019). A `Verification` column was added to every table so each row names the test that covers it (§2, §4 rendered-state mapping, §7, §10, §11), and the copy-wording evidence rule was added. Test coverage corrected to the authoritative `TESTING.md` identifiers (`TEST-UI-011`, `TEST-UI-016`, `TEST-UNIT-022`); `API-CHAR-005` provenance recorded as an open gap. | DEC-052, DEC-021 |
 | 2026-10-03 | `TASK-022` delivered the failure chain: `IC-017` gains `failureMessage`, `failureTitle`, `retryAction` and `isAutomaticallyRetryable`, and the rate-limit countdown closes `GAP-027` — the number travels as an argument of `error_message_rate_limited`, so both platforms substitute the same value from their own resource file. The §4 matrix is driven fixture by fixture through the real REST adapter. | `TASK-022`, `GAP-027`, `REQ-FUNC-022`, `DEC-015` |
 | 2026-10-03 | §1 and §4.1 state where the copy lives: the key names in `CopyKeys` (`IC-017`), the English and Spanish strings in the platform resource files, held identical by `TEST-UNIT-036`; the earlier wording gave the strings to the key list (`CONF-75`). | `DEC-095`, `TASK-041` |
+| 2026-10-05 | §4 and §4.1: the rate-limit message without usable advice is its own key, `error_message_rate_limited_no_countdown`, and the countdown argument is typed (`IC-017`). Android had crashed formatting `%d` with a `String`; iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123`, `TASK-111` |
+| 2026-10-05 | §4 and §9: the list surface carries a failure beside displayable content as `IC-018.contentFailure`, rendered by the stale banner's component with its own message and Retry; a Retry over stale content with no failure revalidates over the network. | `DEC-124`, `TASK-111` |

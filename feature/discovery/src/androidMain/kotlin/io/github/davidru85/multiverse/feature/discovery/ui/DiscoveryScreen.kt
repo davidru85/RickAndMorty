@@ -22,6 +22,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSearchBarState
@@ -56,6 +60,7 @@ import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
+import io.github.davidru85.multiverse.core.presentation.formatArguments
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListIntent
 import io.github.davidru85.multiverse.feature.discovery.presentation.CharacterListUiState
 
@@ -90,29 +95,32 @@ public fun DiscoveryScreen(
     onOpenDetail: (CharacterCardUi) -> Unit = {},
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        SearchField(state = state, onIntent = onIntent)
-        Headline(state = state)
-        FilterRow(state = state, onIntent = onIntent)
-        when (val loadState = state.loadState) {
-            is LoadState.Empty -> DiscoveryEmptyState(state = state, onIntent = onIntent, illustration = illustration)
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SearchField(state = state, onIntent = onIntent)
+            Headline(state = state)
+            FilterRow(state = state, onIntent = onIntent)
+            when (val loadState = state.loadState) {
+                is LoadState.Empty -> DiscoveryEmptyState(state = state, onIntent = onIntent, illustration = illustration)
 
-            is LoadState.Error ->
-                DiscoveryErrorState(
-                    failure = loadState.failure,
-                    onRetry = { onIntent(CharacterListIntent.Retry) },
-                    illustration = illustration,
-                )
+                is LoadState.Error ->
+                    DiscoveryErrorState(
+                        failure = loadState.failure,
+                        onRetry = { onIntent(CharacterListIntent.Retry) },
+                        illustration = illustration,
+                    )
 
-            LoadState.Loading, LoadState.Content ->
-                CharacterGrid(
-                    state = state,
-                    onIntent = onIntent,
-                    seam = seam,
-                    gridState = gridState,
-                    onOpenDetail = onOpenDetail,
-                )
+                LoadState.Loading, LoadState.Content ->
+                    CharacterGrid(
+                        state = state,
+                        onIntent = onIntent,
+                        seam = seam,
+                        gridState = gridState,
+                        onOpenDetail = onOpenDetail,
+                    )
+            }
         }
+        DiscoveryNotice(state = state, onIntent = onIntent, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
@@ -230,12 +238,8 @@ private fun DiscoveryErrorState(
     val message = DefaultPresentationFormatters.failureMessage(failure)
     EmptyState(
         heading = CopyResolver.copy(DefaultPresentationFormatters.failureTitle().value),
-        body =
-            if (message.arguments.isEmpty()) {
-                CopyResolver.copy(message.key.value)
-            } else {
-                CopyResolver.copy(message.key.value).format(*message.arguments.toTypedArray())
-            },
+        // The typed arguments go to the resource formatter unchanged (`DEC-123`).
+        body = CopyResolver.copy(message.key.value, *message.formatArguments()),
         illustration = illustration,
         actionLabel = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value),
         onAction = onRetry,
@@ -258,7 +262,6 @@ private fun CharacterGrid(
         PagingEffect(state = state, gridState = gridState, itemCount = items.size, onIntent = onIntent)
     }
     Column(modifier = Modifier.fillMaxSize()) {
-        if (state.isStale) StaleBanner()
         LazyVerticalStaggeredGrid(
             columns = MultiverseGrid.columns(),
             state = gridState,
@@ -328,17 +331,40 @@ private fun PagingEffect(
     }
 }
 
-/** The stale banner of `UI_SPEC.md` §8: the content stays visible while its provenance is stated. */
+/**
+ * The non-blocking notice over content (`UI_SPEC.md` §8: a snackbar with Retry; `ERROR_FLOW.md` §4,
+ * §9; `DEC-124`). A load that failed beside displayable content shows its own class-specific message,
+ * stale content shows "Showing saved results", and either offers Retry, which the reducer turns into
+ * a re-attempt of the failed load or a network revalidation. Nothing shows while a refresh is in
+ * flight, and a failure with nothing displayable is the full-surface error instead.
+ */
 @Composable
-private fun StaleBanner() {
-    Surface(color = MultiverseColors.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = CopyResolver.copy(CopyKeys.STATE_STALE_BANNER.value),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MultiverseColors.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+private fun DiscoveryNotice(
+    state: CharacterListUiState,
+    onIntent: (CharacterListIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val failure = state.contentFailure
+    val message =
+        when {
+            state.loadState != LoadState.Content || state.isRefreshing -> null
+            failure != null -> {
+                val failureMessage = DefaultPresentationFormatters.failureMessage(failure)
+                CopyResolver.copy(failureMessage.key.value, *failureMessage.formatArguments())
+            }
+            state.isStale -> CopyResolver.copy(CopyKeys.STATE_STALE_BANNER.value)
+            else -> null
+        }
+    val retry = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value)
+    val host = remember { SnackbarHostState() }
+    // Keyed by the message: a new notice replaces the shown one, and a null one dismisses it, because
+    // restarting the effect cancels the suspended `showSnackbar`.
+    LaunchedEffect(message) {
+        if (message == null) return@LaunchedEffect
+        val result = host.showSnackbar(message = message, actionLabel = retry, duration = SnackbarDuration.Indefinite)
+        if (result == SnackbarResult.ActionPerformed) onIntent(CharacterListIntent.Retry)
     }
+    SnackbarHost(hostState = host, modifier = modifier.padding(16.dp))
 }
 
 /** Tall when `index % 4` is 0 or 3, Regular otherwise (`UI_SPEC.md` §4.1). */

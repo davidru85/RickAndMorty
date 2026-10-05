@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.feature.discovery.presentation
 
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
+import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.core.presentation.LoadState
 
@@ -16,6 +17,10 @@ import io.github.davidru85.multiverse.core.presentation.LoadState
  * ended for the current filter, `Error` when the newest attempt failed with nothing displayable,
  * `Empty` when a load ended with no failure and no items, `Content` otherwise. [isAppending] is true
  * only with `Content`, and [isStale] implies `Content`.
+ *
+ * [contentFailure] is the failure of the newest append or refresh while content stays displayable —
+ * `ERROR_FLOW.md` §4's non-blocking error — so it is non-null only with `Content`, and `null` while a
+ * load is re-attempting it. [isRefreshing] is true while a user refresh is in flight (`DEC-124`).
  */
 public data class CharacterListUiState(
     public val filter: CharacterFilter = CharacterFilter(),
@@ -24,6 +29,8 @@ public data class CharacterListUiState(
     public val loadState: LoadState = LoadState.Loading,
     public val isAppending: Boolean = false,
     public val isStale: Boolean = false,
+    public val contentFailure: ApiFailure? = null,
+    public val isRefreshing: Boolean = false,
 )
 
 /**
@@ -47,6 +54,9 @@ public sealed interface CharacterListIntent {
     /** The user asked for a refresh; page 1 is revalidated over the network. */
     public data object Refresh : CharacterListIntent
 
-    /** The user asked for a retry after a failure; a fresh attempt budget is granted. */
+    /**
+     * The user asked for a retry: the failed load is re-attempted with a fresh attempt budget, or —
+     * with no failure but stale content — page 1 is revalidated over the network (`DEC-124`).
+     */
     public data object Retry : CharacterListIntent
 }

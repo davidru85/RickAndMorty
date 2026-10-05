@@ -50,7 +50,9 @@ final class DiscoveryGridTransitionTests: XCTestCase {
             totalCount: KotlinInt(int: 826),
             loadState: loadState,
             isAppending: false,
-            isStale: false
+            isStale: false,
+            contentFailure: nil,
+            isRefreshing: false
         )
     }
 

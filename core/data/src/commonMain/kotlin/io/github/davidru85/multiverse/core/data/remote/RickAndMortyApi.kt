@@ -43,6 +43,29 @@ public object RickAndMortyApi {
     /** Whether [url] may be trusted as a relation or pagination link: HTTPS on [HOST], default port. */
     internal fun isAllowListed(url: Url): Boolean =
         url.protocol == URLProtocol.HTTPS && url.host == HOST && url.port == URLProtocol.HTTPS.defaultPort
+
+    /**
+     * Whether [url] — a portrait URL exactly as a payload carries it — may be fetched at all
+     * (`REQ-SEC-001`, `DEC-126`): HTTPS, [HOST] exactly (no sub-domain), its default port and no user
+     * info. A string that does not parse is rejected. Android's loader gets the same rule from the
+     * allow-listed client; the iOS pipeline has no such client, so it asks this before any of its
+     * layers touches the URL, and the rule exists once.
+     */
+    public fun isAllowedImageUrl(url: String): Boolean {
+        val parsed =
+            try {
+                Url(url)
+            } catch (_: Exception) {
+                return false
+            }
+        return isAllowListed(parsed) && parsed.user == null && parsed.password == null
+    }
+
+    /**
+     * The API resource URL of one character, `https://[HOST]/api/character/{id}`, built from the
+     * configured host so no UI source names one (`DEC-125`): the link the Detail's Share sends.
+     */
+    public fun characterUrl(id: String): String = url(CHARACTER, id).toString()
 }
 
 /** The resource names an `ApiFailure.NotFound` carries for this API. */

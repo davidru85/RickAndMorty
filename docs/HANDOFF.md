@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's); B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`), B8 Phase 8.3 in PR #178, B9 Phase 9.1 in PR #182, B9 Phase 9.2 in PR #186 and B9 Phase 9.3 in PR #189, each prepared on the previous reviewed head; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main` (the B7–B9 stack through PR #189, merge `ce0d92a`; the `v0.1.0`/`v0.2.0` tags and releases are the owner's), and the code-review remediation is under way — phase P0 (`TASK-111`) on `fix/review-remediation-p0` and the single-launcher fix (`TASK-117`) on `fix/single-launcher-entry`, both awaiting review; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -8,6 +8,31 @@
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### Code-review remediation — 2026-10-05
+
+Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolidated into five phase tasks, `TASK-111`…`TASK-115`, one pull request per phase, each started from merged `main` (`DEC-122`). Two owner requests from the same session are `TASK-116` and `TASK-117`.
+
+| Work | Branch | State |
+| --- | --- | --- |
+| `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | Implemented in nine red→green increments; awaiting the owner's review (`LOG-0134`) |
+| `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | Implemented red→green; awaiting review; independent of P0 |
+| `TASK-112` P1, `TASK-113` P2-A, `TASK-114` P2-B, `TASK-115` P3 | — | `Proposed`; each starts from `main` after the previous phase merges |
+| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | — | `Proposed`; starts after P0 merges (it touches the iOS bootstrap P0 changes) |
+
+**Observed on the P0 branch:**
+- The documented Gradle set plus `allTests`, ktlint, lint, the contract replay and the iOS framework link passed (BUILD SUCCESSFUL, 1207 tasks). Its reports hold 870 tests and 0 failures, plus `:androidApp`'s 44 up-to-date tests and `:core:data`'s full 197 re-run alone.
+- `xcodebuild test` on iPhone 17 / iOS 27.0 → 121 tests, 0 failures.
+- Swift lint is clean.
+
+**Not done in P0, by decision:** hiding the iOS system bars on Detail moves to `TASK-114`, because the edge-swipe gesture cannot be verified without a UI-test harness. `TEST-UNIT-070` asserts the adapter's start, not the Swift-side reconciliation of a stored favourite, which cannot be built from Swift (`LOG-0134`).
+
+**The owner's next steps:**
+1. Review and merge the P0 pull request and the launcher pull request (either order; they touch different files except `docs/BACKLOG.md`, in different tables).
+2. Confirm or narrow the write authorization recorded in `DEC-122`.
+3. Decide `CONF-85` (UI_SPEC §4.1's search placeholder wording).
+
+The Spanish strings of P0 are approved, and `CONF-86` is resolved: the microphone stays deferred outside the MVP (`LOG-0135`).
 
 ### B9 closure — 2026-10-04, reviewed 2026-10-05
 

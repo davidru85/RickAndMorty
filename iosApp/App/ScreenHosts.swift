@@ -43,8 +43,13 @@ struct DiscoveryHost: View {
 }
 
 /// One character's detail (`IC-019`).
+///
+/// Back dismisses the pushed screen, and Share presents the system sheet with the character's line
+/// (`DEC-125`); both controls were empty closures before.
 struct DetailHost: View {
     @StateObject private var holder: DetailStateHolder
+    @Environment(\.dismiss) private var dismiss
+    @State private var sharing: ShareItem?
 
     init(card: CharacterCardUi) {
         let resolved = MultiverseBootstrap.shared.characterDetailDependencies()
@@ -64,9 +69,19 @@ struct DetailHost: View {
         CharacterDetailScreen(
             state: holder.state,
             onIntent: { holder.onIntent($0) },
-            onBack: {},
-            onShare: {}
+            onBack: { dismiss() },
+            onShare: {
+                // Share names the character, so it waits for a header; the list's card always
+                // provides one on iOS, and a loaded detail builds one otherwise.
+                if let header = holder.state.header {
+                    sharing = ShareItem(text: CharacterShare.text(for: header))
+                }
+            }
         )
+        .sheet(item: $sharing) { item in
+            ShareSheet(item: item)
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 

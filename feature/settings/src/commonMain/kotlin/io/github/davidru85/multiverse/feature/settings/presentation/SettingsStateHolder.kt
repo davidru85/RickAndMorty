@@ -95,14 +95,13 @@ public class SettingsStateHolder(
                 if (mutableState.value.canDeleteFavorites) mutableState.update { it.copy(isConfirmingDelete = true) }
             }
 
-            // The confirmation guard is what makes "exactly once" hold: a second dispatch while
-            // nothing is open is a no-op, so a re-entrant tap cannot clear the set twice.
+            // The confirmation guard is what makes "exactly once" hold: it is consumed here, before
+            // the clear is launched, so a second dispatch — a double tap that arrives before the
+            // clear has run — finds nothing open and is a no-op.
             SettingsIntent.DeleteFavoritesConfirmed -> {
                 if (mutableState.value.isConfirmingDelete) {
-                    scope.launch(dispatcher) {
-                        clearFavorites()
-                        mutableState.update { it.copy(isConfirmingDelete = false) }
-                    }
+                    mutableState.update { it.copy(isConfirmingDelete = false) }
+                    scope.launch(dispatcher) { clearFavorites() }
                 }
             }
 

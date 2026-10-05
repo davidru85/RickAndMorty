@@ -70,21 +70,25 @@ enum CharacterPresentation {
     /// The failure's message (`ERROR_FLOW.md` §4) resolved from the app's resource files, with the
     /// values its wording substitutes.
     ///
-    /// The number of the rate-limit countdown travels as an argument of the key rather than
-    /// interpolated in shared code (`ERROR_FLOW.md` §4.1, `GAP-027`), so the one formatter here reads
-    /// the positional specifier from the template the resource file carries and substitutes
-    /// accordingly — no platform invents a number, and a missing argument renders no message change.
-    static func message(_ message: FailureMessage) -> String {
-        let template = LocalizedCopy.shared.text(for: key(message.key))
+    /// The number of the rate-limit countdown travels as a **typed** argument of the key rather than
+    /// interpolated in shared code (`ERROR_FLOW.md` §4.1, `GAP-027`, `DEC-123`): a number is passed as
+    /// an `Int64` for the template's `%1$ld` and a text as an `NSString` for `%1$@`, so nothing here
+    /// inspects the template to guess a type. A message without a placeholder carries no argument and
+    /// is returned as the resource file has it.
+    static func message(_ message: FailureMessage, copy: LocalizedCopy = .shared) -> String {
+        let template = copy.text(for: key(message.key))
         guard !message.arguments.isEmpty else { return template }
-        let isNumeric = template.contains("%ld") || template.contains("%d")
         let values: [CVarArg] = message.arguments.map { argument -> CVarArg in
-            if isNumeric {
-                return Int(argument) ?? 0
+            switch argument {
+            case let number as MessageArgumentNumber:
+                return number.value
+            case let text as MessageArgumentText:
+                return text.value as NSString
+            default:
+                preconditionFailure("unsupported MessageArgument case \(type(of: argument))")
             }
-            return argument as NSString
         }
-        return String(format: template, arguments: values)
+        return String(format: template, locale: Locale.current, arguments: values)
     }
 
     /// The accessibility label of one card (`UI_SPEC.md` §9): the card is **one** merged element, so

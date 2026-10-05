@@ -24,7 +24,8 @@ public fun CharacterDetailRoute(
     seam: ImageSeam,
     header: CharacterCardUi?,
     onBack: () -> Unit,
-    onShare: () -> Unit,
+    /** Shares the character on screen (`DEC-125`); the shell owns the platform share sheet. */
+    onShare: (CharacterCardUi) -> Unit,
     modifier: Modifier = Modifier,
     portalMark: androidx.compose.ui.graphics.painter.Painter? = null,
     viewModel: CharacterDetailViewModel =

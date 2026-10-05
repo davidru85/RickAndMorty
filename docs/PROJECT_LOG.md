@@ -1,7 +1,7 @@
 # PROJECT_LOG.md — Project Event Log
 
 - **Status:** Active. Entries `LOG-0001`…`LOG-0015` record pre-audit documentation work that was never executable and was not verified; see §1.3.
-- **Last verified:** 2026-10-04
+- **Last verified:** 2026-10-05
 - **Owner:** Documentation Maintainer (see `AGENTS.md` §3.9)
 - **Authoritative for:** the chronological record of *why* the project changed — one entry per meaningful event, with the event, its rationale, the artifacts it touched, the decision it belongs to, and what was actually verified. Identifier scheme: `LOG-####`.
 - **Not authoritative for:** the current status of a decision (`DECISION_BOARD.md`), the current state of work (`BACKLOG.md`), requirement or contract content (`REQUIREMENTS.md`, `CONTRACTS.md`), release notes (GitHub Releases).
@@ -889,6 +889,48 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Decision / ADR:** `DEC-106` (the B5 packaging), `DEC-012`/`DEC-018` (freshness policy and app-level cache), `DEC-084` (the attempt budget), `DEC-086` (`ForceNetwork`), `DEC-072` (the harness doubles), `DEC-039` (the release logging threshold). No new decision.
 - **Validation:** observed 2026-10-03 on `feat/b5-phase-5-1`. Red was observed before each green: 9 failing cases for the cache policy, 4 for the failure map. `./gradlew check buildHealth verifyDocumentedGate` — BUILD SUCCESSFUL (1069 actionable tasks). `:core:data:jvmTest` 130 tests, 0 failures; `:core:data:testAndroidHostTest` 133+ tests, 0 failures; `:core:presentation:testAndroidHostTest` 25 tests, 0 failures. Three defects the new cases reproduced were fixed: the offline fallback bypassed `ResponseCache.serveFallback`, so `LOG-007` was never emitted; the cache suite named the live API host in a fixture URL, which `verifyNoLiveHosts` rejected; and a duplicated KDoc and long line failed ktlint.
 - **Not verified:** the phase pull request's own CI run, until it is opened; the iOS simulator run of the touched KMP modules, which `DEC-083` suspends in CI and this session did not execute.
+
+### LOG-0134 · 2026-10-05 · Code-review remediation, phase P0 (`TASK-111`): crashes, stuck states, races and the iOS image host bypass
+
+- **Event:** the three code-review inputs in `prompts/code_review/` were consolidated into one master list (`DEC-122`). `code_review_claude.md` carries 90 findings and a P0–P3 prescription, `code_review_codex.md` a ten-section prescription, and `code_review_glm.md` only the audit prompt, with no findings. The list is split into `TASK-111`…`TASK-115`, one pull request per phase, each starting from merged `main` (`DEC-063`). Phase P0 is implemented on `fix/review-remediation-p0` in nine increments, each with a `test:` commit observed red before its `fix:`/`feat:` commit.
+- **Authorization:** the owner's instruction of 2026-10-05 to implement the reviews, read with the Claude prescription's §0.2, is recorded as the `DEC-064` task-scoped authorization for `core/**`, `feature/**`, `androidApp/**`, `iosApp/**`, `docs/**` and both READMEs. `build-logic/**`, `.github/**`, the version catalog and `VERSION` were not touched. The owner can narrow this record.
+- **Every claim was reproduced before it was fixed.** The reds, in the order fixed:
+  - A Detail retry raced the load it superseded (`TEST-UNIT-069`).
+  - A double-tapped Delete cleared the favourites twice (`TEST-UNIT-050`).
+  - `ResponseCache` turned a `CancellationException` into a miss on read, write and evict (`TEST-UNIT-068`, from the Codex prescription).
+  - The rate-limit message crashed Android with `IllegalFormatConversionException: d != java.lang.String`, and Favorites never substituted its countdown (`TEST-UNIT-067`, `TEST-UI-018`, `DEC-123`).
+  - Discovery's intent loop waited behind an append, refresh or retry (`TEST-UNIT-065`).
+  - A failed append over content had no field to travel in, and Retry over stale content sent nothing (`TEST-UNIT-066`, `TEST-UI-019`, `DEC-124`).
+  - The iOS Detail never started its shared holder (`TEST-UNIT-070`).
+  - The iOS pipeline fetched portraits from any host, and admitted a `404` to its caches (`TEST-UNIT-071`, `DEC-126`).
+  - The Detail's Share did nothing on either platform (`TEST-UI-020`, `DEC-125`).
+- **Worse than reported:** on iOS, a rate limit with 30 s of advice rendered "Try again in 4601199584 s.". The helper looked for `%ld` while the template says `%1$ld`, so the countdown string was passed as an object pointer.
+- **Decisions taken in the change, and why:**
+  - `IC-017`'s arguments are typed (`MessageArgument.Number`/`Text`), so no platform guesses a type from a template.
+  - `IC-018` gains `contentFailure` and `isRefreshing`. Both are breaking for the Swift initialiser, and the iOS call sites change in the same commits.
+  - Android's stale strip becomes the specified snackbar with Retry, and iOS's top capsule a bottom glass banner with Retry. Their baselines (`discovery-stale`, both platforms) were re-recorded only after the new captures were compared with `UI_SPEC.md` §8. `detail-error-without-header` was re-recorded on Android for the same reason: Share is disabled there because no header exists to share.
+- **Narrowed or deferred, with the reason:**
+  - `TEST-UNIT-070`'s first version asserted that a stored favourite reads marked from a set built in Swift. A probe showed this cannot hold: Kotlin boxes a value class inside a collection, and the box reaches Swift as an opaque object (`CopyKeys.all` yields `CopyKey(value=…)`, and `contains("status_alive")` is `false`). The case now asserts the adapter's own duty, the load and the subscription. The reconciliation stays with `TEST-UNIT-004`.
+  - Hiding the iOS system navigation bar and tab bar on Detail (review item 69) moves to `TASK-114`. Without a UI-test harness, the edge-swipe gesture cannot be verified after the bar is hidden.
+- **Caught by the repository's own gate:** the first allow-list test named the live host as a literal, which `verifyNoLiveHosts` (`TEST-UNIT-024`) rejects. It now uses `RickAndMortyApi.HOST`, like the other remote tests (`3144a8c`).
+- **Owner requests during the session:**
+  - REST and GraphQL request logs: the owner chose the existing `AppLogger` events, made visible in debug builds on both platforms, delivered after P0 as `TASK-116`.
+  - Two Android launcher icons on a debug install: `TASK-117`, on its own branch `fix/single-launcher-entry` from `main`. The diagnostics panel lost its `LAUNCHER` filter and is reached through a debug-only app shortcut. The debug APK lists one launchable activity, and the release APK carries neither the shortcut nor the panel.
+- **Verification (observed):**
+  - The documented Gradle set of `LOG-0131`, plus `allTests`, `verifyDocumentedCompleteness`, `ktlintCheck`, `lintDebug`, `:core:data:contractTestReplayAndroidHost` and `:core:ios:linkDebugFrameworkIosSimulatorArm64` — BUILD SUCCESSFUL in 1m 20s, 1207 actionable tasks. The run wrote 147 XML reports: 870 tests, 0 failures. `:androidApp:testDebugUnitTest` was up to date, and its last run on this tree reported 44 tests, 0 failures.
+  - `:core:data`'s host results directory holds only the replay's 35 contract cases after that run. The full suite, re-run alone with `--rerun-tasks`, is 197 tests, 0 failures.
+  - `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` — 121 tests, 0 failures (105 before this phase).
+  - `tools/swift-lint.sh iosApp` — 0 violations.
+- **Not verified:** a manual journey on an emulator or simulator; the iOS 18 runtime (Xcode 27 offers none); any device budget. The Spanish copy `error_message_rate_limited_no_countdown` and `share_character_text` awaits owner review.
+- **Affected documents:** `docs/BACKLOG.md` (`TASK-111`…`TASK-116`), `docs/DECISION_BOARD.md` (`DEC-122`…`DEC-126`), `docs/CONTRACTS.md` (`IC-017`, `IC-018`), `docs/ERROR_FLOW.md` (§4, §4.1, §9), `docs/UI_SPEC.md` (status line, §6.3, §8), `docs/SECURITY.md` (§5), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-85`…`CONF-89`), `docs/HANDOFF.md`, and this entry.
+
+### LOG-0135 · 2026-10-05 · Owner decisions on the P0 copy and on the microphone
+
+- **Event:** the owner approved the two Spanish strings `TASK-111` added, unchanged: `error_message_rate_limited_no_countdown` = "Demasiados saltos. Inténtalo de nuevo en un momento." and `share_character_text` = "%1$s en Multiverse Explorer: %2$s". The owner also stated that the microphone (voice search) is recorded for later and is outside the MVP's scope.
+- **Rationale:** `LOG-0134` left both strings pending review. The first reuses the already-approved Spanish for "Try again shortly" (`error_message_server`) and for "Too many jumps" (`error_message_rate_limited`), so the failure messages stay consistent. The microphone statement settles `CONF-86`: the Figma exports draw a control that `DEC-002` defers, and that is the future design, not a defect.
+- **Affected artifacts:** `docs/ERROR_FLOW.md` §4.1 and `docs/UI_SPEC.md` §6.3 (approval noted), `docs/DOCUMENTATION_AUDIT.md` (`CONF-86` resolved, change log), `docs/HANDOFF.md` (owner steps), and this entry. No source or resource changed: the approved values are the ones already shipped on both platforms.
+- **Decision / ADR reference:** `DEC-002` and `DEF-001` (unchanged), `DEC-123`, `DEC-125`.
+- **Validation:** `./gradlew verifyDocumentedCompleteness verifyDocumentedGate` after the edits, observed in the commit that carries them.
 
 ## 3. Verification performed on this repository
 

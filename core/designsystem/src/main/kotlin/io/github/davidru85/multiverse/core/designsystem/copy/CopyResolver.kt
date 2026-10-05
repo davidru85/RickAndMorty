@@ -34,6 +34,22 @@ public object CopyResolver {
         return stringResource(id)
     }
 
+    /**
+     * Resolves [key] and substitutes [formatArgs] into its positional specifiers through the platform
+     * resource formatter. The arguments keep their types, so a number reaches `%d` as a number and a
+     * text reaches `%s` as text (`DEC-123`): a caller never formats a resolved string itself, which is
+     * how a `String` once reached `%d` and crashed the error state.
+     */
+    @Composable
+    public fun copy(
+        key: String,
+        vararg formatArgs: Any,
+    ): String {
+        val id = TABLE[key]
+        requireNotNull(id) { "no Android resource is registered for the copy key `$key` (DEC-100)" }
+        return if (formatArgs.isEmpty()) stringResource(id) else stringResource(id, *formatArgs)
+    }
+
     /** Every registered name, for the table ↔ resource parity test. */
     public fun names(): Set<String> = TABLE.keys
 
@@ -49,6 +65,7 @@ public object CopyResolver {
             put("filter_all", R.string.filter_all)
             put("detail_action_favorite", R.string.detail_action_favorite)
             put("action_share", R.string.action_share)
+            put("share_character_text", R.string.share_character_text)
             put("detail_stat_episodes", R.string.detail_stat_episodes)
             put("detail_stat_dimension", R.string.detail_stat_dimension)
             put("detail_stat_species", R.string.detail_stat_species)
@@ -88,6 +105,7 @@ public object CopyResolver {
             put("error_message_not_found", R.string.error_message_not_found)
             put("error_message_invalid_request", R.string.error_message_invalid_request)
             put("error_message_rate_limited", R.string.error_message_rate_limited)
+            put("error_message_rate_limited_no_countdown", R.string.error_message_rate_limited_no_countdown)
             put("error_message_server", R.string.error_message_server)
             put("error_message_graphql", R.string.error_message_graphql)
             put("error_message_malformed", R.string.error_message_malformed)

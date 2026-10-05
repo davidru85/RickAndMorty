@@ -223,7 +223,9 @@ final class DiscoveryScreenStateTests: XCTestCase {
             totalCount: KotlinInt(int: 826),
             loadState: loadState,
             isAppending: isAppending,
-            isStale: isStale
+            isStale: isStale,
+            contentFailure: nil,
+            isRefreshing: false
         )
     }
 

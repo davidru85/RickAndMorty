@@ -17,8 +17,8 @@ import XCTest
 ///   ways — the pipeline never writes into a foreign cache, and a foreign JSON entry is never
 ///   mistaken for an image.
 ///
-/// The URL is a documentation-only host, so the no-live-host rule of `TESTING.md` §4.1 stays
-/// satisfied; nothing here fetches it.
+/// The URLs are on the configured API host, because the pipeline rejects any other before a cache is
+/// read (`DEC-126`); nothing here fetches them, the transport is a counting stub (`TESTING.md` §4.1).
 @MainActor
 final class ImagePipelineCacheTests: XCTestCase {
     // MARK: - AC-REQ-FUNC-021-1: a second render issues no request
@@ -139,8 +139,8 @@ final class ImagePipelineCacheTests: XCTestCase {
 
     // MARK: - Fixtures
 
-    private static let url = "https://images.invalid/avatar/1.png"
-    private static let otherUrl = "https://images.invalid/avatar/2.png"
+    private static let url = "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+    private static let otherUrl = "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
 
     /// The single parsed form of [url], so no case repeats the parse.
     private static let urlValue = URL(string: url) ?? URL(fileURLWithPath: "/")
@@ -153,8 +153,9 @@ final class ImagePipelineCacheTests: XCTestCase {
         ) ?? Data()
 }
 
-/// The counting transport: it records every request and returns a 1 × 1 PNG, so a case can assert
-/// exactly how many network calls a render issued (`REQ-FUNC-021`, `AC-REQ-FUNC-021-1`).
+/// The counting transport: it records every request and returns a 1 × 1 PNG with an HTTP 200, as the
+/// shipped session does, so a case can assert exactly how many network calls a render issued
+/// (`REQ-FUNC-021`, `AC-REQ-FUNC-021-1`).
 @MainActor
 private final class CountingImageTransport: ImageDataTransport {
     private(set) var requests = 0
@@ -163,12 +164,17 @@ private final class CountingImageTransport: ImageDataTransport {
     func fetch(_ url: String) async -> ImageFetchResponse? {
         requests += 1
         requestedUrls.append(url)
-        let response = URLResponse(
-            url: URL(string: url) ?? URL(fileURLWithPath: "/"),
-            mimeType: "image/png",
-            expectedContentLength: ImagePipelineCacheTests.tinyPNG.count,
-            textEncodingName: nil
-        )
+        guard
+            let requestURL = URL(string: url),
+            let response = HTTPURLResponse(
+                url: requestURL,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "image/png"]
+            )
+        else {
+            return nil
+        }
         return ImageFetchResponse(data: ImagePipelineCacheTests.tinyPNG, response: response)
     }
 }
