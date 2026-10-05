@@ -197,7 +197,11 @@ public fun MultiverseApp(
                         }
                     }
                 }
-                if (onTopLevel) {
+                // The bar grows in and out with the destination change, on the same duration and curve,
+                // so it never pushes the leaving Detail up by its whole height in one frame; Reduce
+                // Motion shows and hides it at once.
+                val (barEnter, barExit) = PortraitMotion.barTransition(reduceMotion)
+                androidx.compose.animation.AnimatedVisibility(visible = onTopLevel, enter = barEnter, exit = barExit) {
                     MultiverseNavigationBar(
                         destinations = destinations,
                         selectedKey = selectedKey,
