@@ -73,6 +73,9 @@ kotlin {
             api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
+            // The screen names its copy through the canonical `CopyKeys` constants rather than typing
+            // the key names (`DEC-144`).
+            implementation(project(":core:presentation"))
             // The screen composes design-system components and resolves their copy; the edge is used
             // rather than exposed, so it stays `implementation` (dependency analysis, ADR-0001,
             // `DESIGN.md` §3.4 rule 5).

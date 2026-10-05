@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
 
 /**
  * The Favorites empty state (`UI_SPEC.md` §6.4): the section's designed empty state, with the copy the
@@ -24,10 +25,10 @@ public fun FavoritesEmptyState(
     modifier: Modifier = Modifier,
 ) {
     EmptyState(
-        heading = CopyResolver.copy("favorites_heading"),
-        body = CopyResolver.copy("favorites_body"),
+        heading = CopyResolver.copy(CopyKeys.FAVORITES_HEADING.value),
+        body = CopyResolver.copy(CopyKeys.FAVORITES_BODY.value),
         illustration = illustration,
-        actionLabel = CopyResolver.copy("browse_characters"),
+        actionLabel = CopyResolver.copy(CopyKeys.BROWSE_CHARACTERS.value),
         containerColor = MultiverseColors.primaryContainer,
         onAction = onBrowseCharacters,
         modifier = modifier,

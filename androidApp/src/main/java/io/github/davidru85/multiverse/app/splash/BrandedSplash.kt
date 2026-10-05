@@ -16,12 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.shadow.Shadow
-import kotlin.random.Random
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -29,9 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -43,6 +42,8 @@ import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
+import kotlin.random.Random
 import kotlinx.coroutines.isActive
 
 /** The acceleration of `UI_SPEC.md` §7: 360° over 1.2 s on the stated curve. */
@@ -81,7 +82,7 @@ public fun BrandedSplash(
             1f
         }
 
-    val loadingLabel = CopyResolver.copy("splash_loading")
+    val loadingLabel = CopyResolver.copy(CopyKeys.SPLASH_LOADING.value)
     Box(
         modifier =
             modifier
@@ -119,18 +120,18 @@ public fun BrandedSplash(
                 )
             }
             Text(
-                text = CopyResolver.copy("splash_wordmark"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_WORDMARK.value),
                 style = MaterialTheme.typography.displayMediumEmphasized,
                 color = MultiverseColors.onSurface,
             )
             Text(
-                text = CopyResolver.copy("splash_wordmark_sub"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_WORDMARK_SUB.value),
                 // "EXPLORER" carries +8 sp tracking (`UI_SPEC.md` §3.4).
                 style = MaterialTheme.typography.labelLargeEmphasized.copy(letterSpacing = 8.sp),
                 color = MultiverseColors.primary,
             )
             Text(
-                text = CopyResolver.copy("splash_tagline"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_TAGLINE.value),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MultiverseColors.onSurfaceVariant,
             )

@@ -4,10 +4,10 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -39,6 +39,7 @@ import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitTran
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitVisibilityScope
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.feature.characterdetail.navigation.CharacterDetail
 import io.github.davidru85.multiverse.feature.discovery.navigation.CharacterList
 import io.github.davidru85.multiverse.feature.episodes.navigation.Episodes
@@ -276,20 +277,20 @@ private fun rememberSplashReady(gate: io.github.davidru85.multiverse.core.presen
 @Composable
 internal fun topLevelDestinations(): List<NavigationDestination> =
     listOf(
-        NavigationDestination(KEY_CHARACTERS, CopyResolver.copy("nav_characters"), MultiverseIcons.Groups, MultiverseIcons.Groups),
+        NavigationDestination(KEY_CHARACTERS, CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value), MultiverseIcons.Groups, MultiverseIcons.Groups),
         NavigationDestination(
             KEY_EPISODES,
-            CopyResolver.copy("nav_episodes"),
+            CopyResolver.copy(CopyKeys.NAV_EPISODES.value),
             MultiverseIcons.PlayArrow,
             MultiverseIcons.PlayArrowOutlined,
         ),
         NavigationDestination(
             KEY_FAVORITES,
-            CopyResolver.copy("nav_favorites"),
+            CopyResolver.copy(CopyKeys.NAV_FAVORITES.value),
             MultiverseIcons.Favorite,
             MultiverseIcons.FavoriteOutlined,
         ),
-        NavigationDestination(KEY_SETTINGS, CopyResolver.copy("nav_settings"), MultiverseIcons.Settings, MultiverseIcons.SettingsOutlined),
+        NavigationDestination(KEY_SETTINGS, CopyResolver.copy(CopyKeys.NAV_SETTINGS.value), MultiverseIcons.Settings, MultiverseIcons.SettingsOutlined),
     )
 
 /**
