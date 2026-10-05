@@ -3,8 +3,13 @@ package io.github.davidru85.multiverse.core.designsystem.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
@@ -17,9 +22,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,8 +65,9 @@ public fun MultiverseNavigationBar(
         modifier =
             modifier
                 .fillMaxWidth()
+                // A group of tabs, not a tab itself: only the items carry `Role.Tab` (`UI_SPEC.md` §9).
+                .selectableGroup()
                 .semantics(mergeDescendants = false) {
-                    role = Role.Tab
                     barDescription?.let { contentDescription = it }
                 },
     ) {
@@ -103,6 +107,9 @@ public fun MultiverseNavigationBar(
                     }
                 }
             }
+            // The container extends behind the system gesture area, as Figma `117:887` draws it
+            // (412 × 88 including the inset), instead of leaving it to the screen's own surface.
+            Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
     }
 }

@@ -2,7 +2,10 @@ package io.github.davidru85.multiverse.app.navigation
 
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -95,7 +98,12 @@ public fun MultiverseApp(
                 io.github.davidru85.multiverse.app.splash
                     .rememberReduceMotion()
             val (enterMotion, exitMotion) = PortraitMotion.transition(reduceMotion)
-            Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            // The Detail is a pushed screen with no navigation bar (Figma `21:1217`); before the graph
+            // resolves its first destination the start destination, Characters, is the one shown.
+            val onTopLevel = currentDestination?.hasRoute(CharacterDetail::class) != true
+            // Edge to edge: each destination handles its own insets, so the Detail hero can draw under
+            // the status bar while the top-level screens start below it.
+            Column(modifier = Modifier.fillMaxSize()) {
                 // The card→Detail shared element (`REQ-FUNC-009`, `DEC-135`): the layout's scope reaches
                 // the design system's portraits through a CompositionLocal, and Reduce Motion withholds
                 // it, so the destination change is the cross-fade alone (`AC-REQ-FUNC-009-2`).
@@ -111,16 +119,18 @@ public fun MultiverseApp(
                             popExitTransition = { exitMotion },
                         ) {
                             composable<CharacterList> {
-                                TransitionDestination {
-                                    io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryRoute(
-                                        seam = imageSeam,
-                                        onOpenDetail = { card ->
-                                            // The card travels through `IC-025` before the destination changes, so the
-                                            // hero can animate from its bounds and the known fields render at once.
-                                            handoff.publish(card)
-                                            navController.navigate(CharacterDetail(card.id.value))
-                                        },
-                                    )
+                                TopLevelInsets {
+                                    TransitionDestination {
+                                        io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryRoute(
+                                            seam = imageSeam,
+                                            onOpenDetail = { card ->
+                                                // The card travels through `IC-025` before the destination changes, so the
+                                                // hero can animate from its bounds and the known fields render at once.
+                                                handoff.publish(card)
+                                                navController.navigate(CharacterDetail(card.id.value))
+                                            },
+                                        )
+                                    }
                                 }
                             }
                             composable<CharacterDetail> { entry ->
@@ -142,42 +152,50 @@ public fun MultiverseApp(
                             // both take "Browse characters" as a callback that selects the Characters
                             // destination without pushing a route (`REQ-FUNC-008`, `DEC-099`).
                             composable<Episodes> {
-                                io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
-                                    onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
-                                    illustration =
-                                        androidx.compose.ui.res
-                                            .painterResource(R.drawable.ic_play_circle),
-                                )
-                            }
-                            composable<Favorites> {
-                                TransitionDestination {
-                                    io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
-                                        seam = imageSeam,
-                                        handoff = handoff,
-                                        onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
+                                TopLevelInsets {
+                                    io.github.davidru85.multiverse.feature.episodes.ui.EpisodesPlaceholder(
                                         onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
                                         illustration =
                                             androidx.compose.ui.res
-                                                .painterResource(R.drawable.ic_heart_outline),
+                                                .painterResource(R.drawable.ic_play_circle),
                                     )
+                                }
+                            }
+                            composable<Favorites> {
+                                TopLevelInsets {
+                                    TransitionDestination {
+                                        io.github.davidru85.multiverse.feature.favorites.ui.FavoritesRoute(
+                                            seam = imageSeam,
+                                            handoff = handoff,
+                                            onOpenDetail = { id -> navController.navigate(CharacterDetail(id.value)) },
+                                            onBrowseCharacters = { navController.selectTopLevel(KEY_CHARACTERS) },
+                                            illustration =
+                                                androidx.compose.ui.res
+                                                    .painterResource(R.drawable.ic_heart_outline),
+                                        )
+                                    }
                                 }
                             }
                             // Characters and Settings render the section title in the Discovery headline
                             // position, with their content staged to `TASK-001` and `TASK-074` (`DEC-099`).
                             // The real Settings screen (`TASK-074`/`TASK-076`); it resolves its own state holder.
                             composable<Settings> {
-                                io.github.davidru85.multiverse.feature.settings.ui
-                                    .SettingsRoute()
+                                TopLevelInsets {
+                                    io.github.davidru85.multiverse.feature.settings.ui
+                                        .SettingsRoute()
+                                }
                             }
                         }
                     }
                 }
-                MultiverseNavigationBar(
-                    destinations = destinations,
-                    selectedKey = selectedKey,
-                    barDescription = null,
-                    onSelect = { key -> navController.selectTopLevel(key) },
-                )
+                if (onTopLevel) {
+                    MultiverseNavigationBar(
+                        destinations = destinations,
+                        selectedKey = selectedKey,
+                        barDescription = null,
+                        onSelect = { key -> navController.selectTopLevel(key) },
+                    )
+                }
             }
             androidx.compose.animation.AnimatedVisibility(
                 visible = splashVisible,
@@ -202,6 +220,23 @@ public fun MultiverseApp(
  * configuration change does not restart it. The work runs in the composition's scope, which cancels it
  * with the composition rather than leaking a request.
  */
+/**
+ * The insets of a top-level destination: it starts below the status bar and clear of a display cutout,
+ * and the navigation bar under it takes the bottom inset. The Detail does not use this, because its
+ * hero draws under the status bar (Figma `21:1217`).
+ */
+@Composable
+private fun TopLevelInsets(content: @Composable () -> Unit) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
+    ) {
+        content()
+    }
+}
+
 /**
  * Provides this destination's animated-visibility scope to the design system's portraits, so a portrait
  * drawn here can take part in the card→Detail shared element (`DEC-135`).

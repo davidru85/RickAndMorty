@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -107,7 +110,10 @@ public fun CharacterDetailScreen(
             modifier
                 .fillMaxSize()
                 .background(MultiverseColors.surface)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                // The screen draws edge to edge (Figma `21:1217`): the hero sits under the status bar,
+                // and the content ends above the gesture area.
+                .navigationBarsPadding(),
     ) {
         Hero(state = state, seam = seam, portalMark = portalMark, onBack = onBack, onShare = onShare)
         TitleBlock(state = state)
@@ -133,7 +139,7 @@ private fun DetailErrorState(
     val formatters = DefaultPresentationFormatters
     val message = formatters.failureMessage(failure)
     val recovery = formatters.recovery(failure)
-    Column(modifier = modifier.fillMaxSize().background(MultiverseColors.surface)) {
+    Column(modifier = modifier.fillMaxSize().background(MultiverseColors.surface).systemBarsPadding()) {
         Box(modifier = Modifier.padding(MultiverseDimensions.spaceL)) {
             HeroControl(glyph = R.drawable.ic_arrow_back, label = CopyKeys.ACTION_BACK, onClick = onBack)
         }
@@ -181,7 +187,7 @@ private fun Hero(
             sharedKey = state.header?.id?.let { PortraitTransition.key(it.value) },
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceL),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(MultiverseDimensions.spaceL),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             HeroControl(glyph = R.drawable.ic_arrow_back, label = CopyKeys.ACTION_BACK, onClick = onBack)
