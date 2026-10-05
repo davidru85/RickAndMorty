@@ -54,6 +54,7 @@
 		578B2D705D6E5ED94B87EC6A /* GlassComponentRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351B2E73C5F27E5609368E26 /* GlassComponentRenderingTests.swift */; };
 		59E6409F0A67D20520959013 /* designSystemBaselines.card-material.png in Resources */ = {isa = PBXBuildFile; fileRef = EEF9362885496BCB6F9F9C64 /* designSystemBaselines.card-material.png */; };
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
+		60271716618FC1B5A457E507 /* libMultiverseExplorer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E5D771FA7A24D39245F6AF9F /* libMultiverseExplorer.a */; };
 		66EF93F7FF10BC67A507A479 /* DesignSystemSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */; };
 		72C0C18FCC8D05AA79A2A6D9 /* DiscoveryRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD5576C72E67327399FEB9E /* DiscoveryRefreshTests.swift */; };
 		72E7DAF26468A4F16DB04165 /* PortalLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A4B20F3B0A5C04760C7503 /* PortalLogo.swift */; };
@@ -68,6 +69,7 @@
 		90389BA7BA4751E43EDE9209 /* designSystemBaselines.card-glass.png in Resources */ = {isa = PBXBuildFile; fileRef = 37A5F90826A74C3BED7C9529 /* designSystemBaselines.card-glass.png */; };
 		907D01D940C93D75581F72B4 /* screenBaselines.detail-error-without-header.png in Resources */ = {isa = PBXBuildFile; fileRef = C67960F9F6BE4BB97F32F96E /* screenBaselines.detail-error-without-header.png */; };
 		90F337597EFDC1BF1EC40D50 /* ScreenLifetime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9D72C1CF01E91651872D0A /* ScreenLifetime.swift */; };
+		953F5D33CC631962EE92428E /* libMultiverseExplorer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E5D771FA7A24D39245F6AF9F /* libMultiverseExplorer.a */; };
 		95C881B9B291196D99980167 /* screenBaselines.detail-accessibility-text.png in Resources */ = {isa = PBXBuildFile; fileRef = 7DAE8941AAABC4E1ADE701B1 /* screenBaselines.detail-accessibility-text.png */; };
 		98A3289E5139C63C60BE8B97 /* SettingsFidelityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB24BEAC8F740E62284E961E /* SettingsFidelityTests.swift */; };
 		9D9588F75BA35A86DCC9D383 /* CharacterPortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B3AF55CC6ECEB008BC5865 /* CharacterPortrait.swift */; };
@@ -207,6 +209,7 @@
 		E3AAA64B35FA22EEEBC9D60F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseApp.swift; sourceTree = "<group>"; };
 		E57D2D84B85606DF292D49CB /* CharacterShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterShare.swift; sourceTree = "<group>"; };
+		E5D771FA7A24D39245F6AF9F /* libMultiverseExplorer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libMultiverseExplorer.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E61756438CB81D7234660E27 /* CopyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyKey.swift; sourceTree = "<group>"; };
 		E6B8C11E13F5A9CA0B682448 /* designSystemBaselines.card-accessibility-text.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "designSystemBaselines.card-accessibility-text.png"; sourceTree = "<group>"; };
 		EDB8FB9BE6072E7E5D423CC5 /* DetailStateHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailStateHolder.swift; sourceTree = "<group>"; };
@@ -222,11 +225,20 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		61165212C34673BFC19FE2CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				953F5D33CC631962EE92428E /* libMultiverseExplorer.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CB5522486C6FDD0DE35BE03E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				75F7F3FE6642A28FD1DA2ECE /* SnapshotTesting in Frameworks */,
+				60271716618FC1B5A457E507 /* libMultiverseExplorer.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,6 +281,7 @@
 				63A99951CC9D9CC0B4268218 /* ImagePipeline */,
 				5A7BDB3959A7B2C01597975A /* Resources */,
 				726559611B824AB4EAE11FA9 /* Tests */,
+				54323A784E82B08A378F1D94 /* Frameworks */,
 				867C569BBF7C2E839F40C996 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -339,6 +352,14 @@
 				0654B4D228F19F8CCCD54CD8 /* Version.xcconfig */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		54323A784E82B08A378F1D94 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E5D771FA7A24D39245F6AF9F /* libMultiverseExplorer.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		5A7BDB3959A7B2C01597975A /* Resources */ = {
@@ -491,6 +512,7 @@
 				21D52DE63CD5933EB9F41FDB /* Build the shared Kotlin framework */,
 				038FC193306884572EBC0A46 /* Sources */,
 				72AF8E8B2FCBD5DA70C1886D /* Resources */,
+				61165212C34673BFC19FE2CD /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -593,7 +615,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n# Link the framework the search path expects: the simulator or the device target, in the\n# Debug or Release build, so a device or Release build never links a simulator object.\ncase \"$PLATFORM_NAME\" in\n  iphonesimulator) TARGET=IosSimulatorArm64 ;;\n  iphoneos) TARGET=IosArm64 ;;\n  *) echo \"error: no Kotlin framework target for platform '$PLATFORM_NAME'\"; exit 1 ;;\nesac\ncase \"$CONFIGURATION\" in\n  Release) BUILD=Release ;;\n  *) BUILD=Debug ;;\nesac\n./gradlew \":core:ios:link${BUILD}Framework${TARGET}\"\n";
+			shellScript = "cd \"$SRCROOT/..\"\n# Link the framework the search path expects: the simulator or the device target, in the\n# Debug or Release build, so a device or Release build never links a simulator object.\ncase \"$PLATFORM_NAME\" in\n  iphonesimulator) TARGET=IosSimulatorArm64 ;;\n  iphoneos) TARGET=IosArm64 ;;\n  *) echo \"error: no Kotlin framework target for platform '$PLATFORM_NAME'\"; exit 1 ;;\nesac\ncase \"$CONFIGURATION\" in\n  Release) BUILD=Release ;;\n  *) BUILD=Debug ;;\nesac\n./gradlew \":core:ios:link${BUILD}Framework${TARGET}\"\n# Copy the framework's static archive where the link phase reads it. `-a` keeps the\n# modification time, so an unchanged framework is not copied and does not relink the app,\n# and a rebuilt one always does.\nrsync -a \"$KOTLIN_FRAMEWORK_DIR/MultiverseExplorer.framework/MultiverseExplorer\" \"$BUILT_PRODUCTS_DIR/libMultiverseExplorer.a\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -846,11 +868,6 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					MultiverseExplorer,
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.MultiverseExplorerTests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -874,11 +891,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "$(MULTIVERSE_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					MultiverseExplorer,
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.app;
 				PRODUCT_MODULE_NAME = MultiverseApp;
 				SDKROOT = iphoneos;
@@ -903,11 +915,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = "$(MULTIVERSE_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					MultiverseExplorer,
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.app;
 				PRODUCT_MODULE_NAME = MultiverseApp;
 				SDKROOT = iphoneos;
@@ -929,11 +936,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
-				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-framework",
-					MultiverseExplorer,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.davidru85.multiverse.MultiverseExplorerTests;
 				SDKROOT = iphoneos;
