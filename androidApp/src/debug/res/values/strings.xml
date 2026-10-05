@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only developer copy (`TASK-117`): the diagnostics panel's label and its launcher shortcut.
+  It never ships in a release artifact and is not product copy, so it is not part of the `CopyKeys`
+  set that `TEST-UNIT-036` holds identical across platforms, and it is not translated.
+-->
+<resources>
+    <string name="diagnostics_label" translatable="false">Multiverse diagnostics</string>
+</resources>

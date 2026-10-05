@@ -2,26 +2,31 @@
 <!--
   The debug variant's manifest overlay (`TASK-044`, `OBSERVABILITY.md` §5, `DEC-085`).
 
-  Two things exist here and nowhere else: the panel's host activity, and the Application subclass
-  that selects the DEBUG logging threshold and registers the diagnostic recorder. Both are selected
-  by the variant at build time, so a release artifact carries neither class nor entry point
-  (`R11`, `TEST-UNIT-033`). There is no runtime flag, intent extra, hidden gesture or `BuildConfig`
-  boolean anywhere in the release path.
+  Three things exist here and nowhere else: the panel's host activity, the static shortcut that opens
+  it, and the Application subclass that selects the DEBUG logging threshold and registers the
+  diagnostic recorder. All are selected by the variant at build time, so a release artifact carries
+  none of them (`R11`, `TEST-UNIT-033`). There is no runtime flag, intent extra, hidden gesture or
+  `BuildConfig` boolean anywhere in the release path.
+
+  The panel is **not** a launcher entry: the launcher shows the app's one icon, which opens the shell
+  at its splash (`TASK-117`). In a debug build a long-press on that icon offers the panel as an app
+  shortcut, and `adb shell am start -n <package>/.app.debug.DiagnosticsActivity` still starts it.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:name="io.github.davidru85.multiverse.app.debug.DebugMultiverseApplication"
         tools:replace="android:name">
+        <!-- Merged into the main manifest's launcher activity: the debug shortcut set hangs off it. -->
+        <activity android:name="io.github.davidru85.multiverse.app.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/diagnostics_shortcuts" />
+        </activity>
         <activity
             android:name="io.github.davidru85.multiverse.app.debug.DiagnosticsActivity"
             android:exported="true"
-            android:label="Multiverse diagnostics"
-            android:excludeFromRecents="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:label="@string/diagnostics_label"
+            android:excludeFromRecents="true" />
     </application>
 </manifest>
