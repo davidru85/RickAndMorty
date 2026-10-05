@@ -110,6 +110,27 @@ class SettingsStateHolderTest {
         }
 
     @Test
+    fun `TEST-UNIT-050 given_the_confirmation_open_when_delete_is_tapped_twice_before_the_clear_runs_then_it_clears_once`() =
+        TestTime.run {
+            val favorites = FakeFavoritesRepository()
+            favorites.mark(character)
+            val holder = holder(favorites = favorites)
+            holder.start()
+            testScheduler.advanceTimeBy(1.milliseconds)
+            holder.onIntent(SettingsIntent.DeleteFavoritesRequested)
+            testScheduler.advanceTimeBy(1.milliseconds)
+
+            // A double tap: both confirmations arrive before the first clear has had a chance to run,
+            // so the open confirmation is the only guard between them (`TASK-111`).
+            holder.onIntent(SettingsIntent.DeleteFavoritesConfirmed)
+            holder.onIntent(SettingsIntent.DeleteFavoritesConfirmed)
+            testScheduler.advanceTimeBy(1.milliseconds)
+
+            assertEquals(1, favorites.clears, "TEST-UNIT-050: a re-entrant Delete must not clear the set a second time")
+            assertFalse(holder.state.value.isConfirmingDelete, "TEST-UNIT-050: the confirmation is closed")
+        }
+
+    @Test
     fun `TEST-UNIT-050 given_the_confirmation_open_when_dismissed_then_nothing_is_invoked`() =
         TestTime.run {
             val favorites = FakeFavoritesRepository()
