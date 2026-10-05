@@ -80,6 +80,6 @@ class DiscoveryCardReuseTest {
             type = null,
             gender = CharacterGender.Unknown,
             lastKnownLocation = LocationSummary(id = null, name = "Earth"),
-            imageUrl = "https://rickandmortyapi.com/api/character/avatar/$id.jpeg",
+            imageUrl = "https://images.example.test/$id.jpeg",
         )
 }
