@@ -1,0 +1,23 @@
+# Advisory monitoring (`DEC-037`, `REQ-SEC-006`, `SECURITY.md` §9.1, `TASK-067`).
+#
+# Dependabot watches the Gradle version catalog and the pinned GitHub Actions for published
+# advisories. `open-pull-requests-limit: 0` turns version updates off — every version stays an exact,
+# reviewed pin (`REQ-NFR-006`) — while security updates are still raised for an advisory. A Dependabot
+# pull request is a proposal like any other: it runs the full gate and only the owner merges it
+# (`DEC-049`). The alerts themselves are a repository setting the owner enables.
+#
+# The Swift packages are not listed: Dependabot reads Swift dependencies from a `Package.swift`, and
+# this project declares its one test-only package in the Xcode project, so `SECURITY.md` §9.3 records
+# that gap and the manual advisory review that covers it.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
