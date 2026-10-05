@@ -61,8 +61,8 @@ public struct EmptyState: View {
         .padding(.horizontal, MultiverseDimensions.spaceL)
     }
 
-    /// The decorative glass symbol well: 120 pt (`Liquid Glass/Regular`) with a 48 pt Portal Glow
-    /// symbol. It is hidden from the accessibility tree because the heading is the first thing a
+    /// The decorative glass symbol well: a 120 pt circle (`Liquid Glass/Regular`, Figma `102:256`) with
+    /// a 48 pt Portal Glow symbol. It is hidden from the accessibility tree because the heading is the first thing a
     /// screen reader should read (`UI_SPEC.md` §6.4).
     ///
     /// The 48 pt size comes from the type token `editorialDisplaySize` (`UI_SPEC.md` §6.4 fixes the
@@ -76,7 +76,7 @@ public struct EmptyState: View {
                 width: MultiverseDimensions.emptyStateWell,
                 height: MultiverseDimensions.emptyStateWell
             )
-            .glassSurface(.rounded(MultiverseDimensions.cornerExtraLarge))
+            .glassSurface(.capsule)
             .accessibilityHidden(true)
     }
 }
