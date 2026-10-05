@@ -25,9 +25,14 @@ enum HostedRendering {
             step()
             settle(controller)
         }
-        return UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+        let rendered = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
             _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
+        // The frame is compared in the encoding its reference was stored in. The renderer's in-memory
+        // bitmap format follows the host's GPU (bit depth, range), so two hosts whose PNGs agree to one
+        // level still compared as different images; round-tripping through PNG removes that.
+        let encoded = try XCTUnwrap(rendered.pngData(), "the rendered frame must encode as PNG")
+        return try XCTUnwrap(UIImage(data: encoded, scale: rendered.scale), "the encoded frame must decode")
     }
 
     /// The near-white pixels of `image`: the label colour of names and titles
