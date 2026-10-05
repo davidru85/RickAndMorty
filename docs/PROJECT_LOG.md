@@ -1095,6 +1095,114 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **What this does not claim:** the index is a document, so its completeness is checked by reading it, not by a build task. The machine-checked half of `DEFINITION.md` §6 is `verifyDocumentedCompleteness`, added by `TASK-068` in this same phase; `DOC5` (requirements → task → test) needs the judgement that an id maps to a *suitable* task and test, which stays with the review and is reported there rather than approximated.
 - **Affected documents:** `PROJECT_LOG.md` (this entry), `BACKLOG.md` (`TASK-069` row).
 
+### LOG-0118 · 2026-10-04 · B9 Phase 9.3: the product launched for the first time, and the crash that had hidden behind four merged phases
+
+- **Event:** `TASK-070` and `TASK-071` (Phase 9.3 of `DEC-110`) on `feat/b9-phase-9-3`.
+- **`TASK-070`'s handover criterion is "no claim that a check was run when it was not", so the phase began by running the app rather than reading it — and the app did not run.** `:androidApp:assembleDebug` built, the APK installed, and every launch died in `onCreate`:
+  ```
+  FATAL EXCEPTION: main
+  Process: io.github.davidru85.multiverse, PID: 3766
+  Caused by: org.koin.core.error.NoDefinitionFoundException:
+      No definition found for type 'io.github.davidru85.multiverse.app.image.CoilImageSeam' on scope '['_root_']'.
+      at io.github.davidru85.multiverse.app.MainActivity.getImageSeam(MainActivity.kt:31)
+  ```
+  `MainActivity` injected the **concrete** `CoilImageSeam`; `ShellModule.imageLoaderModule` registers the **port** (`ImageSeam`), which is also the only type the design system declares and the only one a caller may depend on (`R4`). `rememberCoilImageSeam` — a helper that would have produced the port — was dead code, called from nowhere.
+- **It was not a B9 defect and not a one-branch accident.** Introduced by B5 Phase 5.2 (`db4223b`), it is present on every B6, B7, B8 and B9 branch. Four merged phases therefore describe an app that could not start, and **no check caught it**: `TEST-UNIT-057` resolved a hand-written list of bindings (`CharacterRemoteDataSource`, `CharacterRepository`, `FavoritesRepository`, `AppLogger`) that happened not to name the seam, and no case started the activity. Registered as `GAP-032` (S1).
+- **Fixed, and proved fixed by running the product end-to-end on the emulator** — the first launch of this repository's application in its history:
+  | Step | Observed |
+  | --- | --- |
+  | Launch | `topResumedActivity=…/.app.MainActivity`, 0 `FATAL EXCEPTION` in the crash buffer |
+  | Discovery | 826 characters from the live API, real portraits, status badges and the four filter chips |
+  | Detail | `Rick Sanchez`, `51 Episodes` (the live `/episode/{ids}` batch enrichment), origin and last-known-location rows |
+  | Favourite | the heart marks the character and `Favorites` lists it |
+  | Persistence | `am force-stop` then relaunch: the favourite survives — DataStore, not memory |
+  | Delete all | the confirmation dialog, then `No favorites yet` |
+  | Offline with cache | cached content served, `IS_STALE=false` inside the freshness window, as specified |
+  | Offline without cache | `Portal link lost` / `You're offline. Reconnect to continue exploring the multiverse.` |
+  | Retry | connectivity restored, `Retry` reloads, 826 characters return |
+- **Regression case, red-then-green:** `TEST-UNIT-057` now reads the activity's **injection accessors reflectively** and resolves each declared type from the real shell graph, so a future `by inject()` whose type the graph cannot serve fails in the suite instead of on a device. Proven both ways: on the restored old shape (`CoilImageSeam`) the case FAILED; on the fix it passes.
+- **Suite totals observed on this phase's tree:** `./gradlew allTests` BUILD SUCCESSFUL, **1110 tests, 0 failures** across 188 report files; `xcodebuild test` on the booted iPhone 17 Pro simulator **96 tests, 0 failures, `** TEST SUCCEEDED **`**.
+- **`TASK-071`, the deferred-register reconciliation (`DEC-118`).** `DEC-025` is **closed — re-admitted**: its condition ("iOS milestone starts") fired with B7 and M2's release in B8 Phase 8.3, and `TASK-059` delivered the six committed baselines the question was about. `DEF-002`/`DEF-003`'s condition (after M2) has likewise been met, but both stay deferred because they are Could-have and starting them needs a new accepted decision. `DEF-001` (no speech path; the manifest holds no microphone permission), `DEF-004` (Swift export is **Alpha**, not Stable — kotlinlang.org, verified 2026-10-04) and `DEF-005` (no sound set) stay deferred with their conditions re-read against the tree rather than restated. `DEC-029` stays deferred: `API_SPECS.md` still records no version segment.
+- **A second real defect found while reconciling:** `DEC-080` and `DEC-081` are `Accepted` decisions and were sitting in `DECISION_BOARD.md` §4's **deferred** register with no §2 row, which broke §2's numeric order at the 079→082 gap. They now carry their proper §2 rows and §4 holds only deferred items.
+- **Corrected in review (`LOG-0133`):** this was not the application's first launch, and `main` was not affected when this entry was written. PR #153's review had reproduced the same crash (`590c412`), fixed it with a startup test that launches the real composition root (`3694ddd`) and validated the app on an emulator with TalkBack (`LOG-0125`, `DEC-119`), and that fix merged to `main` before M1. The B6–B9 branches this phase ran on predated that merge. M2 is **prepared** at `v0.2.0` (`DEC-121`), not released, so `DEC-118`'s reading of the deferred conditions is corrected in its own row.
+- **Affected documents:** `DECISION_BOARD.md` (`DEC-118`, the `DEC-080`/`DEC-081` move, the `DEC-025` closure, the change-log row), `REQUIREMENTS.md` §1.3 (six DEF rows re-read), `BACKLOG.md` §7 and the `TASK-070`/`TASK-071` rows, `DOCUMENTATION_AUDIT.md` (`GAP-032`), `HANDOFF.md` (the released state), `PROJECT_LOG.md` (this entry).
+### LOG-0119 · 2026-10-04 · B9 Phase 9.3 (continued): `:core:ios` was formatted by no job
+
+- **Event:** `TASK-070` (Phase 9.3 of `DEC-110`), found while running the phase's verification set.
+- **Observed:** `./gradlew ktlintCheck` FAILED on `:core:ios:ktlintCommonMainSourceSetCheck`; `./gradlew :core:ios:check` selects that task, so the module's own gate task had been red since the module was written. Eight violations in the module's one file: import order, an unused import, two `Expected newline before '.'`, a body-expression line break, a needless blank line, and the non-autocorrectable `iOSGraph` object name.
+- **Root cause, and why nothing caught it:** `:core:ios` deliberately has no Android target (`ADR-0012`, boundary rule `R12`), so it cannot be in the `module-checks` matrix, whose gate requires `compileAndroidMain` and `testAndroidHostTest` per module. The `ios` job ran `iosSimulatorArm64Test` and the replay but **not** the module's formatter. The module was therefore formatted by no job in any workflow, and no local command was run against it — the class of gap `TEST-UNIT-044` exists to prevent, in a place it did not cover.
+- **Fixed:** the formatter passes; `iOSGraph` is `IosGraph` at its eleven sites; `:core:ios:ktlintCheck` is a step of the `ios` job; and `ModularWorkflowGate`'s `ios` rule now requires that step, so deleting it is a gate failure. **Proven both ways:** with the step removed the gate reports `` `:core:ios:ktlintCheck` is not an executable step of the ios gate job ``; restored, it is BUILD SUCCESSFUL.
+- **Not claimed:** `GAP-029` (`:androidApp`'s own ktlint plugin) is a different hole of the same family and stays open, because `AndroidApplicationConventionPlugin` is not the module's formatter owner and closing it is a separate change.
+- **Affected documents:** `.github/workflows/pull-request.yml`, `ModularWorkflowGate.kt`, `PROJECT_LOG.md` (this entry), `HANDOFF.md` (the B9 closure).
+
+### LOG-0120 · 2026-10-04 · The `ios` gate's fourth CI defect: the runner's own toolchain rejected twice named
+
+- **Event:** B9 Phase 9.3 (`TASK-070`), found by reading the pushed heads' check results rather than by a local run — the local Xcode is selected the ordinary way, so the defect cannot reproduce on this workstation.
+- **Observed:** `ios` FAILED on every B7–B9 head (`7d7edaf`, `50ac13d`, `ab772a0`, `b1cdf9b`), and the `android` context then failed with `CI gate failed: Required checks did not succeed: ios`. The message:
+  ```
+  ERROR: swift-format resolved to /Applications/Xcode_27.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-format,
+    which is outside the validated Xcode 27.0 toolchain (/Applications/Xcode_27.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain)
+  ```
+- **Root cause, reproduced with a fake toolchain:** the `xcode-27` image installs `Xcode_27.0.app` as a **symlink** to `Xcode_27.app`. `xcode-select -s /Applications/Xcode_27.0.app` records the link spelling; `xcrun --find` resolves it and reports the physical path. `tools/swift-lint.sh` compared the resolved path against the selected spelling, so it rejected the runner's own formatter. **`485c8c4` fixed the selection *step* but not this second membership test**, which is why the heads stayed red after it.
+- **Fixed:** the membership test accepts the selected directory **or its physical resolution** (`pwd -P`), so either spelling names the same toolchain. A wrong toolchain still fails closed, because neither form matches it.
+- **Proven both ways, in `tools/swift-tools-test.sh`:** a new case builds a symlinked fake toolchain with a fake `xcodebuild` and `xcrun` that resolves exactly as the real one does. With the fix the gate exits 0; with the single-spelling test restored it FAILS `expected exit 0, got 1`. The suite is 10 passed, 0 failed either way, so the case is what moves.
+- **Affected documents:** `tools/swift-lint.sh`, `tools/swift-tools-test.sh`, `PROJECT_LOG.md` (this entry).
+
+### LOG-0121 · 2026-10-04 · The twelve phase pull requests, verified as a stack
+
+- **Event:** the end of B9 Phase 9.3 (`TASK-070`, `DEC-110`). The owner's instruction was that the twelve phase pull requests (B6.1 → B9.3) are approved and merged **sequentially**, so each later one must apply onto the earlier ones' merged result without conflict.
+- **Verified by simulation, not by assertion:** a throwaway clone of the repository was merged through all twelve branches in order — `git merge --no-edit origin/feat/<phase>` for each — and every one reported **clean, no conflict**. The simulation was run twice: once before the Phase 9.3 CI fix was propagated and once after, with the same result both times.
+- **The merged tree was then built and tested, so "merges cleanly" is backed by a working build rather than by Git's exit code alone:** `./gradlew allTests :build-logic:convention:test` BUILD SUCCESSFUL, and a `--rerun-tasks` pass confirming **1039 tests, 0 failures** across 169 report files. The full policy set (`verifyDependencyPolicy verifyModuleBoundaries verifyRepositoryHygiene verifyWorkflowGate verifyDocumentedGate buildHealth`) was BUILD SUCCESSFUL on the merged tree.
+- **One stacking gap was found and is not a merge blocker:** `feat/b8-phase-8-1` does not contain `feat/b7-phase-7-3`'s tip by ancestry, because the branches cross-merge each other's heads; the empirical merge above is the property that matters, and it holds.
+- **The propagated CI fix (`LOG-0120`) reaches every red head.** The eight branches that were red on `ios` now carry the two fix commits as their own top commit, so the `ios` job's fix is present whichever order they merge in. Verified per branch: `RESOLVED_TOOLCHAIN_DIR` in `tools/swift-lint.sh`, the symlink case in `tools/swift-tools-test.sh`, the step in `.github/workflows/pull-request.yml`, and the rule in `ModularWorkflowGate`.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0122 · 2026-10-04 · A stale device-side dex, and how it was told apart from the product defect
+
+- **Event:** the end-of-phase re-run of the product journey (`TASK-070`, Phase 9.3), after the `GAP-032` fix.
+- **Observed, and alarming:** the freshly built APK, installed with `adb install -r`, launched into a `"Multiverse Explorer keeps stopping"` dialog, and `logcat` carried the **same** `NoDefinitionFoundException` for `CoilImageSeam` at `MainActivity.getImageSeam(MainActivity.kt:31)` — the line the fix had already replaced with the `ImageSeam` port.
+- **It was not the product.** Three observations separated the two: the APK's own bytecode reported `getImageSeam()Lio/github/davidru85/multiverse/core/designsystem/image/ImageSeam;` by `dexdump`, so the artifact was correct; the source at `HEAD` declares the port; and the reported line number pointed at a line the current source does not contain. `adb uninstall` followed by a plain `adb install` then launched cleanly — 0 `FATAL EXCEPTION`, Discovery with 826 live characters, and the Detail screen with its live `51 Episodes` enrichment.
+- **Conclusion:** `adb install -r` on this emulator kept serving a stale dex for the replacement APK, so the crash was device state, not a regression. The distinction matters because the two are indistinguishable from the dialog alone, and reporting the second as a product defect would have been wrong.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0123 · 2026-10-04 · The merge verification's own false alarm, and the concurrent work that caused it
+
+- **Event:** the merge simulation of `LOG-0121`, re-run after the CI fix propagation, began failing on `TEST-A11Y-005` ("maximum text size must not clip detail text") with `C-137`, `Human`, `Episodes` and `Dimension` ellipsized at `fontScale 2.0`.
+- **It was not a defect in the stack.** The failing assertion arrived on `origin/feat/b6-phase-6-1` in commit `b630066`, whose own message says it is **deliberately red**: `test(androidApp): reproduce PR153 snapshot and text-scale gaps … Observed red: :feature:character-detail:testAndroidHostTest with native graphics failed because C-137, Human, Episodes and Dimension are ellipsized at fontScale 2.0.` That is a concurrent reviewer's **red phase**; its green fix (`StatTile`'s fixed `width(120.dp)` and `height(76.dp)`) was still uncommitted in that reviewer's worktree when this simulation ran.
+- **Three wrong readings were discarded before the right one, and the difference matters:**
+  1. *"A real cross-branch defect"* — wrong: a second clone of the same content passed, which pointed at state rather than code.
+  2. *"A caching artifact"* — wrong: `--rerun-tasks` reproduced the failure deterministically in one tree and, once the commit was present, in every tree.
+  3. *"A stale local branch"* — wrong, and the most instructive: `git rev-parse origin/feat/b6-phase-6-1` returned `09c68af` against a stale remote-tracking ref, so the commit looked local-only. A fresh `git clone` fetched it and showed it on the remote.
+- **The property that holds:** with `b6-phase-6-1` at its **merged** head (`09c68af`), the twelve phase branches merge clean and the affected suite is BUILD SUCCESSFUL on the merged tree. When the concurrent reviewer's green fix lands, its branch returns to the same class.
+- **Rule for the next reader:** a red test on a PR head is a TDD red phase until its green commit arrives in the same branch, and a remote-tracking ref is not the remote. Re-clone or `git fetch` before concluding anything about another branch's content.
+- **Affected documents:** `PROJECT_LOG.md` (this entry).
+
+### LOG-0124 · 2026-10-04 · B6, B7, B8 and B9 delivered: twelve phase pull requests, all green
+
+- **Event:** the end of the block-delivery instruction — B6, B7, B8 and B9 completed in full, each in its three sequential phase pull requests (`DEC-107`, `DEC-108`, `DEC-109`, `DEC-110`), without waiting for any manual review, under the owner's directive of 2026-10-04.
+- **Observed state of the twelve heads**, each with a green `pull-request` run and a passing `android` context:
+  | Block | Phase | PR | Head |
+  | --- | --- | --- | --- |
+  | B6 | 6.1 visual and accessibility evidence | #153 | `feat/b6-phase-6-1` |
+  | B6 | 6.2 security and performance evidence | #156 | `feat/b6-phase-6-2` |
+  | B6 | 6.3 M1 release | #158 | `feat/b6-phase-6-3` |
+  | B7 | 7.1 framework export and app target | #161 | `feat/b7-phase-7-1` |
+  | B7 | 7.2 design system and state holders | #164 | `feat/b7-phase-7-2` |
+  | B7 | 7.3 shell and copy parity | #166 | `feat/b7-phase-7-3` |
+  | B8 | 8.1 journey parity and motion fallback | #170 | `feat/b8-phase-8-1` |
+  | B8 | 8.2 placeholders, Settings and baselines | #174 | `feat/b8-phase-8-2` |
+  | B8 | 8.3 iOS evidence and M2 | #178 | `feat/b8-phase-8-3` |
+  | B9 | 9.1 hardening and risk | #182 | `feat/b9-phase-9-1` |
+  | B9 | 9.2 documentation gate and traceability | #186 | `feat/b9-phase-9-2` |
+  | B9 | 9.3 handover and deferred reconciliation | #189 | `feat/b9-phase-9-3` |
+- **The sequential-merge constraint the owner set is verified twice over:** all twelve merge into `main` clean, in that order, with no conflict — checked in a throwaway clone before and after the CI fix propagation — and the resulting tree passes `allTests :build-logic:convention:test` with **1039 tests, 0 failures** plus the full policy set (`LOG-0121`).
+- **Defects this final phase found and fixed, each proven red-then-green:** the Android app crashed on every launch since B5.2 (`GAP-032`, S1 — the seam port injected as its concrete class, caught by no test because `TEST-UNIT-057` resolved a hand-written binding list); `:core:ios` was formatted by no job (its ktlint task failed on eight violations in a file no CI job checked); the Swift quality gate rejected the runner's own toolchain because `xcode-27` installs `Xcode_27.0.app` as a symlink to `Xcode_27.app` and the membership test compared one spelling against the other (every B7–B9 head was red without it); and `tools/swift-tools-test.sh` — the suite that proves the gate fails closed — ran in no job.
+- **The product was launched and its journey exercised for the first time in this repository's history** (`LOG-0118`): Discovery with 826 live characters; Detail with its live episode enrichment; the favourite and its survival across a process restart; "Delete all" to the empty state; cached content offline; the offline error state and a working Retry.
+- **Carried as unevidenced, named in `HANDOFF.md` rather than claimed:** `M1-4`/`M1-5`/`M2-4` (budgets on a named reference device — none exists here), `M2-1`/`M2-2` (the iOS 18 floor — every runtime starts at 26.4), the device-level accessibility checklist and the dependency advisory register (no real finding exists to record).
+- **The owner's remaining steps** (`DEC-049`): review and merge the twelve pull requests in order; re-add the `ios` required context to the `main protection` ruleset (`TASK-108`); and tag/publish the releases.
+- **Corrected in review (`LOG-0133`):** the sequential review that followed restructured the stack, so this entry's table and merge simulation describe the heads of 2026-10-04 and not the ones to merge. PR #161 carries B7 Phases 7.1–8.2 (`DEC-120`). #164, #166, #170 and #174 close after it, and the order is #161 → #178 → #182 → #186 → #189, each prepared on the previous reviewed head. The launch crash counted here among this phase's fixes was already fixed on `main` by PR #153 (`GAP-032`).
+- **Affected documents:** `PROJECT_LOG.md` (this entry), `HANDOFF.md` (the B9 closure and the state table).
+
 ### LOG-0125 · 2026-10-04 · PR #153 audit corrects evidence and runtime accessibility defects
 
 - **Tasks:** TASK-045, TASK-046; PR #153, reviewed first against merged main `3c60fdad` (DEC-107).
@@ -1188,3 +1296,26 @@ No feature code exists yet, so no test, lint, static-analysis, benchmark or appl
 - **One defect of the review's own, caught by the gate:** the first draft of `TEST-UNIT-063`'s autolink case named the live API host, and `verifyNoLiveHosts` (`TEST-UNIT-024`) failed the full run. The fixture now uses `example.org` (`4c7ae42`).
 - **Verification (observed):** `./gradlew :build-logic:convention:test` — 230 tests, 0 failures (`TEST-UNIT-063` 15, `TEST-UNIT-064` 6); `./gradlew verifyDocumentedCompleteness` — 46 documents, 0 findings; the LOG-0131 Gradle command plus `verifyDocumentedCompleteness` — BUILD SUCCESSFUL in 1m 41s, 1085 actionable tasks, 0 hygiene findings; `./gradlew releaseNotes --rerun-tasks` — `build/releases/notes.md` for 0.2.0 (no `v*` tag yet, so the whole history); `bash tools/ios-version.sh --check` — matches `VERSION` (0.2.0); `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` — 105 tests, 0 failures. No Swift source changed, so SwiftLint was not re-run.
 - **Affected documents:** `docs/TESTING.md` (catalogue, §16, §17, change log), `docs/BACKLOG.md`, `docs/DOCUMENTATION_AUDIT.md` (seven rows, `GAP-028`, change log), `docs/HANDOFF.md` (§1.20), `LOG-0114` and `LOG-0115` (correction notes) and this entry.
+
+### LOG-0133 · 2026-10-05 · PR #189 review: B9 Phase 9.3 on the reviewed stack, and a handover that matches it
+
+- **Event:** sequential review of PR #189 (B9 Phase 9.3, `TASK-070`, `TASK-071`, `DEC-110`), the last pull request of the stack. Merge `f01b7fb` takes PR #186's reviewed head `f21292c`. 9.3 had branched from an earlier 9.2 commit, so its own content is the diff from `f1fd0d9` to its tip (nine files). That content is reapplied on the reviewed documents, and the code takes the reviewed head where only a comment differed.
+- **`GAP-032`'s history was wrong, and so was "the first launch in its history".** PR #153's review reproduced the same `NoDefinitionFoundException` (`590c412`), fixed it with `MainActivityStartupTest` launching the real composition root (`3694ddd`) and ran the app on an emulator with TalkBack (`LOG-0125`, `DEC-119`). That fix merged to `main` before M1, so `v0.1.0`'s commit launches. 9.3 met the crash again on branches that predated the merge.
+- **What 9.3 adds still has value.** `TEST-UNIT-057`'s new case resolves the activity's actual injection points from the production graph, which the startup test replaces with its own seam. The review observed it red: with `CoilImageSeam` restored, 4 tests ran and 1 failed with "MainActivity injects `imageSeam` as class …CoilImageSeam and the graph must serve it". It is green on the fix, and the dead `rememberCoilImageSeam` is removed. The phase had committed the case with its fix rather than as a red commit, so this observation is its red evidence. `GAP-032` is registered with that history and closed.
+- **`DEC-118` read the deferred conditions against an M2 that is not released.** M2 is prepared at `v0.2.0` (`DEC-121`), and the owner's tag releases it. `DEF-002`/`DEF-003` therefore wait for that tag and then for a new decision. `DEC-025` stays closed, because its condition ("iOS milestone starts") did fire. `DEF-004`'s Alpha status is re-verified on kotlinlang.org (`native-swift-export.html`, page dated 2026-08-28: "currently in Alpha"). The unverified "next milestone Alpha→Beta" clause is dropped. `DEC-080`/`DEC-081`'s move to §2 is kept; it closes `GAP-024`, which had registered the misfiling on 2026-10-02.
+- **Smaller corrections:**
+  - `TASK-083`'s decision packet is `LOG-0086` (B4 opens), not `LOG-0111` (B8 Phase 8.2).
+  - `GAP-001` (no feature implementation), `GAP-006` (no iOS baselines) and `GAP-026` (`coreModule` unowned) are resolved with their evidence.
+  - `LOG-0117` was never allocated, so there is a numbering gap, not a reuse.
+  - `GAP-025`'s double meaning of `TEST-UNIT-046`/`047` stays open and is named in the handover.
+- **The handover now states the reviewed stack, not the twelve original heads.**
+  - 9.3's handover said every iOS runtime starts at 26.4, gave 96 iOS tests, six iOS and 46 Android baselines and 45 documents, said all twelve phase PRs were green and merge-simulated, and still listed `GAP-031` as open.
+  - The handover now gives the merge order #161 → #178 → #182 → #186 → #189 (with #164–#174 closing after #161) and the numbers observed below. It says Xcode 27 offers no iOS 18 runtime, and that the device checklist still open is the iOS one (`TASK-061`); the Android checklist ran under `DEC-119`.
+  - `README.md`'s and `README.es.md`'s banners no longer say "no application yet … the APK has no activity", and neither does `AGENTS.md` §1.
+  - The manual journey runs of `LOG-0118` and `LOG-0125` are cited as recorded by those who ran them; this review did not re-run them.
+- **Verification (observed):**
+  - The Gradle verification set: `./gradlew allTests` plus `LOG-0131`'s command (with `verifyDocumentedCompleteness`) — BUILD SUCCESSFUL in 1m 2s, 1103 actionable tasks, 0 hygiene findings. Under `build/test-results` that left 193 XML reports with 1165 tests and 0 failures.
+  - `bash tools/ios-version.sh --check` — matches `VERSION` (0.2.0).
+  - `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` — 105 tests, 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate` after the documentation changes — 46 documents, 0 findings.
+- **Affected documents:** `docs/HANDOFF.md`, `docs/BACKLOG.md`, `docs/DECISION_BOARD.md` (`DEC-118`, §2/§4, `DEC-025`, change log), `docs/REQUIREMENTS.md` (§1.3, change log), `docs/DOCUMENTATION_AUDIT.md` (`GAP-032`, four resolved gaps, change log), `README.md`, `README.es.md`, `AGENTS.md` §1, correction notes on `LOG-0118` and `LOG-0124`, and this entry.

@@ -11,8 +11,8 @@ A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickan
 
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
-> **Project status: build tooling and governance, no application yet.**
-> The repository contains the documentation set, the Gradle/KMP build skeleton (TASK-014), the tracked `.gitignore` with its hygiene check (TASK-016), the pinned version catalog with its policy checks (TASK-015), the accepted contract baseline (TASK-019), the executable module-boundary check (TASK-017, hardened by TASK-088), the single `VERSION` source (`0.1.0`, TASK-018, with every Android artifact task depending on its validation via TASK-089), the shared test harness in `:core:testing` (TASK-024), the **both-runner pull-request gate** (TASK-025, PR #52), the contract suite in fixture/replay mode (`TASK-026`, PR #67) with its scheduled live signal (`TASK-027`, PR #70) and the quality toolchain — ktlint, Android Lint, `buildHealth` and the documented-gate check are active and blocking (TASK-029, PR #65), the Swift toolchain is pinned with a checksum-verified script (TASK-030, PR #63), and the workflow guard rejects automated integration and any merge-gate reference to live mode (TASK-028/TASK-093/TASK-026). There is **no feature behaviour, no product test and no launchable app** yet; the APK has no activity. Block 1 is *integrated and locally verified* because it merged before the gate existed; every change from `TASK-025` onward runs under real required checks (`DEC-071`). Commands marked *executed* were run on the recorded date; every other command is the intended one.
+> **Project status: both apps are built and verified; the releases await the owner's tags.**
+> The repository holds the shared Kotlin Multiplatform core, the design system, the Android app (Compose, `minSdk` 26) and the iOS app (SwiftUI over one Kotlin framework). Both apps have Discovery, Character detail, Favorites and Settings, with the offline and error states. 52 Android and 17 iOS screenshot baselines are committed, and every policy and quality check blocks in CI. M1 is prepared as `v0.1.0` and M2 as `v0.2.0`; tagging and publishing are the owner's (`DEC-049`). The evidence only a device can give is carried as unevidenced rather than claimed: the performance budgets on a reference device, the iOS 18 floor run and the iOS VoiceOver checklist. [`docs/HANDOFF.md`](docs/HANDOFF.md) separates what was verified from what was not; commands marked *executed* were run on the recorded date.
 
 ## 1. Assessment objectives
 
@@ -176,7 +176,7 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 
 ## 8. Build and run
 
-> The build skeleton exists and its commands are marked **executed** below. The feature, test and release commands are still the intended interface, recorded so the plan and the documentation are concrete; each is marked with why it has not run.
+> Every command below carries the date it was executed and the observed result. Tagging and publishing a release stay the owner's actions (`DEC-049`).
 
 | Task | Command | State |
 | --- | --- | --- |
