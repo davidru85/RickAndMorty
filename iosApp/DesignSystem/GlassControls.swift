@@ -125,21 +125,21 @@ public struct GlassSegmentedControl: View {
 
     private func segment(_ option: Option, fitted: Bool) -> some View {
         let selected = option.id == selection
-        let foreground =
-            selected ? MultiverseBrandColors.spaceBlack : MultiverseLabelColors.primary
         return Button {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 selection = option.id
             }
         } label: {
-            label(option, foreground: foreground, fitted: fitted)
+            label(option, selected: selected, fitted: fitted)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .background {
+            // The selected segment is a clear-glass capsule tinted Portal Green at 30 % (`UI_SPEC.md`
+            // §4.2), under a white label (Figma `29:419`).
             if selected {
-                Capsule()
-                    .fill(MultiverseGlassColors.tintGreen)
+                Color.clear
+                    .glassSurface(.capsule, tint: MultiverseGlassColors.tintGreen)
                     .matchedGeometryEffect(id: SegmentSelection.id, in: namespace)
             }
         }
@@ -147,10 +147,10 @@ public struct GlassSegmentedControl: View {
     }
 
     @ViewBuilder
-    private func label(_ option: Option, foreground: Color, fitted: Bool) -> some View {
+    private func label(_ option: Option, selected: Bool, fitted: Bool) -> some View {
         let text = Text(option.label)
-            .font(MultiverseType.subheadline)
-            .foregroundStyle(foreground)
+            .font(selected ? MultiverseType.subheadlineEmphasized : MultiverseType.subheadline)
+            .foregroundStyle(selected ? MultiverseLabelColors.primary : MultiverseLabelColors.secondary)
         if fitted {
             text
                 .fixedSize()
