@@ -97,9 +97,10 @@ private struct PortraitPlaceholder: View {
             MultiverseGlassColors.fill
                 .opacity(animated && !reduceMotion ? (pulse ? 0.35 : 1.0) : 1.0)
             if showsPortalMark {
-                Image(systemName: "circle.circle")
-                    .font(.system(size: MultiverseType.emptyStateSymbolSize, weight: .regular))
-                    .foregroundStyle(MultiverseBrandColors.portalGlow.opacity(0.4))
+                // The brand's portal logo at 40 % (`UI_SPEC.md` §5.1, `DEC-139`), never a glyph.
+                PortalLogo()
+                    .frame(width: MultiverseType.emptyStateSymbolSize, height: MultiverseType.emptyStateSymbolSize)
+                    .opacity(0.4)
             }
         }
         .animation(

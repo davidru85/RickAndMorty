@@ -51,6 +51,7 @@
 		5C1CDB061E7B545DED5D64B6 /* FavoritesStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADFB66696294211BC377EE8 /* FavoritesStateHolder.swift */; };
 		66EF93F7FF10BC67A507A479 /* DesignSystemSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */; };
 		72C0C18FCC8D05AA79A2A6D9 /* DiscoveryRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD5576C72E67327399FEB9E /* DiscoveryRefreshTests.swift */; };
+		72E7DAF26468A4F16DB04165 /* PortalLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A4B20F3B0A5C04760C7503 /* PortalLogo.swift */; };
 		75828753B0CCE9DFEBE7DFEF /* LocalizedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BED588860D71840131E473 /* LocalizedCopy.swift */; };
 		75F7F3FE6642A28FD1DA2ECE /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 1DA21591685648C4F848DD12 /* SnapshotTesting */; };
 		7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */; };
@@ -63,6 +64,7 @@
 		907D01D940C93D75581F72B4 /* screenBaselines.detail-error-without-header.png in Resources */ = {isa = PBXBuildFile; fileRef = C67960F9F6BE4BB97F32F96E /* screenBaselines.detail-error-without-header.png */; };
 		95C881B9B291196D99980167 /* screenBaselines.detail-accessibility-text.png in Resources */ = {isa = PBXBuildFile; fileRef = 7DAE8941AAABC4E1ADE701B1 /* screenBaselines.detail-accessibility-text.png */; };
 		9D9588F75BA35A86DCC9D383 /* CharacterPortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B3AF55CC6ECEB008BC5865 /* CharacterPortrait.swift */; };
+		9DC536315339260D5382EFCA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3AAA64B35FA22EEEBC9D60F /* Assets.xcassets */; };
 		A4BCD97D18C67B3249059781 /* ShellTabItemsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D1117B9C8B775F120F5587 /* ShellTabItemsTests.swift */; };
 		A5173A14BCFF6235D7D5BACF /* PortraitMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536D11A7C633C64930CA43F5 /* PortraitMotion.swift */; };
 		A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */; };
@@ -159,6 +161,7 @@
 		980EECE9B6EFFF2375C160D8 /* DiscoveryNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryNotice.swift; sourceTree = "<group>"; };
 		A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemSnapshotTests.swift; sourceTree = "<group>"; };
 		A3B5184B79465D6C5C39614A /* CharacterShareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterShareTests.swift; sourceTree = "<group>"; };
+		A7A4B20F3B0A5C04760C7503 /* PortalLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortalLogo.swift; sourceTree = "<group>"; };
 		A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtons.swift; sourceTree = "<group>"; };
 		ABE02E389392D027F75DF3C7 /* HostedRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostedRendering.swift; sourceTree = "<group>"; };
 		AD1AFE1EEBB5398C60FBB7AC /* BrandedSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandedSplashView.swift; sourceTree = "<group>"; };
@@ -177,6 +180,7 @@
 		DE0F85D4F084F566EEFD981E /* screenBaselines.detail.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = screenBaselines.detail.png; sourceTree = "<group>"; };
 		E1B3AF55CC6ECEB008BC5865 /* CharacterPortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterPortrait.swift; sourceTree = "<group>"; };
 		E1F0941E422B5FB568209987 /* CharacterDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterDetailScreen.swift; sourceTree = "<group>"; };
+		E3AAA64B35FA22EEEBC9D60F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E44C92AFCFE64CD773707EF8 /* MultiverseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiverseApp.swift; sourceTree = "<group>"; };
 		E57D2D84B85606DF292D49CB /* CharacterShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterShare.swift; sourceTree = "<group>"; };
 		E6B8C11E13F5A9CA0B682448 /* designSystemBaselines.card-accessibility-text.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "designSystemBaselines.card-accessibility-text.png"; sourceTree = "<group>"; };
@@ -272,6 +276,7 @@
 				21D851FB75D9353923D5987C /* GlassControls.swift */,
 				7FB00588E2E25299609BD647 /* GlassSurface.swift */,
 				D6C0C0FABBB5C7D886590B7A /* GlassTabBar.swift */,
+				A7A4B20F3B0A5C04760C7503 /* PortalLogo.swift */,
 				536D11A7C633C64930CA43F5 /* PortraitMotion.swift */,
 				0422C1E40C05BA5AD16E9B67 /* Tokens.swift */,
 			);
@@ -311,6 +316,7 @@
 		5A7BDB3959A7B2C01597975A /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				E3AAA64B35FA22EEEBC9D60F /* Assets.xcassets */,
 				5536017E77F302F6EB967132 /* en.lproj */,
 				3AD1D8A2B96D58A6D1BA6FE0 /* es.lproj */,
 			);
@@ -497,6 +503,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9DC536315339260D5382EFCA /* Assets.xcassets in Resources */,
 				08EB182477F63FE3D9F79CDB /* en.lproj in Resources */,
 				7BF4A3FCB48364A9183E46B5 /* es.lproj in Resources */,
 			);
@@ -576,6 +583,7 @@
 				03ECE53F0CA3D2563E18F996 /* GlassTabBar.swift in Sources */,
 				75828753B0CCE9DFEBE7DFEF /* LocalizedCopy.swift in Sources */,
 				1B784629BCD52AE3C83333CE /* MultiverseApp.swift in Sources */,
+				72E7DAF26468A4F16DB04165 /* PortalLogo.swift in Sources */,
 				7E3E6F296423DCCAFBBA1071 /* PortraitImagePipeline.swift in Sources */,
 				A5173A14BCFF6235D7D5BACF /* PortraitMotion.swift in Sources */,
 				267BC68D43A11C59F00068F9 /* RootView.swift in Sources */,
@@ -799,7 +807,7 @@
 		5E8085AB3D7DD1693A245580 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -828,7 +836,7 @@
 		A5592085F455D64C70730788 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
