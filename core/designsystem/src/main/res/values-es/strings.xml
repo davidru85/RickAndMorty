@@ -35,6 +35,7 @@
     <string name="settings_sound_title">Sonidos</string>
     <string name="settings_sound_body">Reproducir efectos de sonido en la app</string>
     <string name="settings_data_source_title">Fuente de datos</string>
+    <string name="settings_data_source_body">Cómo obtiene la app los personajes</string>
     <string name="settings_data_rest">API REST</string>
     <string name="settings_data_graphql">GraphQL</string>
     <string name="settings_delete_action">Borrar favoritos</string>

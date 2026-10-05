@@ -106,6 +106,7 @@ public object CopyResolver {
             put("settings_sound_title", R.string.settings_sound_title)
             put("settings_sound_body", R.string.settings_sound_body)
             put("settings_data_source_title", R.string.settings_data_source_title)
+            put("settings_data_source_body", R.string.settings_data_source_body)
             put("settings_data_rest", R.string.settings_data_rest)
             put("settings_data_graphql", R.string.settings_data_graphql)
             put("settings_delete_action", R.string.settings_delete_action)

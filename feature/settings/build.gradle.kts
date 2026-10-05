@@ -48,8 +48,14 @@ kotlin {
      * `CopyResolver.copy(...)` cannot resolve in `TEST-UI-017`. The convention plugin already created
      * the compilation, so it is configured here rather than created again; `compilations.withType` is
      * the plugin's documented way to do that.
+     *
+     * `androidResources.enable` is `false` for a multiplatform library by default; it is enabled so the
+     * module's own bundled row glyphs under `androidMain/res/drawable` ship (`TASK-113`).
      */
     extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget> {
+        androidResources {
+            enable = true
+        }
         compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java).configureEach {
             isIncludeAndroidResources = true
         }

@@ -47,6 +47,7 @@
 "nav_settings" = "Settings";
 "search_characters" = "Search characters";
 "settings_data_graphql" = "GraphQL";
+"settings_data_source_body" = "How the app fetches characters";
 "settings_data_rest" = "REST API";
 "settings_data_source_title" = "Data source";
 "settings_delete_action" = "Delete favorites";

@@ -123,6 +123,9 @@ public object CopyKeys {
     public val SETTINGS_SOUND_TITLE: CopyKey = key("settings_sound_title")
     public val SETTINGS_SOUND_BODY: CopyKey = key("settings_sound_body")
     public val SETTINGS_DATA_SOURCE_TITLE: CopyKey = key("settings_data_source_title")
+
+    /** The Data source row's supporting text (`UI_SPEC.md` §6.5; resolves `CONF-80`). */
+    public val SETTINGS_DATA_SOURCE_BODY: CopyKey = key("settings_data_source_body")
     public val SETTINGS_DATA_REST: CopyKey = key("settings_data_rest")
     public val SETTINGS_DATA_GRAPHQL: CopyKey = key("settings_data_graphql")
     public val SETTINGS_DELETE_ACTION: CopyKey = key("settings_delete_action")

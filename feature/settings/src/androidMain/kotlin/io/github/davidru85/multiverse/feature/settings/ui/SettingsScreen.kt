@@ -3,29 +3,45 @@ package io.github.davidru85.multiverse.feature.settings.ui
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
@@ -33,6 +49,7 @@ import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
+import io.github.davidru85.multiverse.feature.settings.R
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsIntent
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsUiState
 
@@ -96,6 +113,8 @@ private fun PreferencesSection(
         content = {
             val soundTitle = CopyResolver.copy("settings_sound_title")
             ListItem(
+                colors = TransparentRow,
+                leadingContent = { RowGlyph(R.drawable.ic_volume_up) },
                 supportingContent = { Text(CopyResolver.copy("settings_sound_body")) },
                 trailingContent = {
                     Switch(
@@ -104,6 +123,19 @@ private fun PreferencesSection(
                         modifier = Modifier.semantics { contentDescription = soundTitle },
                         checked = state.soundsEnabled,
                         onCheckedChange = { enabled -> onIntent(SettingsIntent.SoundsToggled(enabled)) },
+                        // A check on the thumb when on (`UI_SPEC.md` §4.1).
+                        thumbContent =
+                            if (state.soundsEnabled) {
+                                {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_check),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    )
+                                }
+                            } else {
+                                null
+                            },
                     )
                 },
             ) {
@@ -117,10 +149,9 @@ private fun PreferencesSection(
  * Data: the "Data source" row with the two-segment connected picker below it, inside the same group
  * (`UI_SPEC.md` §6.5).
  *
- * The group is the M3 Expressive connected `ButtonGroup` in single-select mode: each segment is a
- * `ToggleButton` sharing the connected shapes, and the selected segment is the one whose
- * `remoteProtocol` matches. The overflow affordance is empty because the two segments are weighted to
- * share the row's width by construction, so the group has nothing to overflow into.
+ * The picker is the M3 Expressive connected group in single-select mode: two `ToggleButton`s sharing
+ * the row's width with the connected shapes, the selected one the segment whose `remoteProtocol`
+ * matches. Each segment is a radio button to a screen reader, because exactly one is ever selected.
  */
 @Composable
 private fun DataSection(
@@ -130,11 +161,16 @@ private fun DataSection(
     SettingsSection(
         header = CopyResolver.copy("settings_section_data"),
         content = {
-            ListItem { Text(CopyResolver.copy("settings_data_source_title")) }
-            val restLabel = CopyResolver.copy("settings_data_rest")
-            val graphQlLabel = CopyResolver.copy("settings_data_graphql")
-            ButtonGroup(
-                overflowIndicator = { },
+            ListItem(
+                colors = TransparentRow,
+                leadingContent = { RowGlyph(R.drawable.ic_swap_horiz) },
+                supportingContent = { Text(CopyResolver.copy("settings_data_source_body")) },
+            ) {
+                Text(CopyResolver.copy("settings_data_source_title"))
+            }
+            // The connected single-select picker (`UI_SPEC.md` §4.1): two equal segments, the selected
+            // one Secondary / On Secondary, the other Secondary Container / On Secondary Container.
+            Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -145,17 +181,17 @@ private fun DataSection(
                         ),
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
             ) {
-                toggleableItem(
+                ProtocolSegment(
+                    label = CopyResolver.copy("settings_data_rest"),
                     checked = state.remoteProtocol == RemoteProtocol.Rest,
-                    label = restLabel,
-                    onCheckedChange = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.Rest)) },
-                    weight = 1f,
+                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                    onSelect = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.Rest)) },
                 )
-                toggleableItem(
+                ProtocolSegment(
+                    label = CopyResolver.copy("settings_data_graphql"),
                     checked = state.remoteProtocol == RemoteProtocol.GraphQl,
-                    label = graphQlLabel,
-                    onCheckedChange = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.GraphQl)) },
-                    weight = 1f,
+                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    onSelect = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.GraphQl)) },
                 )
             }
         },
@@ -183,6 +219,7 @@ private fun FavoritesSection(
                 color = MultiverseColors.onSurfaceVariant,
                 modifier = Modifier.padding(MultiverseDimensions.spaceL),
             )
+            // A filled Medium (56 dp) destructive button with its leading glyph (`UI_SPEC.md` §4.1, §6.5).
             Button(
                 onClick = { onIntent(SettingsIntent.DeleteFavoritesRequested) },
                 enabled = state.canDeleteFavorites,
@@ -191,6 +228,7 @@ private fun FavoritesSection(
                         containerColor = MultiverseColors.errorContainer,
                         contentColor = MultiverseColors.onErrorContainer,
                     ),
+                contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight),
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -198,13 +236,57 @@ private fun FavoritesSection(
                             start = MultiverseDimensions.spaceL,
                             end = MultiverseDimensions.spaceL,
                             bottom = MultiverseDimensions.spaceL,
-                        ),
+                        ).heightIn(min = ButtonDefaults.MediumContainerHeight),
             ) {
-                Text(CopyResolver.copy("settings_delete_action"))
+                Icon(
+                    painter = painterResource(R.drawable.ic_delete),
+                    contentDescription = null,
+                    modifier = Modifier.size(ButtonDefaults.iconSizeFor(ButtonDefaults.MediumContainerHeight)),
+                )
+                Spacer(modifier = Modifier.width(MultiverseDimensions.spaceS))
+                Text(
+                    text = CopyResolver.copy("settings_delete_action"),
+                    style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight),
+                )
             }
         },
     )
 }
+
+/** One segment of the data-source picker: a connected `ToggleButton` that is a radio button to TalkBack. */
+@Composable
+private fun RowScope.ProtocolSegment(
+    label: String,
+    checked: Boolean,
+    shapes: ToggleButtonShapes,
+    onSelect: () -> Unit,
+) {
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { onSelect() },
+        shapes = shapes,
+        colors =
+            ToggleButtonDefaults.colors(
+                containerColor = MultiverseColors.secondaryContainer,
+                contentColor = MultiverseColors.onSecondaryContainer,
+                checkedContainerColor = MultiverseColors.secondary,
+                checkedContentColor = MultiverseColors.onSecondary,
+            ),
+        modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
+    ) {
+        Text(label)
+    }
+}
+
+/** A row's 24 dp leading glyph in On Surface Variant (`UI_SPEC.md` §6.5); decorative, as the title names the row. */
+@Composable
+private fun RowGlyph(glyph: Int) {
+    Icon(painter = painterResource(glyph), contentDescription = null, tint = MultiverseColors.onSurfaceVariant)
+}
+
+/** The rows are transparent on their group, so no row paints a darker band over the Surface Container. */
+private val TransparentRow: ListItemColors
+    @Composable get() = ListItemDefaults.colors(containerColor = Color.Transparent)
 
 /**
  * The delete confirmation (`UI_SPEC.md` §6.5, `AC-REQ-FUNC-035-1`).
@@ -267,10 +349,12 @@ private fun SettingsSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
     ) {
+        // Title Small in Primary, 16 dp in, where the group's content starts (Figma `101:568`).
         Text(
             text = header,
             style = MaterialTheme.typography.titleSmall,
             color = MultiverseColors.primary,
+            modifier = Modifier.padding(start = MultiverseDimensions.spaceL),
         )
         Surface(
             modifier = Modifier.fillMaxWidth(),
