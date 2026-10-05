@@ -28,9 +28,14 @@ import io.github.davidru85.multiverse.core.domain.result.ApiWarning
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.domain.result.DataSource
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 /**
@@ -124,6 +129,13 @@ public class RemoteCharacterRepository(
     private val revalidating = mutableSetOf<CacheKey>()
     private val revalidationLock = Mutex()
 
+    /**
+     * The page revalidations in flight, by key. A forced load of the same page joins one rather than
+     * sending a second request for the same entry (`DEC-130`, `REQ-REL-002`). Guarded by
+     * [revalidationLock].
+     */
+    private val pageRevalidations = mutableMapOf<CacheKey, Deferred<DataResult<CharacterPage>>>()
+
     /** What makes two page loads the same request. */
     private data class PageIdentity(
         val protocol: RemoteProtocol,
@@ -169,6 +181,11 @@ public class RemoteCharacterRepository(
         policy: PageLoadPolicy,
     ): DataResult<CharacterPage> {
         val key = CacheKeyBuilder.page(protocol, filter, page)
+        if (policy == PageLoadPolicy.ForceNetwork) {
+            // A revalidation of this entry is already on the network: its answer is the one a forced
+            // load would get, so the two cost one request (`DEC-130`).
+            revalidationLock.withLock { pageRevalidations[key] }?.let { return it.await() }
+        }
         val hit = cache.read(key, LogOperation.CHARACTER_LIST, page)
         val cached = hit?.page
         if (cached != null && policy == PageLoadPolicy.Default) {
@@ -218,12 +235,27 @@ public class RemoteCharacterRepository(
             }
         }
         cache.miss(LogOperation.CHARACTER_DETAIL, null)
+        return when (val fetched = fetchDetails(protocol, key, id, enrich)) {
+            is DataResult.Failure -> fallback(hit, fetched, LogOperation.CHARACTER_DETAIL) { it.details }
+            is DataResult.Success -> fetched
+        }
+    }
+
+    /**
+     * One detail through the network — with its episodes when [enrich] asks for them — stored only
+     * when complete: a failed enrichment returns the detail with a warning and writes nothing
+     * (`ERROR_FLOW.md` §7). The first load and a background revalidation share it, so a revalidated
+     * enriched entry is as whole as the one it replaces (`DEC-130`).
+     */
+    private suspend fun fetchDetails(
+        protocol: RemoteProtocol,
+        key: CacheKey,
+        id: CharacterId,
+        enrich: Boolean,
+    ): DataResult<CharacterDetails> {
         val detail = retry.run(LogOperation.CHARACTER_DETAIL) { adapterFor(protocol).characterDetails(id) }
         if (detail !is DataResult.Success) {
-            if (detail is DataResult.Failure) {
-                cache.refuse(LogOutcome.FAILURE, detail.failure)
-                return fallback(hit, detail, LogOperation.CHARACTER_DETAIL) { it.details }
-            }
+            if (detail is DataResult.Failure) cache.refuse(LogOutcome.FAILURE, detail.failure)
             return detail
         }
         if (!enrich) {
@@ -266,20 +298,29 @@ public class RemoteCharacterRepository(
         page: Int,
     ) {
         if (!beginRevalidation(key)) return
-        scope.launch {
-            try {
-                val outcome = retry.run(LogOperation.CHARACTER_LIST) { adapterFor(protocol).characterPage(filter, page) }
-                if (outcome is DataResult.Success) {
-                    admitPage(outcome, page)?.let { cache.store(key, it) }
-                } else if (outcome is DataResult.Failure) {
-                    // A failed revalidation is silent: the caller already has content, and the cache
-                    // keeps the entry it served (ERROR_FLOW.md §8).
-                    cache.refuse(LogOutcome.FAILURE, outcome.failure)
+        // Registered before it starts, so a forced load can never join a revalidation that has already
+        // ended, and removed when it ends whatever its outcome.
+        val revalidation =
+            scope.async(start = CoroutineStart.LAZY) {
+                try {
+                    val outcome = retry.run(LogOperation.CHARACTER_LIST) { adapterFor(protocol).characterPage(filter, page) }
+                    if (outcome is DataResult.Success) {
+                        admitPage(outcome, page)?.let { cache.store(key, it) }
+                    } else if (outcome is DataResult.Failure) {
+                        // A failed revalidation is silent: the caller already has content, and the cache
+                        // keeps the entry it served (ERROR_FLOW.md §8).
+                        cache.refuse(LogOutcome.FAILURE, outcome.failure)
+                    }
+                    outcome
+                } finally {
+                    withContext(NonCancellable) {
+                        revalidationLock.withLock { pageRevalidations -= key }
+                        endRevalidation(key)
+                    }
                 }
-            } finally {
-                endRevalidation(key)
             }
-        }
+        revalidationLock.withLock { pageRevalidations[key] = revalidation }
+        revalidation.start()
     }
 
     private suspend fun revalidateDetails(
@@ -291,12 +332,11 @@ public class RemoteCharacterRepository(
         if (!beginRevalidation(key)) return
         scope.launch {
             try {
-                val outcome = retry.run(LogOperation.CHARACTER_DETAIL) { adapterFor(protocol).characterDetails(id) }
-                if (outcome is DataResult.Success && !enrich) {
-                    admitDetails(outcome)?.let { cache.store(key, it) }
-                }
+                // The same fetch as a first load, enrichment included, so the stored result is complete
+                // or nothing is stored; no request's answer is discarded (`DEC-130`).
+                fetchDetails(protocol, key, id, enrich)
             } finally {
-                endRevalidation(key)
+                withContext(NonCancellable) { endRevalidation(key) }
             }
         }
     }

@@ -208,7 +208,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 
 ## 9. Stale and offline rendering with cache
 
-- `isStale = true` means "the rendered value came from the cache and the freshness window has passed" ([`API_SPECS.md`](API_SPECS.md) §3, §7.3). It is set by the data layer, never by a view.
+- `isStale = true` means "the rendered value came from the cache and the freshness window has passed" ([`API_SPECS.md`](API_SPECS.md) §3, §7.3). It is set by the data layer, never by a view. On the list surface it ends without user action when the network answers: a stale first page is followed by a silent network load, and its success replaces the page and clears the state. Its failure changes nothing, and the banner's Retry stays available (`DEC-130`).
 - The stale banner binds `state_stale_banner` ("Showing saved results") and carries the Retry action; per [`UI_SPEC.md`](UI_SPEC.md) §8 it is a snackbar on Android and a bottom glass banner on iOS. With no failure to re-attempt, that Retry revalidates page 1 over the network (`refresh()`, `ForceNetwork`), so the banner's action always reaches the network rather than doing nothing; while that refresh is in flight the banner is withheld (`IC-018.isRefreshing`, `DEC-124`).
 - Stale content is still content: it renders the full grid or detail, never the error surface, while the entry is inside the 30-day offline window.
 - Outside the 30-day window the entry is not usable and the state degrades to the class-specific error for the failure that prevented revalidation.
@@ -284,3 +284,4 @@ A test identifier is never cited here as evidence for copy wording. The failure-
 | 2026-10-03 | §1 and §4.1 state where the copy lives: the key names in `CopyKeys` (`IC-017`), the English and Spanish strings in the platform resource files, held identical by `TEST-UNIT-036`; the earlier wording gave the strings to the key list (`CONF-75`). | `DEC-095`, `TASK-041` |
 | 2026-10-05 | §4 and §4.1: the rate-limit message without usable advice is its own key, `error_message_rate_limited_no_countdown`, and the countdown argument is typed (`IC-017`). Android had crashed formatting `%d` with a `String`; iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123`, `TASK-111` |
 | 2026-10-05 | §4 and §9: the list surface carries a failure beside displayable content as `IC-018.contentFailure`, rendered by the stale banner's component with its own message and Retry; a Retry over stale content with no failure revalidates over the network. | `DEC-124`, `TASK-111` |
+| 2026-10-05 | §9: a stale first page ends its stale state when its silent network load succeeds. | `DEC-130`, `TASK-112` |

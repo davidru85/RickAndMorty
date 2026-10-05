@@ -30,6 +30,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Test
@@ -493,7 +494,11 @@ class CharacterPagerTest {
             val repository = FakeCharacterRepository(catalogue(45), cached = catalogue(45), cachedIsStale = true)
             val pager = RepositoryCharacterPager(repository, this, logger())
 
+            // A stale first page is followed by a silent network load of it (DEC-130); it fails here, so
+            // the stale page stays and the case can observe its provenance.
+            repository.failNext(ApiFailure.Offline)
             pager.setFilter(all)
+            runCurrent()
             val fromStaleCache = pager.state.value.isStale
             repository.failNext(ApiFailure.Offline)
             pager.refresh()

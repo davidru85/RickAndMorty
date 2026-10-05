@@ -270,7 +270,8 @@ enum class PageLoadPolicy { Default, ForceNetwork }
   - `details(id, enrich = false)` `MUST NOT` issue an episode request; `details(id, enrich = true)` performs at most one bounded episode batch call, never one request per episode (`REQ-FUNC-023`, `AC-REQ-FUNC-023-1`).
   - A detail for an unknown id returns `DataResult.Failure` carrying `ApiFailure.NotFound`; the repository `MUST NOT` return an empty shell model (`API_SPECS.md` §4.4).
   - Concurrent identical calls are deduplicated in the implementation, so two simultaneous identical loads issue one remote request (`REQ-REL-002`, `AC-REQ-REL-002-1`). Identity includes the protocol, the operation, the page or id, the normalized filter, the enrichment mode and the `PageLoadPolicy`.
-  - `page(…, policy = ForceNetwork)` reaches the network even when a fresh entry exists (`AC-REQ-FUNC-012-1`, `DEC-086`).
+  - `page(…, policy = ForceNetwork)` reaches the network even when a fresh entry exists (`AC-REQ-FUNC-012-1`, `DEC-086`). When a background revalidation of the same entry is already on the network, a `ForceNetwork` load joins it and returns its result, so the two cost one request (`REQ-REL-002`, `DEC-130`).
+  - A background revalidation fetches what a first load fetches: an enriched detail is revalidated with its episodes and stored only when complete, so no request's answer is discarded (`DEC-130`).
   - Only successfully decoded, domain-valid payloads are promoted to a cache; errors, empty bodies and partial responses are never written (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`).
   - A `CancellationException` from an underlying suspending call propagates unchanged and is never converted into a `Failure` (`IC-003`).
   - The repository `MUST NOT` expose, accept or depend on a DTO type or a platform type.
@@ -474,6 +475,7 @@ data class PagerState(
   - `setFilter` resets to page 1 and cancels any in-flight page load; the items of the previous filter are not carried into the new filter's accumulation (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-003-2`).
   - A change of the active protocol resets exactly as `setFilter` does, keeping the filter. Items, total, end flag, failure and staleness clear, and the load in flight is cancelled, so nothing the previous protocol loaded stays on screen while page 1 of the new one loads (`AC-REQ-FUNC-034-2`, `DEC-130`).
   - `isLoading` is `true` from a reset (`setFilter` or a protocol switch) until the first page of the new identity is published, whatever its outcome, so a consumer never reads an empty reset as an empty result (`DEC-130`).
+  - A **stale** first page, published from a `Default` load, is followed by one silent network load of page 1, which joins the repository's revalidation of that entry. On success it is published like any load — replacing the page and clearing `isStale` — unless the identity changed or a page was appended meanwhile; on failure nothing changes, and no `failure` is reported (`ERROR_FLOW.md` §9, `DEC-130`).
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
   - `next()` while `failure != null` performs no request: a failed load suppresses further speculative loads, so repeated scroll triggers cannot become a request storm while the service is failing (`DEC-092`). `retry()`, `refresh()` and `setFilter` are the ways out.
@@ -1079,6 +1081,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-007`/`IC-014` (`TASK-112`): a `ForceNetwork` load joins a revalidation in flight; an enriched detail is revalidated with its episodes; a stale first page is followed by a silent network load that clears the stale state on success. | `DEC-130` |
 | 2026-10-05 | `IC-014` (`TASK-112`): `PagerState.isLoading` added, and a protocol switch resets like `setFilter`. The Swift initialiser of `PagerState` gains the parameter; no Swift code constructs one. | `DEC-130` |
 | 2026-10-05 | `IC-018` (`TASK-112`): `CharacterListIntent.ClearFilters` clears both filter dimensions in one request. Additive for the Swift consumer. | `DEC-129` |
 | 2026-10-05 | `IC-018` (`TASK-111`): `CharacterListUiState` gains `contentFailure` (the failure carried beside displayable content) and `isRefreshing`; `Retry` revalidates stale content when there is no failure; no intent awaits a load inside the intent loop. Breaking for the Swift consumer (§8.2), whose initialiser gains the two parameters; the iOS app and its tests change in the same commit. | `DEC-124` |

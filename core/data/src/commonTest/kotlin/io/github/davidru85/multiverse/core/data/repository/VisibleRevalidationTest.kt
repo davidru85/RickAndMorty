@@ -20,7 +20,8 @@ import io.github.davidru85.multiverse.testing.MutableFakeClock
 import io.github.davidru85.multiverse.testing.RecordingLogSink
 import io.github.davidru85.multiverse.testing.TestTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,6 +30,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * `TEST-UNIT-078` — background revalidation reaches the screen, costs no duplicate request and keeps
@@ -53,6 +55,15 @@ class VisibleRevalidationTest {
 
     private fun cache() = ResponseCache(FakeCacheStorage(), clock, CachePolicy(), logger)
 
+    /**
+     * Runs the background work the case started. `advanceUntilIdle` stops once only `backgroundScope`
+     * tasks remain, and a revalidation is exactly such a task, so the case advances virtual time instead.
+     */
+    private fun TestScope.settle() {
+        advanceTimeBy(1.seconds)
+        runCurrent()
+    }
+
     /** Past the 24 h fresh window, inside the 7 d stale-while-revalidate one. */
     private fun ageIntoTheStaleWindow() {
         clock.advanceBy(48.hours.inWholeMilliseconds)
@@ -69,7 +80,7 @@ class VisibleRevalidationTest {
             val stale = assertIs<DataResult.Success<*>>(repository.page(all, 1))
             runCurrent()
             val forced = assertIs<DataResult.Success<*>>(repository.page(all, 1, PageLoadPolicy.ForceNetwork))
-            advanceUntilIdle()
+            settle()
 
             assertTrue(stale.isStale)
             assertEquals(2, remote.calls.size, "TEST-UNIT-078: the forced load joins the revalidation in flight (REQ-REL-002)")
@@ -80,7 +91,9 @@ class VisibleRevalidationTest {
     @Test
     fun `TEST-UNIT-078 given_a_stale_first_page_when_the_pager_shows_it_then_a_silent_revalidation_clears_the_stale_state`() =
         TestTime.run {
-            val remote = FakeRemoteSource(catalogue)
+            // The network takes time, so the repository's revalidation is still in flight when the pager's
+            // silent load arrives, and that load joins it.
+            val remote = FakeRemoteSource(catalogue, latency = 200.milliseconds)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
             repository.page(all, 1)
             ageIntoTheStaleWindow()
@@ -88,7 +101,7 @@ class VisibleRevalidationTest {
 
             pager.setFilter(all)
             val shown = pager.state.value
-            advanceUntilIdle()
+            settle()
 
             assertTrue(shown.isStale, "TEST-UNIT-078: the saved page renders at once, marked stale")
             assertEquals(false, pager.state.value.isStale, "TEST-UNIT-078: the revalidated page replaces it, so the banner goes away")
@@ -100,7 +113,9 @@ class VisibleRevalidationTest {
     @Test
     fun `TEST-UNIT-078 given_a_stale_first_page_when_its_silent_revalidation_fails_then_nothing_changes`() =
         TestTime.run {
-            val remote = FakeRemoteSource(catalogue)
+            // The network takes time, so the repository's revalidation is still in flight when the pager's
+            // silent load arrives, and that load joins it.
+            val remote = FakeRemoteSource(catalogue, latency = 200.milliseconds)
             val repository = RemoteCharacterRepository(remote, backgroundScope, FixedRandom(0.5), logger, cache())
             repository.page(all, 1)
             ageIntoTheStaleWindow()
@@ -109,7 +124,7 @@ class VisibleRevalidationTest {
 
             pager.setFilter(all)
             val shown = pager.state.value
-            advanceUntilIdle()
+            settle()
 
             assertEquals(shown, pager.state.value, "TEST-UNIT-078: a failed silent revalidation shows nothing and changes nothing")
         }
@@ -124,7 +139,7 @@ class VisibleRevalidationTest {
             ageIntoTheStaleWindow()
 
             val stale = assertIs<DataResult.Success<*>>(repository.details(id, enrich = true))
-            advanceUntilIdle()
+            settle()
             val next = assertIs<DataResult.Success<*>>(repository.details(id, enrich = true))
 
             assertTrue(stale.isStale)

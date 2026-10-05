@@ -199,6 +199,30 @@ public class RepositoryCharacterPager(
             }.also { inFlight = it }
     }
 
+    /**
+     * Brings a stale first page up to date behind the screen (`DEC-130`): one network load of page 1,
+     * which joins the repository's own revalidation of that entry, so it costs no second request. A
+     * success is published like any load — it replaces the page and clears the stale state — unless the
+     * identity changed or a page was appended meanwhile; a failure changes nothing, because the screen
+     * already shows content and offers Retry. Called under [lock].
+     */
+    private fun revalidateSilently(nextAfterStale: Int?) {
+        val revalidationGeneration = generation
+        val filter = mutableState.value.filter
+        val correlation = CorrelationId.next()
+        scope.launch(correlation) {
+            val started = timeSource.markNow()
+            val result = repository.page(filter, FIRST_PAGE, PageLoadPolicy.ForceNetwork)
+            if (result !is DataResult.Success) return@launch
+            val durationMs = started.elapsedNow().inWholeMilliseconds
+            lock.withLock {
+                val unchanged =
+                    revalidationGeneration == generation && nextPage == nextAfterStale && !mutableState.value.isAppending
+                if (unchanged) publish(Load(FIRST_PAGE, PageLoadPolicy.ForceNetwork), result, durationMs, correlation.value)
+            }
+        }
+    }
+
     /** Applies and logs the outcome of a current-generation [load]. Called under [lock]. */
     private fun publish(
         load: Load,
@@ -225,6 +249,9 @@ public class RepositoryCharacterPager(
                         isLoading = false,
                     )
                 }
+                // A saved first page renders at once; the network then brings it up to date behind the
+                // screen, so the stale state ends when the network answers (`DEC-130`).
+                if (load.replaces && result.isStale && load.policy == PageLoadPolicy.Default) revalidateSilently(page.nextPage)
             }
             is DataResult.Failure ->
                 if (!load.replaces && result.failure is ApiFailure.NotFound) {
