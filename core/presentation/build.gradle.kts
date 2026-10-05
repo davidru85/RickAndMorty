@@ -10,6 +10,8 @@ kotlin {
         commonMain.dependencies {
             // `LoadState`, `CharacterCardUi` and the formatters carry domain types in their signatures.
             api(project(":core:domain"))
+            // The shared splash gate takes the caller's dispatcher (`IC-026`, `DEC-136`).
+            api(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
