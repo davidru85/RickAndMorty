@@ -1,7 +1,7 @@
 # API_SPECS.md - REST and GraphQL Technical Specification
 
 - **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-05
 - **Owner:** API Architect (see `AGENTS.md`)
 - **Authoritative for:** the remote data contract — endpoints, DTOs, failure taxonomy, retry, response and image caching policy, contract identifiers.
 - **Not authoritative for:** architecture (`DESIGN.md`), internal Kotlin seams (`CONTRACTS.md`), failure-to-copy behaviour (`ERROR_FLOW.md`), UI (`UI_SPEC.md`).
@@ -644,7 +644,7 @@ App policy:
 
 ### 7.2 GraphQL cache
 
-An HTTP engine's disk cache does not satisfy the app's GraphQL caching requirement because the app contract uses `POST`. The app uses its application-level response cache for both protocols (ADR-0005). A GraphQL entry is keyed `graphql|POST|/graphql|` + the operation-response key below, so it can never collide with a REST entry (ADR-0011). No normalized cache is used; the Apollo bullet below is kept only as the alternative ADR-0011 rejected.
+An HTTP engine's disk cache does not satisfy the app's GraphQL caching requirement because the app contract uses `POST`. The app uses its application-level response cache for both protocols (ADR-0005). A GraphQL entry is keyed `graphql|POST|/graphql|` + the operation-response key below, so it can never collide with a REST entry (ADR-0011). Every GraphQL request shares the path, so the variables that select the response are the key's parameters, in the canonical form of §7.1: `page`, `name` and `status` for a page, and `id` (plus `enrich=true` for an enriched detail) for a detail. Without the id, every GraphQL detail shared one entry and the first one cached answered for every other character (`GAP-035`, fixed in `TASK-123`). No normalized cache is used; the Apollo bullet below is kept only as the alternative ADR-0011 rejected.
 
 Cache identity:
 
@@ -816,3 +816,4 @@ Any change to the selected protocol, required fields, caching policy or error se
 | 2026-09-29 | Scope widened from "Android character review app" to the two-platform KMP client. §7.1 rewritten from an OkHttp disk cache to the app-level cache with explicit freshness, keying and the `404` `no-store` requirement. §9 rate-limit-header claim corrected against the live probe. §11 traceability re-pointed at stable requirement ids. §12 open decisions replaced by the resolved-decision table. §13 contract identifier index added. | DEC-011, DEC-012, DEC-018, DEC-052 |
 | 2026-09-30 | GraphQL moves from documented alternative to shipped, user-selectable protocol through Ktor; §2, §7.2 and §14 updated. | DEC-056 |
 | 2026-09-30 | §2 states the three-data-source inventory (`RestCharacterRemoteDataSource`, `GraphQlCharacterRemoteDataSource`, `AppSettingsLocalDataSource`) and the per-request selection through `IC-021`. | DEC-055, DEC-056 |
+| 2026-10-05 | §7.2 states the GraphQL key's parameters per operation: a detail's key carries its `id`, which it lacked (`GAP-035`, `TASK-123`). | DEC-151 |

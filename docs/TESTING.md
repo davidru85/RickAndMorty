@@ -159,7 +159,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Settings state holder | `IC-023` intent rules: delete confirmation only when favorites exist, exactly one `ClearFavorites` on confirm — a double-tapped Delete included (`TASK-111`) — none on dismiss, no write for an unchanged protocol (`AC-REQ-FUNC-035-1`, `AC-REQ-FUNC-035-3`) | `TEST-UNIT-050` |
 | Failure mapping | Full `ApiFailure` matrix against `ERROR_FLOW.md` and its `API-ERR-###` rows; precedence when several mappings apply; `CancellationException` never surfaced (`AC-REQ-FUNC-022-2`) | `TEST-UNIT-010` |
 | Cache | Freshness, stale-while-revalidate and offline windows with an injected fake clock; `DataResult.source` and `isStale`; errors, empty bodies and partial GraphQL responses never cached (`AC-REQ-FUNC-020-3`, `AC-REQ-REL-004-1`) | `TEST-UNIT-009`, `TEST-UNIT-023` |
-| Cache identity | Key isolation across pages, filters, protocols and GraphQL field selections (`REQ-REL-001`) | `TEST-UNIT-020` |
+| Cache identity | Key isolation across pages, filters, protocols and GraphQL field selections, and between two GraphQL details (`GAP-035`) (`REQ-REL-001`) | `TEST-UNIT-020` |
 | Request coalescing | Two concurrent identical loads produce one network call (`REQ-REL-002`) | `TEST-UNIT-021` |
 | Retry boundaries | At most three attempts in total — the original plus two automatic retries — with backoff and jitter; a `429` at most one retry and only after a valid `Retry-After`; never retried for schema, validation, decoding, other `4xx` or cancellation (`REQ-REL-003`, `DEC-084`) | `TEST-UNIT-022` |
 | Pager | Reset to page 1; single-page prefetch; dedupe of an in-flight load; cancellation; no `Loading` after `Content` without an explicit reset; stop requesting at `info.next == null` (`AC-REQ-FUNC-001-2`) | `TEST-UNIT-016` |
@@ -792,6 +792,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-123`: `TEST-UNIT-020` gains the case that two GraphQL details are two entries, observed red while the GraphQL detail key had no id (`GAP-035`). | `DEC-151`, `LOG-0147` |
 | 2026-10-05 | `TASK-122`: `TEST-UNIT-104` is allocated and implemented, observed red while the app packaged no icon. | `DEC-150`, `LOG-0146` |
 | 2026-10-05 | `TASK-120`: the release build is minified, so `TEST-UNIT-033`'s artifact half relies on `androidApp/proguard-rules.pro` pinning the diagnostic type names; a negative control showed the check blind under R8 without the pin and failing with it. `PERF-009`'s `verifyReleaseApkSize` stays a release verification task, not a test id (`PERFORMANCE.md`). | `DEC-148`, `LOG-0144` |
 | 2026-10-05 | `TASK-119`: `TEST-UI-027`, reserved since `TASK-112`, is implemented with a Debug and a Release half; `TEST-UNIT-103` is allocated and implemented. | `TASK-119`, `LOG-0143` |
