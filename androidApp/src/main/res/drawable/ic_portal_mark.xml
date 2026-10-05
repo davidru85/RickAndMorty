@@ -1,15 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The portal mark (`UI_SPEC.md` §6.1, `DEC-103`): a ring with a spiral core, on the 24 dp grid, so the
-  splash draws the brand shape from the shell's own bundled art rather than an icon artifact.
+  The portal mark (`UI_SPEC.md` §5.3, §6.1, `DEC-103`): Figma `Brand/Portal logo` (`16:13`), exported as
+  SVG and drawn untinted — a radial-gradient disc, two spiral strokes and a rim. The spiral is what makes
+  the splash's rotation visible, so the mark is the brand's own art rather than a symmetric ring.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="#FFFFFFFF">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+    <path android:pathData="M80 154C120.869 154 154 120.869 154 80C154 39.1309 120.869 6 80 6C39.1309 6 6 39.1309 6 80C6 120.869 39.1309 154 80 154Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="80"
+                android:centerY="80"
+                android:gradientRadius="76">
+                <item android:offset="0" android:color="#FFF6FFE0" />
+                <item android:offset="0.28" android:color="#FFC6FF6B" />
+                <item android:offset="0.7" android:color="#FF97CE4C" />
+                <item android:offset="1" android:color="#FF3B6E10" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm0 2.2a5.8 5.8 0 1 0 0 11.6 5.8 5.8 0 0 0 0-11.6Zm0 2.2a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 0 1 0-7.2Zm0 1.4a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4Z" />
+        android:pathData="M84 80L85 81V82V84V85L84 87L83 88L81 89L79 90L77 91L75 90H72L70 88L68 87L66 84L64 81V78V74L65 71L66 67L69 64L72 62L75 59L80 58H84H89L94 60L98 63L102 66L105 71L107 76L108 81V87L107 93L104 99L100 104L95 108L90 111L83 113L76 114L69 113L62 111L56 107L50 102L46 96L42 89L40 81V73L42 65L45 57L50 50L56 44L64 39L72 36L81 34L91 35L100 37L109 41L117 48L123 55L128 64L131 74L132 85L130 96L127 106L121 115L114 124L105 130L94 135L83 137L71 138L59 135L48 130L38 124L29 114L23 104L18 92L16 79L17 66L21 53L27 41"
+        android:strokeWidth="7"
+        android:strokeColor="#8C2F5A08"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M76 80L75 79V78V76V75L76 73L77 72L79 71L81 70L83 69L85 70H88L90 72L92 73L94 76L96 79V82V86L95 89L94 93L91 96L88 98L85 101L80 102H76H71L66 100L62 97L58 94L55 89L53 84L52 79V73L53 67L56 61L60 56L65 52L70 49L77 47L84 46L91 47L98 49L104 53L110 58L114 64L118 71L120 79V87L118 95L115 103L110 110L104 116L96 121L88 124L79 126L69 125L60 123L51 119L43 112L37 105L32 96L29 86L28 75L30 64L33 54L39 45L46 36L55 30L66 25L77 23L89 22L101 25L112 30L122 36L131 46L137 56L142 68L144 81L143 94L139 107L133 119"
+        android:strokeWidth="4"
+        android:strokeColor="#B3F4FFD2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M80 154C120.869 154 154 120.869 154 80C154 39.1309 120.869 6 80 6C39.1309 6 6 39.1309 6 80C6 120.869 39.1309 154 80 154Z"
+        android:strokeWidth="3"
+        android:strokeColor="#99E9FFB8" />
 </vector>
