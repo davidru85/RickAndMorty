@@ -246,11 +246,13 @@ public enum MultiverseType {
 
     /// The editorial display (`UI_SPEC.md` §3.4): SF Pro Expanded Heavy at 40 pt — the one fixed
     /// size in the scale, which a view scales through `@ScaledMetric` at its call site.
-    public static let editorialDisplay: Font = Font.system(
-        size: editorialDisplaySize,
-        weight: editorialDisplayWeight,
-        design: .default
-    ).width(.expanded)
+    public static let editorialDisplay: Font = editorialDisplay(size: editorialDisplaySize)
+
+    /// The editorial display at [size] — the `@ScaledMetric` value a call site scales the 40 pt token
+    /// to — so the scaled name keeps the Expanded width and the Heavy weight.
+    public static func editorialDisplay(size: CGFloat) -> Font {
+        Font.system(size: size, weight: editorialDisplayWeight, design: .default).width(.expanded)
+    }
 
     /// The empty state's illustrated symbol (`UI_SPEC.md` §6.4): 48 pt. It follows font scale like
     /// the rest of the type scale (`REQ-UX-006`), so it belongs with the type tokens rather than the

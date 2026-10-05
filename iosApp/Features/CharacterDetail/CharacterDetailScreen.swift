@@ -16,6 +16,13 @@ import SwiftUI
 /// (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`). [episodeCount]
 /// comes from `episodeIds.size`, so the Episodes tile renders with or without the enrichment.
 ///
+/// The layout is Figma `26:452`'s (`UI_SPEC.md` §5.3, §6.3): a full-screen blurred copy of the portrait
+/// under a 38 % Space Black dim and the Detail's two glows is the glass backdrop; the sharp 402 × 520
+/// hero dissolves into it from 55 % of its height; and the title block, the frosted panel and the
+/// episode line are one stack that starts over the hero's lower part — 162 pt above its bottom, where
+/// Figma places the title — so rows arriving later grow it downwards without moving the title, and a
+/// larger text size scrolls rather than clips. The controls stay fixed at the top.
+///
 /// The screen owns only the platform concerns: the layout, the SF Symbols, the glass controls and the
 /// accessibility shape. Every interaction leaves as a `CharacterDetailIntent`, and the screen never
 /// reaches a use case or a repository (`IC-019`, `CONTRACTS.md` R2).
@@ -45,13 +52,30 @@ struct CharacterDetailScreen: View {
     /// The hero's size (`UI_SPEC.md` §6.3): 402 × 520.
     private static let heroAspectRatio: CGFloat = 402 / 520
 
+    /// Where the hero starts dissolving into the backdrop (`UI_SPEC.md` §5.3): 55 % of its height.
+    private static let heroDissolveStart: CGFloat = 0.55
+
+    /// The backdrop's blur: Figma's 64 pt layer blur, which is a Gaussian of half that radius.
+    private static let backdropBlur: CGFloat = 32
+
+    /// The backdrop's Space Black dim (`UI_SPEC.md` §5.3).
+    private static let backdropDim: Double = 0.38
+
+    /// How far above the hero's bottom the stack starts (Figma `31:396`: the title block at y 358 of
+    /// the 520 pt hero).
+    private static let titleRise: CGFloat = 162
+
     /// The editorial display scales with Dynamic Type through `@ScaledMetric` (`UI_SPEC.md` §3.4,
     /// §9), so the fixed token size is not a fixed rendered size.
     @ScaledMetric(relativeTo: .largeTitle) private var editorialDisplaySize = MultiverseType.editorialDisplaySize
 
+    /// SF Pro Expanded Heavy at the scaled size (`UI_SPEC.md` §3.4).
     private var editorialDisplay: Font {
-        Font.system(size: editorialDisplaySize, weight: MultiverseType.editorialDisplayWeight)
+        MultiverseType.editorialDisplay(size: editorialDisplaySize)
     }
+
+    /// Reduce Motion stills the favourite's bounce (`UI_SPEC.md` §7).
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if let failure = (state.loadState as? LoadStateError)?.failure, state.header == nil {
@@ -59,17 +83,48 @@ struct CharacterDetailScreen: View {
             // than an empty hero (`AC-REQ-UX-009-1`, `DEC-131`).
             fullSurfaceError(failure: failure)
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: MultiverseDimensions.spaceL) {
-                    hero
-                    titleBlock
-                    panel
-                    episodeCountLine
+            ZStack(alignment: .top) {
+                GeometryReader { proxy in
+                    ScrollView {
+                        ZStack(alignment: .top) {
+                            hero
+                            stack
+                                .padding(.top, proxy.size.width / Self.heroAspectRatio - Self.titleRise)
+                        }
+                    }
+                    .scrollIndicators(.hidden)
                 }
-                .padding(.bottom, MultiverseDimensions.spaceL)
+                // The hero and the stack start at the top of the screen, under the status bar.
+                .ignoresSafeArea(edges: .top)
+                heroControls
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background { backdrop }
         }
+    }
+
+    /// The stack of `UI_SPEC.md` §6.3: the title block, the frosted panel and the episode line.
+    private var stack: some View {
+        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+            titleBlock
+            panel
+            episodeCountLine
+        }
+        .padding(.bottom, MultiverseDimensions.spaceS)
+    }
+
+    // MARK: - Backdrop
+
+    /// The glass backdrop (`UI_SPEC.md` §5.3, Figma `26:454`…`26:458`): the portrait again, full
+    /// screen and blurred, under the Space Black dim and the Detail's two glows.
+    private var backdrop: some View {
+        CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            .blur(radius: Self.backdropBlur, opaque: true)
+            .overlay { MultiverseBrandColors.spaceBlack.opacity(Self.backdropDim) }
+            .overlay { CosmicCanvas(.detail, base: false) }
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
 
     // MARK: - Failure
@@ -128,12 +183,37 @@ struct CharacterDetailScreen: View {
             .aspectRatio(Self.heroAspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)
             .overlay {
-                CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+                ZStack {
+                    // The sharp portrait, opaque to 55 % of the height and clear at the bottom.
+                    CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+                        .mask { fade(opaqueUntil: Self.heroDissolveStart) }
+                    // The progressive blur: a blurred copy that takes over below 55 % and fades out too.
+                    CharacterPortrait(url: state.header?.imageUrl ?? "", loader: loader)
+                        .blur(radius: MultiverseDimensions.spaceL)
+                        .mask { dissolveBand }
+                }
             }
             .clipped()
-            .overlay(alignment: .top) { heroControls }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text(state.header?.name ?? copy("nav_characters")))
+    }
+
+    /// Opaque from the top to [location] of the height, then fading to clear at the bottom.
+    private func fade(opaqueUntil location: CGFloat) -> some View {
+        var stops: [Gradient.Stop] = []
+        stops.append(.init(color: .black, location: 0))
+        stops.append(.init(color: .black, location: location))
+        stops.append(.init(color: .clear, location: 1))
+        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
+    }
+
+    /// Clear above the dissolve, strongest between it and the bottom, clear again at the bottom edge.
+    private var dissolveBand: some View {
+        var stops: [Gradient.Stop] = []
+        stops.append(.init(color: .clear, location: Self.heroDissolveStart - 0.05))
+        stops.append(.init(color: .black, location: 0.8))
+        stops.append(.init(color: .clear, location: 1))
+        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
     }
 
     /// The back, share and favourite controls (`UI_SPEC.md` §4.1, §6.3). The favourite is the
@@ -158,9 +238,11 @@ struct CharacterDetailScreen: View {
                 favouriteButton
             }
         }
-        .padding(MultiverseDimensions.spaceL)
+        .padding(.horizontal, MultiverseDimensions.spaceL)
     }
 
+    /// The favourite toggle (`UI_SPEC.md` §6.3, §7 "Favorite"): the heart bounces and the device gives
+    /// the success haptic when the state changes; Reduce Motion keeps the haptic and stills the bounce.
     private var favouriteButton: some View {
         GlassIconButton(
             systemImage: state.isFavorite ? "heart.fill" : "heart",
@@ -168,6 +250,8 @@ struct CharacterDetailScreen: View {
             accessibilityLabel: copy("detail_action_favorite"),
             action: { onIntent(CharacterDetailIntentToggleFavorite.shared) }
         )
+        .symbolEffect(.bounce, options: reduceMotion ? .nonRepeating.speed(0) : .nonRepeating, value: state.isFavorite)
+        .sensoryFeedback(.success, trigger: state.isFavorite)
         .accessibilityAddTraits(state.isFavorite ? [.isSelected] : [])
     }
 
@@ -189,7 +273,7 @@ struct CharacterDetailScreen: View {
                     .shadow(color: MultiverseBrandColors.spaceBlack, radius: MultiverseDimensions.spaceS)
                 if let subtitle {
                     Text(subtitle)
-                        .font(MultiverseType.subheadline)
+                        .font(MultiverseType.title3Semibold)
                         .foregroundStyle(MultiverseLabelColors.secondary)
                         .lineLimit(2)
                 }
@@ -215,9 +299,12 @@ struct CharacterDetailScreen: View {
     /// on a failure, the inline retry in their place (`ERROR_FLOW.md` §4, §8).
     private var panel: some View {
         GlassPanel {
-            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
+            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceL) {
                 stats
-                Divider()
+                Rectangle()
+                    .fill(MultiverseGlassColors.strokeHighlight)
+                    .frame(height: MultiverseDimensions.rimWidth)
+                    .accessibilityHidden(true)
                 info
             }
         }
@@ -240,58 +327,58 @@ struct CharacterDetailScreen: View {
         }
     }
 
-    /// The three connected tiles (`UI_SPEC.md` §6.3): Episodes count · Dimension · Species. A `nil`
-    /// dimension hides its tile rather than rendering a placeholder (`IC-019`).
+    /// The stats row of the frosted panel (`UI_SPEC.md` §4.2, §6.3, Figma `31:403`): Episodes count ·
+    /// Dimension · Species in equal columns split by 1 pt separators, each a Title 2 value over a
+    /// Caption 1 label, the Episodes value in Portal Glow. A `nil` dimension drops its column rather
+    /// than rendering a placeholder (`IC-019`).
     @ViewBuilder
     private var stats: some View {
         if let header = state.header {
-            HStack(alignment: .top, spacing: MultiverseDimensions.spaceS) {
+            HStack(spacing: 0) {
                 if let count = state.episodeCount {
-                    statTile(
+                    stat(
                         value: String(count.int32Value),
                         label: copy("detail_stat_episodes"),
-                        container: MultiverseColors.primaryContainer,
-                        content: MultiverseColors.onPrimaryContainer
+                        tint: MultiverseBrandColors.portalGlow
                     )
+                    statSeparator
                 }
                 if let dimension = state.dimension {
-                    statTile(
-                        value: dimension,
-                        label: copy("detail_stat_dimension"),
-                        container: MultiverseColors.tertiaryContainer,
-                        content: MultiverseColors.onTertiaryContainer
-                    )
+                    stat(value: dimension, label: copy("detail_stat_dimension"), tint: MultiverseLabelColors.primary)
+                    statSeparator
                 }
-                statTile(
+                stat(
                     value: CharacterPresentation.text(header.species),
                     label: copy("detail_stat_species"),
-                    container: MultiverseColors.secondaryFixedDim,
-                    content: MultiverseColors.onSecondaryFixed
+                    tint: MultiverseLabelColors.primary
                 )
             }
         }
     }
 
-    /// One stat tile of `UI_SPEC.md` §6.3.
-    private func statTile(value: String, label: String, container: Color, content: Color) -> some View {
-        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceXs) {
+    /// One column of the stats row.
+    private func stat(value: String, label: String, tint: Color) -> some View {
+        VStack(spacing: 1) {
             Text(value)
-                .font(MultiverseType.subheadlineEmphasized)
-                .foregroundStyle(content)
+                .font(MultiverseType.title2Bold)
+                .foregroundStyle(tint)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.7)
             Text(label)
-                .font(MultiverseType.caption2Emphasized)
-                .foregroundStyle(content)
+                .font(MultiverseType.caption1)
+                .foregroundStyle(MultiverseLabelColors.secondary)
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(MultiverseDimensions.spaceM)
-        .background(content: {
-            RoundedRectangle(cornerRadius: MultiverseDimensions.cornerLarge, style: .continuous)
-                .fill(container)
-        })
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+    }
+
+    /// The 1 pt separator between two stat columns.
+    private var statSeparator: some View {
+        Rectangle()
+            .fill(MultiverseGlassColors.strokeHighlight)
+            .frame(width: MultiverseDimensions.rimWidth, height: MultiverseDimensions.space2Xl)
+            .accessibilityHidden(true)
     }
 
     /// The info rows and the inline error (`UI_SPEC.md` §6.3, §8).

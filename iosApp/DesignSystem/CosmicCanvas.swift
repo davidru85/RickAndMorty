@@ -18,14 +18,22 @@ public struct CosmicCanvas: View {
     }
 
     private let layout: Layout
+    private let base: Bool
 
-    public init(_ layout: Layout = .topLevel) {
+    /// - Parameters:
+    ///   - layout: where the glows sit.
+    ///   - base: whether Space Black is painted under them; the Detail lays its glows over its own
+    ///     blurred-portrait backdrop instead.
+    public init(_ layout: Layout = .topLevel, base: Bool = true) {
         self.layout = layout
+        self.base = base
     }
 
     public var body: some View {
         Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(MultiverseBrandColors.spaceBlack))
+            if base {
+                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(MultiverseBrandColors.spaceBlack))
+            }
             for glow in glows(in: size) {
                 glow.draw(in: &context)
             }

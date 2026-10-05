@@ -150,9 +150,9 @@ public enum CardParallax {
     }
 }
 
-/// The glass **info row** (`UI_SPEC.md` §4.2, §1.2 `iOS/Glass info row`): a 38 pt symbol well in
-/// `Glass/Tint Green` with the symbol in Portal Glow, a Footnote secondary label and a Headline
-/// value, in a `LabeledContent`-shaped row for the frosted panel.
+/// The glass **info row** (`UI_SPEC.md` §4.2, §1.2 `iOS/Glass info row`, Figma
+/// `19-glass-info-row-ios`): a 38 pt circular symbol well in `Glass/Tint Green` with the symbol in
+/// Portal Glow, then the Footnote secondary label above the Headline value.
 public struct GlassInfoRow: View {
     private let symbol: String
     private let label: String
@@ -165,23 +165,23 @@ public struct GlassInfoRow: View {
     }
 
     public var body: some View {
-        HStack(spacing: MultiverseDimensions.spaceM) {
+        HStack(spacing: MultiverseDimensions.spaceL) {
             symbolWell
-            LabeledContent {
-                Text(value)
-                    .font(MultiverseType.headline)
-                    .foregroundStyle(MultiverseLabelColors.primary)
-            } label: {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(MultiverseType.footnote)
                     .foregroundStyle(MultiverseLabelColors.secondary)
+                Text(value)
+                    .font(MultiverseType.headline)
+                    .foregroundStyle(MultiverseLabelColors.primary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .combine)
     }
 
-    /// The symbol well: `Glass/Tint Green` on the component's own glass surface, the symbol in
-    /// Portal Glow (`UI_SPEC.md` §4.2).
+    /// The symbol well: a `Glass/Tint Green` circle on the component's own glass surface, the symbol
+    /// in Portal Glow (`UI_SPEC.md` §4.2).
     private var symbolWell: some View {
         Image(systemName: symbol)
             // A matched text style rather than a raw size, so the symbol scales with Dynamic Type
@@ -192,10 +192,7 @@ public struct GlassInfoRow: View {
                 width: MultiverseDimensions.infoRowSymbolWell,
                 height: MultiverseDimensions.infoRowSymbolWell
             )
-            .glassSurface(
-                .rounded(MultiverseDimensions.cornerMedium),
-                tint: MultiverseGlassColors.tintGreen
-            )
+            .glassSurface(.capsule, tint: MultiverseGlassColors.tintGreen)
     }
 }
 
