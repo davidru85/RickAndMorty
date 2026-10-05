@@ -72,7 +72,8 @@ targets:
       - path: Resources/es.lproj
         buildPhase: resources
       # The asset catalog (`DEC-139`): the brand's portal logo as a vector PDF, exported from Figma
-      # `Brand/Portal logo` (`16:13`), for the splash, the empty states and a failed portrait.
+      # `Brand/Portal logo` (`16:13`), for the splash, the empty states and a failed portrait; and the
+      # app icon (`DEC-150`).
       - path: Resources/Assets.xcassets
         buildPhase: resources
     info:
@@ -98,9 +99,9 @@ targets:
           - $(inherited)
           - $(KOTLIN_FRAMEWORK_DIR)
         SWIFT_EMIT_LOC_STRINGS: YES
-        # The asset catalog holds the portal logo only (`DEC-139`); the app icon is not packaged in it
-        # (`UI_SPEC.md` §10.2), so the compiler is not told to look for one.
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # The app icon (`UI_SPEC.md` §10.2, `DEC-150`): one 1024 × 1024 master exported from Figma
+        # `iOS/App icon` (`59:844`), in the Any slot only, since the app has one appearance.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     # The app links exactly one Kotlin framework (ADR-0012): its static archive, which the pre-build
     # script copies into the products directory as `libMultiverseExplorer.a`. The linker does not
     # report an archive it loads through `-framework` as one of its inputs, so with the framework
