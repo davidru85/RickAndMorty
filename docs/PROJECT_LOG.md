@@ -932,6 +932,18 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Decision / ADR reference:** `DEC-002` and `DEF-001` (unchanged), `DEC-123`, `DEC-125`.
 - **Validation:** `./gradlew verifyDocumentedCompleteness verifyDocumentedGate` after the edits, observed in the commit that carries them.
 
+### LOG-0136 · 2026-10-05 · P0 and the launcher fix merged; owner decisions; `TASK-116` starts
+
+- **Event:** the owner merged PR #192 (`TASK-111`, as `63d0652`) and PR #193 (`TASK-117`, as `9599434`). The owner also decided four things:
+  - `TASK-116` comes next.
+  - `CONF-85` is resolved with "Search characters".
+  - `DEC-122`'s write authorization is confirmed as recorded.
+  - Issues are created for `TASK-111`…`TASK-117`: #194–#200, with #194 and #200 closed against their merged pull requests.
+- **Rationale:** each pull request was green on its own head, but the two had not run together. The merged `main` was checked on the surfaces both touched before new work started on it.
+- **Affected artifacts:** `docs/BACKLOG.md` (`TASK-111`, `TASK-117` Done; `TASK-116` In progress), `docs/UI_SPEC.md` §4.1, `docs/DOCUMENTATION_AUDIT.md` (`CONF-85`), `docs/DECISION_BOARD.md` (`DEC-122` source and scope), `docs/HANDOFF.md`, and this entry.
+- **Decision / ADR reference:** `DEC-122`; `CONF-85`.
+- **Validation (observed on `9599434`):** `./gradlew :androidApp:testDebugUnitTest :androidApp:verifyReleaseArtifact :androidApp:verifyRoborazziDebug verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries` — exit 0; `:androidApp` 47 tests, 0 failures (P0's 44 plus the launcher's 3).
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main` (the B7–B9 stack through PR #189, merge `ce0d92a`; the `v0.1.0`/`v0.2.0` tags and releases are the owner's), and the code-review remediation is under way — phase P0 (`TASK-111`) on `fix/review-remediation-p0` and the single-launcher fix (`TASK-117`) on `fix/single-launcher-entry`, both awaiting review; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`) and the single launcher entry (PR #193, `TASK-117`); `TASK-116` is in progress on `feat/debug-request-logs`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -15,10 +15,10 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | Implemented in nine red→green increments; awaiting the owner's review (`LOG-0134`) |
-| `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | Implemented red→green; awaiting review; independent of P0 |
+| `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | **Merged** (PR #192, `63d0652`; issue #194 closed) |
+| `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | **Merged** (PR #193, `9599434`; issue #200 closed) |
 | `TASK-112` P1, `TASK-113` P2-A, `TASK-114` P2-B, `TASK-115` P3 | — | `Proposed`; each starts from `main` after the previous phase merges |
-| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | — | `Proposed`; starts after P0 merges (it touches the iOS bootstrap P0 changes) |
+| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | In progress (issue #199) |
 
 **Observed on the P0 branch:**
 - The documented Gradle set plus `allTests`, ktlint, lint, the contract replay and the iOS framework link passed (BUILD SUCCESSFUL, 1207 tasks). Its reports hold 870 tests and 0 failures, plus `:androidApp`'s 44 up-to-date tests and `:core:data`'s full 197 re-run alone.
@@ -27,10 +27,7 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 
 **Not done in P0, by decision:** hiding the iOS system bars on Detail moves to `TASK-114`, because the edge-swipe gesture cannot be verified without a UI-test harness. `TEST-UNIT-070` asserts the adapter's start, not the Swift-side reconciliation of a stored favourite, which cannot be built from Swift (`LOG-0134`).
 
-**The owner's next steps:**
-1. Review and merge the P0 pull request and the launcher pull request (either order; they touch different files except `docs/BACKLOG.md`, in different tables).
-2. Confirm or narrow the write authorization recorded in `DEC-122`.
-3. Decide `CONF-85` (UI_SPEC §4.1's search placeholder wording).
+**State after the merges (`LOG-0136`):** the combined `main` passes `:androidApp`'s 47 tests, `verifyReleaseArtifact`, `verifyRoborazziDebug`, `verifyModuleBoundaries` and the documentation gates. The owner confirmed `DEC-122` as recorded and resolved `CONF-85` ("Search characters"). Issues #194–#200 track `TASK-111`…`TASK-117`.
 
 The Spanish strings of P0 are approved, and `CONF-86` is resolved: the microphone stays deferred outside the MVP (`LOG-0135`).
 
