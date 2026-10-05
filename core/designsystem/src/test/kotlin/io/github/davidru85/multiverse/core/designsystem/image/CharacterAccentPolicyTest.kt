@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -172,6 +173,23 @@ class CharacterAccentPolicyTest {
             assertEquals("a hit protects its entry from the next eviction", 1, source.reads["a"])
             policy.accentFor("b")
             assertEquals("the entry that was not hit left instead", 2, source.reads["b"])
+        }
+
+    /**
+     * `TEST-UNIT-099` — one extraction per URL in flight (`TASK-115`): two cards of the same character
+     * asking at once each ran an extraction, because the memo is only written when one finishes.
+     */
+    @Test
+    fun `TEST-UNIT-099 given_two_first_calls_for_one_url_at_once_when_both_resolve_then_the_pixels_are_read_once`() =
+        runTest {
+            val source = CountingPixels(redPixels)
+            val policy = policy(source)
+
+            val first = async { policy.accentFor("url") }
+            val second = async { policy.accentFor("url") }
+
+            assertEquals("both callers get the same accent", first.await(), second.await())
+            assertEquals("a URL in flight is extracted once", 1, source.reads["url"])
         }
 
     @Test
