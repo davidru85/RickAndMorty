@@ -40,6 +40,7 @@
 		364CDA3B8DD83E787F69E36E /* screenBaselines.discovery-grid.png in Resources */ = {isa = PBXBuildFile; fileRef = 3197C6466085064C3C75F74F /* screenBaselines.discovery-grid.png */; };
 		390EF1F7D7B0747448A5D42A /* ShellNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54C460E27588DBDEF1A64F0 /* ShellNavigationTests.swift */; };
 		4144038F3E3F2CE0344835D1 /* PortraitZoomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F0B7CC81D36DBA06B57EE94 /* PortraitZoomTests.swift */; };
+		43B515B98F65B83E85C848A6 /* DiagnosticsSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F9B77C4A8E565A87DABB7C /* DiagnosticsSheetTests.swift */; };
 		457D0A794E53B750F8CC4F7D /* designSystemBaselines.card-opaque.png in Resources */ = {isa = PBXBuildFile; fileRef = 62C1A5CD3ADB5E12A93ECBE1 /* designSystemBaselines.card-opaque.png */; };
 		4850E42E62D59B7A9A160ACE /* screenBaselines.discovery-appending.png in Resources */ = {isa = PBXBuildFile; fileRef = 5D4CACEDA34A4A8A527914F4 /* screenBaselines.discovery-appending.png */; };
 		48610B257E27BDF266440A49 /* SettingsStateHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184BC8919E1A106C1F342CE7 /* SettingsStateHolder.swift */; };
@@ -185,6 +186,7 @@
 		B27A9914B0A3F6AF21B775B5 /* DetailLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailLayoutTests.swift; sourceTree = "<group>"; };
 		B52E245B17EFA9A9199BBAAD /* DetailChromeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailChromeTests.swift; sourceTree = "<group>"; };
 		B54C460E27588DBDEF1A64F0 /* ShellNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigationTests.swift; sourceTree = "<group>"; };
+		B5F9B77C4A8E565A87DABB7C /* DiagnosticsSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsSheetTests.swift; sourceTree = "<group>"; };
 		B7D1117B9C8B775F120F5587 /* ShellTabItemsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTabItemsTests.swift; sourceTree = "<group>"; };
 		B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		BB5C6FB8DEACCA0A47BEBC50 /* CardParallaxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardParallaxTests.swift; sourceTree = "<group>"; };
@@ -373,6 +375,7 @@
 				B27A9914B0A3F6AF21B775B5 /* DetailLayoutTests.swift */,
 				7E96B53A066AA718E69A5683 /* DetailNavigationTests.swift */,
 				D2002B38A402CEE19033380E /* DetailStateHolderTests.swift */,
+				B5F9B77C4A8E565A87DABB7C /* DiagnosticsSheetTests.swift */,
 				CB0CA3B5D900AB714320D1AF /* DiscoveryFidelityTests.swift */,
 				2D710C46D4C4A463600F539C /* DiscoveryGridTransitionTests.swift */,
 				C9BA2894D783D40038B27779 /* DiscoveryNoticeTests.swift */,
@@ -652,6 +655,7 @@
 				8233D88A6293EF678D4EC2B4 /* DetailLayoutTests.swift in Sources */,
 				1663768FC46470905A7162A7 /* DetailNavigationTests.swift in Sources */,
 				F18765820EF16AA21F9FD174 /* DetailStateHolderTests.swift in Sources */,
+				43B515B98F65B83E85C848A6 /* DiagnosticsSheetTests.swift in Sources */,
 				ED3B960D1627354DE3A3AE91 /* DiscoveryFidelityTests.swift in Sources */,
 				351E2537B554E56261C3D52A /* DiscoveryGridTransitionTests.swift in Sources */,
 				B98F1AC04F644F1F5AFF0F5B /* DiscoveryNoticeTests.swift in Sources */,
