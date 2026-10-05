@@ -38,6 +38,9 @@
 "favorites_body" = "Toca el corazón en la página de un personaje para guardarlo aquí.";
 "favorites_heading" = "Aún no hay favoritos";
 "filter_all" = "Todos";
+"gender_female" = "Femenino";
+"gender_genderless" = "Sin género";
+"gender_male" = "Masculino";
 "nav_characters" = "Personajes";
 "nav_episodes" = "Episodios";
 "nav_favorites" = "Favoritos";

@@ -15,7 +15,9 @@ import io.github.davidru85.multiverse.core.presentation.LoadState
  * known fields render before the detail response arrives and the shared-element transition has a
  * source (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`). An `Error` never clears a non-null [header]: a detail
  * failure with list data keeps the known fields and offers the inline retry
- * (`AC-REQ-FUNC-002-3`). [episodeCount] comes from `CharacterDetails.episodeIds.size`, never from the
+ * (`AC-REQ-FUNC-002-3`). [gender] is the `IC-017.genderKey` label, `null` until the detail answers,
+ * because the list card carries no gender (`REQ-FUNC-002`, `DEC-131`). [episodeCount] comes from
+ * `CharacterDetails.episodeIds.size`, never from the
  * enrichment, so it renders even when `episodeSummaries` is `null` (`AC-REQ-FUNC-023-2`).
  * [dimension] is produced by `IC-017.dimensionText`; `null` means "hide the tile". [info] holds the
  * rows in the fixed order `Origin`, `LastKnownLocation`, `FirstSeenIn`: the first two are always
@@ -26,6 +28,7 @@ import io.github.davidru85.multiverse.core.presentation.LoadState
  */
 public data class CharacterDetailUiState(
     public val header: CharacterCardUi? = null,
+    public val gender: CopyKey? = null,
     public val episodeCount: Int? = null,
     public val dimension: String? = null,
     public val info: List<InfoRowUi> = emptyList(),

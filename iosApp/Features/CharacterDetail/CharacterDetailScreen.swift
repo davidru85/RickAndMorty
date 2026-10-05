@@ -152,13 +152,13 @@ struct CharacterDetailScreen: View {
         }
     }
 
-    /// `Species · Origin`, joined by the shared helper from parts the state already carries
-    /// (`UI_SPEC.md` §6.3).
+    /// `Species · Gender`, joined by the shared helper from parts the state already carries
+    /// (`UI_SPEC.md` §6.3, `DEC-131`).
     private var subtitle: String? {
         guard let header = state.header else { return nil }
         return CharacterPresentation.subtitle(
             species: CharacterPresentation.text(header.species),
-            info: state.info
+            gender: state.gender
         )
     }
 

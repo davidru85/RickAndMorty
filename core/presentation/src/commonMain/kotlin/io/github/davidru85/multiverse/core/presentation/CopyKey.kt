@@ -49,6 +49,11 @@ public object CopyKeys {
     public val STATUS_DEAD: CopyKey = key("status_dead")
     public val VALUE_UNKNOWN: CopyKey = key("value_unknown")
 
+    // The gender labels (`IC-017`, `DEC-131`); an unknown or unrecognised gender is `value_unknown`.
+    public val GENDER_FEMALE: CopyKey = key("gender_female")
+    public val GENDER_MALE: CopyKey = key("gender_male")
+    public val GENDER_GENDERLESS: CopyKey = key("gender_genderless")
+
     // The B4 surfaces (`TASK-013`, `DEC-100`, `DEC-101`): the app name, the splash, the navigation
     // and the two placeholder screens. Each key's English string is canonical in `UI_SPEC.md`
     // §6.1/§6.4 and is carried by the one Android copy set in `:core:designsystem`.

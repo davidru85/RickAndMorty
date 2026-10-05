@@ -77,6 +77,7 @@ public object CharacterDetailReducer {
     ): CharacterDetailUiState =
         CharacterDetailUiState(
             header = header ?: headerOf(details, formatters),
+            gender = formatters.genderKey(details.gender),
             episodeCount = details.episodeIds.size,
             dimension = formatters.dimensionText(details.origin, enrichRequested),
             info = infoRows(details, enrichRequested, formatters),

@@ -190,19 +190,20 @@ private fun TitleBlock(state: CharacterDetailUiState) {
 }
 
 /**
- * `Species · Gender · Origin` joined from data-derived parts only. The screen joins the parts it is
- * given rather than deriving any of them: [CharacterDetailUiState.dimension] and the origin row's
- * value already carry the shared derivations, and a part that is absent is left out. An unknown
- * origin is left out too: the Origin row below already reads "Unknown", and the subtitle names a
- * place or nothing (`DEC-131`).
+ * `Species · Gender · Origin` (`UI_SPEC.md` §6.3, `DEC-131`). The screen joins the parts it is given
+ * rather than deriving any of them: [CharacterDetailUiState.gender] and the origin row's value already
+ * carry the shared derivations, and a part that is absent is left out — the gender until the detail
+ * answers. An unknown origin is left out too: the Origin row below already reads "Unknown", and the
+ * subtitle names a place or nothing.
  */
 @Composable
 private fun Subtitle(
     state: CharacterDetailUiState,
     species: DisplayText,
 ): String? {
+    val gender = state.gender?.let { CopyResolver.copy(it.value) }
     val origin = (state.info.firstOrNull { it.kind == InfoRowKind.Origin }?.value as? DisplayText.Data)?.value
-    val parts = listOfNotNull(species.text(), origin)
+    val parts = listOfNotNull(species.text(), gender, origin)
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 

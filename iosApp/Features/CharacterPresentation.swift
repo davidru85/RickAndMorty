@@ -125,16 +125,16 @@ enum CharacterPresentation {
         }
     }
 
-    /// The detail subtitle: `Species · Origin`, joined from parts the state already carries.
+    /// The detail subtitle: `Species · Gender` (`UI_SPEC.md` §6.3, `DEC-131`).
     ///
-    /// The screen joins the parts it is given rather than deriving any of them: the origin row's
-    /// value is the shared derivation, and a part that is absent is left out. An unknown origin is
-    /// left out too: the Origin row already reads "Unknown", and the subtitle names a place or
-    /// nothing (`DEC-131`). `nil` means "no subtitle", never an empty line (`IC-019`, `UI_SPEC.md` §6.3).
-    static func subtitle(species: String, info: [InfoRowUi]) -> String? {
+    /// The screen joins the parts it is given rather than deriving any of them: the gender is the
+    /// shared `IC-017` label, `nil` until the detail answers because the list card carries none, and
+    /// a part that is absent is left out. The origin has its own row, so iOS does not repeat it here.
+    /// `nil` means "no subtitle", never an empty line (`IC-019`).
+    static func subtitle(species: String, gender: Any?) -> String? {
         var parts: [String] = [species]
-        if let origin = info.first(where: { $0.kind == InfoRowKind.origin })?.value as? DisplayTextData {
-            parts.append(origin.value)
+        if let gender {
+            parts.append(LocalizedCopy.shared.text(for: key(gender)))
         }
         let joined = parts.filter { !$0.isEmpty }.joined(separator: " · ")
         return joined.isEmpty ? nil : joined

@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.presentation
 
+import io.github.davidru85.multiverse.core.domain.model.CharacterGender
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.model.LocationSummary
@@ -13,6 +14,9 @@ import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 public interface PresentationFormatters {
     /** The status label; an unknown or unrecognised status is [unknownKey]. */
     public fun statusKey(status: CharacterStatus): CopyKey
+
+    /** The gender label (`DEC-131`); an unknown or unrecognised gender is [unknownKey]. */
+    public fun genderKey(gender: CharacterGender): CopyKey
 
     /** The single source of the "Unknown" presentation. */
     public fun unknownKey(): CopyKey
@@ -72,6 +76,14 @@ public object DefaultPresentationFormatters : PresentationFormatters {
             CharacterStatus.Alive -> CopyKeys.STATUS_ALIVE
             CharacterStatus.Dead -> CopyKeys.STATUS_DEAD
             CharacterStatus.Unknown, is CharacterStatus.Unsupported -> unknownKey()
+        }
+
+    override fun genderKey(gender: CharacterGender): CopyKey =
+        when (gender) {
+            CharacterGender.Female -> CopyKeys.GENDER_FEMALE
+            CharacterGender.Male -> CopyKeys.GENDER_MALE
+            CharacterGender.Genderless -> CopyKeys.GENDER_GENDERLESS
+            CharacterGender.Unknown, is CharacterGender.Unsupported -> unknownKey()
         }
 
     override fun unknownKey(): CopyKey = CopyKeys.VALUE_UNKNOWN

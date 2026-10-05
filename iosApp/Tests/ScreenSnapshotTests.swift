@@ -40,6 +40,7 @@ final class ScreenSnapshotTests: XCTestCase {
         }
         let detail = CharacterDetailUiState(
             header: cards[0],
+            gender: CopyKeys.shared.GENDER_MALE,
             episodeCount: KotlinInt(int: 51),
             dimension: "Dimension C-137",
             info: detailRows(),
@@ -105,6 +106,7 @@ final class ScreenSnapshotTests: XCTestCase {
         let failedDetail = { (header: CharacterCardUi?) in
             CharacterDetailUiState(
                 header: header,
+                gender: nil,
                 episodeCount: nil,
                 dimension: nil,
                 info: [],

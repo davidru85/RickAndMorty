@@ -706,6 +706,9 @@ object CopyKeys {
     val STATUS_ALIVE: CopyKey           // "status_alive"
     val STATUS_DEAD: CopyKey            // "status_dead"
     val VALUE_UNKNOWN: CopyKey          // "value_unknown", the one "Unknown"
+    val GENDER_FEMALE: CopyKey          // "gender_female"
+    val GENDER_MALE: CopyKey            // "gender_male"
+    val GENDER_GENDERLESS: CopyKey      // "gender_genderless"
     val APP_NAME: CopyKey               // "app_name", the launcher label
     // … the B4 surface keys: the splash, the four navigation labels, the two placeholder screens,
     // each registered by TASK-013 with the resources that carry it (DEC-101) …
@@ -719,6 +722,7 @@ sealed interface DisplayText {
 
 interface PresentationFormatters {
     fun statusKey(status: CharacterStatus): CopyKey
+    fun genderKey(gender: CharacterGender): CopyKey
     fun unknownKey(): CopyKey
     fun valueText(raw: String?): DisplayText
     fun dimensionText(origin: LocationSummary, enrichRequested: Boolean): String?
@@ -750,6 +754,7 @@ object DefaultPresentationFormatters : PresentationFormatters
   - The formatters are pure and platform-free: no clock, no network, no `Locale`-dependent formatting beyond what the platform resource layer applies, and no platform type in a signature.
   - `unknownKey()` is the single source of the "Unknown" presentation: a raw API value that is absent, blank or `"unknown"` is rendered through it and `MUST NOT` be displayed raw (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`).
   - `statusKey(CharacterStatus.Unsupported(raw))` returns `unknownKey()`; an unrecognised status never renders as an internal value (`REQ-NFR-004`, `AC-REQ-NFR-004-2`).
+  - `genderKey` returns `gender_female`, `gender_male` or `gender_genderless` for the three supported genders, and `unknownKey()` for `Unknown` and `Unsupported(raw)` (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`, `DEC-131`). The approved copy is "Female", "Male", "Genderless"; Spanish "Femenino", "Masculino", "Sin género" (`DEC-128`).
   - A formatter returns `null` to mean "hide this row/tile" and `MUST NOT` return an empty or placeholder string (`UI_SPEC.md` §6.3).
   - `dimensionText` derives the value from `origin` and returns `null` when the origin carries neither a dimension nor a parenthesised designation; it `MUST NOT` invent a value (`UI_SPEC.md` §6.3).
   - `firstSeenText(null)` returns `null`; the "first seen in" row is therefore absent exactly when enrichment was not requested (`AC-REQ-FUNC-023-2`). An enrichment that found no episode is `null` as well; otherwise the value is the first episode's "name · code" (`UI_SPEC.md` §6.3).
@@ -836,6 +841,7 @@ sealed interface CharacterListIntent {
 ```kotlin
 data class CharacterDetailUiState(
     val header: CharacterCardUi? = null,
+    val gender: CopyKey? = null,
     val episodeCount: Int? = null,
     val dimension: String? = null,
     val info: List<InfoRowUi> = emptyList(),
@@ -861,6 +867,7 @@ sealed interface CharacterDetailIntent {
 - **Invariants**
   - `header` is populated from the list-provided `CharacterCardUi` before any detail response and `MUST` be rendered first, so the shared-element/zoom transition has a source (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`, `DESIGN.md` §4.2).
   - `loadState == Error` `MUST NOT` clear a non-null `header`: a detail failure with list data keeps the known fields and offers the inline retry (`AC-REQ-FUNC-002-3`).
+  - `gender` is `IC-017.genderKey(CharacterDetails.gender)` once a detail has answered, and `null` before that and on a failure, because the list-provided card carries no gender. Android renders the subtitle "Species · Gender · Origin", iOS "Species · Gender" (`REQ-FUNC-002`, `UI_SPEC.md` §6.3, `DEC-131`).
   - `episodeCount` is derived from `CharacterDetails.episodeIds.size` and `MUST NOT` be computed from `episodeSummaries`, so it renders even when enrichment is absent (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`).
   - `InfoRowKind.FirstSeenIn` appears in `info` only when enrichment was requested and `episodeSummaries` is non-null; the row is absent rather than empty (`AC-REQ-FUNC-023-2`).
   - `dimension == null` means "hide the dimension tile"; it is produced by `IC-017.dimensionText` and `MUST NOT` be replaced by a placeholder (`UI_SPEC.md` §6.3).
@@ -1081,6 +1088,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `genderKey(CharacterGender)` and the keys `gender_female`, `gender_male`, `gender_genderless`; `CharacterDetailUiState.gender: CopyKey?`. Breaking for the Swift consumer (§8.2), whose initialiser gains the parameter; the iOS app and its tests change in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-019` (`TASK-112`): `InfoRowUi.value` becomes `DisplayText`, and an unknown origin or location keeps its row with `value_unknown`; only `FirstSeenIn` stays availability-filtered. Breaking for the Swift consumer (§8.2), which resolves the value through `CharacterPresentation.text` in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-007`/`IC-014` (`TASK-112`): a `ForceNetwork` load joins a revalidation in flight; an enriched detail is revalidated with its episodes; a stale first page is followed by a silent network load that clears the stale state on success. | `DEC-130` |
 | 2026-10-05 | `IC-014` (`TASK-112`): `PagerState.isLoading` added, and a protocol switch resets like `setFilter`. The Swift initialiser of `PagerState` gains the parameter; no Swift code constructs one. | `DEC-130` |

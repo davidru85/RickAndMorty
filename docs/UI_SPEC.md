@@ -570,6 +570,7 @@ The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but un
 | `error_message_unknown` | Something went wrong on the way to this dimension. Try again. |
 | `detail_error_inline` | Couldn't load these details. Retry. |
 | `status_alive` · `status_dead` · `value_unknown` | Alive · Dead · Unknown |
+| `gender_female` · `gender_male` · `gender_genderless` | Female · Male · Genderless (`DEC-131`; an unknown gender is `value_unknown`) |
 
 The app name (`app_name`) is canonical too and reads "Multiverse Explorer". Spanish values live in each platform's Spanish resources; the Android set ships them and the phase pull request lists them for owner review.
 

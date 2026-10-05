@@ -81,4 +81,9 @@
     <string name="status_alive">Vivo</string>
     <string name="status_dead">Muerto</string>
     <string name="value_unknown">Desconocido</string>
+
+    <!-- Gender presentation (IC-017, DEC-131) -->
+    <string name="gender_female">Femenino</string>
+    <string name="gender_male">Masculino</string>
+    <string name="gender_genderless">Sin género</string>
 </resources>
