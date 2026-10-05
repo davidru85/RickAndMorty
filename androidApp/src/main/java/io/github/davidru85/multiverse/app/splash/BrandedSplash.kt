@@ -13,6 +13,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -230,10 +232,8 @@ private val PortalAcceleration = CubicBezierEasing(0.32f, 0f, 0.67f, 0f)
 /** The portal itself: Figma's multi-tone spiral, drawn untinted so the rotation is visible. */
 @Composable
 private fun PortalMark(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.Image(
-        painter =
-            androidx.compose.ui.res
-                .painterResource(id = SPLASH_PORTAL_DRAWABLE),
+    Image(
+        painter = painterResource(id = SPLASH_PORTAL_DRAWABLE),
         contentDescription = null,
         modifier = modifier,
     )
