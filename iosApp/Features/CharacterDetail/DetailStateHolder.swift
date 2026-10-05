@@ -43,6 +43,9 @@ public final class DetailStateHolder: ObservableObject {
             preconditionFailure("the shared detail holder published no initial state")
         }
         self.state = initial
+        // Once, as the Android `CharacterDetailViewModel` does: without it nothing loads and the stored
+        // favourite set is never observed, so a tap on a stored favourite would remove it.
+        holder.start()
         observation = Task { @MainActor [weak self, scope] in
             while !Task.isCancelled {
                 guard let self else { break }
