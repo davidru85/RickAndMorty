@@ -37,7 +37,11 @@ public class CoilPortraitPixels(
     }
 
     private companion object {
-        /** The sampled portrait's longest side: enough colours for the quantizer, cheap to decode. */
-        const val ACCENT_SAMPLE_PX = 64
+        /**
+         * The sampled portrait's longest side (`TASK-128`): 1 024 pixels still fill the quantizer's 128
+         * colours, and the decode and the quantizer pass cost a quarter of what a 64 px sample did, once per
+         * card a fling brings on screen.
+         */
+        const val ACCENT_SAMPLE_PX = 32
     }
 }
