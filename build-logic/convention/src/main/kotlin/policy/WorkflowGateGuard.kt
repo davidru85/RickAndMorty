@@ -94,7 +94,10 @@ internal object WorkflowGateGuard {
     private fun requiredJobs(iosRestored: Boolean): List<String> = if (iosRestored) REQUIRED_JOBS else listOf("android")
 
     /** The runner each required job must use: one Linux, one macOS (`DEC-054`, `DEC-071`). */
-    private val REQUIRED_RUNNERS = mapOf("android" to "ubuntu-latest", "ios" to "macos-latest")
+    // The iOS runner is `xcode-27` rather than `macos-latest` from `TASK-051`: the Swift tool lock
+    // pins swift-format to Xcode 27.0, and `macos-latest` ships Xcode 26.x. The runner image was
+    // verified against the published toolset listing on 2026-10-04.
+    private val REQUIRED_RUNNERS = mapOf("android" to "ubuntu-latest", "ios" to "xcode-27")
 
     /**
      * `TEST-UNIT-044` (`GAP-028`): the task names a job may exclude with `-x`, because the runner's

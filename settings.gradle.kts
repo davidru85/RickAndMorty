@@ -42,6 +42,7 @@ include(
     ":core:data",
     ":core:presentation",
     ":core:designsystem",
+    ":core:ios",
     ":core:testing",
     ":core:diagnostics",
     ":feature:discovery",

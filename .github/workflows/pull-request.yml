@@ -295,15 +295,104 @@ jobs:
             core/data/build/test-results/**
           if-no-files-found: ignore
 
+  ios:
+    name: ios
+    # The `xcode-27` image carries the toolchain `tools/swift-tools.lock` pins (`macos-latest`
+    # ships Xcode 26.x, whose swift-format is not the locked one). Verified against the runner-image
+    # toolset listing on 2026-10-04; the job fails closed, naming the available toolchains, if the
+    # locked Xcode is absent.
+    runs-on: xcode-27
+    timeout-minutes: 40
+    steps:
+      - name: Check out the same revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up the JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # The shared suites on the Apple simulator target and the native contract replay. Both are
+      # blocking again now that the app target exists (`TASK-051` restored them; the suspension of
+      # `DEC-083` ended with the `iosApp` application target the tripwire detects).
+      - name: Run the shared suites on the Apple target
+        run: ./gradlew iosSimulatorArm64Test --stacktrace
+      # `TASK-070`: `:core:ios` has no Android target, so it is deliberately absent from the
+      # `module-checks` matrix. Its formatter therefore ran in no job, and `./gradlew check` failed
+      # locally on a file no CI job checked. It is a Kotlin module like the others, so its formatter
+      # belongs beside the Apple suites rather than nowhere.
+      - name: Check the framework module's Kotlin formatting
+        run: ./gradlew :core:ios:ktlintCheck --stacktrace
+      - name: Replay the contract suite on the Apple target
+        run: ./gradlew :core:data:contractTestReplayIosSimulator --stacktrace
+      # The pinned Swift toolchain, then the formatting and lint row (`DEC-076`, `TASK-051`). The
+      # script verifies the lock's SHA-256 before it runs either tool and fails closed otherwise.
+      # `macos-latest` selects its own Xcode (26.6 at the time of writing) while `swift-tools.lock`
+      # pins swift-format to the Xcode the project verified, so the job selects that toolchain
+      # explicitly. Without this the quality gate fails closed — correctly — on a runner whose
+      # default Xcode is not the locked one.
+      - name: Select the pinned Xcode
+        run: |
+          LOCKED="$(awk '$1 == "swift-format" { print $2 }' tools/swift-tools.lock | sed "s/@Xcode-//")"
+          echo "tools/swift-tools.lock pins Xcode $LOCKED"
+          # The runner names the bundle with the version the lock records (`Xcode_27.0.app`) while the
+          # active selection may report it without the patch component (`Xcode_27.app`); both spellings
+          # name the same toolchain, so both are accepted rather than failing on the directory name.
+          SELECTED=""
+          for candidate in "/Applications/Xcode_$LOCKED.app" "/Applications/Xcode_${LOCKED%.*}.app"; do
+            if [ -d "$candidate" ]; then
+              SELECTED="$candidate"
+              break
+            fi
+          done
+          if [ -n "$SELECTED" ]; then
+            sudo xcode-select -s "$SELECTED"
+          elif [ -n "$(xcodebuild -version 2>/dev/null | awk '/^Xcode /{ print $2 }' | grep -x "$LOCKED" || true)" ]; then
+            # The selected toolchain already reports the locked version, so no change is needed.
+            echo "the active Xcode already reports $LOCKED"
+          else
+            echo "WARNING: /Applications/Xcode_$LOCKED.app is not installed on this runner; the available toolchains are:"
+            ls -d /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          xcodebuild -version
+      - name: Set up the Swift tools
+        run: bash tools/swift-tools-setup.sh
+      # `TEST-UNIT-046` covers these scripts themselves, and nothing ran them: the suite that proves
+      # the Swift gate fails closed was itself unchecked by any job, so a defect in it would surface
+      # only as a red `ios` job. It needs no simulator and no network.
+      - name: Prove the Swift quality scripts fail closed
+        run: bash tools/swift-tools-test.sh
+      - name: Swift formatting and lint
+        run: bash tools/swift-lint.sh iosApp
+      # The snapshot baselines are recorded on this device and runtime — the iOS 27.0 runtime the pinned
+      # Xcode ships, which the runner provides — so a different runtime, which renders glass
+      # differently, fails visibly instead of being compared against the wrong reference.
+      - name: Build the iOS app and run its tests and snapshot baselines
+        run: xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0' -resultBundlePath build/ios-tests.xcresult CODE_SIGNING_ALLOWED=NO
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+            build/ios-tests.xcresult/**
+          if-no-files-found: ignore
+
   android:
     name: android
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: ${{ always() }}
-    needs: [module-checks, designsystem, app-tests, app-artifacts, build-logic, policies, dependency-health, contract-replay]
+    needs: [module-checks, designsystem, app-tests, app-artifacts, build-logic, policies, dependency-health, contract-replay, ios]
     env:
       CI_JOB_RESULTS: ${{ toJSON(needs) }}
-      CI_REQUIRE_IOS: "false"
+      CI_REQUIRE_IOS: "true"
     steps:
       - name: Check out the same revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

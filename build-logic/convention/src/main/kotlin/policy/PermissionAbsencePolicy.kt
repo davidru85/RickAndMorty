@@ -9,8 +9,8 @@ import java.io.File
  * `SECURITY.md` §8.1 forbids a `RECORD_AUDIO` entry and an `NSSpeechRecognitionUsageDescription` /
  * `NSMicrophoneUsageDescription` entry while voice search is deferred. The audit covers the whole
  * repository rather than only the shipped manifest, so a new manifest or plist that introduces one
- * is caught wherever it lands; `iosApp/` does not exist yet, so finding no plist is a pass and not
- * an error. The shipped manifest must be present: the check fails closed when it is missing.
+ * is caught wherever it lands, the iOS app's `Info.plist` included. The shipped manifest must be
+ * present: the check fails closed when it is missing.
  *
  * A source manifest cannot show a permission that a library manifest merges into the APK, so
  * [scanArtifact] reads the shipped artifact's own permission table as well (`TESTING.md` §17 places

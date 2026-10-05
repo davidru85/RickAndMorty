@@ -39,6 +39,7 @@ internal object ModularWorkflowGate {
         "contract-replay" to setOf(":core:data:contractTestReplayAndroidHost"),
     )
     private const val MATRIX_RUN = "./gradlew \$GRADLE_TASKS --stacktrace"
+    private const val IOS_SCHEME = "MultiverseExplorer"
     private const val RESULT_RUN = "python3 .github/scripts/verify-ci-results.py"
 
     fun matches(document: WorkflowDocument): Boolean =
@@ -58,7 +59,11 @@ internal object ModularWorkflowGate {
                 report(null, "the `$name` job is missing from the modular gate (TEST-UNIT-061)")
                 return@forEach
             }
-            val runner = if (name == "ios") "macos-latest" else "ubuntu-latest"
+            // `TASK-051`: the iOS runner is `xcode-27`, because `tools/swift-tools.lock` pins
+            // swift-format to Xcode 27.0 and `macos-latest` ships Xcode 26.x. The runner image is
+            // asserted here as well as in `WorkflowGateGuard`, so a job moved back to a runner
+            // without the locked toolchain fails the gate rather than the Swift step.
+            val runner = if (name == "ios") "xcode-27" else "ubuntu-latest"
             if (job.stringAt("runs-on") != runner) report(job, "the `$name` job must run on `$runner`")
             val condition = job.scalarAt("if")
             if (name == "android") {
@@ -143,8 +148,25 @@ internal object ModularWorkflowGate {
         }
         jobs["ios"]?.let { job ->
             val commands = job.executableRunTexts().filter { it.executesGradle() }.joinToString(" ")
-            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator").forEach { command ->
+            listOf("iosSimulatorArm64Test", ":core:data:contractTestReplayIosSimulator", ":core:ios:ktlintCheck").forEach { command ->
                 if (!commands.contains(command)) report(job, "`$command` is not an executable step of the ios gate job")
+            }
+            // TASK-051: the Swift quality gate (`DEC-076`) is part of the iOS row, so removing its
+            // step is a gate narrowing rather than a simplification. The step runs the pinned script,
+            // which fails closed when a tool is missing.
+            if (job.executableRunTexts().none { it.contains("tools/swift-lint.sh") }) {
+                report(job, "the iOS job must run the Swift quality gate `tools/swift-lint.sh` (`DEC-076`, `TASK-051`)")
+            }
+            // `TEST-UNIT-046` proves those scripts fail closed, and no job ran it: the suite guarding
+            // the gate was itself unguarded, so a defect in it could only surface as a red `ios` job.
+            if (job.executableRunTexts().none { it.contains("tools/swift-tools-test.sh") }) {
+                report(job, "the iOS job must run the Swift fail-closed suite `tools/swift-tools-test.sh` (`TEST-UNIT-046`)")
+            }
+            // `TESTING.md` §14.2: the Swift test target — the state holders, the screens and the committed
+            // snapshot baselines — runs on every pull request from `TASK-051`/`TASK-059`. Without this
+            // step those cases exist and never execute in the gate.
+            if (job.executableRunTexts().none { it.contains("xcodebuild") && it.contains(" test") && it.contains("-scheme $IOS_SCHEME") }) {
+                report(job, "the iOS job must build the iOS app and run its test target with `xcodebuild test -scheme $IOS_SCHEME` (`TESTING.md` §14.2, `TASK-051`, `TASK-059`)")
             }
         }
         return findings

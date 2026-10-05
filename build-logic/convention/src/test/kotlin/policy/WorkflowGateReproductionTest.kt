@@ -71,7 +71,7 @@ class WorkflowGateReproductionTest {
                 // Every required job carries `if: ${{ false }}`: the rollup is green and nothing ran.
                 text.replace("    if: \${{ always() }}\n", "")
                     .replace("    runs-on: ubuntu-latest", "    if: \${{ false }}\n    runs-on: ubuntu-latest")
-                    .replace("    runs-on: macos-latest", "    if: \${{ false }}\n    runs-on: macos-latest")
+                    .replace("    runs-on: xcode-27", "    if: \${{ false }}\n    runs-on: xcode-27")
             }
         assertTrue(
             findings.any { it.contains("can skip its required checks") },
@@ -125,6 +125,21 @@ class WorkflowGateReproductionTest {
         assertTrue(
             findings.any { it.contains("fixture/replay mode only") },
             "Bypass 4 (GAP-016): live mode reachable from a flow-sequence `on:` must be reported",
+        )
+    }
+
+    @Test
+    fun `an ios job that never builds and tests the iOS app is reported`() {
+        // `TESTING.md` §14.2: the Swift test targets and the iOS snapshot baselines run on every pull
+        // request from `TASK-051`/`TASK-059`. A job that runs only the Kotlin/Native suites and the
+        // Swift linters leaves both unexecuted, so the step that runs them must not be removable.
+        val findings =
+            findingsAfter { text ->
+                text.lines().filterNot { it.contains("xcodebuild") && it.contains(" test") }.joinToString("\n") + "\n"
+            }
+        assertTrue(
+            findings.any { it.contains("xcodebuild") && it.contains("TESTING.md") },
+            "an ios job without the iOS app's test step must be reported; got $findings",
         )
     }
 
