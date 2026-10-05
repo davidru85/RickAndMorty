@@ -1187,6 +1187,27 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 - **Not verified:** a Release device archive with signing, since no signing identity is configured here.
 
+### LOG-0146 · 2026-10-05 · `TASK-122`: the iOS app icon
+
+- **Event:** `TASK-122` packages the iOS app icon of `UI_SPEC.md` §10.2 (`DEC-150`). Until now the app showed the system placeholder.
+- **The change:**
+  - Figma `iOS/App icon` (`59:844`) was exported at 1024 × 1024. The PNG is fully opaque, so it was flattened to RGB, because an App Store icon carries no alpha channel.
+  - It goes in `iosApp/Resources/Assets.xcassets/AppIcon.appiconset` in the Any slot only, and `ASSETCATALOG_COMPILER_APPICON_NAME` is `AppIcon`.
+  - Against the committed board export `docs/figma/10-appicon-ios.png` (the master cropped from the 2× board and scaled to 1024), the mean difference is 0.62/0.62/0.59 per channel out of 255. 14 of 1 048 576 pixels differ by more than 15, which is resampling noise.
+- **Red, then green:**
+  - `TEST-UNIT-104` failed with `XCTUnwrap failed … the app declares no icon`.
+  - It passes once the icon is packaged.
+  - The built app's `Info.plist` names `AppIcon`. Its `Assets.car` carries the 1024 image, and actool derived `AppIcon60x60@2x.png` and `AppIcon76x76@2x~ipad.png`, with no asset-catalog diagnostic.
+- **Also corrected:** `DESIGN.md` §3 said the release APK "already exceeds" `PERF-009`, which stopped being true with `TASK-120`.
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-150`), `docs/DESIGN.md` §3, `docs/UI_SPEC.md` §10.2, `docs/TESTING.md` (§3.2, §16, §17), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 165 tests, 0 failures.
+  - `tools/swift-lint.sh` — 0 violations in 77 files.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:**
+  - The icon as drawn on a Home Screen: the installed app landed on the simulator's second page, and there is no gesture automation here.
+  - The layered Icon Composer variant, which is not built (`DEC-150`).
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
