@@ -1101,6 +1101,28 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - The Episodes baselines verify unchanged through `:androidApp:verifyRoborazziDebug`.
 - **Not verified:** nothing beyond the gate; the change renders the same strings.
 
+### LOG-0143 · 2026-10-05 · `TASK-119`: the iOS debug diagnostics sheet (`CONF-90`)
+
+- **Event:** the owner decided `CONF-90` with option (a) (`DEC-146`), and `TASK-119` delivers the iOS half of `REQ-OBS-002` (`DEC-147`).
+- **The change:**
+  - `R12` now admits `:core:ios` → `:core:diagnostics` as `implementation` and rejects an `api` edge to it, as it does for `:core:data`. This is the one authorized change under `build-logic/**`.
+  - The debug Kotlin binary creates a `DiagnosticsRecorder` and writes every validated record to it beside the unified log.
+  - `MultiverseBootstrap.observeDiagnostics` hands Swift the rows `:core:diagnostics` renders. `DiagnosticsSnapshot.rows()` and `DiagnosticsCopy` are now shared, and the Android panel draws the same rows; its two strings leave the release resources.
+  - A Debug-only toolbar button on the Settings tab opens a read-only sheet.
+- **Red, then green:**
+  - `TEST-UNIT-103` failed to compile without `rows()`.
+  - The `R12` case failed with `R12 consumer=:core:ios … producer=:core:diagnostics` before the amendment.
+  - `TEST-UI-027` failed to compile without the observation and the sheet.
+  - All three pass after their fixes.
+- **Affected documents:** `docs/DECISION_BOARD.md` (`DEC-147`), `docs/OBSERVABILITY.md` §5, `docs/DESIGN.md` §3, `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-90`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth :build-logic:convention:check --continue` — BUILD SUCCESSFUL: 1213 tasks, whose 264 test reports hold 1348 tests and 0 failures.
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 (Debug) — 164 tests, 0 failures.
+  - `xcodebuild test -configuration Release ENABLE_TESTABILITY=YES ONLY_ACTIVE_ARCH=YES` for `DiagnosticsSheetTests` and `DebugLoggingTests` — 2 tests, 0 failures. The observation is `nil`, and the sheet's own case is not compiled.
+  - The Release app binary carries no `DiagnosticsSheet` symbol and no `ladybug` string. As a positive control, the Debug binary carries 146 such symbols and the string.
+  - `tools/swift-lint.sh` — 0 violations in 76 files.
+- **Not verified:** opening the sheet by tapping in the simulator, since there is no tap automation here; `TEST-UI-027` renders the sheet with its nine rows instead.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

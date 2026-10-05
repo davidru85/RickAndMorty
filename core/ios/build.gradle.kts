@@ -54,6 +54,9 @@ kotlin {
             // Compiled into the framework but **not** exported (`DEC-091`): the feature modules need
             // their implementations at runtime, and `R12` rejects an `api` edge to `:core:data`.
             implementation(project(":core:data"))
+            // The debug diagnostics sheet's recorder (`DEC-147`): linked, never exported, so no
+            // diagnostic type reaches Swift, and attached to the logger only in the debug binary.
+            implementation(project(":core:diagnostics"))
         }
     }
 }

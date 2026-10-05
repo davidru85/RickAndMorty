@@ -20,8 +20,9 @@ package io.github.davidru85.multiverse.buildlogic.boundaries
  *   may depend on `:core:data` (`DEC-091`). It may link `:core:diagnostics` from a `debug*`
  *   configuration only, and the release closure of the shell never reaches that module
  *   (`TEST-UNIT-033`, `DEC-088`).
- * - `R12` `:core:ios` has only the ADR-0012 edges, never exposes `:core:data` through `api`
- *   (`DEC-091`), and no Android source set consumes it.
+ * - `R12` `:core:ios` has only the ADR-0012 edges plus `:core:diagnostics` (`DEC-147`), exposes
+ *   neither `:core:data` (`DEC-091`) nor `:core:diagnostics` through `api`, and no Android source set
+ *   consumes it.
  * - `R13` an unrecognised project or edge fails closed.
  * - `R14` (`TEST-UNIT-012`) `:core:domain` declares no external dependency beyond the Kotlin
  *   standard library and `kotlinx-coroutines-core` (`DEC-066`).
@@ -80,7 +81,10 @@ internal object ModuleBoundaryRules {
      * (`GAP-014`).
      */
     private fun isCoreIosAllowed(producer: String): Boolean =
-        producer in CORE_IOS_CORE || ModuleSet.isAcceptedFeature(producer)
+        producer in CORE_IOS_CORE || producer == DIAGNOSTICS_MODULE || ModuleSet.isAcceptedFeature(producer)
+
+    /** The modules `:core:ios` links but never exports to Swift (`DEC-091`, `DEC-147`). */
+    private val CORE_IOS_LINKED_ONLY = setOf(IMPLEMENTATION_MODULE, DIAGNOSTICS_MODULE)
 
     fun evaluate(
         snapshot: ModuleGraphSnapshot,
@@ -421,9 +425,9 @@ internal object ModuleBoundaryRules {
                         configuration = edge.configuration,
                         sourceSet = edge.sourceSet,
                         producer = edge.producer,
-                        reason = "`:core:ios` depends on the five accepted features and the three shared " +
-                            "production core modules only (`:core:designsystem` is Android-only and " +
-                            "`:core:testing` is test-only; ADR-0012, `DEC-091`)",
+                        reason = "`:core:ios` depends on the five accepted features, the three shared " +
+                            "production core modules and the debug diagnostic module only (`:core:designsystem` " +
+                            "is Android-only and `:core:testing` is test-only; ADR-0012, `DEC-091`, `DEC-147`)",
                     ),
                 )
             }
@@ -431,7 +435,7 @@ internal object ModuleBoundaryRules {
             // type reaches Swift. An `api` declaration — direct or inherited — is what `export` admits.
             project.edges
                 .filter { edge ->
-                    edge.producer == IMPLEMENTATION_MODULE &&
+                    edge.producer in CORE_IOS_LINKED_ONLY &&
                         (edge.configuration.endsWith("Api") || edge.originConfiguration.endsWith("Api"))
                 }.forEach { edge ->
                     log.add(
@@ -442,9 +446,9 @@ internal object ModuleBoundaryRules {
                             sourceSet = edge.sourceSet,
                             producer = edge.producer,
                             origin = edge.originConfiguration,
-                            reason = "`:core:ios` links `:core:data` as `implementation` and never exports it; the " +
-                                "Swift-visible surface is the features, `:core:domain` and `:core:presentation` " +
-                                "(DEC-091, ADR-0014)",
+                            reason = "`:core:ios` links `${edge.producer}` as `implementation` and never exports it; " +
+                                "the Swift-visible surface is the features, `:core:domain` and `:core:presentation` " +
+                                "(DEC-091, DEC-147, ADR-0014)",
                         ),
                     )
                 }

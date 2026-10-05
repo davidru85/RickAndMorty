@@ -484,6 +484,24 @@ class ModuleBoundaryRulesTest {
     }
 
     @Test
+    fun `R12 admits core ios linking the diagnostic module and rejects exporting it`() {
+        // DEC-147 (owner decision DEC-146): the iOS debug sheet reads the recorder through `:core:ios`,
+        // which links `:core:diagnostics` but never exports it, as it links `:core:data`.
+        val ios = ":core:ios"
+        val linked = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:diagnostics")))),
+            emptyMap(),
+        )
+        assertEquals(emptyList(), only(linked, "R12").map { it.render() }, "the iOS framework may link the diagnostic module")
+
+        val exported = ModuleBoundaryRules.evaluate(
+            complete(project(ios, edges = listOf(edge(ios, ":core:diagnostics", "commonMainApi", "commonMain")))),
+            emptyMap(),
+        )
+        assertEquals(1, only(exported, "R12").size, "the diagnostic module is linked, never exported to Swift")
+    }
+
+    @Test
     fun `R12 rejects core ios exposing the implementation module through api`() {
         val ios = ":core:ios"
         val exported = ModuleBoundaryRules.evaluate(

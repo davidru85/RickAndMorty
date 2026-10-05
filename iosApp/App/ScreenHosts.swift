@@ -132,9 +132,15 @@ struct SettingsHost: View {
     }
 
     var body: some View {
-        SettingsScreen(
+        let screen = SettingsScreen(
             state: holder.state,
             onIntent: { holder.onIntent($0) }
         )
+        // The debug diagnostics entry exists in Debug builds only (`REQ-OBS-002`, `DEC-147`).
+        #if DEBUG
+            screen.modifier(DiagnosticsEntry())
+        #else
+            screen
+        #endif
     }
 }
