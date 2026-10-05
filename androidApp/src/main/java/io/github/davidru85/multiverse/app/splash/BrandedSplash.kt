@@ -1,5 +1,10 @@
 package io.github.davidru85.multiverse.app.splash
 
+import android.content.ContentResolver
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -17,8 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -31,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -140,21 +150,29 @@ public fun BrandedSplash(
 }
 
 /**
- * Whether the platform asks for reduced motion: Android keeps the setting in the animator duration
- * scale, which is `0` when animations are disabled. The value is read at composition, so a screen
- * honours a setting change the next time it is composed.
+ * Whether the platform asks for reduced motion (`REQ-UX-007`): Android keeps the setting in the animator
+ * duration scale, which is `0` when animations are disabled. The setting is **observed**, not read once:
+ * a change made while the app runs reaches every composition that reads it.
  */
 @Composable
 public fun rememberReduceMotion(): Boolean {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    return androidx.compose.runtime.remember(context) {
-        android.provider.Settings.Global.getFloat(
-            context.contentResolver,
-            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) == 0f
+    val resolver = LocalContext.current.contentResolver
+    var reduced by remember(resolver) { mutableStateOf(readReduceMotion(resolver)) }
+    DisposableEffect(resolver) {
+        val observer =
+            object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean) {
+                    reduced = readReduceMotion(resolver)
+                }
+            }
+        resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, observer)
+        onDispose { resolver.unregisterContentObserver(observer) }
     }
+    return reduced
 }
+
+private fun readReduceMotion(resolver: ContentResolver): Boolean =
+    Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
 /**
  * The portal's angle while it spins (`UI_SPEC.md` §7), read on the frame clock: the elapsed time since

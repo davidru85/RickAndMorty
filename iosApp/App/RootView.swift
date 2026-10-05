@@ -23,6 +23,10 @@ struct RootView: View {
     /// card opened in one must not push a detail onto the others.
     @State private var openedCards: [ShellDestination: CharacterCardUi] = [:]
 
+    /// Reduce Motion as SwiftUI observes it (`REQ-UX-007`), so a change made while the splash shows
+    /// reaches it, which a one-off read of `UIAccessibility.isReduceMotionEnabled` did not.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         // The design system's glass tab bar (`UI_SPEC.md` §4.2): each tab its SF Symbol and label, the
         // selected one in Portal Glow and every other one white through the installed appearance.
@@ -46,7 +50,7 @@ struct RootView: View {
         }
         .overlay {
             if splashVisible {
-                BrandedSplashView(reduceMotion: UIAccessibility.isReduceMotionEnabled)
+                BrandedSplashView(reduceMotion: reduceMotion)
                     .transition(.opacity)
                     .task {
                         // The shared gate the Android shell awaits (`IC-026`, `DEC-136`): at least
