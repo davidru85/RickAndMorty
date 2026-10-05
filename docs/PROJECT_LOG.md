@@ -1369,6 +1369,27 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 267 test reports hold 1361 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0155 · 2026-10-06 · `TASK-130`: the Android navigation bar draws the Material Symbols glyphs (`GAP-040`)
+
+- **Event:** the owner reported that the bottom bar's icons are wrong.
+- **The cause:**
+  - `MultiverseIcons.kt` held hand-drawn path approximations: Characters drew three bars and a square, the outline heart was a corrupted copy of `favorite_border`, and the gear was a polygon.
+  - They were read by a path parser of the file's own, which lacks commands the official glyphs use (`T`/`t`), which is likely why the true glyphs were never used.
+- **The change (`DEC-156`):**
+  - The eight glyphs are the official Material Symbols Rounded path data (`groups`, `play_arrow`, `favorite`, `settings`; `FILL 1` for the selected destination and outlined otherwise), copied verbatim from `google/material-design-icons` (Apache-2.0).
+  - They are built on the 960 Symbols grid through Compose's own `PathParser`, and the file's parser is deleted.
+  - Characters gains its outlined variant, which the bar shows while it is not selected.
+- **Red, then green:**
+  - `TEST-UNIT-108` rasterises each glyph and its official SVG, kept verbatim in the test resources.
+  - It failed with all eight differing, for example `characters selected differs from Material Symbols Rounded groups_fill1 in 734 of 2304 pixels`.
+  - It passes after the change. `TEST-UNIT-058` now finds a glyph's path inside the group that places it on its grid.
+- **Baselines:** the six shell baselines that show the bar (`shell-characters`, `shell-episodes`, `shell-maximum-text`, light and dark) re-record. Their compare images differ only in the four glyphs, and a fresh `-Proborazzi.test.verify=true --rerun` passes.
+- **Device:** on the emulator, the bar shows the filled people glyph on the selected Characters item, then the play triangle, the heart and the gear outlines, as Figma `117:665` draws them.
+- **Affected documents:** `docs/UI_SPEC.md` §4.1, `docs/DECISION_BOARD.md` (`DEC-156`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-040`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 268 test reports hold 1362 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
