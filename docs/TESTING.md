@@ -1,7 +1,7 @@
 # TESTING.md — Test Strategy and Verification Plan
 
 - **Status:** Active — mixed. The build skeleton (TASK-014), the shared harness with its fixtures (TASK-024), the both-runner gate (TASK-025), the fixture/replay contract entry point (TASK-026) and the scheduled live signal (TASK-027) are merged, and the quality toolchain runs in `check` (TASK-029); there is **no product test yet** — the harness's own tests are the only cases that execute (§Preamble, *Current state vs target state*).
-- **Last verified:** 2026-10-04
+- **Last verified:** 2026-10-05
 - **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`DESIGN.md`](DESIGN.md), [`UI_SPEC.md`](UI_SPEC.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), `ERROR_FLOW.md`, `CONTRACTS.md`, `PERFORMANCE.md`, `DEFINITION.md`, `CONTRIBUTING.md`, `GUIDELINES.md`, [`../AGENTS.md`](../AGENTS.md)
@@ -156,7 +156,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Clear favorites | `clear()` on `IC-008`/`IC-013`: one empty-set emission to every collector, none on an empty store, preferences untouched (`AC-REQ-FUNC-035-2`) | `TEST-UNIT-047` |
 | Protocol switch | A `remoteProtocol` change while a page loads cancels it, resets the pager to page 1 and reloads through the other `IC-011` implementation, with no item from the previous protocol ever emitted (`AC-REQ-FUNC-034-2`) | `TEST-UNIT-048` |
 | Protocol cache isolation | Same filter and page produce different `CacheKey`s per protocol; a switch neither evicts nor reads the other protocol's entries (`AC-REQ-FUNC-034-4`) | `TEST-UNIT-049` |
-| Settings state holder | `IC-023` intent rules: delete confirmation only when favorites exist, exactly one `ClearFavorites` on confirm, none on dismiss, no write for an unchanged protocol (`AC-REQ-FUNC-035-1`, `AC-REQ-FUNC-035-3`) | `TEST-UNIT-050` |
+| Settings state holder | `IC-023` intent rules: delete confirmation only when favorites exist, exactly one `ClearFavorites` on confirm — a double-tapped Delete included (`TASK-111`) — none on dismiss, no write for an unchanged protocol (`AC-REQ-FUNC-035-1`, `AC-REQ-FUNC-035-3`) | `TEST-UNIT-050` |
 | Failure mapping | Full `ApiFailure` matrix against `ERROR_FLOW.md` and its `API-ERR-###` rows; precedence when several mappings apply; `CancellationException` never surfaced (`AC-REQ-FUNC-022-2`) | `TEST-UNIT-010` |
 | Cache | Freshness, stale-while-revalidate and offline windows with an injected fake clock; `DataResult.source` and `isStale`; errors, empty bodies and partial GraphQL responses never cached (`AC-REQ-FUNC-020-3`, `AC-REQ-REL-004-1`) | `TEST-UNIT-009`, `TEST-UNIT-023` |
 | Cache identity | Key isolation across pages, filters, protocols and GraphQL field selections (`REQ-REL-001`) | `TEST-UNIT-020` |
@@ -165,6 +165,13 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | Pager | Reset to page 1; single-page prefetch; dedupe of an in-flight load; cancellation; no `Loading` after `Content` without an explicit reset; stop requesting at `info.next == null` (`AC-REQ-FUNC-001-2`) | `TEST-UNIT-016` |
 | Empty results | Filtered REST `404` → `LoadState.Empty`, not an error (`AC-REQ-FUNC-010-1`); clearing filters restores the unfiltered first page (`AC-REQ-FUNC-010-2`) | `TEST-UNIT-005` |
 | Retry and refresh intents | Retry starts a fresh attempt budget and clears the error on success (`AC-REQ-FUNC-011-1`); refresh performs a network request even when the cache is fresh and a failed refresh keeps the previous items (`AC-REQ-FUNC-012-1`, `AC-REQ-FUNC-012-2`) | `TEST-UNIT-006`, `TEST-UNIT-007` |
+| Responsive intent loop | No load blocks the Discovery intent loop: a status change sent during an append, a refresh or a retry reaches the pager at once and supersedes the load (`AC-REQ-FUNC-003-2`, `AC-REQ-FUNC-004-1`, `DEC-124`) | `TEST-UNIT-065` |
+| Content-level failure | A failed append or refresh over content is carried as `contentFailure` and never replaces the content; Retry re-requests the failed page and keeps the loaded ones; Retry over stale content with no failure is a `ForceNetwork` page-1 load; `isRefreshing` spans a refresh (`ERROR_FLOW.md` §4, §9, §10 rule 4, `DEC-124`) | `TEST-UNIT-066` |
+| Typed failure arguments | A rate limit without usable advice maps to the placeholder-free `error_message_rate_limited_no_countdown`; with advice the countdown is one `MessageArgument.Number`; the key is registered (`IC-017`, `DEC-123`) | `TEST-UNIT-067` |
+| Cache cancellation | The response cache contains a storage failure as a miss but rethrows a `CancellationException` from every read, write and eviction (`IC-012`, `AC-REQ-FUNC-022-2`) | `TEST-UNIT-068` |
+| Detail retry supersession | A Detail retry cancels the load in flight, so a slower, older failure cannot overwrite a newer success (`IC-019`, `AC-REQ-FUNC-011-1`) | `TEST-UNIT-069` |
+| iOS Detail adapter | The Swift `DetailStateHolder` starts the shared holder: the detail loads once and the stored set is observed; how the observed set reconciles the flag stays `TEST-UNIT-004`'s, because a set built in Swift cannot hold a boxed `CharacterId` | `TEST-UNIT-070` |
+| Portrait host rule | The shared predicate's accepted and rejected forms, and in the iOS pipeline zero fetches for a URL outside the rule, no cache admission for a non-`2xx` response and a refused foreign redirect (`REQ-SEC-001`, `DEC-126`) | `TEST-UNIT-071` |
 | Formatters | Card and detail formatting including `"unknown"` → `"Unknown"`; episode count and dimension derivation; no platform types in signatures (`AC-REQ-NFR-001-2`) | `TEST-UNIT-001`, `TEST-UNIT-002`, `TEST-UNIT-012` |
 | Localisation | Every canonical copy key resolves in `en` and `es` and follows the device locale (`REQ-FUNC-013`) | `TEST-UNIT-008` |
 | Copy-key parity | Canonical key list (`DEC-020`) ↔ Android resource file ↔ iOS resource file: no key missing, no extra key, no divergent default (`REQ-UX-008`) | `TEST-UNIT-036` |
@@ -655,21 +662,21 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | Requirement | Priority | Test IDs |
 | --- | --- | --- |
 | `REQ-FUNC-001` — Paginated character list | Must | `TEST-UNIT-001`, `TEST-UNIT-016`, `TEST-CONTRACT-001`, `TEST-UI-001`, `TEST-PERF-003` |
-| `REQ-FUNC-002` — Character detail | Must | `TEST-UNIT-002`, `TEST-UNIT-039`, `TEST-UI-002`, `TEST-CONTRACT-002` |
-| `REQ-FUNC-003` — Name search | Must | `TEST-UNIT-003` |
-| `REQ-FUNC-004` — Status filter | Must | `TEST-UNIT-003`, `TEST-UI-003` |
+| `REQ-FUNC-002` — Character detail | Must | `TEST-UNIT-002`, `TEST-UNIT-039`, `TEST-UI-002`, `TEST-CONTRACT-002`, `TEST-UNIT-070`, `TEST-UI-020` |
+| `REQ-FUNC-003` — Name search | Must | `TEST-UNIT-003`, `TEST-UNIT-065` |
+| `REQ-FUNC-004` — Status filter | Must | `TEST-UNIT-003`, `TEST-UI-003`, `TEST-UNIT-065` |
 | `REQ-FUNC-005` — Image-first presentation | Must | `TEST-UI-004`, `TEST-INT-002` |
-| `REQ-FUNC-006` — Favorites | Must | `TEST-UNIT-004`, `TEST-UNIT-040`, `TEST-INT-003`, `TEST-INT-004`, `TEST-UI-005`, `TEST-UI-013` |
+| `REQ-FUNC-006` — Favorites | Must | `TEST-UNIT-004`, `TEST-UNIT-040`, `TEST-INT-003`, `TEST-INT-004`, `TEST-UI-005`, `TEST-UI-013`, `TEST-UNIT-070` |
 | `REQ-FUNC-007` — Splash with branded loading | Must | `TEST-UI-006`, `TEST-A11Y-001` |
 | `REQ-FUNC-008` — Navigation and sections | Must | `TEST-UI-007` |
 | `REQ-FUNC-009` — Card-to-detail transition | Must | `TEST-UI-008`, `TEST-A11Y-006` |
 | `REQ-FUNC-010` — Empty results state | Must | `TEST-UNIT-005`, `TEST-UI-009` |
-| `REQ-FUNC-011` — Retry | Must | `TEST-UNIT-006` |
-| `REQ-FUNC-012` — Manual refresh | Must | `TEST-UNIT-007` (its pager half: `ForceNetwork` over a fresh cached entry, a failed refresh keeps the items, `TASK-039`), `TEST-UNIT-038` |
+| `REQ-FUNC-011` — Retry | Must | `TEST-UNIT-006`, `TEST-UNIT-066`, `TEST-UNIT-069`, `TEST-UI-019` |
+| `REQ-FUNC-012` — Manual refresh | Must | `TEST-UNIT-007` (its pager half: `ForceNetwork` over a fresh cached entry, a failed refresh keeps the items, `TASK-039`), `TEST-UNIT-038`, `TEST-UNIT-066` |
 | `REQ-FUNC-013` — Localisation | Must | `TEST-UNIT-008`, `TEST-UNIT-036` |
 | `REQ-FUNC-020` — Response caching | Should | `TEST-UNIT-009`, `TEST-UNIT-020`, `TEST-UNIT-023`, `TEST-UNIT-037`, `TEST-INT-001` |
 | `REQ-FUNC-021` — Image caching | Should | `TEST-INT-002` |
-| `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010` |
+| `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010`, `TEST-UNIT-067`, `TEST-UNIT-068`, `TEST-UI-018`, `TEST-UI-019` |
 | `REQ-FUNC-023` — Detail enrichment | Should | `TEST-UNIT-011`, `TEST-CONTRACT-002` |
 | `REQ-FUNC-033` — Settings screen and sounds preference | Should | `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`; `AC-REQ-FUNC-033-3` by the manifest/`Info.plist` and dependency checks `TEST-UNIT-028` |
 | `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017` |
@@ -703,7 +710,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-REL-002` — Concurrent request deduplication | Must | `TEST-UNIT-021` |
 | `REQ-REL-003` — Bounded retries and non-retryable outcomes | Must | `TEST-UNIT-022` |
 | `REQ-REL-004` — Stale marking and clock-change resilience | Must | `TEST-UNIT-023`, `TEST-UNIT-009` |
-| `REQ-SEC-001` — HTTPS-only, configured host only | Must | `TEST-UNIT-025`; the adapter's rejection of foreign pagination and relation URLs is also asserted by `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` (`TASK-037`), and `TASK-038` completes the transport-wide half |
+| `REQ-SEC-001` — HTTPS-only, configured host only | Must | `TEST-UNIT-025`, `TEST-UNIT-071` (the portrait host rule, `DEC-126`); the adapter's rejection of foreign pagination and relation URLs is also asserted by `TEST-CONTRACT-001`, `TEST-CONTRACT-003` and `TEST-UNIT-001` (`TASK-037`), and `TASK-038` completes the transport-wide half |
 | `REQ-SEC-002` — No secrets in the repository | Must | `TEST-UNIT-026` |
 | `REQ-SEC-003` — No personal data; favourites only | Must | `TEST-UNIT-027`; the "ids only" half is also asserted on both real stores by `TEST-INT-004` (`TASK-040`) |
 | `REQ-SEC-004` — No microphone or speech permissions | Must | `TEST-UNIT-028`, `TEST-UI-013` |
@@ -765,6 +772,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `TASK-111` (P0 of the code-review remediation): `TEST-UNIT-065`…`071` and `TEST-UI-018`…`020` are allocated and implemented, `TEST-UNIT-050` gains the double-tapped Delete case, §3.2 and §16 trace them. Each was observed red before its fix. | `TASK-111`, `DEC-122`…`DEC-126` |
 | 2026-10-05 | PR #186 review: `TEST-UNIT-063` (the documentation completeness gate) and `TEST-UNIT-064` (the release note) are allocated and implemented; the second allocation of `TEST-UNIT-060` (2026-10-04, the `GAP-028` exclusion, which the code asserts under `TEST-UNIT-044`) is folded into `TEST-UNIT-044`, so `TEST-UNIT-060` names only the protocol switch case `TASK-075` gave it on 2026-10-03; `REQ-NFR-007` gains `TEST-UNIT-063` | `DEC-110`, `DEC-042` |
 | 2026-10-05 | PR #182 review: `TEST-UI-016` gains seven iOS state baselines — list loading, paging, empty, offline error, stale over content, and the detail failure with and without the retained header — so `TASK-064`'s cross-check compares images on both platforms | `TASK-064`, `LOG-0131` |
 | 2026-10-05 | PR #178 review: the `ios` job checks the iOS version against `VERSION` (`tools/ios-version.sh --check`), required by `ModularWorkflowGate` and pinned by a `TEST-UNIT-044` reproduction case | `TASK-063`, `DEC-121`, `LOG-0130` |

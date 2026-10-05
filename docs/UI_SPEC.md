@@ -1,6 +1,6 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
-- **Status:** Active — target state (implementation not started; see `DOCUMENTATION_AUDIT.md` §5)
+- **Status:** Active — implemented on both platforms with known visual deviations, which the code reviews of 2026-10-05 list and `TASK-113` (Android) and `TASK-114` (iOS) remediate; the drift rule is `DOCUMENTATION_AUDIT.md` §5
 - **Last verified:** 2026-09-30
 - **Owner:** UI/UX Designer (see `AGENTS.md`)
 - **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
