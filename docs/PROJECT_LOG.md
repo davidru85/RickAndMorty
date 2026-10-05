@@ -944,6 +944,28 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Decision / ADR reference:** `DEC-122`; `CONF-85`.
 - **Validation (observed on `9599434`):** `./gradlew :androidApp:testDebugUnitTest :androidApp:verifyReleaseArtifact :androidApp:verifyRoborazziDebug verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries` — exit 0; `:androidApp` 47 tests, 0 failures (P0's 44 plus the launcher's 3).
 
+### LOG-0137 · 2026-10-05 · `TASK-116`: REST and GraphQL request logs in debug builds on both platforms, and a latent iOS crash
+
+- **Event:** the owner asked for the REST and GraphQL logs and chose the app's own request events, visible in debug builds on both platforms. Two facts were already established:
+  - The shared path already emitted them: `LOG-001` names the protocol, and each completion joins its start through the correlation id. `TEST-UNIT-072` pins this over the production adapters and repository, a switch included; it passed on the existing code and was not a red.
+  - Android's debug variant already showed them in Logcat.
+- **The iOS gap, and two defects found on the way:**
+  - **iOS logged nothing below `ERROR` in any build.** The graph now binds the logger by the Kotlin binary variant, through `Platform.isDebugBinary` (`DEC-127`). `MultiverseBootstrap.logger()` gives Swift the same contract. `TEST-UNIT-073` was red in a Debug build ("a Debug build logs each request start (LOG-001)").
+  - **The iOS sink crashed on every record.** `NSLog("%@ …")` received Kotlin strings, which reach a C variadic call as C strings: the app's crash report faulted at an address made of the bytes of "DEBUG". In release only `ERROR` records reach the sink, so on iOS the first failed request (offline, timeout, server) would have ended the app. `TEST-UNIT-074` was red ("Child process terminated with signal 10: Bus error"); the sink now passes one `%s` argument.
+  - **The two sinks printed different lines.** Android printed enum names (`PROTOCOL=`), iOS printed the record's insertion order. `TEST-UNIT-075` was red on both halves; both now print the catalogue's wire names in its order.
+- **Local tooling found, not fixed (`GAP-033`):** Xcode does not relink the app when only the static Kotlin framework changes, so the first green attempt ran the old sink and crashed; a clean build was needed. A Release simulator build also tries an `x86_64` slice the framework lacks. The Release verification below passed `ONLY_ACTIVE_ARCH=YES`.
+- **Environment:** every "iPhone 17" simulator had disappeared from this Mac since the morning. One iPhone 17 on iOS 27.0 was recreated (`xcrun simctl create`), because the repository's iOS tests and baselines pin that device.
+- **Verification (observed):**
+  - `:core:data:testAndroidHostTest --tests '*ProtocolRequestLoggingTest*'` — 2 tests, 0 failures.
+  - `:core:data:iosSimulatorArm64Test` — 188 tests, 0 failures.
+  - `:androidApp:testDebugUnitTest` — 48 tests, 0 failures.
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 (Debug) — 122 tests, 0 failures.
+  - The same `DebugLoggingTests` built in Release (`-configuration Release ENABLE_TESTABILITY=YES ONLY_ACTIVE_ARCH=YES`) — pass, so only `ERROR` is enabled there.
+  - Manual, Android debug APK on the `Pixel_9_Pro` emulator: `LOG-001 protocol=REST operation=CHARACTER_LIST pathTemplate=/character page=1 …`; after choosing GraphQL in Settings, `LOG-001 … protocol=GRAPHQL …`.
+  - Manual, iOS Debug app on the simulator: `DEBUG LOG-001 protocol=REST …`; with the stored protocol set to `graphql`, `DEBUG LOG-001 … protocol=GRAPHQL …`. The preference was removed afterwards.
+- **Not verified:** a physical device, which the owner allowed and was not needed. An earlier manual iOS check installed a stale DerivedData build; it was discarded and repeated with the build under test.
+- **Affected documents:** `docs/OBSERVABILITY.md` §2.1, `docs/DECISION_BOARD.md` (`DEC-127`), `docs/TESTING.md`, `docs/DOCUMENTATION_AUDIT.md` (`GAP-033`), `docs/BACKLOG.md` (`TASK-116`), `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

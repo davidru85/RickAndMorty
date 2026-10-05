@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`) and the single launcher entry (PR #193, `TASK-117`); `TASK-116` is in progress on `feat/debug-request-logs`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`) and the single launcher entry (PR #193, `TASK-117`); `TASK-116` (request logs, and the iOS log-sink crash) awaits review on `feat/debug-request-logs`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -18,7 +18,7 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 | `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | **Merged** (PR #192, `63d0652`; issue #194 closed) |
 | `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | **Merged** (PR #193, `9599434`; issue #200 closed) |
 | `TASK-112` P1, `TASK-113` P2-A, `TASK-114` P2-B, `TASK-115` P3 | — | `Proposed`; each starts from `main` after the previous phase merges |
-| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | In progress (issue #199) |
+| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | Implemented and observed on both platforms; awaiting review (issue #199, `LOG-0137`). It also fixes a latent iOS crash: the log sink crashed on any record, so a failed request would have ended the app |
 
 **Observed on the P0 branch:**
 - The documented Gradle set plus `allTests`, ktlint, lint, the contract replay and the iOS framework link passed (BUILD SUCCESSFUL, 1207 tasks). Its reports hold 870 tests and 0 failures, plus `:androidApp`'s 44 up-to-date tests and `:core:data`'s full 197 re-run alone.
