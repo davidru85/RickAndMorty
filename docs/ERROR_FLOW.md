@@ -137,7 +137,7 @@ The key names below are the canonical binding owned by this file, and every one 
 | `error_message_not_found` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That character isn't in this dimension." | Fixed |
 | `error_message_invalid_request` | [`UI_SPEC.md`](UI_SPEC.md) §8: "That request doesn't fit this dimension. Adjust it and try again." | Fixed |
 | `error_message_rate_limited` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again in %d s." (number substituted by the countdown formatter, `IC-017`) | Fixed |
-| `error_message_rate_limited_no_countdown` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again shortly." — the rate-limit message when no usable `Retry-After` was advised, so no placeholder is left unfilled (`DEC-123`) | Fixed; Spanish value pending owner review |
+| `error_message_rate_limited_no_countdown` | [`UI_SPEC.md`](UI_SPEC.md) §8: "Too many jumps. Try again shortly." — the rate-limit message when no usable `Retry-After` was advised, so no placeholder is left unfilled (`DEC-123`) | Fixed; Spanish value approved by the owner 2026-10-05 (`LOG-0135`) |
 | `error_message_server` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal is glitching on its side. Try again shortly." | Fixed |
 | `error_message_graphql` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal didn't understand that request. Try again." | Fixed |
 | `error_message_malformed` | [`UI_SPEC.md`](UI_SPEC.md) §8: "The portal sent back something unreadable. Try again." | Fixed |

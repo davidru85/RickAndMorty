@@ -29,9 +29,10 @@ Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolida
 
 **The owner's next steps:**
 1. Review and merge the P0 pull request and the launcher pull request (either order; they touch different files except `docs/BACKLOG.md`, in different tables).
-2. Review the Spanish strings: `error_message_rate_limited_no_countdown` = "Demasiados saltos. Inténtalo de nuevo en un momento.", `share_character_text` = "%1$s en Multiverse Explorer: %2$s".
-3. Confirm or narrow the write authorization recorded in `DEC-122`.
-4. Decide `CONF-85` and `CONF-86` (UI_SPEC §4.1 wording; the microphone in the Figma exports).
+2. Confirm or narrow the write authorization recorded in `DEC-122`.
+3. Decide `CONF-85` (UI_SPEC §4.1's search placeholder wording).
+
+The Spanish strings of P0 are approved, and `CONF-86` is resolved: the microphone stays deferred outside the MVP (`LOG-0135`).
 
 ### B9 closure — 2026-10-04, reviewed 2026-10-05
 

@@ -422,7 +422,7 @@ On iOS, the title block, panel and accessory are a bottom-anchored stack, so the
 Top-control actions (`DEC-125`):
 
 - **Back** returns to the screen that opened the Detail (`popBackStack` on Android; the navigation stack's `dismiss` on iOS).
-- **Share** offers one line through the platform's own sheet (an `ACTION_SEND` chooser on Android, the system share sheet on iOS): `share_character_text` = "%1$s on Multiverse Explorer: %2$s", with the character's name and its API resource URL `https://rickandmortyapi.com/api/character/{id}`, which `:core:data` builds from the configured host. Share names the character, so on Android it is disabled (M3 disabled colours) while a deep-linked Detail has no header yet. Spanish value pending owner review: "%1$s en Multiverse Explorer: %2$s".
+- **Share** offers one line through the platform's own sheet (an `ACTION_SEND` chooser on Android, the system share sheet on iOS): `share_character_text` = "%1$s on Multiverse Explorer: %2$s", with the character's name and its API resource URL `https://rickandmortyapi.com/api/character/{id}`, which `:core:data` builds from the configured host. Share names the character, so on Android it is disabled (M3 disabled colours) while a deep-linked Detail has no header yet. Spanish value, approved by the owner 2026-10-05: "%1$s en Multiverse Explorer: %2$s" (`LOG-0135`).
 
 ### 6.4 Episodes and Favorites (placeholders)
 

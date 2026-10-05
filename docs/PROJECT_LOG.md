@@ -924,6 +924,14 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Not verified:** a manual journey on an emulator or simulator; the iOS 18 runtime (Xcode 27 offers none); any device budget. The Spanish copy `error_message_rate_limited_no_countdown` and `share_character_text` awaits owner review.
 - **Affected documents:** `docs/BACKLOG.md` (`TASK-111`…`TASK-116`), `docs/DECISION_BOARD.md` (`DEC-122`…`DEC-126`), `docs/CONTRACTS.md` (`IC-017`, `IC-018`), `docs/ERROR_FLOW.md` (§4, §4.1, §9), `docs/UI_SPEC.md` (status line, §6.3, §8), `docs/SECURITY.md` (§5), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-85`…`CONF-89`), `docs/HANDOFF.md`, and this entry.
 
+### LOG-0135 · 2026-10-05 · Owner decisions on the P0 copy and on the microphone
+
+- **Event:** the owner approved the two Spanish strings `TASK-111` added, unchanged: `error_message_rate_limited_no_countdown` = "Demasiados saltos. Inténtalo de nuevo en un momento." and `share_character_text` = "%1$s en Multiverse Explorer: %2$s". The owner also stated that the microphone (voice search) is recorded for later and is outside the MVP's scope.
+- **Rationale:** `LOG-0134` left both strings pending review. The first reuses the already-approved Spanish for "Try again shortly" (`error_message_server`) and for "Too many jumps" (`error_message_rate_limited`), so the failure messages stay consistent. The microphone statement settles `CONF-86`: the Figma exports draw a control that `DEC-002` defers, and that is the future design, not a defect.
+- **Affected artifacts:** `docs/ERROR_FLOW.md` §4.1 and `docs/UI_SPEC.md` §6.3 (approval noted), `docs/DOCUMENTATION_AUDIT.md` (`CONF-86` resolved, change log), `docs/HANDOFF.md` (owner steps), and this entry. No source or resource changed: the approved values are the ones already shipped on both platforms.
+- **Decision / ADR reference:** `DEC-002` and `DEF-001` (unchanged), `DEC-123`, `DEC-125`.
+- **Validation:** `./gradlew verifyDocumentedCompleteness verifyDocumentedGate` after the edits, observed in the commit that carries them.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
