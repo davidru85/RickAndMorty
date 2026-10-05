@@ -221,6 +221,8 @@ public enum MultiverseDimensions {
     public static let settingsPanelCorner: CGFloat = 26
     /// A settings row's height (`UI_SPEC.md` §4.2, "Settings row": the iOS kit `Row`, Tall, 68 pt).
     public static let settingsRowHeight: CGFloat = 68
+    /// The iOS kit's `Row - Button` height, the destructive Settings action (Figma `123:473`).
+    public static let settingsButtonRowHeight: CGFloat = 52
     /// The 1 pt light-catching rim (`UI_SPEC.md` §3.2).
     public static let rimWidth: CGFloat = 1
 }

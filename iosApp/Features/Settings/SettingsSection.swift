@@ -69,6 +69,11 @@ struct SettingsRow<Trailing: View>: View {
         self.trailing = trailing
     }
 
+    /// A destructive row is the kit's 52 pt `Row - Button`; every other row is the 68 pt Tall row.
+    private var minHeight: CGFloat {
+        isDestructive ? MultiverseDimensions.settingsButtonRowHeight : MultiverseDimensions.settingsRowHeight
+    }
+
     var body: some View {
         HStack(spacing: MultiverseDimensions.spaceM) {
             if let symbol {
@@ -94,7 +99,7 @@ struct SettingsRow<Trailing: View>: View {
             trailing()
         }
         .padding(.horizontal, MultiverseDimensions.spaceL)
-        .frame(minHeight: MultiverseDimensions.settingsRowHeight)
+        .frame(minHeight: minHeight)
     }
 }
 

@@ -153,6 +153,8 @@ struct SettingsScreen: View {
                 }
             }
             .pickerStyle(.segmented)
+            // The kit's Large segmented control (Figma `123:444`, 50 pt tall).
+            .controlSize(.large)
             .labelsHidden()
             .accessibilityLabel(Text(copy(SettingsCopy.dataSourceTitle)))
             .padding(.horizontal, MultiverseDimensions.spaceL)
