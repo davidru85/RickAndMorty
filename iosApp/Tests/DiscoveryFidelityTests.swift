@@ -23,6 +23,34 @@ final class DiscoveryFidelityTests: XCTestCase {
         XCTAssertEqual(bounds.maxX, 402 - 16, accuracy: 1, "the trailing column ends 16 pt in (Figma x = 209 + 177)")
     }
 
+    func test_TEST_UI_037_given_favourites_when_laid_out_then_the_cards_sit_on_16_pt_margins() throws {
+        let cards = (1...4).map { index in
+            CharacterCardUi(
+                id: "\(index)",
+                name: "Rick Sanchez",
+                species: DisplayTextData(value: "Human"),
+                status: CharacterStatusAlive.shared,
+                statusLabel: CopyKeys.shared.STATUS_ALIVE,
+                imageUrl: "https://rickandmortyapi.com/api/character/avatar/\(index).jpeg"
+            )
+        }
+        let favorites = FavoritesScreen(
+            state: FavoritesUiState(items: cards, loadState: LoadStateContent.shared),
+            loader: PortraitImageStub(),
+            onIntent: { _ in },
+            onCharacterSelected: { _ in },
+            onBrowseCharacters: {}
+        )
+        let image = try HostedRendering.render(UIHostingController(rootView: favorites))
+
+        let portraits = try HostedRendering.matchingPixels(in: image) { red, green, blue in
+            green > 150 && green - red > 60 && green - blue > 60
+        }
+        let bounds = try XCTUnwrap(portraits.bounds, "the favourites' portraits must paint")
+        XCTAssertEqual(bounds.minX, 16, accuracy: 1, "Favorites shares Discovery's 16 pt margins (Figma 102:375)")
+        XCTAssertEqual(bounds.maxX, 402 - 16, accuracy: 1)
+    }
+
     func test_TEST_UI_037_given_an_empty_search_when_rendered_then_the_portal_logo_is_its_illustration() throws {
         let image = try HostedRendering.render(UIHostingController(rootView: discovery(cards: 0, load: LoadStateEmpty.shared)))
 
