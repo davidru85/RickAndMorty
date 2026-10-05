@@ -1,7 +1,7 @@
 # PROJECT_LOG.md — Project Event Log
 
 - **Status:** Active. Entries `LOG-0001`…`LOG-0015` record pre-audit documentation work that was never executable and was not verified; see §1.3.
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** Documentation Maintainer (see `AGENTS.md` §3.9)
 - **Authoritative for:** the chronological record of *why* the project changed — one entry per meaningful event, with the event, its rationale, the artifacts it touched, the decision it belongs to, and what was actually verified. Identifier scheme: `LOG-####`.
 - **Not authoritative for:** the current status of a decision (`DECISION_BOARD.md`), the current state of work (`BACKLOG.md`), requirement or contract content (`REQUIREMENTS.md`, `CONTRACTS.md`), release notes (GitHub Releases).
@@ -1292,6 +1292,30 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew :build-logic:convention:check verifyWorkflowGate verifyDocumentedGate` — BUILD SUCCESSFUL; the build-logic suite holds 231 tests, 0 failures, and the real workflow passes the guard.
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1231 tasks, whose 265 test reports hold 1355 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
+### LOG-0152 · 2026-10-06 · The owner's audit is registered; `TASK-127`: one splash on Android (`GAP-037`)
+
+- **Event:** the owner's manual audit of 2026-10-05 listed ten defects, eight on Android and two on iOS.
+  - Each was reproduced on 2026-10-06, on the `Pixel_9_Pro` emulator (API 37, debug and a locally signed release build) or on the iPhone 17 simulator (iOS 27.0, Debug).
+  - They are registered as `GAP-037`…`GAP-046` and `TASK-127`…`TASK-136`, with issues #226–#235.
+  - The owner directed one pull request per defect, delivered without waiting for a review and merged in order (`DEC-153`). The branches are stacked, like `DEC-133`'s.
+- **`TASK-127`, the cause:**
+  - The splash theme handed the Android 12+ starting window the launcher foreground. The window centres it, while the branded splash draws the cookie above the wordmark, over the nebula.
+  - A cold-start recording showed both: the system window's cookie fading out, then the branded splash.
+  - `UI_SPEC.md` §10.1 had assumed the handoff was seamless.
+- **The change:**
+  - `windowSplashScreenAnimatedIcon` is a transparent vector (`ic_splash_blank`), so the starting window, which Android 12+ always shows and which cannot be skipped, shows only Surface `#0F0E12` (`DEC-154`).
+  - `installSplashScreen()`, the branded splash, its gate and its accessibility are unchanged.
+- **Red, then green:**
+  - `TEST-UNIT-105` draws the theme's icon natively.
+  - It failed with `its icon painted 48208 of 186624 pixels expected:<0> but was:<48208>`.
+  - It passes with the blank icon, and the five other splash classes still pass (10 tests).
+- **Device:** after the change, the cold-start recording shows the launcher, then five blank Surface frames at 6 fps, then the branded splash fading in, then Discovery.
+- **Affected documents:** `docs/UI_SPEC.md` (§6.1, §10.1), `docs/DESIGN.md` §3.4, `docs/DECISION_BOARD.md` (`DEC-153`, `DEC-154`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-037`…`GAP-046`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 266 test reports hold 1356 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** API 26–30, where the AndroidX library draws an emulated starting window from the same attribute. The case resolves the attribute through that library, but no run on those levels was observed.
 
 ## 3. Verification performed on this repository
 
