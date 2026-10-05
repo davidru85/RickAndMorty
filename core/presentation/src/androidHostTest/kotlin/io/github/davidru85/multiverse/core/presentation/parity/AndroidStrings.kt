@@ -9,6 +9,9 @@ import javax.xml.parsers.DocumentBuilderFactory
  * value wrapped in double quotes keeps its whitespace, otherwise runs of whitespace collapse; an
  * unescaped double quote is dropped; and `\n`, `\t`, `\'`, `\"`, `\\`, `\@`, `\?` and `\uXXXX` are
  * escapes. Document type declarations are refused, so the parser reads no external entity.
+ *
+ * Each quantity form of a `<plurals>` resource is read as its own entry, `name#quantity`, so the
+ * verifier compares it as it compares a plain string (`DEC-132`).
  */
 object AndroidStrings {
     fun parse(file: File): ParsedStrings {
@@ -17,17 +20,27 @@ object AndroidStrings {
                 setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
                 isExpandEntityReferences = false
             }
-        val strings =
+        val root =
             factory
                 .newDocumentBuilder()
                 .parse(file)
                 .documentElement
-                .getElementsByTagName("string")
+        val strings = root.getElementsByTagName("string")
+        val plurals = root.getElementsByTagName("plurals")
         return ParsedStrings.of(
             (0 until strings.length).map { index ->
                 val element = strings.item(index) as Element
                 element.getAttribute("name") to unescape(element.textContent)
-            },
+            } +
+                (0 until plurals.length).flatMap { index ->
+                    val plural = plurals.item(index) as Element
+                    val items = plural.getElementsByTagName("item")
+                    (0 until items.length).map { item ->
+                        val element = items.item(item) as Element
+                        CopyParity.pluralForm(plural.getAttribute("name"), element.getAttribute("quantity")) to
+                            unescape(element.textContent)
+                    }
+                },
         )
     }
 

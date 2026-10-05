@@ -113,7 +113,7 @@ class CharacterDetailReducerTest {
             "TEST-UNIT-002: a row carries its copy key, never an English label (REQ-FUNC-013)",
         )
         assertEquals(
-            listOf("Earth (C-137)", "Citadel of Ricks", "Pilot · S01E01"),
+            listOf("Earth (C-137)", "Citadel of Ricks", "Pilot · S01E01").map(DisplayText::Data),
             state.info.map { it.value },
             "TEST-UNIT-002: a row's value is the data text, and first seen is name and code",
         )
@@ -170,7 +170,7 @@ class CharacterDetailReducerTest {
     }
 
     @Test
-    fun `TEST-UNIT-002 given_an_absent_origin_value_when_the_detail_renders_then_the_row_is_absent_and_the_dimension_tile_is_hidden`() {
+    fun `TEST-UNIT-002 given_an_unknown_origin_value_when_the_detail_renders_then_the_dimension_tile_is_hidden`() {
         val state =
             CharacterDetailReducer.render(
                 header = null,
@@ -197,7 +197,7 @@ class CharacterDetailReducerTest {
                 enrichRequested = false,
                 formatters = formatters,
             )
-        assertTrue(state.info.isEmpty(), "TEST-UNIT-002: an unknown origin and location make their rows absent rather than raw")
+        // The Origin and Last known location rows stay and read "Unknown"; `TEST-UNIT-079` owns that case.
         assertNull(state.dimension, "TEST-UNIT-002: null means hide the tile; no placeholder is invented (UI_SPEC.md 6.3)")
         assertEquals(1, state.episodeCount, "TEST-UNIT-002: the count is independent of the origin")
         assertEquals(

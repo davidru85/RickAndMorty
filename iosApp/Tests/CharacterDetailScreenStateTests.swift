@@ -85,14 +85,42 @@ final class CharacterDetailScreenStateTests: XCTestCase {
         assertRenders(state: state, "the detail load failure with the header retained (ERROR_FLOW.md §4, §8)")
     }
 
-    func test_TEST_UI_016_given_a_detail_failure_without_list_data_when_rendered_then_the_inline_retry_renders() {
+    func test_TEST_UI_016_given_a_detail_failure_without_list_data_when_rendered_then_the_full_surface_error_renders() {
         assertRenders(
             state: makeState(
                 header: nil,
                 loadState: LoadStateError(failure: ApiFailureOffline.shared)
             ),
-            "the detail load failure without cached data (AC-REQ-UX-009-1)"
+            "the detail load failure without cached data, as the full-surface error (AC-REQ-UX-009-1, DEC-131)"
         )
+    }
+
+    // MARK: - TEST-UI-022: the failure recovery (DEC-131)
+
+    func test_TEST_UI_022_given_a_not_found_detail_when_recovered_then_the_affordance_is_back_and_never_retry() {
+        let notFound = ApiFailureNotFound(resource: "character", id: "9999")
+        let recovery = DefaultPresentationFormatters.shared.recovery(failure: notFound)
+        XCTAssertEqual(recovery, Recovery.back, "a 404 is terminal for the identifier (ERROR_FLOW.md §10)")
+        XCTAssertEqual(CharacterPresentation.key(recovery.actionKey), "action_back")
+        XCTAssertEqual(
+            CharacterPresentation.key(DefaultPresentationFormatters.shared.inlineFailureMessage(failure: notFound).key),
+            "error_message_not_found",
+            "beside a header the message says the character is not in this dimension"
+        )
+        assertRenders(
+            state: makeState(header: card(id: "1", name: "Rick Sanchez"), loadState: LoadStateError(failure: notFound)),
+            "the not-found detail with the header retained and Back"
+        )
+        assertRenders(
+            state: makeState(header: nil, loadState: LoadStateError(failure: notFound)),
+            "the not-found detail without a header, as the full-surface error with Back"
+        )
+    }
+
+    func test_TEST_UI_022_given_a_retryable_detail_failure_when_recovered_then_the_affordance_is_retry() {
+        let recovery = DefaultPresentationFormatters.shared.recovery(failure: ApiFailureOffline.shared)
+        XCTAssertEqual(recovery, Recovery.retry)
+        XCTAssertEqual(CharacterPresentation.key(recovery.actionKey), "action_retry")
     }
 
     func test_TEST_UI_016_given_a_marked_favourite_when_rendered_then_the_prominent_toggle_renders() {
@@ -119,15 +147,37 @@ final class CharacterDetailScreenStateTests: XCTestCase {
 
     // MARK: - The shared derivations
 
-    func test_UI_SPEC_6_3_given_an_origin_when_the_subtitle_renders_then_it_joins_species_and_origin() {
+    func test_TEST_UI_022_given_a_gender_when_the_subtitle_renders_then_it_joins_species_and_gender() {
+        // `UI_SPEC.md` §6.3: iOS reads "Species · Gender"; the origin has its own row (`DEC-131`).
         XCTAssertEqual(
-            CharacterPresentation.subtitle(species: "Human", info: allRows(enriched: true)),
-            "Human · Earth (C-137)"
+            CharacterPresentation.subtitle(species: "Human", gender: CopyKeys.shared.GENDER_MALE),
+            "Human · \(LocalizedCopy.shared.text(for: "gender_male"))"
         )
     }
 
-    func test_UI_SPEC_6_3_given_a_missing_origin_when_the_subtitle_renders_then_it_is_the_species_alone() {
-        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", info: []), "Human")
+    func test_TEST_UI_022_given_no_gender_yet_when_the_subtitle_renders_then_it_is_the_species_alone() {
+        // The list card carries no gender, so the subtitle before the detail answers is the species.
+        XCTAssertEqual(CharacterPresentation.subtitle(species: "Human", gender: nil), "Human")
+    }
+
+    // MARK: - TEST-UI-022: Unknown rows (DEC-131)
+
+    func test_TEST_UI_022_given_an_unknown_origin_and_location_when_rendered_then_both_rows_read_unknown() {
+        let rows = unknownRows()
+        XCTAssertEqual(
+            rows.map { CharacterPresentation.text($0.value) },
+            [LocalizedCopy.shared.text(for: "value_unknown"), LocalizedCopy.shared.text(for: "value_unknown")],
+            "an unknown origin and location keep their rows and read Unknown (AC-REQ-FUNC-002-2)"
+        )
+        assertRenders(
+            state: makeState(
+                header: card(id: "1", name: "Rick Sanchez"),
+                episodeCount: 1,
+                info: rows,
+                loadState: LoadStateContent.shared
+            ),
+            "the detail with an unknown origin and location"
+        )
     }
 
     func test_UI_SPEC_6_3_given_an_info_row_when_its_symbol_is_resolved_then_it_is_the_specified_glyph() {
@@ -162,6 +212,7 @@ final class CharacterDetailScreenStateTests: XCTestCase {
 
     private func makeState(
         header: CharacterCardUi?,
+        gender: Any? = nil,
         episodeCount: Int32? = nil,
         dimension: String? = nil,
         info: [InfoRowUi] = [],
@@ -170,6 +221,7 @@ final class CharacterDetailScreenStateTests: XCTestCase {
     ) -> CharacterDetailUiState {
         CharacterDetailUiState(
             header: header,
+            gender: gender,
             episodeCount: episodeCount.map { KotlinInt(int: $0) },
             dimension: dimension,
             info: info,
@@ -186,14 +238,14 @@ final class CharacterDetailScreenStateTests: XCTestCase {
             InfoRowUi(
                 kind: InfoRowKind.origin,
                 copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
-                value: "Earth (C-137)"
+                value: DisplayTextData(value: "Earth (C-137)")
             )
         )
         rows.append(
             InfoRowUi(
                 kind: InfoRowKind.lastknownlocation,
                 copyKey: CopyKeys.shared.DETAIL_INFO_LAST_KNOWN_LOCATION,
-                value: "Citadel of Ricks"
+                value: DisplayTextData(value: "Citadel of Ricks")
             )
         )
         if enriched {
@@ -201,10 +253,30 @@ final class CharacterDetailScreenStateTests: XCTestCase {
                 InfoRowUi(
                     kind: InfoRowKind.firstseenin,
                     copyKey: CopyKeys.shared.DETAIL_INFO_FIRST_SEEN_IN,
-                    value: "Pilot · S01E01"
+                    value: DisplayTextData(value: "Pilot · S01E01")
                 )
             )
         }
+        return rows
+    }
+
+    /// The two rows the shared reducer keeps for an origin and a location the API reports as unknown.
+    private func unknownRows() -> [InfoRowUi] {
+        var rows: [InfoRowUi] = []
+        rows.append(
+            InfoRowUi(
+                kind: InfoRowKind.origin,
+                copyKey: CopyKeys.shared.DETAIL_INFO_ORIGIN,
+                value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
+            )
+        )
+        rows.append(
+            InfoRowUi(
+                kind: InfoRowKind.lastknownlocation,
+                copyKey: CopyKeys.shared.DETAIL_INFO_LAST_KNOWN_LOCATION,
+                value: DisplayTextCopy(key: CopyKeys.shared.VALUE_UNKNOWN)
+            )
+        )
         return rows
     }
 

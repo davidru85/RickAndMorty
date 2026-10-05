@@ -48,12 +48,28 @@ sealed interface ParityIssue {
  * Android `strings.xml` and the Apple `Localizable.strings` with their own parsers and reports every
  * canonical key that is missing, every key that is not canonical, every duplicate, and every key whose
  * two values differ once each format's escapes and placeholders are read. English is never compared
- * with Spanish.
+ * with Spanish. A plural key is compared per quantity form: the Android `<plurals>` items against the
+ * Apple `Localizable.stringsdict` forms, each as `key#quantity` (`DEC-132`).
  *
  * The real resource folders are passed in by `TASK-013` (Android `res/`) and `TASK-060` (the Apple
  * folder holding the `.lproj` directories), with `CopyKeys.all` as [verify]'s canonical list (`CONF-70`).
  */
 object CopyParity {
+    /** The quantity forms every plural key carries on both platforms, in both locales (`DEC-132`). */
+    private val QUANTITIES = listOf("one", "other")
+
+    /** The entry name of one quantity form of a plural key, as both parsers read it. */
+    fun pluralForm(
+        key: String,
+        quantity: String,
+    ): String = "$key#$quantity"
+
+    /** The canonical entries: every plain key, and every quantity form of every plural key. */
+    fun canonical(
+        plain: Set<String>,
+        plurals: Set<String>,
+    ): Set<String> = plain + plurals.flatMap { key -> QUANTITIES.map { pluralForm(key, it) } }
+
     /** The shipped locales and where each platform keeps them (`REQ-FUNC-013`, `DEC-006`). */
     private val LOCALES =
         listOf(
@@ -97,7 +113,7 @@ object CopyParity {
     ): List<ParityIssue> =
         LOCALES.flatMap { locale ->
             val android = File(androidResources, "${locale.androidFolder}/strings.xml").takeIf { it.isFile }?.let(AndroidStrings::parse)
-            val apple = File(appleResources, "${locale.appleFolder}/Localizable.strings").takeIf { it.isFile }?.let(AppleStrings::parse)
+            val apple = File(appleResources, locale.appleFolder).takeIf { it.isDirectory }?.let(::appleCopy)
             buildList {
                 listOf(Platform.ANDROID to android, Platform.APPLE to apple).forEach { (platform, strings) ->
                     if (strings == null) {
@@ -121,11 +137,28 @@ object CopyParity {
         }
 }
 
+/**
+ * One Apple locale folder's copy: `Localizable.strings` plus, when present, the plural forms of
+ * `Localizable.stringsdict`. Without the strings file the locale is missing; without the stringsdict
+ * there are no plural forms, and each canonical form is then reported missing.
+ */
+private fun appleCopy(folder: File): ParsedStrings? {
+    val strings = File(folder, "Localizable.strings").takeIf { it.isFile }?.let(AppleStrings::parse) ?: return null
+    val plurals = File(folder, "Localizable.stringsdict").takeIf { it.isFile }?.let(AppleStringsDict::parse)
+    return if (plurals == null) strings else strings + plurals
+}
+
 /** A parsed resource file: the first value of each key, and the keys defined more than once. */
 class ParsedStrings(
     val entries: Map<String, String>,
     val duplicates: List<String>,
 ) {
+    /** The entries of both files read as one set; a key defined in both is a duplicate. */
+    operator fun plus(other: ParsedStrings): ParsedStrings =
+        of(entries.toList() + other.entries.toList()).let { merged ->
+            ParsedStrings(merged.entries, (duplicates + other.duplicates + merged.duplicates).distinct())
+        }
+
     companion object {
         fun of(pairs: List<Pair<String, String>>): ParsedStrings {
             val entries = linkedMapOf<String, String>()

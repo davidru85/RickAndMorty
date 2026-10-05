@@ -23,6 +23,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
@@ -131,6 +132,8 @@ private fun Grid(
                 height = if (index % TALL_EVERY == 0 || index % TALL_EVERY == TALL_EVERY - 1) CardHeight.Tall else CardHeight.Regular,
                 portalMark = portalMark,
                 onClick = { onCharacterSelected(card) },
+                // A favourite opens the same Detail, so it is the same transition's source (`DEC-135`).
+                sharedKey = PortraitTransition.key(card.id.value),
             )
         }
     }

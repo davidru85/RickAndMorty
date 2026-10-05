@@ -147,6 +147,15 @@ public class DiscoveryReducer(
                 request(chosen)
             }
 
+            // Both dimensions at once, in one request: a query still settling would otherwise land
+            // after the clear and filter the list again (`DEC-129`).
+            CharacterListIntent.ClearFilters -> {
+                pendingQuery?.cancel()
+                val cleared = CharacterFilter()
+                desired.value = cleared
+                request(cleared)
+            }
+
             // A load is started, never awaited, here: the loop must stay free to take the next intent,
             // so a query or status change made during a load supersedes it at once through `IC-014`'s
             // generation guard instead of waiting behind it (`DEC-124`).
@@ -166,11 +175,18 @@ public class DiscoveryReducer(
         }
     }
 
-    /** Revalidates page 1 over the network; [refreshing] holds until the newest refresh ends. */
-    private fun refresh() {
+    /**
+     * The `Refresh` intent (`REQ-FUNC-012`, `DEC-134`): revalidates page 1 over the network, and
+     * `isRefreshing` holds until the newest refresh ends. It returns the job of the refresh it starts,
+     * for a platform control that awaits its own work — iOS `.refreshable` holds its spinner until the
+     * job ends — while a state-bound control (Android's pull-to-refresh) reads `isRefreshing`. The
+     * refresh runs in the reducer's own scope, never in the caller's frame, so it supersedes and is
+     * superseded exactly as one sent through [onIntent].
+     */
+    public fun refresh(): Job {
         val generation = refreshGeneration.updateAndGet { it + 1 }
         refreshing.value = true
-        scope.launch(dispatcher) {
+        return scope.launch(dispatcher) {
             try {
                 pager.refresh()
             } finally {
@@ -235,7 +251,8 @@ public class DiscoveryReducer(
         val displayable = state.items.isNotEmpty()
         val loadState =
             when {
-                !displayable && isLoading -> LoadState.Loading
+                // The pager's own flag covers a reset this holder did not ask for: a protocol switch.
+                !displayable && (isLoading || state.isLoading) -> LoadState.Loading
                 !displayable && state.failure != null -> LoadState.Error(requireNotNull(state.failure))
                 !displayable -> LoadState.Empty
                 else -> LoadState.Content

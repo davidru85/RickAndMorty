@@ -1,7 +1,7 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
 - **Status:** Active — implemented on both platforms with known visual deviations, which the code reviews of 2026-10-05 list and `TASK-113` (Android) and `TASK-114` (iOS) remediate; the drift rule is `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-09-30
+- **Last verified:** 2026-10-05
 - **Owner:** UI/UX Designer (see `AGENTS.md`)
 - **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
 - **Not authoritative for:** behaviour requirements (`REQUIREMENTS.md`), architecture (`DESIGN.md`), failure handling (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`).
@@ -375,6 +375,7 @@ Behaviour:
   | Species | The API `species` field, never `type`; "unknown" is shown as "Unknown" |
 
   No gender, type or origin on the cards.
+- **Manual refresh** (`REQ-FUNC-012`, `DEC-134`): pulling the grid down revalidates page 1 over the network. Android uses Material 3's `PullToRefreshBox` with its default indicator, shown while `isRefreshing`; iOS uses `.refreshable`, whose system spinner holds until the shared refresh ends. A failed refresh keeps the items on screen and surfaces through the notice of §8.
 - **Prototype content:** both prototypes show the same six characters in the same order: Rick Sanchez, Morty Smith, Birdperson, Krombopulos Michael, Mr. Meeseeks, Squanchy. At runtime both apps render the same API data.
 - **Filters are identical on both platforms:**
   - the same four single-select options (All · Alive · Dead · Unknown)
@@ -570,6 +571,8 @@ The `ApiFailure`-specific messages of `ERROR_FLOW.md` §4.1 were reserved but un
 | `error_message_unknown` | Something went wrong on the way to this dimension. Try again. |
 | `detail_error_inline` | Couldn't load these details. Retry. |
 | `status_alive` · `status_dead` · `value_unknown` | Alive · Dead · Unknown |
+| `gender_female` · `gender_male` · `gender_genderless` | Female · Male · Genderless (`DEC-131`; an unknown gender is `value_unknown`) |
+| `detail_appears_in_episodes` (plural, `DEC-132`) | one: Appears in %d episode · other: Appears in %d episodes |
 
 The app name (`app_name`) is canonical too and reads "Multiverse Explorer". Spanish values live in each platform's Spanish resources; the Android set ships them and the phase pull request lists them for owner review.
 

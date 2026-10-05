@@ -117,13 +117,13 @@ class CharacterDetailSnapshotTest {
             dimension = "C-137",
             info =
                 listOf(
-                    InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)"),
+                    InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
                     InfoRowUi(
                         InfoRowKind.LastKnownLocation,
                         CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION,
-                        "Citadel of Ricks",
+                        DisplayText.Data("Citadel of Ricks"),
                     ),
-                    InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, "Pilot · S01E01"),
+                    InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                 ),
             loadState = LoadState.Loading,
         )
@@ -136,13 +136,13 @@ class CharacterDetailSnapshotTest {
             dimension = "C-137",
             info =
                 listOf(
-                    InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, "Earth (C-137)"),
+                    InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
                     InfoRowUi(
                         InfoRowKind.LastKnownLocation,
                         CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION,
-                        "Citadel of Ricks",
+                        DisplayText.Data("Citadel of Ricks"),
                     ),
-                    InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, "Pilot · S01E01"),
+                    InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot · S01E01")),
                 ),
             loadState = LoadState.Content,
         )

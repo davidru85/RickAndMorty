@@ -38,6 +38,9 @@
 "favorites_body" = "Tap the heart on a character's page to keep them here.";
 "favorites_heading" = "No favorites yet";
 "filter_all" = "All";
+"gender_female" = "Female";
+"gender_genderless" = "Genderless";
+"gender_male" = "Male";
 "nav_characters" = "Characters";
 "nav_episodes" = "Episodes";
 "nav_favorites" = "Favorites";

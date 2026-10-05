@@ -10,9 +10,13 @@ kotlin {
         commonMain.dependencies {
             // `LoadState`, `CharacterCardUi` and the formatters carry domain types in their signatures.
             api(project(":core:domain"))
+            // The shared splash gate takes the caller's dispatcher (`IC-026`, `DEC-136`).
+            api(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            // The shared splash gate's policy is proved on virtual time (`IC-026`, `TEST-UI-006`).
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidHostTest.dependencies {
             // The public-surface case reads the compiled Android classes on the JVM host (`TEST-UNIT-012`).

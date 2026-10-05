@@ -47,4 +47,16 @@ class CopyKeysTest {
             "TEST-UNIT-036: a valid Android resource name and Apple key: $names",
         )
     }
+
+    @Test
+    fun `TEST-UNIT-082 given_the_registry_then_plural_keys_are_registered_apart_from_plain_keys`() {
+        val plurals = CopyKeys.plurals.map { it.value }
+
+        assertTrue("detail_appears_in_episodes" in plurals, "TEST-UNIT-082: the Detail's episode line is a plural key (DEC-132)")
+        assertTrue(
+            plurals.none { name -> CopyKeys.all.any { it.value == name } },
+            "TEST-UNIT-082: a plural key is never also a plain key, so neither resolver can read the other's",
+        )
+        assertTrue(plurals.all { Regex("^[a-z][a-z0-9_]*$").matches(it) }, "TEST-UNIT-082: resource-safe names: $plurals")
+    }
 }

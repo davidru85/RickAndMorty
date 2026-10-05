@@ -125,18 +125,25 @@ enum CharacterPresentation {
         }
     }
 
-    /// The detail subtitle: `Species · Origin`, joined from parts the state already carries.
+    /// The detail subtitle: `Species · Gender` (`UI_SPEC.md` §6.3, `DEC-131`).
     ///
-    /// The screen joins the parts it is given rather than deriving any of them: the origin row's
-    /// value is the shared derivation, and a part that is absent is left out. `nil` means "no
-    /// subtitle", never an empty line (`IC-019`, `UI_SPEC.md` §6.3).
-    static func subtitle(species: String, info: [InfoRowUi]) -> String? {
+    /// The screen joins the parts it is given rather than deriving any of them: the gender is the
+    /// shared `IC-017` label, `nil` until the detail answers because the list card carries none, and
+    /// a part that is absent is left out. The origin has its own row, so iOS does not repeat it here.
+    /// `nil` means "no subtitle", never an empty line (`IC-019`).
+    static func subtitle(species: String, gender: Any?) -> String? {
         var parts: [String] = [species]
-        if let origin = info.first(where: { $0.kind == InfoRowKind.origin })?.value {
-            parts.append(origin)
+        if let gender {
+            parts.append(LocalizedCopy.shared.text(for: key(gender)))
         }
         let joined = parts.filter { !$0.isEmpty }.joined(separator: " · ")
         return joined.isEmpty ? nil : joined
+    }
+
+    /// The Detail's informative line under the panel, "Appears in N episodes" (`UI_SPEC.md` §6.3,
+    /// `DEC-132`): plural copy, so the count picks the form in each locale.
+    static func episodeCountLine(_ count: Int, copy: LocalizedCopy = .shared) -> String {
+        copy.plural(for: key(CopyKeys.shared.DETAIL_APPEARS_IN_EPISODES), count: count)
     }
 
     /// The SF Symbol `UI_SPEC.md` §6.3 fixes for an info row: `globe.americas.fill`,
@@ -192,6 +199,10 @@ struct CharacterCardCell: View {
 
     @State private var portrait: Image?
 
+    /// The shell's zoom namespace, when the cell is inside it (`DEC-135`).
+    @Environment(\.portraitTransitionNamespace) private var transitionNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     init(
         card: CharacterCardUi,
         loader: (any PortraitImageLoading)? = nil,
@@ -208,6 +219,10 @@ struct CharacterCardCell: View {
         loader ?? PortraitImagePipeline.shared
     }
 
+    private var zoomSourceID: String? {
+        PortraitMotion.zoomSourceID(characterID: CharacterPresentation.identifier(card.id), reduceMotion: reduceMotion)
+    }
+
     var body: some View {
         Button(action: action) {
             GlassCharacterCard(
@@ -219,6 +234,7 @@ struct CharacterCardCell: View {
             )
         }
         .buttonStyle(.plain)
+        .modifier(ZoomSource(id: zoomSourceID, namespace: transitionNamespace))
         .task(id: card.imageUrl) {
             if let cached = resolvedLoader.cachedImage(for: card.imageUrl) {
                 portrait = cached
@@ -246,4 +262,19 @@ struct CharacterCardCell: View {
 extension CharacterCardUi {
     /// The grid identity of `CharacterPresentation.gridIdentity(_:)`, as a key path `ForEach` can read.
     var gridIdentity: String { CharacterPresentation.gridIdentity(self) }
+}
+
+/// Makes a card the zoom's source under [id] in the shell's [namespace] (`DEC-135`); unchanged when
+/// either is missing — outside the shell, or with Reduce Motion.
+private struct ZoomSource: ViewModifier {
+    let id: String?
+    let namespace: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let id, let namespace {
+            content.matchedTransitionSource(id: id, in: namespace)
+        } else {
+            content
+        }
+    }
 }

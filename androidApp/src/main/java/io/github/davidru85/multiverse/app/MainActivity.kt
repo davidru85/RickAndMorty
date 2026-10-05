@@ -8,7 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
-import io.github.davidru85.multiverse.app.splash.SplashGate
+import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.DetailHandoff

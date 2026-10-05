@@ -90,15 +90,35 @@ public class RepositoryCharacterPager(
     private val protocolObserver: Job =
         scope.launch { protocolChanges.collect { switchProtocol() } }
 
-    /** Resets to page 1 of the current filter and reloads, cancelling the superseded load. */
+    /**
+     * Resets to page 1 of the current filter and reloads, cancelling the superseded load. The reset is
+     * the one [setFilter] performs: nothing the previous protocol loaded stays on screen while the new
+     * page loads (`DEC-130`).
+     */
     private suspend fun switchProtocol() {
         val load =
             lock.withLock {
                 startGeneration()
-                nextPage = FIRST_PAGE
+                reset(mutableState.value.filter)
                 start(Load(FIRST_PAGE, PageLoadPolicy.Default))
             }
         load.join()
+    }
+
+    /** Empties the state for a new identity of [filter] and marks its first page as loading. Called under [lock]. */
+    private fun reset(filter: CharacterFilter) {
+        nextPage = FIRST_PAGE
+        mutableState.value =
+            PagerState(
+                filter = filter,
+                items = emptyList(),
+                totalCount = null,
+                isAppending = false,
+                isEndReached = false,
+                isStale = false,
+                failure = null,
+                isLoading = true,
+            )
     }
 
     /** One page request: page 1 replaces the collection, any later page appends to it. */
@@ -113,17 +133,7 @@ public class RepositoryCharacterPager(
         val load =
             lock.withLock {
                 startGeneration()
-                nextPage = FIRST_PAGE
-                mutableState.value =
-                    PagerState(
-                        filter = filter,
-                        items = emptyList(),
-                        totalCount = null,
-                        isAppending = false,
-                        isEndReached = false,
-                        isStale = false,
-                        failure = null,
-                    )
+                reset(filter)
                 start(Load(FIRST_PAGE, PageLoadPolicy.Default))
             }
         load.join()
@@ -189,6 +199,30 @@ public class RepositoryCharacterPager(
             }.also { inFlight = it }
     }
 
+    /**
+     * Brings a stale first page up to date behind the screen (`DEC-130`): one network load of page 1,
+     * which joins the repository's own revalidation of that entry, so it costs no second request. A
+     * success is published like any load — it replaces the page and clears the stale state — unless the
+     * identity changed or a page was appended meanwhile; a failure changes nothing, because the screen
+     * already shows content and offers Retry. Called under [lock].
+     */
+    private fun revalidateSilently(nextAfterStale: Int?) {
+        val revalidationGeneration = generation
+        val filter = mutableState.value.filter
+        val correlation = CorrelationId.next()
+        scope.launch(correlation) {
+            val started = timeSource.markNow()
+            val result = repository.page(filter, FIRST_PAGE, PageLoadPolicy.ForceNetwork)
+            if (result !is DataResult.Success) return@launch
+            val durationMs = started.elapsedNow().inWholeMilliseconds
+            lock.withLock {
+                val unchanged =
+                    revalidationGeneration == generation && nextPage == nextAfterStale && !mutableState.value.isAppending
+                if (unchanged) publish(Load(FIRST_PAGE, PageLoadPolicy.ForceNetwork), result, durationMs, correlation.value)
+            }
+        }
+    }
+
     /** Applies and logs the outcome of a current-generation [load]. Called under [lock]. */
     private fun publish(
         load: Load,
@@ -212,8 +246,12 @@ public class RepositoryCharacterPager(
                         isEndReached = page.nextPage == null,
                         isStale = result.isStale || (!load.replaces && current.isStale),
                         failure = null,
+                        isLoading = false,
                     )
                 }
+                // A saved first page renders at once; the network then brings it up to date behind the
+                // screen, so the stale state ends when the network answers (`DEC-130`).
+                if (load.replaces && result.isStale && load.policy == PageLoadPolicy.Default) revalidateSilently(page.nextPage)
             }
             is DataResult.Failure ->
                 if (!load.replaces && result.failure is ApiFailure.NotFound) {
@@ -222,13 +260,13 @@ public class RepositoryCharacterPager(
                     logger.log(LogLevel.DEBUG) { LogEvent.PaginationExhausted(load.page - 1) }
                     failedLoad = null
                     nextPage = null
-                    mutableState.update { it.copy(isAppending = false, isEndReached = true, failure = null) }
+                    mutableState.update { it.copy(isAppending = false, isEndReached = true, failure = null, isLoading = false) }
                 } else {
                     logger.log(LogLevel.DEBUG) {
                         LogEvent.PageLoaded(load.page, LogOutcome.FAILURE, durationMs, result.source, correlationId)
                     }
                     failedLoad = load
-                    mutableState.update { it.copy(isAppending = false, failure = result.failure) }
+                    mutableState.update { it.copy(isAppending = false, failure = result.failure, isLoading = false) }
                 }
         }
     }

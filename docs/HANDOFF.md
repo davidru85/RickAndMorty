@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`) and the single launcher entry (PR #193, `TASK-117`); `TASK-116` (request logs, and the iOS log-sink crash) awaits review on `feat/debug-request-logs`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112` (P1) is implemented on `feat/task-112-p1` and awaits review in PR #202, the first of the stacked `TASK-112`…`TASK-115` pull requests (`DEC-133`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-05
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -11,14 +11,19 @@
 
 ### Code-review remediation — 2026-10-05
 
-Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolidated into five phase tasks, `TASK-111`…`TASK-115`, one pull request per phase, each started from merged `main` (`DEC-122`). Two owner requests from the same session are `TASK-116` and `TASK-117`.
+Three code reviews of `main` at `ce0d92a` (`prompts/code_review/`) are consolidated into five phase tasks, `TASK-111`…`TASK-115`, one pull request per phase (`DEC-122`). Two owner requests from the same session are `TASK-116` and `TASK-117`. From `TASK-112` on, the owner reviews at the end: each remaining task's branch starts from the previous task's head, every pull request targets `main`, and they merge in order (`DEC-133`).
 
 | Work | Branch | State |
 | --- | --- | --- |
 | `TASK-111` P0 — crashes, stuck states, races, iOS image host bypass, live Share/Back | `fix/review-remediation-p0` | **Merged** (PR #192, `63d0652`; issue #194 closed) |
 | `TASK-117` — one Android launcher icon; diagnostics through a debug-only shortcut | `fix/single-launcher-entry` | **Merged** (PR #193, `9599434`; issue #200 closed) |
-| `TASK-112` P1, `TASK-113` P2-A, `TASK-114` P2-B, `TASK-115` P3 | — | `Proposed`; each starts from `main` after the previous phase merges |
-| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | Implemented and observed on both platforms; awaiting review (issue #199, `LOG-0137`). It also fixes a latent iOS crash: the log sink crashed on any record, so a failed request would have ended the app |
+| `TASK-112` P1 — Clear filters, protocol reset, visible revalidation, complete Detail and its recovery, plurals, manual refresh, card→Detail transitions, shared splash gate | `feat/task-112-p1` (from `main` at `b457a71`) | Implemented and verified locally; awaits review in **PR #202** (issue #195, `LOG-0138`). P1-c, the iOS debug diagnostics sheet, is **not shipped**: it is escalated as `CONF-90` |
+| `TASK-113` P2-A, `TASK-114` P2-B, `TASK-115` P3 | each from the previous task's head (`DEC-133`) | `Proposed`; next in that order |
+| `TASK-116` — REST and GraphQL request logs visible in debug builds on both platforms | `feat/debug-request-logs` | **Merged** (PR #201, `b457a71`; issue #199; `LOG-0137`). It also fixed a latent iOS crash: the log sink passed Kotlin strings to `%@` |
+
+**Observed on the `TASK-112` branch (`LOG-0138`):** see that entry for the commands. In short, every touched Kotlin suite and the full Gradle gate pass, every Android Roborazzi baseline verifies, `xcodebuild test` on iPhone 17 / iOS 27.0 after a clean build passes 132 tests with 0 failures, and on that simulator the splash shows at 0.5 s and Discovery at 4.5 s. Not observed: the rendered card→Detail motion on a device (the tests pin its structure, not its frames).
+
+**Escalated in `TASK-112` (`CONF-90`):** the iOS debug diagnostics sheet of `REQ-OBS-002` needs `:core:ios` to link `:core:diagnostics`. `R12` in `build-logic` forbids that edge, and `build-logic/**` is outside the task's write authorization (`DEC-122`). The recommended option is one authorized `R12` change with a `DEC` that amends `DEC-088` for iOS; a Swift re-implementation of the recorder is rejected as a second implementation. Until the owner decides, `TEST-UI-027` stays reserved.
 
 **Observed on the P0 branch:**
 - The documented Gradle set plus `allTests`, ktlint, lint, the contract replay and the iOS framework link passed (BUILD SUCCESSFUL, 1207 tasks). Its reports hold 870 tests and 0 failures, plus `:androidApp`'s 44 up-to-date tests and `:core:data`'s full 197 re-run alone.

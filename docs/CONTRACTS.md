@@ -130,6 +130,7 @@ FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data   
 CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain  commonMain (implemented in :core:data)
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 DetailHandoff                            CONTRACTS.md IC-025       :core:presentation  commonMain
+SplashGate                               CONTRACTS.md IC-026       :core:presentation  commonMain (splash package)
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -270,7 +271,8 @@ enum class PageLoadPolicy { Default, ForceNetwork }
   - `details(id, enrich = false)` `MUST NOT` issue an episode request; `details(id, enrich = true)` performs at most one bounded episode batch call, never one request per episode (`REQ-FUNC-023`, `AC-REQ-FUNC-023-1`).
   - A detail for an unknown id returns `DataResult.Failure` carrying `ApiFailure.NotFound`; the repository `MUST NOT` return an empty shell model (`API_SPECS.md` §4.4).
   - Concurrent identical calls are deduplicated in the implementation, so two simultaneous identical loads issue one remote request (`REQ-REL-002`, `AC-REQ-REL-002-1`). Identity includes the protocol, the operation, the page or id, the normalized filter, the enrichment mode and the `PageLoadPolicy`.
-  - `page(…, policy = ForceNetwork)` reaches the network even when a fresh entry exists (`AC-REQ-FUNC-012-1`, `DEC-086`).
+  - `page(…, policy = ForceNetwork)` reaches the network even when a fresh entry exists (`AC-REQ-FUNC-012-1`, `DEC-086`). When a background revalidation of the same entry is already on the network, a `ForceNetwork` load joins it and returns its result, so the two cost one request (`REQ-REL-002`, `DEC-130`).
+  - A background revalidation fetches what a first load fetches: an enriched detail is revalidated with its episodes and stored only when complete, so no request's answer is discarded (`DEC-130`).
   - Only successfully decoded, domain-valid payloads are promoted to a cache; errors, empty bodies and partial responses are never written (`REQ-FUNC-020`, `AC-REQ-FUNC-020-3`).
   - A `CancellationException` from an underlying suspending call propagates unchanged and is never converted into a `Failure` (`IC-003`).
   - The repository `MUST NOT` expose, accept or depend on a DTO type or a platform type.
@@ -463,6 +465,7 @@ data class PagerState(
     val isEndReached: Boolean,
     val isStale: Boolean,
     val failure: ApiFailure?,
+    val isLoading: Boolean = false,   // DEC-130
 )
 ```
 
@@ -471,6 +474,9 @@ data class PagerState(
 - **Invariants**
   - `state` is hot with replay of the current value: a new collector receives the current `PagerState` as its first emission and never triggers a load by collecting.
   - `setFilter` resets to page 1 and cancels any in-flight page load; the items of the previous filter are not carried into the new filter's accumulation (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-003-2`).
+  - A change of the active protocol resets exactly as `setFilter` does, keeping the filter. Items, total, end flag, failure and staleness clear, and the load in flight is cancelled, so nothing the previous protocol loaded stays on screen while page 1 of the new one loads (`AC-REQ-FUNC-034-2`, `DEC-130`).
+  - `isLoading` is `true` from a reset (`setFilter` or a protocol switch) until the first page of the new identity is published, whatever its outcome, so a consumer never reads an empty reset as an empty result (`DEC-130`).
+  - A **stale** first page, published from a `Default` load, is followed by one silent network load of page 1, which joins the repository's revalidation of that entry. On success it is published like any load — replacing the page and clearing `isStale` — unless the identity changed or a page was appended meanwhile; on failure nothing changes, and no `failure` is reported (`ERROR_FLOW.md` §9, `DEC-130`).
   - `next()` while `isEndReached == true` performs no request; `isEndReached` is set when the server's end-of-pagination signal is observed (`REQ-FUNC-001`, `AC-REQ-FUNC-001-2`, `API_SPECS.md` §4.3).
   - `next()` while a page load is in flight is coalesced: it `MUST NOT` start a second concurrent page request.
   - `next()` while `failure != null` performs no request: a failed load suppresses further speculative loads, so repeated scroll triggers cannot become a request storm while the service is failing (`DEC-092`). `retry()`, `refresh()` and `setFilter` are the ways out.
@@ -695,16 +701,25 @@ data class CharacterCardUi(
 @JvmInline
 value class CopyKey(val value: String)
 
+/** A string whose wording depends on a count; never resolved as a plain string (DEC-132). */
+@JvmInline
+value class PluralKey(val value: String)
+
 /** The one canonical key list: every key a shared contract binds, each once. */
 object CopyKeys {
     val ERROR_TITLE: CopyKey            // … every key of ERROR_FLOW.md §4.1 …
     val STATUS_ALIVE: CopyKey           // "status_alive"
     val STATUS_DEAD: CopyKey            // "status_dead"
     val VALUE_UNKNOWN: CopyKey          // "value_unknown", the one "Unknown"
+    val GENDER_FEMALE: CopyKey          // "gender_female"
+    val GENDER_MALE: CopyKey            // "gender_male"
+    val GENDER_GENDERLESS: CopyKey      // "gender_genderless"
     val APP_NAME: CopyKey               // "app_name", the launcher label
     // … the B4 surface keys: the splash, the four navigation labels, the two placeholder screens,
     // each registered by TASK-013 with the resources that carry it (DEC-101) …
+    val DETAIL_APPEARS_IN_EPISODES: PluralKey  // "detail_appears_in_episodes", DEC-132
     val all: Set<CopyKey>
+    val plurals: Set<PluralKey>         // apart from `all` (DEC-132)
 }
 
 sealed interface DisplayText {
@@ -714,6 +729,7 @@ sealed interface DisplayText {
 
 interface PresentationFormatters {
     fun statusKey(status: CharacterStatus): CopyKey
+    fun genderKey(gender: CharacterGender): CopyKey
     fun unknownKey(): CopyKey
     fun valueText(raw: String?): DisplayText
     fun dimensionText(origin: LocationSummary, enrichRequested: Boolean): String?
@@ -723,7 +739,12 @@ interface PresentationFormatters {
     fun failureTitle(): CopyKey                                        // TASK-022
     fun retryAction(): CopyKey                                         // TASK-022
     fun isAutomaticallyRetryable(failure: ApiFailure): Boolean          // TASK-022
+    fun recovery(failure: ApiFailure): Recovery                        // TASK-112, DEC-131
+    fun inlineFailureMessage(failure: ApiFailure): FailureMessage      // TASK-112, DEC-131
 }
+
+/** How a failed Detail load is recovered, with the key of its one affordance (DEC-131). */
+enum class Recovery(val actionKey: CopyKey) { Retry(CopyKeys.ACTION_RETRY), Back(CopyKeys.ACTION_BACK) }
 
 /** The copy of one failure: the key, plus the typed values its wording substitutes (GAP-027, DEC-123). */
 data class FailureMessage(val key: CopyKey, val arguments: List<MessageArgument> = emptyList())
@@ -745,6 +766,8 @@ object DefaultPresentationFormatters : PresentationFormatters
   - The formatters are pure and platform-free: no clock, no network, no `Locale`-dependent formatting beyond what the platform resource layer applies, and no platform type in a signature.
   - `unknownKey()` is the single source of the "Unknown" presentation: a raw API value that is absent, blank or `"unknown"` is rendered through it and `MUST NOT` be displayed raw (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`).
   - `statusKey(CharacterStatus.Unsupported(raw))` returns `unknownKey()`; an unrecognised status never renders as an internal value (`REQ-NFR-004`, `AC-REQ-NFR-004-2`).
+  - A plural key is a `PluralKey`, registered in `CopyKeys.plurals` and never in `all`. Android carries it as `<plurals>` in the one copy set, resolved by `CopyResolver.plural(key, count)`; Apple carries it in `Localizable.stringsdict` as exactly one `NSStringPluralRuleType` variable, resolved by `LocalizedCopy.plural(for:count:)`. Both platforms carry the `one` and `other` forms in `en` and `es`, and `TEST-UNIT-082` holds every form identical per locale (`DEC-132`).
+  - `genderKey` returns `gender_female`, `gender_male` or `gender_genderless` for the three supported genders, and `unknownKey()` for `Unknown` and `Unsupported(raw)` (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`, `DEC-131`). The approved copy is "Female", "Male", "Genderless"; Spanish "Femenino", "Masculino", "Sin género" (`DEC-128`).
   - A formatter returns `null` to mean "hide this row/tile" and `MUST NOT` return an empty or placeholder string (`UI_SPEC.md` §6.3).
   - `dimensionText` derives the value from `origin` and returns `null` when the origin carries neither a dimension nor a parenthesised designation; it `MUST NOT` invent a value (`UI_SPEC.md` §6.3).
   - `firstSeenText(null)` returns `null`; the "first seen in" row is therefore absent exactly when enrichment was not requested (`AC-REQ-FUNC-023-2`). An enrichment that found no episode is `null` as well; otherwise the value is the first episode's "name · code" (`UI_SPEC.md` §6.3).
@@ -757,6 +780,7 @@ object DefaultPresentationFormatters : PresentationFormatters
   - `rateLimitCountdown(retryAfterSeconds)` is the one formatter for the number in `error_message_rate_limited`: the advised seconds, or `null` when the advice is absent or negative. It `MUST NOT` invent a value, and it is the only place the number is derived, so both platforms render the same countdown (`ERROR_FLOW.md` §4.1, `GAP-027`).
   - `isAutomaticallyRetryable(failure)` states the recovery table's answer rather than a per-surface choice: `Offline`, `Timeout` and `Server` are retried within the bounded budget, and TLS (`Unknown`), another `4xx` (`InvalidRequest`), `NotFound`, `RateLimited`, `GraphQl`, `MalformedResponse` and `EmptyBody` are not retried automatically (`ERROR_FLOW.md` §10, `API_SPECS.md` §6.3, `DEC-084`). A user-initiated retry stays available for every class.
   - `failureTitle()` and `retryAction()` return the shared full-surface title and the retry affordance, so the two keys are named once instead of per surface.
+  - `recovery(failure)` is `Back` for `NotFound` — a detail `404` is terminal for the identifier (`API-ERR-016`) — and `Retry` for every other failure; a Detail surface `MUST NOT` offer Retry for a `NotFound` (`ERROR_FLOW.md` §4, §10, `DEC-131`). `inlineFailureMessage(failure)` is the message of the inline error beside a retained header: `failureMessage(failure)` when the recovery is `Back`, `detail_error_inline` otherwise.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-013`, `REQ-FUNC-022`, `REQ-FUNC-023`, `REQ-UX-008`, `DEC-015`, `DEC-020`.
 
 ### IC-025 — `DetailHandoff`
@@ -776,8 +800,31 @@ class DetailHandoff {
   - It holds at most one card, and never a list, a page or any network state: a screen reads it once on entry.
   - `consume` returns the held card only when its id equals the requested one; a deep link or a process restart consumes nothing, which is why the detail screen renders from its own state in that case.
   - It is not a cache: the card a consumer receives is the one that was published, and `clear` drops it rather than retaining it.
-  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`), which is the only composition-root edge to it beyond the shared copy keys.
+  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`) and for `IC-026`; beyond those two and the shared copy keys the composition root uses nothing from it.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-009`, `DESIGN.md` §4.2, `DEC-013`.
+
+### IC-026 — `SplashGate`
+
+- **Declaration** (`:core:presentation`, `commonMain`, `splash` package):
+
+```kotlin
+class SplashGate(
+    repository: CharacterRepository,
+    dispatcher: CoroutineDispatcher,
+    val minimum: Duration = MINIMUM,   // 1.2 s
+    val maximum: Duration = MAXIMUM,   // 3 s
+) {
+    suspend fun awaitReady(): DataResult<*>?
+}
+```
+
+- **Semantics:** the splash readiness gate of `DEC-098`, shared by both shells since `DEC-136`. The Android shell awaits it in its splash overlay, and the iOS root view awaits it through `MultiverseBootstrap.awaitSplashReady(onReady)`, so the two splashes end by one policy (`REQ-FUNC-007`, `UI_SPEC.md` §6.1).
+- **Invariants**
+  - `awaitReady` returns no sooner than `minimum` and no later than `maximum`, measured on the injected dispatcher's clock; no wall clock is read.
+  - It completes on the first page's **outcome** — a success or a failure — and returns it; it returns `null` when the ceiling expired first. A failure never holds the splash (`AC-REQ-FUNC-007-2`).
+  - Its one request is `CharacterRepository.page(CharacterFilter(), 1)` under the default policy, the page the first screen loads, so the splash warms that entry instead of costing a request of its own.
+  - A shell shows the splash once per launch: the Android "ready" flag lives in saved state, so a configuration change does not replay it.
+- **Traceability:** `REQ-FUNC-007`, `DEC-098`, `DEC-136`, `TEST-UI-006`, `TEST-UNIT-084`, `TEST-UI-026`.
 
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 
@@ -798,6 +845,7 @@ data class CharacterListUiState(
 sealed interface CharacterListIntent {
     data class QueryChanged(val query: String) : CharacterListIntent
     data class StatusSelected(val status: StatusFilter) : CharacterListIntent
+    data object ClearFilters : CharacterListIntent      // DEC-129
     data object LoadNextPage : CharacterListIntent
     data object Refresh : CharacterListIntent
     data object Retry : CharacterListIntent
@@ -816,6 +864,7 @@ sealed interface CharacterListIntent {
   - `isStale == true` implies `loadState == Content` and a cache source for the displayed items (`IC-003`); stale content is displayed, never replaced by an error, while it exists.
   - `totalCount` is `null` until the server establishes it and is never `0` as a placeholder (`AC-REQ-FUNC-001-3`).
   - `QueryChanged` and `StatusSelected` reset paging to page 1; `StatusSelected` preserves the active query and `QueryChanged` preserves the active status (`REQ-FUNC-003`, `REQ-FUNC-004`, `AC-REQ-FUNC-004-1`).
+  - `ClearFilters` resets the query **and** the status to their defaults in one page-1 request, and cancels a query still settling, so the result is the unfiltered first page (`AC-REQ-FUNC-010-2`, `DEC-129`). A platform's search field follows a query the state changed and does not send it back as `QueryChanged`.
   - `Retry` starts a fresh attempt budget and clears the error on success: with a failure it re-attempts the failed load through `IC-014.retry()` — the failed append as that page, a failed refresh as a refresh — and with no failure but `isStale` content it revalidates page 1 through `IC-014.refresh()` (`ForceNetwork`), which is the stale banner's action (`ERROR_FLOW.md` §9); with neither it does nothing. `Refresh` revalidates over the network even when the cache is fresh and keeps the previous items if it fails (`REQ-FUNC-011`, `REQ-FUNC-012`, `AC-REQ-FUNC-011-1`, `DEC-124`).
   - No intent awaits a load inside the holder's intent loop: `LoadNextPage`, `Refresh` and `Retry` start their pager call in a child of the holder's scope, so a `QueryChanged` or `StatusSelected` that arrives during a load is handled at once and supersedes the load through `IC-014`'s generation guard (`AC-REQ-FUNC-003-2`, `AC-REQ-FUNC-004-1`, `DEC-124`).
   - An intent `MUST` be the only write path: a view `MUST NOT` call a repository or use case directly (`ERROR_FLOW.md` §3 invariant 4).
@@ -829,6 +878,7 @@ sealed interface CharacterListIntent {
 ```kotlin
 data class CharacterDetailUiState(
     val header: CharacterCardUi? = null,
+    val gender: CopyKey? = null,
     val episodeCount: Int? = null,
     val dimension: String? = null,
     val info: List<InfoRowUi> = emptyList(),
@@ -841,7 +891,7 @@ enum class InfoRowKind { Origin, LastKnownLocation, FirstSeenIn }
 data class InfoRowUi(
     val kind: InfoRowKind,
     val copyKey: CopyKey,
-    val value: String,
+    val value: DisplayText,
 )
 
 sealed interface CharacterDetailIntent {
@@ -853,13 +903,14 @@ sealed interface CharacterDetailIntent {
 - **Consumed by:** the Android ViewModel in `:feature:character-detail` (its Android UI source set) and the iOS `ObservableObject` in `iosApp/Features/CharacterDetail` (`DEC-013`).
 - **Invariants**
   - `header` is populated from the list-provided `CharacterCardUi` before any detail response and `MUST` be rendered first, so the shared-element/zoom transition has a source (`REQ-FUNC-002`, `AC-REQ-FUNC-002-1`, `DESIGN.md` §4.2).
-  - `loadState == Error` `MUST NOT` clear a non-null `header`: a detail failure with list data keeps the known fields and offers the inline retry (`AC-REQ-FUNC-002-3`).
+  - `loadState == Error` `MUST NOT` clear a non-null `header`: a detail failure with list data keeps the known fields and offers the inline error with `IC-017.inlineFailureMessage` and `IC-017.recovery` (`AC-REQ-FUNC-002-3`). With a `null` header there is nothing known to keep, so both platforms render the full-surface error state — `failureTitle()`, `failureMessage(failure)` and the recovery's affordance — never an empty hero (`AC-REQ-UX-009-1`, `DEC-131`).
+  - `gender` is `IC-017.genderKey(CharacterDetails.gender)` once a detail has answered, and `null` before that and on a failure, because the list-provided card carries no gender. Android renders the subtitle "Species · Gender · Origin", iOS "Species · Gender" (`REQ-FUNC-002`, `UI_SPEC.md` §6.3, `DEC-131`).
   - `episodeCount` is derived from `CharacterDetails.episodeIds.size` and `MUST NOT` be computed from `episodeSummaries`, so it renders even when enrichment is absent (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`).
   - `InfoRowKind.FirstSeenIn` appears in `info` only when enrichment was requested and `episodeSummaries` is non-null; the row is absent rather than empty (`AC-REQ-FUNC-023-2`).
   - `dimension == null` means "hide the dimension tile"; it is produced by `IC-017.dimensionText` and `MUST NOT` be replaced by a placeholder (`UI_SPEC.md` §6.3).
   - `copyKey` on a row is a `CopyKey`; the row `MUST NOT` carry an English label (`REQ-FUNC-013`, `REQ-UX-008`).
   - `isFavorite` reflects the stored set and updates immediately on `ToggleFavorite`, before the write completes, then reconciles with `ObserveFavoriteIds` emissions; the control therefore never shows a stale toggled state (`REQ-FUNC-006`, `AC-REQ-FUNC-006-1`).
-  - `info` order is fixed as `Origin`, `LastKnownLocation`, `FirstSeenIn`, filtered by availability.
+  - `info` order is fixed as `Origin`, `LastKnownLocation`, `FirstSeenIn`. Once a detail has answered, the `Origin` and `LastKnownLocation` rows are always present, and their `value` is `IC-017.valueText` of the location name: an absent, blank or `unknown` name is `DisplayText.Copy(value_unknown)`, never a dropped row (`AC-REQ-FUNC-002-2`, `DEC-131`). Only `FirstSeenIn` is filtered by availability; its `value` is `DisplayText.Data`.
   - Only `ToggleFavorite` and `Retry` are intents; `Retry` starts a fresh attempt budget (`REQ-FUNC-011`).
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-006`, `REQ-FUNC-011`, `REQ-FUNC-023`, `REQ-UX-009`, `DEC-013`, `DEC-015`.
 
@@ -1074,6 +1125,14 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-026` added (`TASK-112`): the splash gate moves from `:androidApp` to `:core:presentation` and serves both shells; iOS awaits it through `MultiverseBootstrap.awaitSplashReady`. | `DEC-136` |
+| 2026-10-05 | `IC-017` (`TASK-112`): `PluralKey`, `CopyKeys.plurals` and the first plural key `detail_appears_in_episodes`; Android `<plurals>` through `CopyResolver.plural`, Apple `Localizable.stringsdict` through `LocalizedCopy.plural`. Additive for the Swift consumer. | `DEC-132` |
+| 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `Recovery`, `recovery(failure)` and `inlineFailureMessage(failure)`; a not-found Detail is recovered by Back, and a failure without a header renders the full-surface error. Additive for the Swift consumer. | `DEC-131` |
+| 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `genderKey(CharacterGender)` and the keys `gender_female`, `gender_male`, `gender_genderless`; `CharacterDetailUiState.gender: CopyKey?`. Breaking for the Swift consumer (§8.2), whose initialiser gains the parameter; the iOS app and its tests change in the same commit. | `DEC-131` |
+| 2026-10-05 | `IC-019` (`TASK-112`): `InfoRowUi.value` becomes `DisplayText`, and an unknown origin or location keeps its row with `value_unknown`; only `FirstSeenIn` stays availability-filtered. Breaking for the Swift consumer (§8.2), which resolves the value through `CharacterPresentation.text` in the same commit. | `DEC-131` |
+| 2026-10-05 | `IC-007`/`IC-014` (`TASK-112`): a `ForceNetwork` load joins a revalidation in flight; an enriched detail is revalidated with its episodes; a stale first page is followed by a silent network load that clears the stale state on success. | `DEC-130` |
+| 2026-10-05 | `IC-014` (`TASK-112`): `PagerState.isLoading` added, and a protocol switch resets like `setFilter`. The Swift initialiser of `PagerState` gains the parameter; no Swift code constructs one. | `DEC-130` |
+| 2026-10-05 | `IC-018` (`TASK-112`): `CharacterListIntent.ClearFilters` clears both filter dimensions in one request. Additive for the Swift consumer. | `DEC-129` |
 | 2026-10-05 | `IC-018` (`TASK-111`): `CharacterListUiState` gains `contentFailure` (the failure carried beside displayable content) and `isRefreshing`; `Retry` revalidates stale content when there is no failure; no intent awaits a load inside the intent loop. Breaking for the Swift consumer (§8.2), whose initialiser gains the two parameters; the iOS app and its tests change in the same commit. | `DEC-124` |
 | 2026-10-05 | `IC-017` (`TASK-111`): `FailureMessage.arguments` becomes `List<MessageArgument>` (`Number`/`Text`) with `formatArguments()`, `rateLimitCountdown` returns `Long?`, and a rate limit without usable advice maps to the new placeholder-free key `error_message_rate_limited_no_countdown`. Breaking for the Swift consumer (§8.2), which changes in the same commit: Android crashed formatting `%d` with a `String`, and iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123` |
 | 2026-10-03 | B3 Phase 3.3 (`TASK-041`): `IC-015`…`IC-017` are implemented. `IC-016`'s `species` becomes `DisplayText` and gains `statusLabel` and the `from` mapping, because a `String` could not carry "Unknown" through `IC-017`'s key without an English literal (`CONF-74`); `IC-017` gains the `CopyKeys` registry, `DisplayText`, `valueText` and `DefaultPresentationFormatters`, and states where the strings live. No consumer existed, so nothing breaks (§8). | `TASK-041`, `DEC-015`, `DEC-020` |

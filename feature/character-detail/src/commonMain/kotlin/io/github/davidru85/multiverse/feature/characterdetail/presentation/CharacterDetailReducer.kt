@@ -3,8 +3,8 @@ package io.github.davidru85.multiverse.feature.characterdetail.presentation
 import io.github.davidru85.multiverse.core.domain.model.CharacterDetails
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
-import io.github.davidru85.multiverse.core.presentation.CopyKey
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
+import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
 import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
 
@@ -77,6 +77,7 @@ public object CharacterDetailReducer {
     ): CharacterDetailUiState =
         CharacterDetailUiState(
             header = header ?: headerOf(details, formatters),
+            gender = formatters.genderKey(details.gender),
             episodeCount = details.episodeIds.size,
             dimension = formatters.dimensionText(details.origin, enrichRequested),
             info = infoRows(details, enrichRequested, formatters),
@@ -99,9 +100,11 @@ public object CharacterDetailReducer {
         )
 
     /**
-     * The available rows in the fixed order `Origin`, `LastKnownLocation`, `FirstSeenIn`, filtered by
-     * availability: a row whose value the formatters hid is **absent**, not empty
-     * (`IC-019`, `AC-REQ-FUNC-023-2`).
+     * The rows in the fixed order `Origin`, `LastKnownLocation`, `FirstSeenIn` (`IC-019`). Origin and
+     * Last known location are always present: an absent, blank or "unknown" name reads as the one
+     * "Unknown" presentation (`AC-REQ-FUNC-002-2`, `DEC-131`). Only `FirstSeenIn` is filtered by
+     * availability, because it depends on an enrichment rather than on a value the API reported
+     * (`AC-REQ-FUNC-023-2`).
      */
     private fun infoRows(
         details: CharacterDetails,
@@ -109,34 +112,20 @@ public object CharacterDetailReducer {
         formatters: PresentationFormatters,
     ): List<InfoRowUi> =
         buildList {
-            (CopyKeys.DETAIL_INFO_ORIGIN to details.origin.name)
-                .row(InfoRowKind.Origin, formatters)
-                ?.let(::add)
-            (CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION to details.lastKnownLocation.name)
-                .row(InfoRowKind.LastKnownLocation, formatters)
-                ?.let(::add)
+            add(InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, formatters.valueText(details.origin.name)))
+            add(
+                InfoRowUi(
+                    InfoRowKind.LastKnownLocation,
+                    CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION,
+                    formatters.valueText(details.lastKnownLocation.name),
+                ),
+            )
             // First seen in requires the enrichment; `firstSeenText(null)` is null, so an absent
             // enrichment leaves the row out entirely rather than rendering an empty value.
             if (enrichRequested) {
                 formatters
                     .firstSeenText(details.episodeSummaries)
-                    ?.let { add(InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, it)) }
+                    ?.let { add(InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data(it))) }
             }
         }
-
-    /** The row for a raw location name, or `null` when the value is absent, blank or "unknown". */
-    private fun Pair<CopyKey, String>.row(
-        kind: InfoRowKind,
-        formatters: PresentationFormatters,
-    ): InfoRowUi? {
-        val text = formatters.valueText(second)
-        val value =
-            when (text) {
-                is io.github.davidru85.multiverse.core.presentation.DisplayText.Data -> text.value
-                // A value that resolves to the one "Unknown" presentation is not a location name, so
-                // the row is absent. The design system resolves the key at the platform seam.
-                is io.github.davidru85.multiverse.core.presentation.DisplayText.Copy -> return null
-            }
-        return InfoRowUi(kind, first, value)
-    }
 }

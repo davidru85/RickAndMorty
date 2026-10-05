@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
+import io.github.davidru85.multiverse.core.designsystem.motion.portraitSharedElement
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import androidx.compose.animation.core.tween as animationTween
 
@@ -54,6 +55,9 @@ public const val PortraitMaxDecodePx: Int = 300
  * a card — the card's merged node carries the meaning (`UI_SPEC.md` §9) — so [contentDescription] is
  * `null` by default and the caller passes one only when the portrait stands alone.
  *
+ * [sharedKey] names the portrait for the card→Detail shared element (`PortraitTransition`,
+ * `DEC-135`); it takes effect only inside the shell's transition, and is ignored elsewhere.
+ *
  * The requested decode size is [decodePx] capped to [PortraitMaxDecodePx], so no surface can ask for
  * a larger bitmap than the specification allows.
  */
@@ -65,12 +69,18 @@ public fun CharacterPortrait(
     decodePx: Int = PortraitMaxDecodePx,
     portalMark: Painter? = null,
     contentDescription: String? = null,
+    sharedKey: String? = null,
 ) {
     val requested = decodePx.coerceAtMost(PortraitMaxDecodePx)
     val height = requested
     val result = seam.rememberPainter(url = imageUrl, widthPx = requested, heightPx = height)
 
-    Box(modifier = modifier.semantics { contentDescription?.let { this.contentDescription = it } }) {
+    Box(
+        modifier =
+            modifier
+                .portraitSharedElement(sharedKey)
+                .semantics { contentDescription?.let { this.contentDescription = it } },
+    ) {
         Crossfade(
             targetState = result,
             animationSpec = animationTween(PortraitCrossfadeMillis),

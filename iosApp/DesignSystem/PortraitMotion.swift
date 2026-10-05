@@ -44,6 +44,13 @@ public enum PortraitMotion {
     /// `true` when the platform should use the zoom transition rather than the cross-fade.
     public static func usesZoomTransition(reduceMotion: Bool) -> Bool { !reduceMotion }
 
+    /// The id both ends of the zoom use for one character (`DEC-135`): the grid cell is
+    /// `.matchedTransitionSource` under it and the Detail destination `.navigationTransition(.zoom)`.
+    /// `nil` with Reduce Motion, so neither end applies the zoom and the change is the cross-fade.
+    public static func zoomSourceID(characterID: String, reduceMotion: Bool) -> String? {
+        usesZoomTransition(reduceMotion: reduceMotion) ? sharedKey(characterID: characterID) : nil
+    }
+
     /// `true` when the portrait parallax is suppressed (`UI_SPEC.md` §7).
     public static func usesParallax(reduceMotion: Bool) -> Bool { !reduceMotion }
 
@@ -64,4 +71,17 @@ public struct SystemMotionPreference: MotionPreference {
     public init() {}
 
     public var reduceMotionEnabled: Bool { UIAccessibility.isReduceMotionEnabled }
+}
+
+/// The shell's zoom namespace (`DEC-135`), handed to the grids through the environment so a card cell
+/// can be the transition's source without its screen taking a parameter; `nil` outside the shell.
+private struct PortraitTransitionNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
+extension EnvironmentValues {
+    public var portraitTransitionNamespace: Namespace.ID? {
+        get { self[PortraitTransitionNamespaceKey.self] }
+        set { self[PortraitTransitionNamespaceKey.self] = newValue }
+    }
 }

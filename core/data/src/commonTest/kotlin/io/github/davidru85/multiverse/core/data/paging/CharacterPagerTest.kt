@@ -30,6 +30,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Test
@@ -173,9 +174,13 @@ class CharacterPagerTest {
             pager.next()
             pager.refresh()
 
+            // A reset also flips `isLoading` (DEC-130), which this projection does not show; consecutive
+            // equal projections are therefore one step of the sequence.
             assertEquals(
                 listOf(0 to false, 20 to false, 20 to true, 40 to false, 20 to false),
-                states.map { it.items.size to it.isAppending },
+                states.map { it.items.size to it.isAppending }.fold(emptyList<Pair<Int, Boolean>>()) { steps, step ->
+                    if (steps.lastOrNull() == step) steps else steps + step
+                },
                 "TEST-UNIT-016: only an append sets isAppending, and a refresh keeps the items until it succeeds (ADR-0009 rule 5)",
             )
         }
@@ -207,6 +212,8 @@ class CharacterPagerTest {
                     isEndReached = false,
                     isStale = false,
                     failure = null,
+                    // The reset says its first page is loading, so it is never read as an empty result (DEC-130).
+                    isLoading = true,
                 ),
                 states[reset],
                 "TEST-UNIT-016: the new filter and the cleared accumulation arrive in one emission (AC-REQ-FUNC-003-2)",
@@ -487,7 +494,11 @@ class CharacterPagerTest {
             val repository = FakeCharacterRepository(catalogue(45), cached = catalogue(45), cachedIsStale = true)
             val pager = RepositoryCharacterPager(repository, this, logger())
 
+            // A stale first page is followed by a silent network load of it (DEC-130); it fails here, so
+            // the stale page stays and the case can observe its provenance.
+            repository.failNext(ApiFailure.Offline)
             pager.setFilter(all)
+            runCurrent()
             val fromStaleCache = pager.state.value.isStale
             repository.failNext(ApiFailure.Offline)
             pager.refresh()

@@ -51,9 +51,12 @@ struct RootView: View {
                 BrandedSplashView(reduceMotion: UIAccessibility.isReduceMotionEnabled)
                     .transition(.opacity)
                     .task {
-                        // The splash is a floor, not a network wait, so a cold start with no
-                        // connectivity still reaches the shell (`TASK-007`).
-                        try? await Task.sleep(nanoseconds: UInt64(SplashTiming.minimumSeconds * 1_000_000_000))
+                        // The shared gate the Android shell awaits (`IC-026`, `DEC-136`): at least
+                        // 1.2 s, at most 3 s, ended by the first page's outcome — so a cold start with
+                        // no connectivity still reaches the shell at the ceiling.
+                        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                            MultiverseBootstrap.shared.awaitSplashReady { continuation.resume() }
+                        }
                         withAnimation(.easeInOut(duration: SplashTiming.exitCrossfadeSeconds)) {
                             splashVisible = false
                         }
@@ -65,8 +68,9 @@ struct RootView: View {
     }
 }
 
-/// The splash's timing contract (`UI_SPEC.md` §6.1, `TASK-007`): the same 1.2 s floor and exit
-/// crossfade the Android gate uses, so the two shells cannot disagree about how long it lasts.
+/// The splash's motion timing (`UI_SPEC.md` §6.1, `TASK-007`): the portal's 1.2 s cycle — the shared
+/// gate's minimum, so one full acceleration always plays — and the exit crossfade the Android shell
+/// uses. How long the splash stays is the shared gate's decision (`IC-026`), not a constant here.
 enum SplashTiming {
     static let minimumSeconds: Double = 1.2
     static let exitCrossfadeSeconds: Double = 0.38
@@ -86,15 +90,30 @@ struct DestinationView<Detail: View>: View {
     /// because the real host starts the shared graph and its network client.
     let detail: (CharacterCardUi) -> Detail
 
+    /// The one namespace the card→Detail zoom runs in (`DEC-135`): the grids' cells are its sources
+    /// through the environment, and the Detail destination zooms out of the tapped one.
+    @Namespace private var portraitNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         NavigationStack {
             root
+                .environment(\.portraitTransitionNamespace, portraitNamespace)
                 // Inside the stack, on its root: SwiftUI drops a `navigationDestination` attached to
                 // the stack itself, so a tapped card would push nothing. The detail renders from the
                 // card the list already had, so its header is present in the first frame
                 // (`AC-REQ-FUNC-002-1`).
                 .navigationDestination(item: $opened) { card in
                     detail(card)
+                        .modifier(
+                            ZoomDestination(
+                                sourceID: PortraitMotion.zoomSourceID(
+                                    characterID: CharacterPresentation.identifier(card.id),
+                                    reduceMotion: reduceMotion
+                                ),
+                                namespace: portraitNamespace
+                            )
+                        )
                 }
         }
     }
@@ -122,6 +141,21 @@ struct DestinationView<Detail: View>: View {
         }
     }
 
+}
+
+/// Zooms the Detail out of the card under [sourceID] (`UI_SPEC.md` §7, `DEC-135`); with no id —
+/// Reduce Motion — the push is the system's own transition, which Reduce Motion makes a cross-fade.
+private struct ZoomDestination: ViewModifier {
+    let sourceID: String?
+    let namespace: Namespace.ID
+
+    func body(content: Content) -> some View {
+        if let sourceID {
+            content.navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        } else {
+            content
+        }
+    }
 }
 
 extension DestinationView where Detail == DetailHost {

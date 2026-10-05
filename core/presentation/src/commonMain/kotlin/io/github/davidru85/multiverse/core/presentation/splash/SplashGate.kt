@@ -1,17 +1,16 @@
-package io.github.davidru85.multiverse.app.splash
+package io.github.davidru85.multiverse.core.presentation.splash
 
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.result.DataResult
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The splash readiness gate (`DEC-098`, `UI_SPEC.md` §6.1): the splash lasts **at least 1.2 s** so the
@@ -30,8 +29,9 @@ import kotlinx.coroutines.withTimeout
  * `TEST-UI-006` reproduced as a gate that never completed at the documented instant.
  *
  * Both the dispatcher and the bounds are injected, and no wall clock is read, so the timing policy is
- * proved on virtual time and never waits in a test. The gate is shell-internal: it crosses no module
- * boundary, which is why it has no `IC-###` (`DEC-098`).
+ * proved on virtual time and never waits in a test. One gate serves both shells (`IC-026`, `DEC-136`):
+ * the Android shell and the iOS root view await the same policy, so the two splashes cannot disagree
+ * about how long they last or what ends them.
  */
 public class SplashGate(
     private val repository: CharacterRepository,

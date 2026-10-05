@@ -24,6 +24,12 @@ public final class LocalizedCopy: @unchecked Sendable {
         NSLocalizedString(key, bundle: bundle, comment: "")
     }
 
+    /// The plural copy [key] carries for [count] (`DEC-132`): the `Localizable.stringsdict` entry picks
+    /// the quantity form for the bundle's language, and [count] is substituted as a number.
+    public func plural(for key: String, count: Int) -> String {
+        String.localizedStringWithFormat(NSLocalizedString(key, bundle: bundle, comment: ""), count)
+    }
+
     /// `true` when a locale actually carries [key], for a test that must distinguish a real entry
     /// from the key echoed back.
     public func hasEntry(for key: String, in language: String) -> Bool {

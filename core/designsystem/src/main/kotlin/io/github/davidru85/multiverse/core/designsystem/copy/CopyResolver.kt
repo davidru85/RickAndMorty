@@ -1,7 +1,9 @@
 package io.github.davidru85.multiverse.core.designsystem.copy
 
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.davidru85.multiverse.core.designsystem.R
 
@@ -52,6 +54,33 @@ public object CopyResolver {
 
     /** Every registered name, for the table ↔ resource parity test. */
     public fun names(): Set<String> = TABLE.keys
+
+    /** The `<plurals>` resource id for a canonical plural key name, or `null` when it is not registered. */
+    @PluralsRes
+    public fun pluralResourceId(key: String): Int? = PLURALS[key]
+
+    /**
+     * Resolves the plural key [key] for [count] against the device locale: the platform picks the
+     * quantity form, and [count] is substituted into it as a number (`DEC-132`). A plural is never
+     * resolved through [copy], whose table holds plain strings only.
+     */
+    @Composable
+    public fun plural(
+        key: String,
+        count: Int,
+    ): String {
+        val id = PLURALS[key]
+        requireNotNull(id) { "no Android plurals resource is registered for the copy key `$key` (DEC-132)" }
+        return pluralStringResource(id, count, count)
+    }
+
+    /** Every registered plural name, for the table ↔ resource parity test. */
+    public fun pluralNames(): Set<String> = PLURALS.keys
+
+    private val PLURALS: Map<String, Int> =
+        buildMap {
+            put("detail_appears_in_episodes", R.plurals.detail_appears_in_episodes)
+        }
 
     private val TABLE: Map<String, Int> =
         buildMap {
@@ -115,5 +144,8 @@ public object CopyResolver {
             put("status_alive", R.string.status_alive)
             put("status_dead", R.string.status_dead)
             put("value_unknown", R.string.value_unknown)
+            put("gender_female", R.string.gender_female)
+            put("gender_male", R.string.gender_male)
+            put("gender_genderless", R.string.gender_genderless)
         }
 }

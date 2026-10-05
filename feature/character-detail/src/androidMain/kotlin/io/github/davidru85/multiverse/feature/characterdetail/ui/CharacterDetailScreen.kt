@@ -22,12 +22,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterPortrait
+import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.components.InfoListGroup
 import io.github.davidru85.multiverse.core.designsystem.components.InfoListItem
 import io.github.davidru85.multiverse.core.designsystem.components.StatTileRow
@@ -35,14 +38,19 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusBadge
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
+import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.core.presentation.CopyKey
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
+import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
+import io.github.davidru85.multiverse.core.presentation.Recovery
+import io.github.davidru85.multiverse.core.presentation.formatArguments
 import io.github.davidru85.multiverse.feature.characterdetail.R
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailIntent
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailUiState
@@ -64,8 +72,11 @@ private val ControlSize = 40.dp
  *
  * The one thing the screen owns is the platform concern: the glyphs, the tonal controls, and the
  * [seam] the hero draws through. The header is present in the first composed frame because `state`
- * already carries it — the screen never waits for the load — and a failure shows the inline retry in
- * the info list's place while the hero, the name and the badge stay (`AC-REQ-FUNC-002-1`, `-3`).
+ * already carries it — the screen never waits for the load — and a failure shows the inline error in
+ * the info list's place while the hero, the name and the badge stay (`AC-REQ-FUNC-002-1`, `-3`). A
+ * failure with no header has nothing known to keep, so it renders the full-surface error state
+ * instead of an empty hero; both offer the `IC-017` recovery — Back for a not-found detail, Retry for
+ * everything else (`ERROR_FLOW.md` §4, §10, `DEC-131`).
  *
  * [portalMark] is the design system's error-state painter (`UI_SPEC.md` §5.3) and is passed through
  * to the hero; the module names no icon library and no image API of its own.
@@ -81,6 +92,17 @@ public fun CharacterDetailScreen(
     modifier: Modifier = Modifier,
     portalMark: Painter? = null,
 ) {
+    val failure = (state.loadState as? LoadState.Error)?.failure
+    if (failure != null && state.header == null) {
+        DetailErrorState(
+            failure = failure,
+            onIntent = onIntent,
+            onBack = onBack,
+            illustration = portalMark ?: TransparentPainter,
+            modifier = modifier,
+        )
+        return
+    }
     Column(
         modifier =
             modifier
@@ -91,8 +113,51 @@ public fun CharacterDetailScreen(
         Hero(state = state, seam = seam, portalMark = portalMark, onBack = onBack, onShare = onShare)
         TitleBlock(state = state)
         Stats(state = state)
-        Info(state = state, onIntent = onIntent)
+        Info(state = state, onIntent = onIntent, onBack = onBack)
         FavoriteAction(isFavorite = state.isFavorite, onIntent = onIntent)
+    }
+}
+
+/**
+ * The full-surface error state of `ERROR_FLOW.md` §4 for a failure with no header (`AC-REQ-UX-009-1`,
+ * `DEC-131`): the shared title, the failure's own message and its one recovery, under the back control
+ * the hero would otherwise carry.
+ */
+@Composable
+private fun DetailErrorState(
+    failure: ApiFailure,
+    onIntent: (CharacterDetailIntent) -> Unit,
+    onBack: () -> Unit,
+    illustration: Painter,
+    modifier: Modifier = Modifier,
+) {
+    val formatters = DefaultPresentationFormatters
+    val message = formatters.failureMessage(failure)
+    val recovery = formatters.recovery(failure)
+    Column(modifier = modifier.fillMaxSize().background(MultiverseColors.surface)) {
+        Box(modifier = Modifier.padding(MultiverseDimensions.spaceL)) {
+            HeroControl(glyph = R.drawable.ic_arrow_back, label = CopyKeys.ACTION_BACK, onClick = onBack)
+        }
+        EmptyState(
+            heading = CopyResolver.copy(formatters.failureTitle().value),
+            // The typed arguments go to the resource formatter unchanged (`DEC-123`).
+            body = CopyResolver.copy(message.key.value, *message.formatArguments()),
+            illustration = illustration,
+            actionLabel = CopyResolver.copy(recovery.actionKey.value),
+            onAction = { recovery.perform(onIntent, onBack) },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+/** Runs this recovery: Retry is an intent to the state holder, Back is the caller's navigation. */
+private fun Recovery.perform(
+    onIntent: (CharacterDetailIntent) -> Unit,
+    onBack: () -> Unit,
+) {
+    when (this) {
+        Recovery.Retry -> onIntent(CharacterDetailIntent.Retry)
+        Recovery.Back -> onBack()
     }
 }
 
@@ -113,6 +178,8 @@ private fun Hero(
             portalMark = portalMark,
             // The portrait stands alone here rather than inside a card, so it carries the name.
             contentDescription = state.header?.name,
+            // The target of the card→Detail shared element, under the card's key (`DEC-135`).
+            sharedKey = state.header?.id?.let { PortraitTransition.key(it.value) },
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceL),
@@ -190,24 +257,20 @@ private fun TitleBlock(state: CharacterDetailUiState) {
 }
 
 /**
- * `Species · Gender · Origin` joined from data-derived parts only. The screen joins the parts it is
- * given rather than deriving any of them: [CharacterDetailUiState.dimension] and the origin row's
- * value already carry the shared derivations, and a part that is absent is left out.
+ * `Species · Gender · Origin` (`UI_SPEC.md` §6.3, `DEC-131`). The screen joins the parts it is given
+ * rather than deriving any of them: [CharacterDetailUiState.gender] and the origin row's value already
+ * carry the shared derivations, and a part that is absent is left out — the gender until the detail
+ * answers. An unknown origin is left out too: the Origin row below already reads "Unknown", and the
+ * subtitle names a place or nothing.
  */
 @Composable
 private fun Subtitle(
     state: CharacterDetailUiState,
     species: DisplayText,
 ): String? {
-    val origin = state.info.firstOrNull { it.kind == InfoRowKind.Origin }?.value
-    val parts =
-        listOfNotNull(
-            when (species) {
-                is DisplayText.Data -> species.value
-                is DisplayText.Copy -> CopyResolver.copy(species.key.value)
-            },
-            origin,
-        )
+    val gender = state.gender?.let { CopyResolver.copy(it.value) }
+    val origin = (state.info.firstOrNull { it.kind == InfoRowKind.Origin }?.value as? DisplayText.Data)?.value
+    val parts = listOfNotNull(species.text(), gender, origin)
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
@@ -236,14 +299,9 @@ private fun Stats(state: CharacterDetailUiState) {
                     ),
                 )
             }
-            val species =
-                when (val text = header.species) {
-                    is DisplayText.Data -> text.value
-                    is DisplayText.Copy -> CopyResolver.copy(text.key.value)
-                }
             add(
                 Triple(
-                    species,
+                    header.species.text(),
                     CopyResolver.copy(CopyKeys.DETAIL_STAT_SPECIES.value),
                     MultiverseColors.secondaryFixedDim to MultiverseColors.onSecondaryFixed,
                 ),
@@ -257,17 +315,19 @@ private fun Stats(state: CharacterDetailUiState) {
 
 /**
  * The info list and the inline error (`UI_SPEC.md` §6.3, §8). On a failure the list is replaced by the
- * inline `detail_error_inline` message and its Retry — never by a full-surface error, because the
- * header above it is still the list's data (`AC-REQ-FUNC-002-3`).
+ * inline error — never by a full-surface error, because the header above it is still the list's data
+ * (`AC-REQ-FUNC-002-3`) — with the `IC-017` message and recovery: `detail_error_inline` and Retry, or
+ * the not-found message and Back (`DEC-131`).
  */
 @Composable
 private fun Info(
     state: CharacterDetailUiState,
     onIntent: (CharacterDetailIntent) -> Unit,
+    onBack: () -> Unit,
 ) {
     val failure = state.loadState as? LoadState.Error
     if (failure != null) {
-        InlineError(onRetry = { onIntent(CharacterDetailIntent.Retry) })
+        InlineError(failure = failure.failure, onIntent = onIntent, onBack = onBack)
         return
     }
     if (state.info.isEmpty()) return
@@ -276,7 +336,7 @@ private fun Info(
             state.info.forEach { row ->
                 InfoListItem(
                     label = CopyResolver.copy(row.copyKey.value),
-                    value = row.value,
+                    value = row.value.text(),
                     icon = painterResource(row.kind.glyph()),
                 )
             }
@@ -284,9 +344,15 @@ private fun Info(
     }
 }
 
-/** The inline error of `ERROR_FLOW.md` §4: the message plus the shared retry affordance. */
+/** The inline error of `ERROR_FLOW.md` §4: the message plus the failure's one recovery. */
 @Composable
-private fun InlineError(onRetry: () -> Unit) {
+private fun InlineError(
+    failure: ApiFailure,
+    onIntent: (CharacterDetailIntent) -> Unit,
+    onBack: () -> Unit,
+) {
+    val message = DefaultPresentationFormatters.inlineFailureMessage(failure)
+    val recovery = DefaultPresentationFormatters.recovery(failure)
     Column(
         modifier =
             Modifier
@@ -298,12 +364,12 @@ private fun InlineError(onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
     ) {
         Text(
-            text = CopyResolver.copy(CopyKeys.DETAIL_ERROR_INLINE.value),
+            text = CopyResolver.copy(message.key.value, *message.formatArguments()),
             style = MaterialTheme.typography.bodyMedium,
             color = MultiverseColors.onErrorContainer,
         )
-        TextButton(onClick = onRetry) {
-            Text(text = CopyResolver.copy(CopyKeys.ACTION_RETRY.value), color = MultiverseColors.onErrorContainer)
+        TextButton(onClick = { recovery.perform(onIntent, onBack) }) {
+            Text(text = CopyResolver.copy(recovery.actionKey.value), color = MultiverseColors.onErrorContainer)
         }
     }
 }
@@ -337,6 +403,17 @@ private fun CharacterStatus.tone(): StatusTone =
         CharacterStatus.Alive -> StatusTone.Alive
         CharacterStatus.Dead -> StatusTone.Dead
         CharacterStatus.Unknown, is CharacterStatus.Unsupported -> StatusTone.Unknown
+    }
+
+/** The illustration a preview or a case gets when the caller passes no portal mark. */
+private val TransparentPainter: Painter = ColorPainter(Color.Transparent)
+
+/** A [DisplayText] resolved for the design system, which takes primitives only (`DESIGN.md` §3.4). */
+@Composable
+private fun DisplayText.text(): String =
+    when (this) {
+        is DisplayText.Data -> value
+        is DisplayText.Copy -> CopyResolver.copy(key.value)
     }
 
 /** The bundled glyph for an info row (`UI_SPEC.md` §6.3): Origin, LastKnownLocation, FirstSeenIn. */

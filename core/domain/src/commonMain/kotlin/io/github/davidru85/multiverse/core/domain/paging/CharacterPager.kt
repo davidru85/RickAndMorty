@@ -31,6 +31,8 @@ public interface CharacterPager {
 /**
  * What the pager has loaded for [filter]. A failure is reported here rather than thrown, so a failed
  * load never destroys displayed content; there is no `LoadState`, which the presentation derives.
+ * [isLoading] is `true` from a reset — a filter change or a protocol switch — until the first page of
+ * the new identity is published, so an empty reset is never mistaken for an empty result (`DEC-130`).
  */
 public data class PagerState(
     public val filter: CharacterFilter,
@@ -40,4 +42,5 @@ public data class PagerState(
     public val isEndReached: Boolean,
     public val isStale: Boolean,
     public val failure: ApiFailure?,
+    public val isLoading: Boolean = false,
 )

@@ -7,6 +7,7 @@ import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.result.DataResult
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.DisplayText
 import io.github.davidru85.multiverse.core.presentation.LoadState
 import io.github.davidru85.multiverse.testing.FixtureCatalog
 import io.github.davidru85.multiverse.testing.MockHttp
@@ -86,7 +87,7 @@ class CharacterDetailContractTest {
                 "TEST-CONTRACT-002: with no enrichment the two independent rows render",
             )
             assertEquals(
-                listOf("Earth (C-137)", "Citadel of Ricks"),
+                listOf("Earth (C-137)", "Citadel of Ricks").map(DisplayText::Data),
                 state.info.map { it.value },
                 "TEST-CONTRACT-002: the row values are the fixture's origin and location names",
             )

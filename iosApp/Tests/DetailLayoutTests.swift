@@ -23,6 +23,7 @@ final class DetailLayoutTests: XCTestCase {
         )
         let state = CharacterDetailUiState(
             header: header,
+            gender: CopyKeys.shared.GENDER_MALE,
             episodeCount: KotlinInt(int: 51),
             dimension: "Dimension C-137",
             info: [],

@@ -25,7 +25,19 @@ class CopyResolverTableTest {
         assertTrue("the copy set must not be empty", english.isNotEmpty())
     }
 
-    private fun resourceNames(file: File): Set<String> {
+    @Test
+    fun `TEST-UNIT-082 given_the_plural_table_when_it_is_read_then_it_matches_the_shipped_plurals_names`() {
+        val english = resourceNames(File(resRoot(), "values/strings.xml"), tag = "plurals")
+        val spanish = resourceNames(File(resRoot(), "values-es/strings.xml"), tag = "plurals")
+
+        assertEquals("the plural table must cover exactly the shipped English plurals (DEC-132)", english, CopyResolver.pluralNames())
+        assertEquals("both locales must carry the same plurals", english, spanish)
+    }
+
+    private fun resourceNames(
+        file: File,
+        tag: String = "string",
+    ): Set<String> {
         assertTrue("the resource file must exist: ${file.path}", file.isFile)
         val factory =
             DocumentBuilderFactory.newInstance().apply {
@@ -37,7 +49,7 @@ class CopyResolverTableTest {
                 .newDocumentBuilder()
                 .parse(file)
                 .documentElement
-                .getElementsByTagName("string")
+                .getElementsByTagName(tag)
         return (0 until strings.length)
             .map {
                 strings

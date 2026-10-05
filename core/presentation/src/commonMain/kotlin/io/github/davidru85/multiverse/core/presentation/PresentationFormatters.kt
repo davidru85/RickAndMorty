@@ -1,5 +1,6 @@
 package io.github.davidru85.multiverse.core.presentation
 
+import io.github.davidru85.multiverse.core.domain.model.CharacterGender
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.EpisodeSummary
 import io.github.davidru85.multiverse.core.domain.model.LocationSummary
@@ -13,6 +14,9 @@ import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 public interface PresentationFormatters {
     /** The status label; an unknown or unrecognised status is [unknownKey]. */
     public fun statusKey(status: CharacterStatus): CopyKey
+
+    /** The gender label (`DEC-131`); an unknown or unrecognised gender is [unknownKey]. */
+    public fun genderKey(gender: CharacterGender): CopyKey
 
     /** The single source of the "Unknown" presentation. */
     public fun unknownKey(): CopyKey
@@ -56,6 +60,19 @@ public interface PresentationFormatters {
     public fun retryAction(): CopyKey
 
     /**
+     * How a failed Detail load is recovered (`ERROR_FLOW.md` §4, §10, `DEC-131`): [Recovery.Back] for
+     * a `NotFound`, which is terminal for the identifier, and [Recovery.Retry] for every other failure.
+     */
+    public fun recovery(failure: ApiFailure): Recovery
+
+    /**
+     * The message of the inline error that replaces the Detail's info list while the header stays
+     * (`AC-REQ-FUNC-002-3`, `DEC-131`): the failure's own message when it is recovered by Back, which
+     * a "Retry" wording would contradict, and `detail_error_inline` otherwise.
+     */
+    public fun inlineFailureMessage(failure: ApiFailure): FailureMessage
+
+    /**
      * Whether the retry policy may re-attempt [failure] automatically (`ERROR_FLOW.md` §10,
      * `API-ERR-003`/`006`/`008`/`009`: never for TLS, another `4xx`, an empty body or a decode failure).
      */
@@ -72,6 +89,14 @@ public object DefaultPresentationFormatters : PresentationFormatters {
             CharacterStatus.Alive -> CopyKeys.STATUS_ALIVE
             CharacterStatus.Dead -> CopyKeys.STATUS_DEAD
             CharacterStatus.Unknown, is CharacterStatus.Unsupported -> unknownKey()
+        }
+
+    override fun genderKey(gender: CharacterGender): CopyKey =
+        when (gender) {
+            CharacterGender.Female -> CopyKeys.GENDER_FEMALE
+            CharacterGender.Male -> CopyKeys.GENDER_MALE
+            CharacterGender.Genderless -> CopyKeys.GENDER_GENDERLESS
+            CharacterGender.Unknown, is CharacterGender.Unsupported -> unknownKey()
         }
 
     override fun unknownKey(): CopyKey = CopyKeys.VALUE_UNKNOWN
@@ -122,6 +147,19 @@ public object DefaultPresentationFormatters : PresentationFormatters {
     override fun failureTitle(): CopyKey = CopyKeys.ERROR_TITLE
 
     override fun retryAction(): CopyKey = CopyKeys.ACTION_RETRY
+
+    override fun recovery(failure: ApiFailure): Recovery =
+        when (failure) {
+            // API-ERR-016: a detail 404 cannot succeed on another attempt (ERROR_FLOW.md 10).
+            is ApiFailure.NotFound -> Recovery.Back
+            else -> Recovery.Retry
+        }
+
+    override fun inlineFailureMessage(failure: ApiFailure): FailureMessage =
+        when (recovery(failure)) {
+            Recovery.Back -> failureMessage(failure)
+            Recovery.Retry -> FailureMessage(CopyKeys.DETAIL_ERROR_INLINE)
+        }
 
     override fun isAutomaticallyRetryable(failure: ApiFailure): Boolean =
         when (failure) {

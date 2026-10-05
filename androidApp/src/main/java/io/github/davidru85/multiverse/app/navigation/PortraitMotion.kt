@@ -9,26 +9,27 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 
 /**
  * The card-to-detail transition's motion contract (`UI_SPEC.md` §7, `REQ-FUNC-009`, `REQ-UX-007`).
  *
  * The container transform is 450 ms on an Emphasized Decelerate curve, with the portrait's corner
- * radius going 20 → 0 while the rest of the card fades through. Android draws it with
- * `SharedTransitionLayout` and `Modifier.sharedElement(key = "portrait-$id")`; the key is therefore a
- * function of the character id and nothing else, so the card and the hero agree on it without either
- * feature naming the other (`ADR-0001`).
+ * radius going 20 → 0 while the rest of the card fades through. Android draws it with the shell's
+ * `SharedTransitionLayout` and the design system's `Modifier.sharedElement` under
+ * `PortraitTransition.key(id)` (`DEC-135`); the key is a function of the character id and nothing else,
+ * so the card and the hero agree on it without either feature naming the other (`ADR-0001`).
  *
  * With **Reduce Motion** enabled the transform is replaced by a cross-fade
  * (`UI_SPEC.md` §7, "Reduce Motion (both platforms)"), because the motion *is* the decoration in that
  * case: the destination still changes, and no travel across the screen happens.
  */
 public object PortraitMotion {
-    /** The container transform's duration (`UI_SPEC.md` §7). */
-    public const val TRANSITION_MILLIS: Int = 450
+    /** The container transform's duration (`UI_SPEC.md` §7), the design system's shared-element one. */
+    public const val TRANSITION_MILLIS: Int = PortraitTransition.DURATION_MILLIS
 
     /** The Emphasized Decelerate curve the transform runs on (`UI_SPEC.md` §7). */
-    public val Easing: CubicBezierEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+    public val Easing: CubicBezierEasing = PortraitTransition.Easing
 
     /** The cross-fade Reduce Motion substitutes for the transform (`UI_SPEC.md` §7). */
     public const val REDUCED_MOTION_CROSSFADE_MILLIS: Int = 300
@@ -39,7 +40,7 @@ public object PortraitMotion {
      * It is derived from the canonical id (`IC-001`), never from a position in a list, so the same
      * character carries the same key in the grid and in the hero.
      */
-    public fun sharedKey(characterId: String): String = "portrait-$characterId"
+    public fun sharedKey(characterId: String): String = PortraitTransition.key(characterId)
 
     /**
      * The transition pair the destination change runs with: the container transform, or the

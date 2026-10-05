@@ -6,12 +6,14 @@ import SwiftUI
 /// It renders the shared `CharacterDetailUiState` and nothing it derives itself. The header — the
 /// **list-provided** card the navigation hand-off carries in — renders in the first frame, so the
 /// hero, the name, the status capsule and the subtitle are present before the detail response
-/// arrives (`AC-REQ-FUNC-002-1`). A failure never clears that header: the inline retry appears in
-/// place of the info rows while the known fields stay (`AC-REQ-FUNC-002-3`, `ERROR_FLOW.md` §7).
+/// arrives (`AC-REQ-FUNC-002-1`). A failure never clears that header: the inline error appears in
+/// place of the info rows while the known fields stay (`AC-REQ-FUNC-002-3`, `ERROR_FLOW.md` §7); a
+/// failure with no header renders the full-surface error instead (`DEC-131`).
 ///
-/// The info rows are exactly the rows the state carries, in the state's fixed order, so a row whose
-/// value is absent is **absent** rather than empty — the `First seen in` row does not exist when
-/// the episode enrichment was not requested (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`). [episodeCount]
+/// The info rows are exactly the rows the state carries, in the state's fixed order: an unknown
+/// origin or location reads "Unknown" (`AC-REQ-FUNC-002-2`, `DEC-131`), and the `First seen in` row
+/// is **absent** rather than empty when the episode enrichment was not requested
+/// (`REQ-FUNC-023`, `AC-REQ-FUNC-023-2`). [episodeCount]
 /// comes from `episodeIds.size`, so the Episodes tile renders with or without the enrichment.
 ///
 /// The screen owns only the platform concerns: the layout, the SF Symbols, the glass controls and the
@@ -52,15 +54,61 @@ struct CharacterDetailScreen: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MultiverseDimensions.spaceL) {
-                hero
-                titleBlock
-                panel
+        if let failure = (state.loadState as? LoadStateError)?.failure, state.header == nil {
+            // No header means nothing known to keep, so the surface is the full error state rather
+            // than an empty hero (`AC-REQ-UX-009-1`, `DEC-131`).
+            fullSurfaceError(failure: failure)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: MultiverseDimensions.spaceL) {
+                    hero
+                    titleBlock
+                    panel
+                    episodeCountLine
+                }
+                .padding(.bottom, MultiverseDimensions.spaceL)
             }
-            .padding(.bottom, MultiverseDimensions.spaceL)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    // MARK: - Failure
+
+    /// The full-surface error (`UI_SPEC.md` §8, iOS column: "`ContentUnavailableView` + Retry glass
+    /// button"): the shared title, the failure's own message and its `IC-017` recovery — Back for a
+    /// not-found detail, Retry otherwise (`ERROR_FLOW.md` §4, §10) — under the back control the hero
+    /// would otherwise carry.
+    private func fullSurfaceError(failure: any ApiFailure) -> some View {
+        let formatters = DefaultPresentationFormatters.shared
+        let recovery = formatters.recovery(failure: failure)
+        return ContentUnavailableView {
+            Label(copy(CharacterPresentation.key(formatters.failureTitle())), systemImage: "network.slash")
+        } description: {
+            Text(CharacterPresentation.message(formatters.failureMessage(failure: failure)))
+        } actions: {
+            GlassTextButton(label: copy(CharacterPresentation.key(recovery.actionKey))) {
+                perform(recovery)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topLeading) {
+            GlassIconButton(
+                systemImage: "chevron.left",
+                style: .glass,
+                accessibilityLabel: copy("action_back"),
+                action: onBack
+            )
+            .padding(MultiverseDimensions.spaceL)
+        }
+    }
+
+    /// Runs [recovery]: Retry is an intent to the state holder, Back is the caller's navigation.
+    private func perform(_ recovery: Recovery) {
+        if recovery == Recovery.back {
+            onBack()
+        } else {
+            onIntent(CharacterDetailIntentRetry.shared)
+        }
     }
 
     // MARK: - Hero
@@ -151,13 +199,13 @@ struct CharacterDetailScreen: View {
         }
     }
 
-    /// `Species · Origin`, joined by the shared helper from parts the state already carries
-    /// (`UI_SPEC.md` §6.3).
+    /// `Species · Gender`, joined by the shared helper from parts the state already carries
+    /// (`UI_SPEC.md` §6.3, `DEC-131`).
     private var subtitle: String? {
         guard let header = state.header else { return nil }
         return CharacterPresentation.subtitle(
             species: CharacterPresentation.text(header.species),
-            info: state.info
+            gender: state.gender
         )
     }
 
@@ -174,6 +222,22 @@ struct CharacterDetailScreen: View {
             }
         }
         .padding(.horizontal, MultiverseDimensions.spaceL)
+    }
+
+    /// The informative "Appears in N episodes" line below the panel (`UI_SPEC.md` §6.3, `DEC-132`): a
+    /// plain label, not a control, aligned with the panel content. It needs the count, so it is absent
+    /// until the detail answers rather than showing a placeholder number.
+    @ViewBuilder
+    private var episodeCountLine: some View {
+        if let count = state.episodeCount {
+            Label(
+                CharacterPresentation.episodeCountLine(Int(count.int32Value)),
+                systemImage: "play.rectangle.on.rectangle.fill"
+            )
+            .font(MultiverseType.subheadline)
+            .foregroundStyle(MultiverseLabelColors.secondary)
+            .padding(.horizontal, MultiverseDimensions.spaceL + MultiverseDimensions.glassPanelPadding)
+        }
     }
 
     /// The three connected tiles (`UI_SPEC.md` §6.3): Episodes count · Dimension · Species. A `nil`
@@ -232,35 +296,38 @@ struct CharacterDetailScreen: View {
 
     /// The info rows and the inline error (`UI_SPEC.md` §6.3, §8).
     ///
-    /// On a failure the list is replaced by `detail_error_inline` and its Retry — never by a
-    /// full-surface error, because the header above it is still the list's data
-    /// (`AC-REQ-FUNC-002-3`). Otherwise the rows are exactly the ones the state carries, so an absent
-    /// value is an absent row.
+    /// On a failure the list is replaced by the inline error — never by a full-surface error, because
+    /// the header above it is still the list's data (`AC-REQ-FUNC-002-3`) — with the `IC-017` message
+    /// and recovery: `detail_error_inline` and Retry, or the not-found message and Back (`DEC-131`).
+    /// Otherwise the rows are exactly the ones the state carries, each value resolved by the shared
+    /// boundary mapping.
     @ViewBuilder
     private var info: some View {
-        if state.loadState is LoadStateError {
-            inlineError
+        if let failure = (state.loadState as? LoadStateError)?.failure {
+            inlineError(failure: failure)
         } else if !state.info.isEmpty {
             VStack(alignment: .leading, spacing: MultiverseDimensions.spaceS) {
                 ForEach(state.info, id: \.kind) { row in
                     GlassInfoRow(
                         symbol: CharacterPresentation.infoSymbol(for: row.kind),
                         label: copy(CharacterPresentation.key(row.copyKey)),
-                        value: row.value
+                        value: CharacterPresentation.text(row.value)
                     )
                 }
             }
         }
     }
 
-    /// The inline error of `ERROR_FLOW.md` §4: the message plus the shared retry affordance.
-    private var inlineError: some View {
-        VStack(alignment: .leading, spacing: MultiverseDimensions.spaceS) {
-            Text(copy("detail_error_inline"))
+    /// The inline error of `ERROR_FLOW.md` §4: the message plus the failure's one recovery.
+    private func inlineError(failure: any ApiFailure) -> some View {
+        let formatters = DefaultPresentationFormatters.shared
+        let recovery = formatters.recovery(failure: failure)
+        return VStack(alignment: .leading, spacing: MultiverseDimensions.spaceS) {
+            Text(CharacterPresentation.message(formatters.inlineFailureMessage(failure: failure)))
                 .font(MultiverseType.subheadline)
                 .foregroundStyle(MultiverseColors.onErrorContainer)
-            GlassTextButton(label: copy("action_retry")) {
-                onIntent(CharacterDetailIntentRetry.shared)
+            GlassTextButton(label: copy(CharacterPresentation.key(recovery.actionKey))) {
+                perform(recovery)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

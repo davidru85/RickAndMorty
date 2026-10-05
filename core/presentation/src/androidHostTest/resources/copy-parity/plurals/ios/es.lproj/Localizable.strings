@@ -1,0 +1,3 @@
+/* Controlled parity input for TEST-UNIT-082 (DEC-132). */
+
+"action_retry" = "Reintentar";
