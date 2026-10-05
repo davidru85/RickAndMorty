@@ -85,14 +85,42 @@ final class CharacterDetailScreenStateTests: XCTestCase {
         assertRenders(state: state, "the detail load failure with the header retained (ERROR_FLOW.md §4, §8)")
     }
 
-    func test_TEST_UI_016_given_a_detail_failure_without_list_data_when_rendered_then_the_inline_retry_renders() {
+    func test_TEST_UI_016_given_a_detail_failure_without_list_data_when_rendered_then_the_full_surface_error_renders() {
         assertRenders(
             state: makeState(
                 header: nil,
                 loadState: LoadStateError(failure: ApiFailureOffline.shared)
             ),
-            "the detail load failure without cached data (AC-REQ-UX-009-1)"
+            "the detail load failure without cached data, as the full-surface error (AC-REQ-UX-009-1, DEC-131)"
         )
+    }
+
+    // MARK: - TEST-UI-022: the failure recovery (DEC-131)
+
+    func test_TEST_UI_022_given_a_not_found_detail_when_recovered_then_the_affordance_is_back_and_never_retry() {
+        let notFound = ApiFailureNotFound(resource: "character", id: "9999")
+        let recovery = DefaultPresentationFormatters.shared.recovery(failure: notFound)
+        XCTAssertEqual(recovery, Recovery.back, "a 404 is terminal for the identifier (ERROR_FLOW.md §10)")
+        XCTAssertEqual(CharacterPresentation.key(recovery.actionKey), "action_back")
+        XCTAssertEqual(
+            CharacterPresentation.key(DefaultPresentationFormatters.shared.inlineFailureMessage(failure: notFound).key),
+            "error_message_not_found",
+            "beside a header the message says the character is not in this dimension"
+        )
+        assertRenders(
+            state: makeState(header: card(id: "1", name: "Rick Sanchez"), loadState: LoadStateError(failure: notFound)),
+            "the not-found detail with the header retained and Back"
+        )
+        assertRenders(
+            state: makeState(header: nil, loadState: LoadStateError(failure: notFound)),
+            "the not-found detail without a header, as the full-surface error with Back"
+        )
+    }
+
+    func test_TEST_UI_022_given_a_retryable_detail_failure_when_recovered_then_the_affordance_is_retry() {
+        let recovery = DefaultPresentationFormatters.shared.recovery(failure: ApiFailureOffline.shared)
+        XCTAssertEqual(recovery, Recovery.retry)
+        XCTAssertEqual(CharacterPresentation.key(recovery.actionKey), "action_retry")
     }
 
     func test_TEST_UI_016_given_a_marked_favourite_when_rendered_then_the_prominent_toggle_renders() {

@@ -87,6 +87,7 @@ class CharacterDetailScreenTest {
         state: CharacterDetailUiState,
         onIntent: (CharacterDetailIntent) -> Unit = {},
         fontScale: Float = 1f,
+        onBack: () -> Unit = {},
     ) {
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
@@ -95,7 +96,7 @@ class CharacterDetailScreenTest {
                         state = state,
                         seam = RecordingSeam(),
                         onIntent = onIntent,
-                        onBack = {},
+                        onBack = onBack,
                         onShare = {},
                         portalMark = ColorPainter(Color.Black),
                     )
@@ -286,6 +287,55 @@ class CharacterDetailScreenTest {
 
         compose.onNodeWithText(copy("action_retry")).performClick()
         compose.runOnIdle { assert(retried == 1) { "TEST-UI-002: the inline retry dispatches the Retry intent" } }
+    }
+
+    @Test
+    fun `TEST-UI-022 given_a_not_found_detail_with_list_data_when_it_is_shown_then_it_says_so_and_offers_Back_not_Retry`() {
+        var backs = 0
+        show(
+            CharacterDetailUiState(header = header, loadState = LoadState.Error(ApiFailure.NotFound("character", "1"))),
+            onBack = { backs++ },
+        )
+
+        // `ERROR_FLOW.md` §4, `DEC-131`: the header stays, the message is the not-found one, and the
+        // only affordance is Back — a 404 is terminal for the identifier, so Retry can never succeed.
+        assertVisible("Rick Sanchez")
+        assertVisible(copy("error_message_not_found"))
+        assertAbsent(copy("detail_error_inline"))
+        assertAbsent(copy("action_retry"))
+        compose.onNodeWithText(copy("action_back")).performClick()
+        compose.runOnIdle { assert(backs == 1) { "TEST-UI-022: the inline Back navigates back" } }
+    }
+
+    @Test
+    fun `TEST-UI-022 given_a_failure_without_list_data_when_it_is_shown_then_the_full_surface_error_offers_Retry`() {
+        val sent = mutableListOf<CharacterDetailIntent>()
+        show(CharacterDetailUiState(header = null, loadState = LoadState.Error(ApiFailure.Offline)), onIntent = { sent += it })
+
+        // `AC-REQ-UX-009-1`, `DEC-131`: no header means nothing known to keep, so the surface is the
+        // full error state — the shared title, the failure's own message and Retry — not an empty hero.
+        assertVisible(copy("error_title"))
+        assertVisible(copy("error_message_offline"))
+        assertAbsent(copy("detail_error_inline"))
+        compose.onNodeWithText(copy("action_retry")).performClick()
+        compose.runOnIdle {
+            org.junit.Assert.assertEquals("TEST-UI-022: the error's Retry", listOf(CharacterDetailIntent.Retry), sent)
+        }
+    }
+
+    @Test
+    fun `TEST-UI-022 given_a_not_found_detail_without_list_data_when_it_is_shown_then_the_full_surface_error_offers_Back`() {
+        var backs = 0
+        show(
+            CharacterDetailUiState(header = null, loadState = LoadState.Error(ApiFailure.NotFound("character", "9999"))),
+            onBack = { backs++ },
+        )
+
+        assertVisible(copy("error_title"))
+        assertVisible(copy("error_message_not_found"))
+        assertAbsent(copy("action_retry"))
+        compose.onNodeWithText(copy("action_back")).performClick()
+        compose.runOnIdle { assert(backs == 1) { "TEST-UI-022: the full-surface Back navigates back" } }
     }
 
     @Test
