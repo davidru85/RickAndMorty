@@ -64,6 +64,7 @@ struct CharacterDetailScreen: View {
                     hero
                     titleBlock
                     panel
+                    episodeCountLine
                 }
                 .padding(.bottom, MultiverseDimensions.spaceL)
             }
@@ -221,6 +222,22 @@ struct CharacterDetailScreen: View {
             }
         }
         .padding(.horizontal, MultiverseDimensions.spaceL)
+    }
+
+    /// The informative "Appears in N episodes" line below the panel (`UI_SPEC.md` §6.3, `DEC-132`): a
+    /// plain label, not a control, aligned with the panel content. It needs the count, so it is absent
+    /// until the detail answers rather than showing a placeholder number.
+    @ViewBuilder
+    private var episodeCountLine: some View {
+        if let count = state.episodeCount {
+            Label(
+                CharacterPresentation.episodeCountLine(Int(count.int32Value)),
+                systemImage: "play.rectangle.on.rectangle.fill"
+            )
+            .font(MultiverseType.subheadline)
+            .foregroundStyle(MultiverseLabelColors.secondary)
+            .padding(.horizontal, MultiverseDimensions.spaceL + MultiverseDimensions.glassPanelPadding)
+        }
     }
 
     /// The three connected tiles (`UI_SPEC.md` §6.3): Episodes count · Dimension · Species. A `nil`

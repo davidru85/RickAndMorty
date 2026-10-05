@@ -87,7 +87,8 @@ class PluralCopyParityTest {
     fun `TEST-UNIT-082 given_a_stringsdict_whose_format_wraps_the_plural_when_parsed_then_it_fails_loudly`() {
         // A format key with text around the variable renders differently from the Android form, so the
         // verifier refuses the shape rather than comparing half of the sentence.
-        val root = mutated("ios/en.lproj/Localizable.stringsdict") { it.replace("<string>%#@count@</string>", "<string>Seen %#@count@</string>") }
+        val root =
+            mutated("ios/en.lproj/Localizable.stringsdict") { it.replace("<string>%#@count@</string>", "<string>Seen %#@count@</string>") }
 
         assertFailsWith<IllegalArgumentException> { verify(root) }
     }

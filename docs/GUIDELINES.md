@@ -1,7 +1,7 @@
 # GUIDELINES.md — Engineering Guidelines
 
 - **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); every code rule below describes the code that will be written, not code that exists yet
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-05
 - **Owner:** Implementation Engineer (see `../AGENTS.md` §3.5)
 - **Authoritative for:** the coding rules for Kotlin, Compose and SwiftUI, the source-set and presentation rules a change must apply inside the module layout owned by [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md), repository naming and identifier conventions, and — for every rule — the artefact that enforces it. Not for the contribution process (`CONTRIBUTING.md`), the gates (`DEFINITION.md`), the test strategy (`TESTING.md`), the architecture rationale and module graph (`DESIGN.md` §1/§3.4, `adr/`), the interface invariants (`CONTRACTS.md`), the remote contract (`API_SPECS.md`), the visual specification (`UI_SPEC.md`), the failure-to-copy chain (`ERROR_FLOW.md`), the logging contract (`OBSERVABILITY.md`) or security policy (`SECURITY.md`).
 - **Inputs:** `../assessment.md`; `REQUIREMENTS.md`; `API_SPECS.md`; `DESIGN.md`; `CONTRACTS.md`; `UI_SPEC.md`; `ERROR_FLOW.md`; `OBSERVABILITY.md`; `SECURITY.md`; `TESTING.md`; `DEFINITION.md`; `CONTRIBUTING.md`; `adr/0001-module-boundaries.md`…`adr/0009-pagination-strategy.md`; `DECISION_BOARD.md` (`DEC-008`, `DEC-010`, `DEC-011`, `DEC-012`, `DEC-013`, `DEC-015`, `DEC-019` superseded by `DEC-052`, `DEC-032`, `DEC-041` as amended by `DEC-053`, `DEC-052`, `DEC-053`, `DEC-054`); verified toolchain and API facts dated 2026-09-29.
@@ -446,7 +446,7 @@ Rules: one id per artefact; an id is quoted verbatim wherever it is cited; an id
 - As part of the documentation audit, the two existing Figma briefs were renamed to satisfy this rule: `docs/design/01 · Android — M3 Expressive.md` → `docs/design/01-android-m3-expressive.md`, and `docs/design/02 · iOS — Liquid Glass.md` → `docs/design/02-ios-liquid-glass.md`. References to the old names are stale links and `MUST` be updated (`DEFINITION.md` §6 DOC2).
 - Kotlin source files are named after their primary declaration (PascalCase). One public top-level declaration per file is the default; a sealed hierarchy with its variants, or a state class with its intent type (`IC-018`), may share a file because they change together (`CONTRACTS.md` §2.1).
 - Swift source files are named after the primary type (PascalCase); an extension file is named `Type+Feature.swift` (`Color+Multiverse.swift`, `Font+Multiverse.swift`).
-- Resource files carry the platform convention (`strings.xml`, `Localizable.strings`) and keys follow the canonical copy list (`DEC-020`); key naming is owned by `UI_SPEC.md`.
+- Resource files carry the platform convention (`strings.xml`, `Localizable.strings`, and for plural copy `<plurals>` and `Localizable.stringsdict`, `DEC-132`) and keys follow the canonical copy list (`DEC-020`); key naming is owned by `UI_SPEC.md`.
 - A test file is named after the production type it tests (`TESTING.md` §13.2).
 
 **Enforcement:** `Review:` filenames in every change; link checking per `DEFINITION.md` §6 DOC2.

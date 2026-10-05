@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Multiverse Explorer — iOS plural copy (DEC-132). Generated from the Android <plurals>, which
+     are the authored source (DEC-095); TEST-UNIT-082 holds every quantity form identical per locale. -->
+<plist version="1.0">
+<dict>
+    <key>detail_appears_in_episodes</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@count@</string>
+        <key>count</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>Appears in %d episode</string>
+            <key>other</key>
+            <string>Appears in %d episodes</string>
+        </dict>
+    </dict>
+</dict>
+</plist>

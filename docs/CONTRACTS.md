@@ -700,6 +700,10 @@ data class CharacterCardUi(
 @JvmInline
 value class CopyKey(val value: String)
 
+/** A string whose wording depends on a count; never resolved as a plain string (DEC-132). */
+@JvmInline
+value class PluralKey(val value: String)
+
 /** The one canonical key list: every key a shared contract binds, each once. */
 object CopyKeys {
     val ERROR_TITLE: CopyKey            // … every key of ERROR_FLOW.md §4.1 …
@@ -712,7 +716,9 @@ object CopyKeys {
     val APP_NAME: CopyKey               // "app_name", the launcher label
     // … the B4 surface keys: the splash, the four navigation labels, the two placeholder screens,
     // each registered by TASK-013 with the resources that carry it (DEC-101) …
+    val DETAIL_APPEARS_IN_EPISODES: PluralKey  // "detail_appears_in_episodes", DEC-132
     val all: Set<CopyKey>
+    val plurals: Set<PluralKey>         // apart from `all` (DEC-132)
 }
 
 sealed interface DisplayText {
@@ -759,6 +765,7 @@ object DefaultPresentationFormatters : PresentationFormatters
   - The formatters are pure and platform-free: no clock, no network, no `Locale`-dependent formatting beyond what the platform resource layer applies, and no platform type in a signature.
   - `unknownKey()` is the single source of the "Unknown" presentation: a raw API value that is absent, blank or `"unknown"` is rendered through it and `MUST NOT` be displayed raw (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`).
   - `statusKey(CharacterStatus.Unsupported(raw))` returns `unknownKey()`; an unrecognised status never renders as an internal value (`REQ-NFR-004`, `AC-REQ-NFR-004-2`).
+  - A plural key is a `PluralKey`, registered in `CopyKeys.plurals` and never in `all`. Android carries it as `<plurals>` in the one copy set, resolved by `CopyResolver.plural(key, count)`; Apple carries it in `Localizable.stringsdict` as exactly one `NSStringPluralRuleType` variable, resolved by `LocalizedCopy.plural(for:count:)`. Both platforms carry the `one` and `other` forms in `en` and `es`, and `TEST-UNIT-082` holds every form identical per locale (`DEC-132`).
   - `genderKey` returns `gender_female`, `gender_male` or `gender_genderless` for the three supported genders, and `unknownKey()` for `Unknown` and `Unsupported(raw)` (`REQ-FUNC-002`, `AC-REQ-FUNC-002-2`, `DEC-131`). The approved copy is "Female", "Male", "Genderless"; Spanish "Femenino", "Masculino", "Sin género" (`DEC-128`).
   - A formatter returns `null` to mean "hide this row/tile" and `MUST NOT` return an empty or placeholder string (`UI_SPEC.md` §6.3).
   - `dimensionText` derives the value from `origin` and returns `null` when the origin carries neither a dimension nor a parenthesised designation; it `MUST NOT` invent a value (`UI_SPEC.md` §6.3).
@@ -1094,6 +1101,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-017` (`TASK-112`): `PluralKey`, `CopyKeys.plurals` and the first plural key `detail_appears_in_episodes`; Android `<plurals>` through `CopyResolver.plural`, Apple `Localizable.stringsdict` through `LocalizedCopy.plural`. Additive for the Swift consumer. | `DEC-132` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `Recovery`, `recovery(failure)` and `inlineFailureMessage(failure)`; a not-found Detail is recovered by Back, and a failure without a header renders the full-surface error. Additive for the Swift consumer. | `DEC-131` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `genderKey(CharacterGender)` and the keys `gender_female`, `gender_male`, `gender_genderless`; `CharacterDetailUiState.gender: CopyKey?`. Breaking for the Swift consumer (§8.2), whose initialiser gains the parameter; the iOS app and its tests change in the same commit. | `DEC-131` |
 | 2026-10-05 | `IC-019` (`TASK-112`): `InfoRowUi.value` becomes `DisplayText`, and an unknown origin or location keeps its row with `value_unknown`; only `FirstSeenIn` stays availability-filtered. Breaking for the Swift consumer (§8.2), which resolves the value through `CharacterPresentation.text` in the same commit. | `DEC-131` |

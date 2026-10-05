@@ -140,6 +140,12 @@ enum CharacterPresentation {
         return joined.isEmpty ? nil : joined
     }
 
+    /// The Detail's informative line under the panel, "Appears in N episodes" (`UI_SPEC.md` §6.3,
+    /// `DEC-132`): plural copy, so the count picks the form in each locale.
+    static func episodeCountLine(_ count: Int, copy: LocalizedCopy = .shared) -> String {
+        copy.plural(for: key(CopyKeys.shared.DETAIL_APPEARS_IN_EPISODES), count: count)
+    }
+
     /// The SF Symbol `UI_SPEC.md` §6.3 fixes for an info row: `globe.americas.fill`,
     /// `mappin.and.ellipse`, `play.tv.fill`.
     static func infoSymbol(for kind: InfoRowKind) -> String {

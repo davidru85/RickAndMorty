@@ -12,6 +12,17 @@ public value class CopyKey(
 )
 
 /**
+ * The name of a user-visible string whose wording depends on a count (`IC-017`, `DEC-132`). It is a
+ * type of its own, so a plural is never resolved as a plain string or the other way round: Android
+ * carries it as `<plurals>`, Apple in `Localizable.stringsdict`, and `TEST-UNIT-082` holds every
+ * quantity form identical per locale.
+ */
+@JvmInline
+public value class PluralKey(
+    public val value: String,
+)
+
+/**
  * The one canonical key list (`IC-017`, `DEC-015`, `DEC-020`). It registers the keys the shared
  * contracts bind — the failure chain of `ERROR_FLOW.md` §4.1 and the keys the formatters return — and
  * a feature registers its own keys here with the resources that carry them (`TASK-013`, `TASK-060`).
@@ -19,8 +30,11 @@ public value class CopyKey(
  */
 public object CopyKeys {
     private val registered = mutableListOf<CopyKey>()
+    private val registeredPlurals = mutableListOf<PluralKey>()
 
     private fun key(name: String): CopyKey = CopyKey(name).also { registered += it }
+
+    private fun plural(name: String): PluralKey = PluralKey(name).also { registeredPlurals += it }
 
     // The failure chain (`ERROR_FLOW.md` §4.1).
     public val ERROR_TITLE: CopyKey = key("error_title")
@@ -95,6 +109,9 @@ public object CopyKeys {
     public val DETAIL_INFO_LAST_KNOWN_LOCATION: CopyKey = key("detail_info_last_known_location")
     public val DETAIL_INFO_FIRST_SEEN_IN: CopyKey = key("detail_info_first_seen_in")
 
+    /** The iOS Detail's informative line under the panel, "Appears in N episodes" (`DEC-132`). */
+    public val DETAIL_APPEARS_IN_EPISODES: PluralKey = plural("detail_appears_in_episodes")
+
     // The settings surface (`TASK-074`, `TASK-076`, `UI_SPEC.md` §6.5). The screen title reuses
     // `nav_settings`, the Favorites section header reuses `nav_favorites`, and the "Delete favorites"
     // disabled state reuses the button's own key.
@@ -114,4 +131,7 @@ public object CopyKeys {
 
     /** Every registered key, in registration order. Declared last, so it sees every key above. */
     public val all: Set<CopyKey> = registered.toSet()
+
+    /** Every registered plural key, apart from [all] (`DEC-132`). Declared last, like [all]. */
+    public val plurals: Set<PluralKey> = registeredPlurals.toSet()
 }

@@ -90,4 +90,10 @@
     <string name="gender_female">Female</string>
     <string name="gender_male">Male</string>
     <string name="gender_genderless">Genderless</string>
+
+    <!-- Plural copy (IC-017, DEC-132): the iOS Detail's informative line under the panel -->
+    <plurals name="detail_appears_in_episodes">
+        <item quantity="one">Appears in %d episode</item>
+        <item quantity="other">Appears in %d episodes</item>
+    </plurals>
 </resources>
