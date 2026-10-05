@@ -26,12 +26,14 @@ internal object ModularWorkflowGate {
         ),
         // `TASK-048` (`TEST-UNIT-028`, the artifact half): the release APK's merged permission table.
         // `TASK-050` (`TEST-UNIT-019`): the release APK and graph are independent of the iOS app.
+        // `TASK-125`/`TASK-126` (`PERF-009`, `DEC-152`): the release APK stays within 12 MiB.
         "app-artifacts" to setOf(
             ":androidApp:assembleDebug",
             ":androidApp:verifyReleaseArtifact",
             ":androidApp:verifySdkLevels",
             ":androidApp:verifyShippedPermissions",
             ":androidApp:verifyMilestoneIndependence",
+            ":androidApp:verifyReleaseApkSize",
         ),
         "build-logic" to setOf(":build-logic:convention:check"),
         "policies" to setOf("verifyModuleBoundaries", "verifyDependencyPolicy", "verifyRepositoryHygiene", "verifyNoLiveHosts", "verifyWorkflowGate", "verifyDocumentedGate"),
