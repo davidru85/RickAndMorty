@@ -1390,6 +1390,32 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 268 test reports hold 1362 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0156 · 2026-10-06 · `TASK-131`: the Android placeholders are centred (`GAP-041`)
+
+- **Event:** the owner reported that the Episodes content is stuck to the top instead of centred.
+- **The cause:**
+  - `EmptyState` scrolls, so that long copy at the largest text sizes stays reachable (PR #153).
+  - Inside the scroll its column was measured unbounded, wrapped its content, and had no vertical alignment.
+  - The `weight(1f)` that `EpisodesPlaceholder` gives it sized only the outer box, so the content sat under the title.
+  - The Favorites empty state shares the component and had the same defect.
+- **The change:**
+  - The column sits in a `BoxWithConstraints`. Given a bounded area, it is at least that tall and centres its content vertically.
+  - Taller content still scrolls, and an unbounded parent leaves it as before.
+  - `UI_SPEC.md` §6.4 states the placement.
+- **Red, then green:**
+  - `TEST-UI-043` gives the component a 412 × 760 dp area. It failed with `the space above the illustration equals the space below the button expected:<0.0> but was:<137.0>`.
+  - It passes after the change.
+- **Baselines:**
+  - The component catalogue placed the empty state in a wrap-content column, where it now takes the remaining window height. The catalogue gives it a 520 dp area, as its screens give it the space below their title.
+  - The catalogue, the Detail's full-surface error and the Favorites error re-record with the content centred.
+  - The shell's Episodes and the Discovery empty/error baselines did not change, even when forced to re-record: their small fixtures leave no spare height [INFERENCE].
+  - Each module's tests were re-run individually in verify mode and pass.
+- **Device:** on the emulator, Episodes and Favorites show the illustration, heading, body and button in the middle of the area between the title and the navigation bar.
+- **Affected documents:** `docs/UI_SPEC.md` §6.4, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-041`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 269 test reports hold 1363 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
