@@ -108,8 +108,11 @@ kotlin {
             // The grid and the scroll container compose over `foundation-layout` primitives, which the
             // module uses (`DEC-077`).
             implementation(libs.androidx.compose.foundation.layout)
-            // The `SharedTransitionLayout` the screen composes for the card transition (`DEC-077`).
+            // The search field's animated colour and the grid's item animations use the animation
+            // primitives and the `animation` composables, which the module uses rather than exposes
+            // (`DEC-077`).
             implementation(libs.androidx.compose.animation.core)
+            implementation(libs.androidx.compose.animation)
             // Material 3 components are the screen's own composition, not its exposed surface; the
             // design system exports the alpha, so the feature never pins it (ADR-0008 rule 2).
             implementation(libs.androidx.compose.material3)

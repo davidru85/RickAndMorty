@@ -100,15 +100,10 @@ kotlin {
             // from `foundation-layout`, so that one is `api` while the rest of foundation is not.
             api(libs.androidx.compose.foundation.layout)
             implementation(libs.androidx.compose.foundation)
-            // The screen names Material 3 types (`MaterialTheme`, `Text`, `TextButton`) directly, so
-            // the artifact is declared where it is used. `:core:designsystem` still owns the pin: it
-            // exports Material 3, and this declaration takes its version from the same BOM (ADR-0008
-            // rule 2, `GUIDELINES.md` §5.1).
-            implementation(libs.androidx.compose.material3)
-            // The route's `collectAsStateWithLifecycle`, Koin `viewModel`/`koinViewModel` resolution
-            // and Compose foundation/UI text types; dependency analysis asks the module to state each
-            // where it uses it.
-            implementation(libs.androidx.compose.ui.text)
+            // The screen names no Material 3 or text type since its title is the design system's
+            // `ScreenTitle` (`TASK-113`). The route's `collectAsStateWithLifecycle` and Koin
+            // `viewModel`/`koinViewModel` resolution; dependency analysis asks the module to state
+            // each where it uses it.
             implementation(libs.androidx.lifecycle.common)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.lifecycle.viewmodel.compose)

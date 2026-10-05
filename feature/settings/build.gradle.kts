@@ -126,6 +126,8 @@ kotlin {
             // geometry types it returns.
             implementation(libs.androidx.compose.ui.test)
             implementation(libs.androidx.compose.ui.geometry)
+            // The layout case measures heights and widths in `Dp` (`TEST-UI-033`).
+            implementation(libs.androidx.compose.ui.unit)
             // The JUnit 4 runner adapter, the concurrency runtime the cases use, and Robolectric's
             // annotation and shadow artifacts, each declared where it is used instead of reached
             // transitively (`DEC-077`).
