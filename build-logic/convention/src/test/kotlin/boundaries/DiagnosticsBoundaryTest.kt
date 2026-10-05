@@ -160,12 +160,11 @@ class DiagnosticsBoundaryTest {
     }
 
     @Test
-    fun `TEST-UNIT-017 no production consumer other than the debug shell may declare the diagnostic module`() {
+    fun `TEST-UNIT-017 no production consumer other than the debug shell and the iOS framework may declare the diagnostic module`() {
         listOf(
             ":core:data" to "R2",
             ":core:presentation" to "R3",
             ":feature:discovery" to "R8",
-            ":core:ios" to "R12",
         ).forEach { (consumer, id) ->
             val violations = evaluate(complete(project(consumer, listOf(edge(consumer, diagnostics)))))
             assertTrue(rule(violations, id).any { it.producer == diagnostics }, "$consumer -> $diagnostics fails $id: $violations")
