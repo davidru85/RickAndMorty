@@ -38,6 +38,7 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
+import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
 import io.github.davidru85.multiverse.core.presentation.CopyKey
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.core.presentation.DisplayText
@@ -75,7 +76,8 @@ public fun CharacterDetailScreen(
     seam: ImageSeam,
     onIntent: (CharacterDetailIntent) -> Unit,
     onBack: () -> Unit,
-    onShare: () -> Unit,
+    /** Shares the character on screen; the caller builds the payload from it (`DEC-125`). */
+    onShare: (CharacterCardUi) -> Unit,
     modifier: Modifier = Modifier,
     portalMark: Painter? = null,
 ) {
@@ -101,7 +103,7 @@ private fun Hero(
     seam: ImageSeam,
     portalMark: Painter?,
     onBack: () -> Unit,
-    onShare: () -> Unit,
+    onShare: (CharacterCardUi) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxWidth().aspectRatio(HeroAspect)) {
         CharacterPortrait(
@@ -117,7 +119,15 @@ private fun Hero(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             HeroControl(glyph = R.drawable.ic_arrow_back, label = CopyKeys.ACTION_BACK, onClick = onBack)
-            HeroControl(glyph = R.drawable.ic_share, label = CopyKeys.ACTION_SHARE, onClick = onShare)
+            // Share names the character, so it waits for a header: a deep link has none until the
+            // detail arrives, and then the reducer builds one from the response.
+            val header = state.header
+            HeroControl(
+                glyph = R.drawable.ic_share,
+                label = CopyKeys.ACTION_SHARE,
+                enabled = header != null,
+                onClick = { header?.let(onShare) },
+            )
         }
     }
 }
@@ -128,9 +138,11 @@ private fun HeroControl(
     glyph: Int,
     label: CopyKey,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     FilledTonalIconButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier.size(MultiverseDimensions.space3Xl),
         colors =
             androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(

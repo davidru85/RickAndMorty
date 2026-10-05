@@ -8,6 +8,7 @@
 "action_delete" = "Delete";
 "action_retry" = "Retry";
 "action_share" = "Share";
+"share_character_text" = "%1$@ on Multiverse Explorer: %2$@";
 "app_name" = "Multiverse Explorer";
 "browse_characters" = "Browse characters";
 "characters_count" = "%1$@ characters across the multiverse";

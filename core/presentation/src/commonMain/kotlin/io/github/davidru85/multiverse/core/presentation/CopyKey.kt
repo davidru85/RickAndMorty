@@ -79,6 +79,10 @@ public object CopyKeys {
     // control, the three stat tiles and the three info-row labels.
     public val DETAIL_ACTION_FAVORITE: CopyKey = key("detail_action_favorite")
     public val ACTION_SHARE: CopyKey = key("action_share")
+
+    /** The line the Detail's Share sends: the name, then the API resource URL (`DEC-125`). */
+    public val SHARE_CHARACTER_TEXT: CopyKey = key("share_character_text")
+
     public val DETAIL_STAT_EPISODES: CopyKey = key("detail_stat_episodes")
     public val DETAIL_STAT_DIMENSION: CopyKey = key("detail_stat_dimension")
     public val DETAIL_STAT_SPECIES: CopyKey = key("detail_stat_species")

@@ -8,6 +8,7 @@
 "action_delete" = "Borrar";
 "action_retry" = "Reintentar";
 "action_share" = "Compartir";
+"share_character_text" = "%1$@ en Multiverse Explorer: %2$@";
 "app_name" = "Multiverse Explorer";
 "browse_characters" = "Explorar personajes";
 "characters_count" = "%1$@ personajes en el multiverso";

@@ -60,6 +60,12 @@ public object RickAndMortyApi {
             }
         return isAllowListed(parsed) && parsed.user == null && parsed.password == null
     }
+
+    /**
+     * The API resource URL of one character, `https://[HOST]/api/character/{id}`, built from the
+     * configured host so no UI source names one (`DEC-125`): the link the Detail's Share sends.
+     */
+    public fun characterUrl(id: String): String = url(CHARACTER, id).toString()
 }
 
 /** The resource names an `ApiFailure.NotFound` carries for this API. */

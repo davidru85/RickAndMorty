@@ -65,6 +65,7 @@ public object CopyResolver {
             put("filter_all", R.string.filter_all)
             put("detail_action_favorite", R.string.detail_action_favorite)
             put("action_share", R.string.action_share)
+            put("share_character_text", R.string.share_character_text)
             put("detail_stat_episodes", R.string.detail_stat_episodes)
             put("detail_stat_dimension", R.string.detail_stat_dimension)
             put("detail_stat_species", R.string.detail_stat_species)

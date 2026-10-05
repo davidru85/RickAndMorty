@@ -136,6 +136,9 @@ public object MultiverseBootstrap {
      */
     public fun isAllowedImageUrl(url: String): Boolean = RickAndMortyApi.isAllowedImageUrl(url)
 
+    /** The API resource URL of the character [id], which the Detail's Share sends (`DEC-125`). */
+    public fun characterUrl(id: String): String = RickAndMortyApi.characterUrl(id)
+
     /**
      * The pager one iOS screen's state holder runs on (`IC-014`, `TASK-055`).
      *

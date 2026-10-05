@@ -25,6 +25,7 @@
     <!-- Character detail (UI_SPEC.md §6.3, TASK-002/TASK-023) -->
     <string name="detail_action_favorite">Favorite</string>
     <string name="action_share">Share</string>
+    <string name="share_character_text">%1$s on Multiverse Explorer: %2$s</string>
     <string name="detail_stat_episodes">Episodes</string>
     <string name="detail_stat_dimension">Dimension</string>
     <string name="detail_stat_species">Species</string>
