@@ -42,9 +42,12 @@ final class DiscoveryFidelityTests: XCTestCase {
         let image = try HostedRendering.render(UIHostingController(rootView: portrait))
 
         let logo = try HostedRendering.matchingPixels(in: image) { red, green, blue in Self.isPortalGreen(red, green, blue) }
-        XCTAssertGreaterThan(logo.count, 12_000, "a failed portrait shows the filled portal logo, not a ring symbol")
-        let bounds = try XCTUnwrap(logo.bounds)
+        let bounds = try XCTUnwrap(logo.bounds, "a failed portrait shows a mark")
         XCTAssertEqual(bounds.midX, 201, accuracy: 4, "the mark is centred on the portrait")
+        // The logo is a filled disc, which covers most of its bounds; the `circle.circle` symbol is two
+        // thin rings, which cover about a third.
+        let coverage = Double(logo.count) / Double(bounds.width * bounds.height * image.scale * image.scale)
+        XCTAssertGreaterThan(coverage, 0.45, "a failed portrait shows the filled portal logo, not a ring symbol")
     }
 
     /// The portal logo's greens at 40 % over the dark canvas: green leads red and blue clearly.
