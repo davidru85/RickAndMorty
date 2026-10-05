@@ -128,34 +128,50 @@ class CharacterAccentPolicyTest {
 
             assertEquals("the memo answers the second call", first, second)
             assertEquals("extraction runs at most once per URL per process", 1, reads)
-            assertEquals(1, policy.extractionCount())
         }
+
+    /** A pixel source that counts its reads per URL, so the memo is observed through what it saves. */
+    private class CountingPixels(
+        private val pixels: IntArray,
+    ) : PortraitPixels {
+        val reads = mutableMapOf<String, Int>()
+
+        override suspend fun pixelsFor(imageUrl: String): IntArray {
+            reads[imageUrl] = (reads[imageUrl] ?: 0) + 1
+            return pixels
+        }
+    }
 
     @Test
     fun `TEST-UNIT-035 given_a_small_memo_when_urls_exceed_it_then_the_eldest_is_evicted_first`() =
         runTest {
-            val policy = policy(pixelsOf("a" to redPixels, "b" to greyPixels, "c" to redPixels), capacity = 2)
+            val source = CountingPixels(redPixels)
+            val policy = policy(source, capacity = 2)
             policy.accentFor("a")
             policy.accentFor("b")
-            assertEquals(listOf("a", "b"), policy.memoised())
+            policy.accentFor("c") // evicts the eldest, `a`
 
+            policy.accentFor("b")
             policy.accentFor("c")
-            assertEquals("the least recently used entry leaves first", listOf("b", "c"), policy.memoised())
+            assertEquals("the two newest entries are still remembered", mapOf("a" to 1, "b" to 1, "c" to 1), source.reads)
+            policy.accentFor("a")
+            assertEquals("the least recently used entry left first", 2, source.reads["a"])
         }
 
     @Test
     fun `TEST-UNIT-035 given_a_memo_hit_when_it_is_read_again_then_the_entry_is_refreshed_not_evicted`() =
         runTest {
-            val policy = policy(pixelsOf("a" to redPixels, "b" to greyPixels, "c" to redPixels), capacity = 2)
+            val source = CountingPixels(redPixels)
+            val policy = policy(source, capacity = 2)
             policy.accentFor("a")
             policy.accentFor("b")
-            assertEquals("the memo holds both entries eldest-first", listOf("a", "b"), policy.memoised())
-
             policy.accentFor("a") // a hit, so `a` becomes the most recent and `b` the eldest
-            assertEquals("a hit moves its entry to the most-recent position", listOf("b", "a"), policy.memoised())
-
             policy.accentFor("c") // evicts the eldest, which is now `b`
-            assertEquals("a hit protects its entry from the next eviction", listOf("a", "c"), policy.memoised())
+
+            policy.accentFor("a")
+            assertEquals("a hit protects its entry from the next eviction", 1, source.reads["a"])
+            policy.accentFor("b")
+            assertEquals("the entry that was not hit left instead", 2, source.reads["b"])
         }
 
     @Test
