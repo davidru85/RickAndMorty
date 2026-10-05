@@ -13,6 +13,8 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            // The shared splash gate's policy is proved on virtual time (`IC-026`, `TEST-UI-006`).
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidHostTest.dependencies {
             // The public-surface case reads the compiled Android classes on the JVM host (`TEST-UNIT-012`).
