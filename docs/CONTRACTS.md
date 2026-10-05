@@ -131,6 +131,8 @@ CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain 
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 DetailHandoff                            CONTRACTS.md IC-025       :core:presentation  commonMain
 SplashGate                               CONTRACTS.md IC-026       :core:presentation  commonMain (splash package)
+StateObserver                            CONTRACTS.md IC-027       :core:presentation  commonMain (observation package)
+PresentationBindings                     CONTRACTS.md IC-028       :core:presentation  commonMain
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -826,6 +828,44 @@ class SplashGate(
   - A shell shows the splash once per launch: the Android "ready" flag lives in saved state, so a configuration change does not replay it.
 - **Traceability:** `REQ-FUNC-007`, `DEC-098`, `DEC-136`, `TEST-UI-006`, `TEST-UNIT-084`, `TEST-UI-026`.
 
+### IC-027 — `StateObserver`
+
+- **Declaration** (`:core:presentation`, `commonMain`, `observation` package):
+
+```kotlin
+class StateObserver<T>(
+    flow: StateFlow<T>,
+    dispatcher: CoroutineDispatcher,
+    onEach: (T) -> Unit,
+) {
+    fun close()
+}
+```
+
+- **Semantics:** the hand-written bridge through which an iOS state holder hears a shared `StateFlow` (`DEC-143`, within `DEC-013`): it collects [flow] on [dispatcher] — the main queue on iOS — and calls `onEach` with each value until `close`. It replaces reading the flow on a timer.
+- **Invariants**
+  - The current value is delivered first, then each new value once; a value equal to the last is not delivered, because a `StateFlow` does not emit it.
+  - Nothing is delivered after `close`; `close` is idempotent.
+  - On iOS each holder owns its observers and its one scope through `ScreenLifetime`, which closes both when the holder goes (`IC-014`).
+- **Traceability:** `REQ-NFR-003`, `DEC-143`, `TEST-UNIT-094`, `TEST-UNIT-095`.
+
+### IC-028 — `PresentationBindings`
+
+- **Declaration** (`:core:presentation`, `commonMain`):
+
+```kotlin
+object PresentationBindings {
+    const val DEFAULT_DISPATCHER: String   // "multiverse.dispatcher.default"
+    const val MAIN_DISPATCHER: String      // "multiverse.dispatcher.main"
+}
+```
+
+- **Semantics:** the names under which the composition roots bind the app-wide presentation dependencies once (`DEC-145`): `DEFAULT_DISPATCHER` (`Dispatchers.Default`) for shared state-holder work and `MAIN_DISPATCHER` (the platform main thread) for a platform holder's publication. `PresentationFormatters` is bound once, unqualified, beside them.
+- **Invariants**
+  - Only `:androidApp`'s shell and `IosGraph` bind these; no feature module declares an app-wide dispatcher or the formatters.
+  - A feature resolves a dispatcher by its name, so loading or reordering another feature's module never changes what it receives.
+- **Traceability:** `DEC-145`, `TEST-UNIT-101`.
+
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 
 - **Declarations** (`:feature:discovery`, `presentation` package, `commonMain`):
@@ -974,6 +1014,7 @@ sealed interface SettingsIntent {
 
 | Concern | Android | iOS |
 | --- | --- | --- |
+| Observation | `viewModelScope` collection of the shared `StateFlow` | `StateObserver` (`IC-027`) on the main queue, owned with the screen's one scope by `ScreenLifetime`; no polling (`DEC-143`) |
 | State holder | A ViewModel per feature screen in the feature module's Android UI source set (for example `:feature:discovery`, `androidMain/<package>/discovery/ui/`) | An `ObservableObject` (or `@Observable` type) per feature screen in the matching Swift package (for example `iosApp/Features/Discovery`) |
 | State types | The `IC-###` classes from the Kotlin framework, unchanged | The same classes, reached through the generated Kotlin framework |
 | Intents | `onIntent(CharacterListIntent)` on the shared type | The same intent values dispatched from SwiftUI |
@@ -989,7 +1030,7 @@ sealed interface SettingsIntent {
 - **R5** Where a state change is behavioural (a filter applied, a page appended, a favourite toggled), the rule is implemented in shared Kotlin, and the platform state holder only dispatches the intent. Divergence between the two platforms is a defect in the shared contract, not a platform choice.
 - **R6** If a UI-state type changes, this file is edited first; then the Kotlin feature module; then the Android ViewModel and the iOS `ObservableObject` if the consumed surface changed; then any test that pins the old shape. `DESIGN.md` §4.1 is edited only when the *flow* or the module picture changed, not when a field changes.
 
-Swift reaches these types without SKIE: the framework exposes them as Objective-C-compatible classes, and the state holder reads properties and dispatches intents (`adr/0003-ui-sharing-strategy.md`). The framework itself is packaging, not a contract: exactly one is produced by the `:core:ios` export module, it exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api` and links `:core:data` as an unexported `implementation` (`DEC-091`, amending ADR-0012), and `iosApp/` links no second Kotlin framework ([ADR-0012](adr/0012-ios-framework-export.md), `DEC-058`) — the Swift-visible surface is therefore exactly the `IC-###` types of this file, and adding a type to it is a contract change (`§8.2`). The module and the framework do not exist yet (`TASK-078`, M1); the packaging decision is recorded and the surface above is target state. The hand-written bridge is project code and is covered by an iOS test (see §9.4).
+Swift reaches these types without SKIE: the framework exposes them as Objective-C-compatible classes, and the state holder reads properties and dispatches intents (`adr/0003-ui-sharing-strategy.md`). The framework itself is packaging, not a contract: exactly one is produced by the `:core:ios` export module, it exports the five `:feature:*` modules, `:core:domain` and `:core:presentation` through `api` and links `:core:data` as an unexported `implementation` (`DEC-091`, amending ADR-0012), and `iosApp/` links no second Kotlin framework ([ADR-0012](adr/0012-ios-framework-export.md), `DEC-058`) — the Swift-visible surface is therefore exactly the `IC-###` types of this file, and adding a type to it is a contract change (`§8.2`). The module and the framework exist since `TASK-078`. The hand-written bridge is project code and is covered by an iOS test (see §9.4).
 
 ## 8. Change, versioning and compatibility rules
 
@@ -1125,6 +1166,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-027` and `IC-028` added (`TASK-115`): the state observer the iOS holders use instead of polling, and the names the composition roots bind the app-wide presentation dependencies under. | `DEC-143`, `DEC-145` |
 | 2026-10-05 | `IC-026` added (`TASK-112`): the splash gate moves from `:androidApp` to `:core:presentation` and serves both shells; iOS awaits it through `MultiverseBootstrap.awaitSplashReady`. | `DEC-136` |
 | 2026-10-05 | `IC-017` (`TASK-112`): `PluralKey`, `CopyKeys.plurals` and the first plural key `detail_appears_in_episodes`; Android `<plurals>` through `CopyResolver.plural`, Apple `Localizable.stringsdict` through `LocalizedCopy.plural`. Additive for the Swift consumer. | `DEC-132` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `Recovery`, `recovery(failure)` and `inlineFailureMessage(failure)`; a not-found Detail is recovered by Back, and a failure without a header renders the full-surface error. Additive for the Swift consumer. | `DEC-131` |

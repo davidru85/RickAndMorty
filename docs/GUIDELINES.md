@@ -348,10 +348,11 @@ Owned as a coding rule here and as a verification in `TESTING.md` §9 and `DEFIN
 ### 5.7 Copy comes from resources
 
 - No user-visible string literal appears in Kotlin or Swift source. Every string resolves through the platform resource file from the canonical copy key list; keys are identical on both platforms (`REQ-FUNC-013`, `REQ-UX-008`, `DEC-020`).
-- A key with no value in either `en` or `es` fails a test; adding a key means adding both values and updating the canonical list in the same change.
+- A key is **named**, never typed: Kotlin passes a `CopyKeys` constant and Swift a `CopyKey` case, which `TEST-UNIT-097` holds to the shipped strings; a template is filled only through `LocalizedCopy.text(for:arguments:)` on iOS and `CopyResolver.copy(key, args)` on Android (`DEC-144`, `DEC-123`).
+- A key with no value in either `en` or `es` fails a test; adding a key means adding both values, the `CopyKeys` constant and the Swift case in the same change. An unregistered key fails in debug and tests and renders as the key in release (`DEC-144`).
 - A string used only in a preview or a test fixture is still a resource key when a user could see it; a fixture-only label that can never ship stays in the test source set.
 
-**Enforcement:** `Tool:` Android Lint (`HardcodedText`); `Test:` `TEST-UNIT-008`, `TEST-UNIT-036`; `Review:` literal copy in a diff.
+**Enforcement:** `Tool:` Android Lint (`HardcodedText`); `Test:` `TEST-UNIT-008`, `TEST-UNIT-036`, `TEST-UNIT-096`, `TEST-UNIT-097`, `TEST-UNIT-098`; `Review:` literal copy, or a typed key, in a diff.
 
 ### 5.8 Composable hygiene
 

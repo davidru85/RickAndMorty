@@ -1055,6 +1055,42 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - With the simulator's Reduce Motion on, `TEST-UI-039` passed on the plain push as well as on the zoom; the setting was turned off again afterwards.
 - **Not verified:** a performed edge swipe (the pop recogniser's delegate is asked whether it may begin); the Detail, Favorites and Settings on the simulator by hand (no tap automation here; their layouts are covered by the hosted-render tests and the baselines); a physical iPhone; iOS 18, where the material fallback draws the glass.
 
+### LOG-0141 · 2026-10-05 · `TASK-115`: the code-review P3 quality items, and one escalation
+
+- **Event:** `TASK-115` is delivered as one pull request from `feat/task-115-p3`, which starts from `TASK-114`'s head and merges after it (`DEC-133`). Every behaviour increment was observed red, then green, as its own commit pair; the refactors keep their suites green before and after.
+- **iOS state and lifetime:**
+  - The four Swift holders read their `StateFlow` every 16 ms, so the tab holders woke the main actor about 240 times a second with nothing changing. They now hear their state through `StateObserver` (`IC-027`, `TEST-UNIT-094`), owned with the screen's one scope by a `ScreenLifetime` that closes both with the holder (`DEC-143`).
+  - Discovery built its pager on a second scope that was never cancelled; it now builds it from the holder's own (`TEST-UNIT-095`).
+  - `IosGraph` starts Koin through a synchronised `lazy`. `MultiverseBootstrap`'s unused `routes`, `card()` (which hard-coded `Unknown`) and `repositoryType()`, and the Swift `SharedFramework` that wrapped them, are removed.
+- **Copy keys (`DEC-144`):**
+  - Kotlin names its keys through `CopyKeys`; Swift through a `CopyKey` enum held to the shipped strings (`TEST-UNIT-097`); every iOS template is filled through `LocalizedCopy`'s typed arguments (`TEST-UNIT-098`).
+  - An unregistered key fails in the debug variant and in tests, and renders as the key in release instead of crashing (`TEST-UNIT-096`). No release-visible log event is added, because `OBSERVABILITY.md` §3 keeps that set closed.
+  - **Escalated (`CONF-91`):** `:feature:episodes` keeps its four typed keys. Naming them consumes an edge that `gradle/dependency-advice-exclusions.txt` still lists as unconsumed, and that file is outside `DEC-122`'s authorization.
+- **Bindings and dispatchers (`DEC-145`, `IC-028`):** the Android shell and `IosGraph` bind the formatters and two named dispatchers once. On Android, the shell's module, loaded last, had silently given Discovery and Settings the data layer's `Dispatchers.IO` in place of Discovery's own `Dispatchers.Default`. Two feature modules no longer redeclare `coreModule`'s `ObserveFavoriteIds`, and the Detail, Favorites and Settings ViewModels take their dispatcher by injection (`TEST-UNIT-101`).
+- **Performance and correctness:**
+  - Discovery re-maps only changed cards, and an unchanged list stays the same list (`TEST-UNIT-102`).
+  - The pager's state is held through `stateIn` instead of being written inside `combine`.
+  - A card accent is extracted once per URL in flight, and its test-only hooks leave the API (`TEST-UNIT-099`).
+  - Reduce Motion is observed on both platforms (`TEST-UNIT-100` on Android).
+- **Tokens and readability:**
+  - Every UI measurement comes from `MultiverseDimensions` or the new `MultiverseComponentDimensions`, and every Android baseline verifies unchanged, run without the build cache.
+  - `TEST-UNIT-035` reads the real `Dp` values, and one hex helper serves both parity records.
+  - The composition root imports its names, and six unused declarations and four contradicting comments are removed or corrected.
+- **Found on the way:**
+  - `buildHealth` asked for `:feature:episodes`' `ui-unit` edge to go once its literals became tokens.
+  - `verifyNoLiveHosts` rejected the live host in a new test fixture.
+  - Both are fixed in their own commits.
+- **Affected documents:** `docs/CONTRACTS.md` (`IC-027`, `IC-028`, §7), `docs/DESIGN.md` §5, `docs/GUIDELINES.md` §5.7, `docs/DECISION_BOARD.md` (`DEC-143`…`DEC-145`), `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`CONF-91`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, both READMEs' dependency inventory, and this entry.
+- **Decision / ADR reference:** `DEC-143`…`DEC-145`; `CONF-91` open.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1211 tasks, whose 262 test reports hold 1343 tests and 0 failures. The first run failed only on `buildHealth`, for the Episodes edge above.
+  - Every Android screenshot baseline verifies with the build cache disabled: `:core:designsystem:verifyRoborazziDebug :androidApp:verifyRoborazziDebug :feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest`; `:feature:favorites` and `:feature:settings` verify too.
+  - After `xcodebuild clean`, `xcodebuild test` on iPhone 17 / iOS 27.0 — 162 tests, 0 failures.
+  - `tools/swift-lint.sh` — 0 violations in 74 files.
+- **Not verified:**
+  - The main actor's idle wake-up rate measured on a device. `TEST-UNIT-094` proves that the observer delivers once per value, and that nothing polls.
+  - A Reduce Motion change while the iOS app runs, which SwiftUI's environment value carries but which is not driven by a test.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
