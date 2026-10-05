@@ -88,6 +88,59 @@ enum HostedRendering {
         return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
     }
 
+    /// The bounds, in points, of the pixels of `image` inside `region` (points; the whole image when
+    /// `nil`) that `matches` accepts, with how many there are; `nil` bounds when none does.
+    static func matchingPixels(
+        in image: UIImage,
+        region: CGRect? = nil,
+        matches: (_ red: Int, _ green: Int, _ blue: Int) -> Bool
+    ) throws -> (count: Int, bounds: CGRect?) {
+        let cgImage = try XCTUnwrap(image.cgImage)
+        let width = cgImage.width
+        let height = cgImage.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let context = try XCTUnwrap(
+            CGContext(
+                data: &pixels,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let scale = image.scale
+        let area = region.map {
+            CGRect(x: $0.minX * scale, y: $0.minY * scale, width: $0.width * scale, height: $0.height * scale)
+        } ?? CGRect(x: 0, y: 0, width: width, height: height)
+        var count = 0
+        var minX = Int.max
+        var minY = Int.max
+        var maxX = Int.min
+        var maxY = Int.min
+        for y in max(0, Int(area.minY))..<min(height, Int(area.maxY)) {
+            for x in max(0, Int(area.minX))..<min(width, Int(area.maxX)) {
+                let index = (y * width + x) * 4
+                guard matches(Int(pixels[index]), Int(pixels[index + 1]), Int(pixels[index + 2])) else { continue }
+                count += 1
+                minX = min(minX, x)
+                minY = min(minY, y)
+                maxX = max(maxX, x)
+                maxY = max(maxY, y)
+            }
+        }
+        guard count > 0 else { return (0, nil) }
+        let bounds = CGRect(
+            x: CGFloat(minX) / scale,
+            y: CGFloat(minY) / scale,
+            width: CGFloat(maxX - minX + 1) / scale,
+            height: CGFloat(maxY - minY + 1) / scale
+        )
+        return (count, bounds)
+    }
+
     private static func settle(_ controller: UIViewController) {
         controller.view.setNeedsLayout()
         controller.view.layoutIfNeeded()
