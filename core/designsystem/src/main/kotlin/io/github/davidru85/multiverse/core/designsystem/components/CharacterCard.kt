@@ -73,6 +73,8 @@ public fun CharacterCard(
     containerColor: Color = MultiverseColors.surfaceContainerHigh,
     portalMark: Painter? = null,
     onClick: (() -> Unit)? = null,
+    /** The portrait's shared-element key for the card→Detail transition (`DEC-135`). */
+    sharedKey: String? = null,
 ) {
     val portraitHeight = if (height == CardHeight.Regular) RegularPortrait else TallPortrait
     val description = "$name, $statusLabel, $species, button"
@@ -95,6 +97,7 @@ public fun CharacterCard(
                 portalMark = portalMark,
                 decodePx = PortraitMaxDecodePx,
                 contentDescription = null,
+                sharedKey = sharedKey,
                 modifier =
                     Modifier
                         .fillMaxWidth()

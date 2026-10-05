@@ -38,6 +38,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusBadge
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
@@ -177,6 +178,8 @@ private fun Hero(
             portalMark = portalMark,
             // The portrait stands alone here rather than inside a card, so it carries the name.
             contentDescription = state.header?.name,
+            // The target of the card→Detail shared element, under the card's key (`DEC-135`).
+            sharedKey = state.header?.id?.let { PortraitTransition.key(it.value) },
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceL),

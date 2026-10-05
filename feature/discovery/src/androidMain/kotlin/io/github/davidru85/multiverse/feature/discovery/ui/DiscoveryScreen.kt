@@ -54,6 +54,7 @@ import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
@@ -309,6 +310,8 @@ private fun CharacterGrid(
                         seam = seam,
                         height = heightOf(index),
                         onClick = { onOpenDetail(card) },
+                        // The source of the card→Detail shared element (`DEC-135`).
+                        sharedKey = PortraitTransition.key(card.id.value),
                     )
                 }
             }

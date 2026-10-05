@@ -199,6 +199,10 @@ struct CharacterCardCell: View {
 
     @State private var portrait: Image?
 
+    /// The shell's zoom namespace, when the cell is inside it (`DEC-135`).
+    @Environment(\.portraitTransitionNamespace) private var transitionNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     init(
         card: CharacterCardUi,
         loader: (any PortraitImageLoading)? = nil,
@@ -215,6 +219,10 @@ struct CharacterCardCell: View {
         loader ?? PortraitImagePipeline.shared
     }
 
+    private var zoomSourceID: String? {
+        PortraitMotion.zoomSourceID(characterID: CharacterPresentation.identifier(card.id), reduceMotion: reduceMotion)
+    }
+
     var body: some View {
         Button(action: action) {
             GlassCharacterCard(
@@ -226,6 +234,7 @@ struct CharacterCardCell: View {
             )
         }
         .buttonStyle(.plain)
+        .modifier(ZoomSource(id: zoomSourceID, namespace: transitionNamespace))
         .task(id: card.imageUrl) {
             if let cached = resolvedLoader.cachedImage(for: card.imageUrl) {
                 portrait = cached
@@ -253,4 +262,19 @@ struct CharacterCardCell: View {
 extension CharacterCardUi {
     /// The grid identity of `CharacterPresentation.gridIdentity(_:)`, as a key path `ForEach` can read.
     var gridIdentity: String { CharacterPresentation.gridIdentity(self) }
+}
+
+/// Makes a card the zoom's source under [id] in the shell's [namespace] (`DEC-135`); unchanged when
+/// either is missing — outside the shell, or with Reduce Motion.
+private struct ZoomSource: ViewModifier {
+    let id: String?
+    let namespace: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let id, let namespace {
+            content.matchedTransitionSource(id: id, in: namespace)
+        } else {
+            content
+        }
+    }
 }
