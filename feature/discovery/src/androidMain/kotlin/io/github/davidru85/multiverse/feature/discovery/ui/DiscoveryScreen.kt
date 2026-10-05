@@ -55,6 +55,7 @@ import io.github.davidru85.multiverse.core.designsystem.components.CardHeight
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCardSkeleton
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
+import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
@@ -217,11 +218,10 @@ private fun SearchField(
 @Composable
 private fun Headline(state: CharacterListUiState) {
     // 16 dp below the app bar (Figma `20:1842`).
-    Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-        Text(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ScreenTitle(
             text = CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value),
-            style = MaterialTheme.typography.displaySmallEmphasized,
-            color = MultiverseColors.onSurface,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
         )
         state.totalCount?.let { count ->
             Text(
@@ -231,6 +231,7 @@ private fun Headline(state: CharacterListUiState) {
                         .format(DefaultPresentationFormatters.charactersCount(count)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MultiverseColors.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
     }

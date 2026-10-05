@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.feature.favorites.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,19 +10,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.style.TextAlign
 import io.github.davidru85.multiverse.core.designsystem.components.CardHeight
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
+import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
+import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
+import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
@@ -72,34 +74,64 @@ public fun FavoritesScreen(
     modifier: Modifier = Modifier,
     portalMark: Painter? = null,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().background(MultiverseColors.surface),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        when (val load = state.loadState) {
-            LoadState.Loading -> Unit
-
-            LoadState.Empty ->
-                FavoritesEmptyState(
-                    onBrowseCharacters = onBrowseCharacters,
-                    illustration = illustration,
-                )
-
-            is LoadState.Error ->
-                FullSurfaceError(
-                    failure = load.failure,
-                    onRetry = { onIntent(FavoritesIntent.Retry) },
-                )
-
-            LoadState.Content ->
-                Grid(
-                    items = state.items,
-                    seam = seam,
-                    portalMark = portalMark,
-                    onCharacterSelected = onCharacterSelected,
-                )
+    Column(modifier = modifier.fillMaxSize().background(MultiverseColors.surface)) {
+        // The section's title, in the place every top-level screen puts it (Figma `101:637`).
+        ScreenTitle(
+            text = CopyResolver.copy(CopyKeys.NAV_FAVORITES.value),
+            modifier =
+                Modifier.padding(
+                    start = MultiverseDimensions.spaceL,
+                    end = MultiverseDimensions.spaceL,
+                    top = MultiverseDimensions.spaceL,
+                ),
+        )
+        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            FavoritesBody(
+                state = state,
+                seam = seam,
+                onCharacterSelected = onCharacterSelected,
+                onIntent = onIntent,
+                onBrowseCharacters = onBrowseCharacters,
+                illustration = illustration,
+                portalMark = portalMark,
+            )
         }
+    }
+}
+
+/** What the stored set renders under the title: nothing yet, the empty state, the error or the grid. */
+@Composable
+private fun FavoritesBody(
+    state: FavoritesUiState,
+    seam: ImageSeam,
+    onCharacterSelected: (CharacterCardUi) -> Unit,
+    onIntent: (FavoritesIntent) -> Unit,
+    onBrowseCharacters: () -> Unit,
+    illustration: Painter,
+    portalMark: Painter?,
+) {
+    when (val load = state.loadState) {
+        LoadState.Loading -> Unit
+
+        LoadState.Empty ->
+            FavoritesEmptyState(
+                onBrowseCharacters = onBrowseCharacters,
+                illustration = illustration,
+            )
+
+        is LoadState.Error ->
+            FullSurfaceError(
+                failure = load.failure,
+                onRetry = { onIntent(FavoritesIntent.Retry) },
+            )
+
+        LoadState.Content ->
+            Grid(
+                items = state.items,
+                seam = seam,
+                portalMark = portalMark,
+                onCharacterSelected = onCharacterSelected,
+            )
     }
 }
 
@@ -152,33 +184,24 @@ private fun FullSurfaceError(
     failure: ApiFailure,
     onRetry: () -> Unit,
 ) {
+    // The same full-surface error as Discovery's: the portal mark at 40 %, the shared title, the
+    // failure's own message and a filled Retry (`UI_SPEC.md` §8).
     val message = DefaultPresentationFormatters.failureMessage(failure)
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceL),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
-    ) {
-        Text(
-            text = CopyResolver.copy(CopyKeys.ERROR_TITLE.value),
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-            color = MultiverseColors.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            // The typed arguments go to the resource formatter unchanged (`DEC-123`).
-            text = CopyResolver.copy(message.key.value, *message.formatArguments()),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MultiverseColors.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        TextButton(onClick = onRetry) {
-            Text(
-                text = CopyResolver.copy(CopyKeys.ACTION_RETRY.value),
-                color = MultiverseColors.primary,
-            )
-        }
-    }
+    EmptyState(
+        heading = CopyResolver.copy(DefaultPresentationFormatters.failureTitle().value),
+        // The typed arguments go to the resource formatter unchanged (`DEC-123`).
+        body = CopyResolver.copy(message.key.value, *message.formatArguments()),
+        illustration = LocalPortalMark.current ?: ColorPainter(Color.Transparent),
+        illustrationTint = Color.Unspecified,
+        illustrationAlpha = PORTAL_MARK_ALPHA,
+        actionLabel = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value),
+        onAction = onRetry,
+        modifier = Modifier.fillMaxSize(),
+    )
 }
+
+/** The portal mark's opacity on the error state (`UI_SPEC.md` §8: "Portal logo (40%)"). */
+private const val PORTAL_MARK_ALPHA = 0.4f
 
 /** The displayed species of a card, resolved from the shared display text (`IC-016`). */
 @Composable

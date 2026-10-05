@@ -1,8 +1,13 @@
 package io.github.davidru85.multiverse.feature.episodes.ui
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
+import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 
@@ -25,13 +30,22 @@ public fun EpisodesPlaceholder(
     illustration: androidx.compose.ui.graphics.painter.Painter,
     modifier: Modifier = Modifier,
 ) {
-    EmptyState(
-        heading = CopyResolver.copy("episodes_heading"),
-        body = CopyResolver.copy("episodes_body"),
-        illustration = illustration,
-        actionLabel = CopyResolver.copy("browse_characters"),
-        containerColor = MultiverseColors.secondaryContainer,
-        onAction = onBrowseCharacters,
-        modifier = modifier,
-    )
+    Column(modifier = modifier.fillMaxSize()) {
+        // The section's title, in the place every top-level screen puts it (Figma `101:499`).
+        ScreenTitle(
+            text = CopyResolver.copy("nav_episodes"),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
+        )
+        EmptyState(
+            heading = CopyResolver.copy("episodes_heading"),
+            body = CopyResolver.copy("episodes_body"),
+            illustration = illustration,
+            actionLabel = CopyResolver.copy("browse_characters"),
+            // The section's colours: Secondary Container with its matching "on" glyph (`UI_SPEC.md` §6.4).
+            containerColor = MultiverseColors.secondaryContainer,
+            illustrationTint = MultiverseColors.onSecondaryContainer,
+            onAction = onBrowseCharacters,
+            modifier = Modifier.weight(1f),
+        )
+    }
 }

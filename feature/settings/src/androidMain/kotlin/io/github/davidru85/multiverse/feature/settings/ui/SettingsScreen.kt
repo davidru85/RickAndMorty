@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -68,11 +69,7 @@ public fun SettingsScreen(
                     .padding(MultiverseDimensions.spaceL),
             verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceXl),
         ) {
-            Text(
-                text = CopyResolver.copy("nav_settings"),
-                style = MaterialTheme.typography.displaySmallEmphasized,
-                color = MultiverseColors.onSurface,
-            )
+            ScreenTitle(text = CopyResolver.copy("nav_settings"))
 
             PreferencesSection(state = state, onIntent = onIntent)
             DataSection(state = state, onIntent = onIntent)
