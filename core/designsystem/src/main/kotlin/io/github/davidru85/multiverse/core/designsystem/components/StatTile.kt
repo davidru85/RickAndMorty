@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,14 +25,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseType
 
 /** Where a tile sits in its connected group, which decides its corners (`UI_SPEC.md` §4.1). */
 public enum class TilePosition { Start, Middle, End }
@@ -60,11 +69,13 @@ public fun StatTile(
                 .padding(horizontal = MultiverseDimensions.spaceM, vertical = MultiverseComponentDimensions.statTilePaddingVertical),
         verticalArrangement = Arrangement.Center,
     ) {
-        // The value wraps rather than truncating: the 76 dp minimum grows with its text (`UI_SPEC.md` §4.1).
+        // The value wraps between words rather than truncating, and the 76 dp minimum grows with its text;
+        // a value whose widest word does not fit steps its size down first (`UI_SPEC.md` §4.1, `DEC-151`).
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmallEmphasized,
+            style = MaterialTheme.typography.headlineSmallEmphasized.copy(lineHeight = VALUE_LINE_HEIGHT),
             color = contentColor,
+            autoSize = WholeWordAutoSize,
         )
         Text(
             text = label,
@@ -73,6 +84,45 @@ public fun StatTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/** Headline Small's 32/24 line height as a ratio, so a stepped-down value keeps its proportions. */
+private val VALUE_LINE_HEIGHT =
+    (MultiverseType.headlineSmallEmphasizedLineHeight.value / MultiverseType.headlineSmallEmphasizedSize.value).em
+
+/**
+ * The stat value's size rule (`UI_SPEC.md` §4.1, `DEC-151`, `GAP-036`): the largest size, from Headline
+ * Small Emphasized down to the Title Medium floor in [MultiverseComponentDimensions.statValueSizeStep]
+ * steps, at which no line ends inside a word. Lines still break between words, so a long value grows its
+ * tile rather than shrinking further. Only a single word wider than the tile at the floor can still
+ * break, which no size can prevent.
+ */
+internal object WholeWordAutoSize : TextAutoSize {
+    override fun TextAutoSizeLayoutScope.getFontSize(
+        constraints: Constraints,
+        text: AnnotatedString,
+    ): TextUnit {
+        val floor = MultiverseType.titleMediumEmphasizedSize.value
+        var size = MultiverseType.headlineSmallEmphasizedSize.value
+        while (size > floor) {
+            if (!performLayout(constraints, text, size.sp).breaksAWord()) return size.sp
+            size -= MultiverseComponentDimensions.statValueSizeStep.value
+        }
+        return floor.sp
+    }
+
+    override fun equals(other: Any?): Boolean = other === this
+
+    override fun hashCode(): Int = System.identityHashCode(this)
+}
+
+/** Whether a line of this layout ends between two letters or digits, that is, inside a word. */
+internal fun TextLayoutResult.breaksAWord(): Boolean {
+    val text = layoutInput.text.text
+    return (0 until lineCount - 1).any { line ->
+        val end = getLineEnd(line)
+        end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()
     }
 }
 

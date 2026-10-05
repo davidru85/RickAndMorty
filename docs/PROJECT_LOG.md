@@ -1233,6 +1233,29 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
     - The cache holds two new detail entries, one for id 1 and one for id 2.
 - **Not verified:** the Xcode suite, since no Swift changed. The shared code's iOS target ran the new case in the gate.
 
+### LOG-0148 · 2026-10-05 · `TASK-124`: a long Detail stat value keeps its words whole (`GAP-036`)
+
+- **Event:** `TASK-124` resolves `GAP-036` with the owner's rule (`DEC-151`).
+- **The change:**
+  - The stat value has its own auto-size rule (`WholeWordAutoSize` in `StatTile.kt`). It steps from Headline Small Emphasized (24 sp) toward the Title Medium floor (16 sp), by the 2 sp `statValueSizeStep` token, until no line ends between two letters or digits. It still wraps between words, so the tile grows instead of shrinking further.
+  - The value's line height is the headline's 32/24 ratio, so a smaller value keeps its proportions.
+  - Compose's built-in step auto-size could not do this: Android breaks a word that is wider than the line instead of reporting an overflow, so the size never shrank.
+  - `UI_SPEC.md` §4.1 states the rule.
+- **Red, then green:**
+  - `TEST-UI-041` lays the row out at the Detail's width on a 411 dp phone, with Robolectric's native graphics so the text is really measured.
+  - It failed with `line 0 ends inside a word ("Dimensi" | "on C-137")`, as on the device.
+  - It passes after the fix. Its guard case, a value that fits keeping 24 sp, passes before and after.
+  - The first run without native graphics passed on the old code, so it was not evidence. The class was corrected before the red was taken.
+- **Baselines:**
+  - Every existing baseline verifies unchanged (`:core:designsystem:verifyRoborazziDebug`, `:feature:character-detail:verifyRoborazziAndroidHostTest`, `:androidApp:verifyRoborazziDebug`, executed rather than restored from cache).
+  - The Detail gains `detail-long-dimension-light`/`-dark`, byte-identical, with "Dimension" / "C-137" on two whole lines.
+- **Device:** on the OnePlus A3003, with GraphQL confirmed in the stored preference (`remote_protocol = graphql`), Rick's Detail shows "Dimension" / "C-137".
+- **Affected documents:** `docs/UI_SPEC.md` §4.1, `docs/TESTING.md` (§3.2, §16, §17), `docs/DOCUMENTATION_AUDIT.md` (`GAP-036`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 265 test reports hold 1355 tests and 0 failures (two `TEST-UI-041` cases and two new Detail baselines).
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** iOS, which `GAP-036` does not cover. Its stat row lays out its values with SwiftUI.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
