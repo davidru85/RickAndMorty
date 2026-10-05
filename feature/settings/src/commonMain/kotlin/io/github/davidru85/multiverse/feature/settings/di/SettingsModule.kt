@@ -2,6 +2,7 @@ package io.github.davidru85.multiverse.feature.settings.di
 
 import io.github.davidru85.multiverse.core.domain.repository.AppSettingsRepository
 import io.github.davidru85.multiverse.core.domain.repository.FavoritesRepository
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.feature.settings.domain.ClearFavorites
 import io.github.davidru85.multiverse.feature.settings.domain.ObserveAppSettings
 import io.github.davidru85.multiverse.feature.settings.domain.UpdateAppSettings
@@ -9,6 +10,7 @@ import io.github.davidru85.multiverse.feature.settings.presentation.SettingsStat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -38,7 +40,7 @@ public val settingsModule: Module =
                 clearFavorites = get(),
                 observeFavoriteIds = get(),
                 scope = scope,
-                dispatcher = get<CoroutineDispatcher>(),
+                dispatcher = get<CoroutineDispatcher>(named(PresentationBindings.DEFAULT_DISPATCHER)),
             )
         }
     }

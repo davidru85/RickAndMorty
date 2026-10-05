@@ -9,7 +9,7 @@ import io.github.davidru85.multiverse.feature.settings.domain.UpdateAppSettings
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsIntent
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsStateHolder
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsUiState
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -25,6 +25,7 @@ public class SettingsViewModel(
     updateAppSettings: UpdateAppSettings,
     clearFavorites: ClearFavorites,
     observeFavoriteIds: ObserveFavoriteIds,
+    dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
     private val holder =
         SettingsStateHolder(
@@ -33,7 +34,7 @@ public class SettingsViewModel(
             clearFavorites = clearFavorites,
             observeFavoriteIds = observeFavoriteIds,
             scope = viewModelScope,
-            dispatcher = Dispatchers.Main.immediate,
+            dispatcher = dispatcher,
         )
 
     /** What the screen renders, owned by the shared holder and only projected here. */

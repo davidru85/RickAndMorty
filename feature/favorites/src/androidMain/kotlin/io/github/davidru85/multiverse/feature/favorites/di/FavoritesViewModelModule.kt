@@ -1,10 +1,12 @@
 package io.github.davidru85.multiverse.feature.favorites.di
 
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
 import io.github.davidru85.multiverse.feature.favorites.ui.FavoritesViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -26,6 +28,7 @@ public val favoritesViewModelModule: Module =
                 observeFavoriteIds = get<ObserveFavoriteIds>(),
                 resolveFavoriteCards = get(),
                 formatters = get<PresentationFormatters>(),
+                dispatcher = get(named(PresentationBindings.MAIN_DISPATCHER)),
             )
         }
     }

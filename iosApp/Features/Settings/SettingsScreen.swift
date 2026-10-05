@@ -201,7 +201,7 @@ struct SettingsScreen: View {
         )
     }
 
-    private func copy(_ key: String) -> String {
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }
@@ -213,26 +213,26 @@ struct SettingsScreen: View {
 /// identical. It is the peer of `EmptyStateCopy`, which gives the two §6.4 placeholders the same
 /// treatment.
 enum SettingsCopy {
-    static let title = "nav_settings"
-    static let preferencesSection = "settings_section_preferences"
-    static let dataSection = "settings_section_data"
-    static let favoritesSection = "nav_favorites"
-    static let soundsTitle = "settings_sound_title"
-    static let soundsBody = "settings_sound_body"
-    static let dataSourceTitle = "settings_data_source_title"
-    static let dataSourceBody = "settings_data_source_body"
-    static let dataRest = "settings_data_rest"
-    static let dataGraphql = "settings_data_graphql"
-    static let deleteAction = "settings_delete_action"
-    static let deleteExplanation = "settings_delete_explanation"
-    static let deleteConfirmTitle = "settings_delete_confirm_title"
-    static let deleteConfirmMessage = "settings_delete_confirm_message"
-    static let cancel = "action_cancel"
-    static let delete = "action_delete"
+    static let title: CopyKey = .navSettings
+    static let preferencesSection: CopyKey = .settingsSectionPreferences
+    static let dataSection: CopyKey = .settingsSectionData
+    static let favoritesSection: CopyKey = .navFavorites
+    static let soundsTitle: CopyKey = .settingsSoundTitle
+    static let soundsBody: CopyKey = .settingsSoundBody
+    static let dataSourceTitle: CopyKey = .settingsDataSourceTitle
+    static let dataSourceBody: CopyKey = .settingsDataSourceBody
+    static let dataRest: CopyKey = .settingsDataRest
+    static let dataGraphql: CopyKey = .settingsDataGraphql
+    static let deleteAction: CopyKey = .settingsDeleteAction
+    static let deleteExplanation: CopyKey = .settingsDeleteExplanation
+    static let deleteConfirmTitle: CopyKey = .settingsDeleteConfirmTitle
+    static let deleteConfirmMessage: CopyKey = .settingsDeleteConfirmMessage
+    static let cancel: CopyKey = .actionCancel
+    static let delete: CopyKey = .actionDelete
 
     /// Every key this screen binds, so its copy bindings are enumerable rather than assumed.
-    static var all: [String] {
-        var keys: [String] = []
+    static var all: [CopyKey] {
+        var keys: [CopyKey] = []
         keys.append(title)
         keys.append(preferencesSection)
         keys.append(dataSection)
@@ -266,7 +266,7 @@ enum SettingsDataSource: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// The canonical copy key of this option's label (`IC-017`).
-    var labelKey: String {
+    var labelKey: CopyKey {
         switch self {
         case .rest: return SettingsCopy.dataRest
         case .graphql: return SettingsCopy.dataGraphql

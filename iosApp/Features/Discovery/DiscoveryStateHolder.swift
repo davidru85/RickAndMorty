@@ -10,26 +10,27 @@ import SwiftUI
 /// a page-1 reset, because a second implementation is what `CONTRACTS.md` R2 and `REQ-PLAT-001`
 /// forbid; the state the view reads is the shared `CharacterListUiState`.
 ///
-/// There is no `StateFlow`-to-Swift bridge (`DEC-013`): the holder owns the coroutine scope the
-/// reducer runs in, and it republishes each emission so SwiftUI can read it. The scope comes from
-/// `MultiverseBootstrap`, because Kotlin/Native exports `CoroutineScope` as a protocol and Swift
-/// cannot construct one.
+/// The holder is hand-written, as `DEC-013` requires: it owns the screen's one scope through its
+/// `ScreenLifetime`, and it hears the reducer's state through the shared `StateObserver`, republishing
+/// each new value so SwiftUI can read it (`DEC-143`). The scope comes from `MultiverseBootstrap`,
+/// because Kotlin/Native exports `CoroutineScope` as a protocol and Swift cannot construct one.
 @MainActor
 public final class DiscoveryStateHolder: ObservableObject {
     /// What the screen renders; the view holds no state of its own.
     @Published public private(set) var state: CharacterListUiState
 
     private let reducer: DiscoveryReducer
-    private let scope: Kotlinx_coroutines_coreCoroutineScope
-    private var observation: Task<Void, Never>?
+    /// The screen's one scope and its state observation, ended with the holder (`DEC-143`).
+    private let lifetime = ScreenLifetime()
 
-    /// Builds the holder around the pager and the initial filter the shell resolved for this screen.
+    /// Builds the holder for one screen: [pagerFactory] builds the screen's pager on the holder's own
+    /// scope, so the pager, its protocol observer and its loads end with the holder (`IC-014`).
     public init(
-        pager: CharacterPager,
+        pagerFactory: (Kotlinx_coroutines_coreCoroutineScope) -> CharacterPager,
         initialFilter: CharacterFilter
     ) {
-        let scope = MultiverseBootstrap.shared.screenScope()
-        self.scope = scope
+        let scope = lifetime.scope
+        let pager = pagerFactory(scope)
         let reducer = DiscoveryReducer(
             pager: pager,
             scope: scope,
@@ -48,20 +49,10 @@ public final class DiscoveryStateHolder: ObservableObject {
         // shared reducer, so a page-1 reset or a debounce rule cannot differ between platforms. Without
         // it the screen stays on its initial `Loading` state (`DiscoveryStateHolderTests`, `GAP-031`).
         _ = reducer.start(initialFilter: initialFilter)
-        // `reducer.state` is a `StateFlow`, which Kotlin/Native exports without `AsyncSequence`
-        // conformance, so it is read by polling rather than collected.
-        observation = Task { [weak self, scope] in
-            while !Task.isCancelled {
-                guard let self else { break }
-                // A `StateFlow` keeps its instance until the value changes, so a new reference is a
-                // new state; republishing the same one would re-render the screen every frame.
-                if let next = self.reducer.state.value as? CharacterListUiState, next !== self.state {
-                    self.state = next
-                }
-                try? await Task.sleep(nanoseconds: 16_000_000)
-            }
-            // The holder is gone: the reducer's scope and its intent loop end with it.
-            MultiverseBootstrap.shared.cancelScope(scope: scope)
+        // The shared state is observed, not polled (`DEC-143`): each new value arrives once, on the main
+        // actor, and an idle screen wakes nothing.
+        lifetime.observe(reducer.state, as: CharacterListUiState.self) { [weak self] next in
+            self?.state = next
         }
     }
 
@@ -78,11 +69,5 @@ public final class DiscoveryStateHolder: ObservableObject {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             _ = job.invokeOnCompletion { _ in continuation.resume() }
         }
-    }
-
-    deinit {
-        // Swift 6 does not allow a nonisolated `deinit` to touch a non-Sendable stored property, so
-        // the observation carries the cancellation: ending it cancels the reducer's scope.
-        observation?.cancel()
     }
 }

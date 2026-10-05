@@ -82,7 +82,7 @@ struct DiscoveryScreen: View {
         }
         // The system large title (`UI_SPEC.md` §4.2, §6.2): it collapses into the inline title as the
         // content scrolls under it.
-        .navigationTitle(copy("nav_characters"))
+        .navigationTitle(copy(.navCharacters))
         .navigationBarTitleDisplayMode(.large)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .cosmicCanvas()
@@ -102,7 +102,7 @@ struct DiscoveryScreen: View {
                     onIntent(CharacterListIntentQueryChanged(query: next))
                 }
             ),
-            placeholder: copy("search_characters")
+            placeholder: copy(.searchCharacters)
         )
     }
 
@@ -122,8 +122,7 @@ struct DiscoveryScreen: View {
 
     private func countLine(count: Int32) -> String {
         let rendered = DefaultPresentationFormatters.shared.charactersCount(count: count)
-        return LocalizedCopy.shared.text(for: "characters_count")
-            .replacingOccurrences(of: "%1$@", with: rendered)
+        return LocalizedCopy.shared.text(for: .charactersCount, arguments: [.text(rendered)])
     }
 
     // MARK: - Filters
@@ -149,11 +148,11 @@ struct DiscoveryScreen: View {
         let all = CharacterPresentation.filterIdentifier(StatusFilter.all)
         let alive = CharacterPresentation.filterIdentifier(StatusFilter.alive)
         let dead = CharacterPresentation.filterIdentifier(StatusFilter.dead)
-        options.append(.init(id: all, label: copy("filter_all")))
-        options.append(.init(id: alive, label: copy("status_alive")))
-        options.append(.init(id: dead, label: copy("status_dead")))
+        options.append(.init(id: all, label: copy(.filterAll)))
+        options.append(.init(id: alive, label: copy(.statusAlive)))
+        options.append(.init(id: dead, label: copy(.statusDead)))
         options.append(
-            .init(id: CharacterPresentation.filterIdentifier(StatusFilter.unknown), label: copy("value_unknown"))
+            .init(id: CharacterPresentation.filterIdentifier(StatusFilter.unknown), label: copy(.valueUnknown))
         )
         return options
     }
@@ -187,7 +186,7 @@ struct DiscoveryScreen: View {
                     .opacity(0.4)
             }
         } actions: {
-            GlassTextButton(label: copy("action_clear_filters")) {
+            GlassTextButton(label: copy(.actionClearFilters)) {
                 // Both dimensions in one intent (`DEC-129`); the field and the segments follow the
                 // state's filter.
                 onIntent(CharacterListIntentClearFilters.shared)
@@ -197,8 +196,7 @@ struct DiscoveryScreen: View {
     }
 
     private var emptySearchMessage: String {
-        LocalizedCopy.shared.text(for: "empty_search_message")
-            .replacingOccurrences(of: "%1$@", with: state.filter.query)
+        LocalizedCopy.shared.text(for: .emptySearchMessage, arguments: [.text(state.filter.query)])
     }
 
     /// The full-surface error (`UI_SPEC.md` §8, iOS column: "`ContentUnavailableView` + Retry glass
@@ -228,7 +226,7 @@ struct DiscoveryScreen: View {
     }
 
     /// The grid of glass cards, with the paging indicator as its last item and the non-blocking notice
-    /// at the bottom (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
+    /// at the bottom (`UI_SPEC.md` §8). Every iOS card is the same 177 × 236 pt (`UI_SPEC.md` §4.2).
     private var grid: some View {
         VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
             LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
@@ -267,7 +265,7 @@ struct DiscoveryScreen: View {
         return [GridItem](repeating: GridItem(.flexible(), spacing: MultiverseDimensions.gridGutter), count: 2)
     }
 
-    /// Six skeletons in the Tall/Regular pattern while no load has completed (`UI_SPEC.md` §8).
+    /// Six skeleton cards while no load has completed (`UI_SPEC.md` §8).
     private var skeletonGrid: some View {
         // The skeletons carry identities no card can have, so the grid replaces them when content
         // arrives instead of keeping their cells (`GAP-031`).
@@ -322,12 +320,16 @@ struct DiscoveryScreen: View {
             .padding(MultiverseDimensions.spaceM)
             .glassSurface(.capsule)
             .frame(maxWidth: .infinity)
-            .accessibilityLabel(Text(copy("splash_loading")))
+            .accessibilityLabel(Text(copy(.splashLoading)))
     }
 
     // MARK: - Helpers
 
     private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import org.junit.Test
 
 /**
@@ -27,15 +28,15 @@ class PortraitMotionTest {
 
     @Test
     fun `TEST-UI-008 given_a_character_when_two_surfaces_share_its_portrait_then_the_key_follows_the_canonical_id`() {
-        assertEquals("the key is the id, never a list position", "portrait-1", PortraitMotion.sharedKey("1"))
+        assertEquals("the key is the id, never a list position", "portrait-1", PortraitTransition.key("1"))
         assertEquals(
             "the same character carries one key in the grid and in the hero",
-            PortraitMotion.sharedKey("1"),
-            PortraitMotion.sharedKey("1"),
+            PortraitTransition.key("1"),
+            PortraitTransition.key("1"),
         )
         assertNotEquals(
-            PortraitMotion.sharedKey("1"),
-            PortraitMotion.sharedKey("2"),
+            PortraitTransition.key("1"),
+            PortraitTransition.key("2"),
             "two characters never share a transition key",
         )
     }

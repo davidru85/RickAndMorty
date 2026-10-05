@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /**
  * The Episodes placeholder (`UI_SPEC.md` §6.4, `TASK-008`): the section's empty state with the copy the
@@ -34,7 +34,12 @@ public fun EpisodesPlaceholder(
         // The section's title, in the place every top-level screen puts it (Figma `101:499`).
         ScreenTitle(
             text = CopyResolver.copy("nav_episodes"),
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            modifier =
+                Modifier.padding(
+                    start = MultiverseDimensions.spaceL,
+                    end = MultiverseDimensions.spaceL,
+                    top = MultiverseDimensions.spaceL,
+                ),
         )
         EmptyState(
             heading = CopyResolver.copy("episodes_heading"),

@@ -134,7 +134,7 @@ struct CharacterDetailScreen: View {
             GlassIconButton(
                 systemImage: "chevron.left",
                 style: .glass,
-                accessibilityLabel: copy("action_back"),
+                accessibilityLabel: copy(.actionBack),
                 action: onBack
             )
             .padding(MultiverseDimensions.spaceL)
@@ -171,7 +171,7 @@ struct CharacterDetailScreen: View {
             }
             .clipped()
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(Text(state.header?.name ?? copy("nav_characters")))
+            .accessibilityLabel(Text(state.header?.name ?? copy(.navCharacters)))
     }
 
     /// The back, share and favourite controls (`UI_SPEC.md` §4.1, §6.3). The favourite is the
@@ -182,7 +182,7 @@ struct CharacterDetailScreen: View {
             GlassIconButton(
                 systemImage: "chevron.left",
                 style: .glass,
-                accessibilityLabel: copy("action_back"),
+                accessibilityLabel: copy(.actionBack),
                 action: onBack
             )
             Spacer()
@@ -190,7 +190,7 @@ struct CharacterDetailScreen: View {
                 GlassIconButton(
                     systemImage: "square.and.arrow.up",
                     style: .glass,
-                    accessibilityLabel: copy("action_share"),
+                    accessibilityLabel: copy(.actionShare),
                     action: onShare
                 )
                 favouriteButton
@@ -205,7 +205,7 @@ struct CharacterDetailScreen: View {
         GlassIconButton(
             systemImage: state.isFavorite ? "heart.fill" : "heart",
             style: state.isFavorite ? .prominent : .glass,
-            accessibilityLabel: copy("detail_action_favorite"),
+            accessibilityLabel: copy(.detailActionFavorite),
             action: { onIntent(CharacterDetailIntentToggleFavorite.shared) }
         )
         .symbolEffect(.bounce, options: reduceMotion ? .nonRepeating.speed(0) : .nonRepeating, value: state.isFavorite)
@@ -344,6 +344,10 @@ struct CharacterDetailScreen: View {
     // MARK: - Helpers
 
     private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }

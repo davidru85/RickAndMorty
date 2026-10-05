@@ -50,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.components.CardHeight
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCardSkeleton
@@ -64,6 +63,8 @@ import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
@@ -173,7 +174,7 @@ private fun SearchField(
                 .fillMaxWidth()
                 .height(AppBarHeight)
                 .background(appBar)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = MultiverseDimensions.spaceL),
         contentAlignment = Alignment.Center,
     ) {
         SearchBar(
@@ -221,7 +222,12 @@ private fun Headline(state: CharacterListUiState) {
     Column(modifier = Modifier.fillMaxWidth()) {
         ScreenTitle(
             text = CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value),
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            modifier =
+                Modifier.padding(
+                    start = MultiverseDimensions.spaceL,
+                    end = MultiverseDimensions.spaceL,
+                    top = MultiverseDimensions.spaceL,
+                ),
         )
         state.totalCount?.let { count ->
             Text(
@@ -231,7 +237,7 @@ private fun Headline(state: CharacterListUiState) {
                         .format(DefaultPresentationFormatters.charactersCount(count)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MultiverseColors.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = MultiverseDimensions.spaceL),
             )
         }
     }
@@ -264,8 +270,12 @@ private fun FilterRow(
             Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(
+                    start = MultiverseDimensions.spaceL,
+                    end = MultiverseDimensions.spaceL,
+                    top = MultiverseComponentDimensions.chipsTopGap,
+                ),
+        horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
     ) {
         options.forEach { (status, key) ->
             val selected = state.filter.status == status
@@ -303,7 +313,7 @@ private fun DiscoveryEmptyState(
         actionLabel = CopyResolver.copy(CopyKeys.ACTION_CLEAR_FILTERS.value),
         // Both dimensions in one intent; the field and the chips follow the state (`DEC-129`).
         onAction = { onIntent(CharacterListIntent.ClearFilters) },
-        modifier = Modifier.padding(top = 16.dp),
+        modifier = Modifier.padding(top = MultiverseDimensions.spaceL),
     )
 }
 
@@ -323,7 +333,7 @@ private fun DiscoveryErrorState(
         illustrationAlpha = PORTAL_MARK_ALPHA,
         actionLabel = CopyResolver.copy(DefaultPresentationFormatters.retryAction().value),
         onAction = onRetry,
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(MultiverseDimensions.spaceL),
     )
 }
 
@@ -347,9 +357,15 @@ private fun CharacterGrid(
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             // 16 dp screen margins and 12 dp gutters, 20 dp below the chips (Figma `20:1868`, `UI_SPEC.md` §3.3).
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp,
+            contentPadding =
+                PaddingValues(
+                    start = MultiverseDimensions.spaceL,
+                    end = MultiverseDimensions.spaceL,
+                    top = MultiverseComponentDimensions.gridTopGap,
+                    bottom = MultiverseDimensions.spaceL,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
+            verticalItemSpacing = MultiverseDimensions.spaceM,
         ) {
             if (state.loadState == LoadState.Loading) {
                 // Six skeletons in the Tall/Regular pattern while no load has completed (§8).
@@ -376,13 +392,13 @@ private fun CharacterGrid(
             if (state.isAppending) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(MultiverseDimensions.spaceM),
                         contentAlignment = Alignment.Center,
                     ) {
                         // The 48 dp contained indicator is the paging indicator, and only that (§8).
                         ContainedLoadingIndicator(
                             containerColor = MultiverseColors.secondaryContainer,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(MultiverseComponentDimensions.pagingIndicator),
                         )
                     }
                 }
@@ -450,7 +466,7 @@ private fun DiscoveryNotice(
         val result = host.showSnackbar(message = message, actionLabel = retry, duration = SnackbarDuration.Indefinite)
         if (result == SnackbarResult.ActionPerformed) onIntent(CharacterListIntent.Retry)
     }
-    SnackbarHost(hostState = host, modifier = modifier.padding(16.dp))
+    SnackbarHost(hostState = host, modifier = modifier.padding(MultiverseDimensions.spaceL))
 }
 
 /** The brand mark the shell provides for the empty and error states, or nothing in a bare preview. */
@@ -464,7 +480,7 @@ private const val PORTAL_MARK_ALPHA = 0.4f
 private const val CARD_CONTENT_TYPE = "character-card"
 
 /** The top app bar's height (`UI_SPEC.md` §4.1): 64 dp. */
-private val AppBarHeight = 64.dp
+private val AppBarHeight = MultiverseComponentDimensions.appBarHeight
 
 /** Tall when `index % 4` is 0 or 3, Regular otherwise (`UI_SPEC.md` §4.1). */
 private fun heightOf(index: Int): CardHeight = if (index % 4 == 0 || index % 4 == 3) CardHeight.Tall else CardHeight.Regular

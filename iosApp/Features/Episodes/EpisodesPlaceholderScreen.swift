@@ -43,7 +43,7 @@ struct EpisodesPlaceholderScreen: View {
     /// The section's large title, at the same position as Discovery's and Favorites' (`UI_SPEC.md`
     /// §6.4, "Large Title, same position as Discovery").
     private var headline: some View {
-        Text(copy("nav_episodes"))
+        Text(copy(.navEpisodes))
             .font(MultiverseType.largeTitleBold)
             .foregroundStyle(MultiverseLabelColors.primary)
             .padding(.horizontal, MultiverseDimensions.spaceL)
@@ -51,6 +51,10 @@ struct EpisodesPlaceholderScreen: View {
     }
 
     private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }

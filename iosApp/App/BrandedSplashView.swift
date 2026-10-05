@@ -33,7 +33,7 @@ struct BrandedSplashView: View {
             }
         }
         .accessibilityElement()
-        .accessibilityLabel(LocalizedCopy.shared.text(for: "splash_loading"))
+        .accessibilityLabel(LocalizedCopy.shared.text(for: .splashLoading))
         .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -52,14 +52,14 @@ struct BrandedSplashView: View {
 
     private var wordmark: some View {
         VStack(spacing: MultiverseDimensions.spaceS) {
-            Text(LocalizedCopy.shared.text(for: "splash_wordmark"))
+            Text(LocalizedCopy.shared.text(for: .splashWordmark))
                 .font(MultiverseType.editorialDisplay(size: wordmarkSize))
                 .foregroundStyle(MultiverseLabelColors.primary)
-            Text(LocalizedCopy.shared.text(for: "splash_wordmark_sub"))
+            Text(LocalizedCopy.shared.text(for: .splashWordmarkSub))
                 .font(MultiverseType.caption2Emphasized)
                 .tracking(SplashLayout.subTracking)
                 .foregroundStyle(MultiverseBrandColors.portalGreen)
-            Text(LocalizedCopy.shared.text(for: "splash_tagline"))
+            Text(LocalizedCopy.shared.text(for: .splashTagline))
                 .font(MultiverseType.subheadline)
                 .foregroundStyle(MultiverseLabelColors.secondary)
                 .multilineTextAlignment(.center)

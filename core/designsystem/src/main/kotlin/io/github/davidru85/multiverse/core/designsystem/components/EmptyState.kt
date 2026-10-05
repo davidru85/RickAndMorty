@@ -19,9 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /**
@@ -46,14 +46,14 @@ public fun EmptyState(
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MultiverseColors.primaryContainer,
-    illustrationSize: androidx.compose.ui.unit.Dp = 160.dp,
+    illustrationSize: androidx.compose.ui.unit.Dp = MultiverseComponentDimensions.emptyStateIllustration,
     illustrationTint: Color = MultiverseColors.onPrimaryContainer,
     illustrationAlpha: Float = 1f,
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = MultiverseDimensions.spaceL),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
     ) {
         Cookie9Illustration(
             icon = illustration,
@@ -90,16 +90,13 @@ public fun EmptyState(
 }
 
 /** The body's measure (`UI_SPEC.md` §6.4): 320 dp, centred. */
-private val BodyWidth = 320.dp
-
-/** The corner a section group uses for its own panel (`UI_SPEC.md` §4.1): 28. */
-internal val SectionCorner = MultiverseDimensions.cornerExtraLarge
+private val BodyWidth = MultiverseComponentDimensions.emptyStateBodyWidth
 
 @Preview
 @Composable
 private fun EmptyStatePreview() {
     MultiverseTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(MultiverseDimensions.spaceL)) {
             EmptyState(
                 heading = "No favorites yet",
                 body = "Tap the heart on a character's page to keep them here.",

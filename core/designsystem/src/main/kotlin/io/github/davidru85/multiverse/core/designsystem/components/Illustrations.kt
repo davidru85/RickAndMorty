@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -21,8 +20,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -66,9 +66,6 @@ public class Cookie9Shape(
         return Outline.Generic(path)
     }
 
-    /** The rectangular bounds the shape draws within; a Cookie-9 is a disc, so it fills its box. */
-    public fun bounds(size: Size): Rect = Rect(Offset.Zero, size)
-
     private companion object {
         const val LOBES = 9
         const val STEPS_PER_LOBE = 12
@@ -90,8 +87,8 @@ public fun Cookie9Illustration(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     containerColor: Color = MultiverseColors.primaryContainer,
-    size: Dp = 160.dp,
-    iconSize: Dp = 64.dp,
+    size: Dp = MultiverseComponentDimensions.emptyStateIllustration,
+    iconSize: Dp = MultiverseComponentDimensions.illustrationIcon,
     /** The glyph's tint: the container's matching "on" colour, or `Color.Unspecified` for a brand mark. */
     iconTint: Color = MultiverseColors.onPrimaryContainer,
     iconAlpha: Float = 1f,
@@ -119,9 +116,19 @@ public fun SectionGlyph(
     iconTint: Color = MultiverseColors.onSecondaryContainer,
 ) {
     Box(
-        modifier = modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(containerColor),
+        modifier =
+            modifier
+                .size(
+                    MultiverseComponentDimensions.sectionGlyphContainer,
+                ).clip(RoundedCornerShape(MultiverseDimensions.cornerLarge))
+                .background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(painter = icon, contentDescription = contentDescription, tint = iconTint, modifier = Modifier.size(24.dp))
+        Icon(
+            painter = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(MultiverseComponentDimensions.icon),
+        )
     }
 }

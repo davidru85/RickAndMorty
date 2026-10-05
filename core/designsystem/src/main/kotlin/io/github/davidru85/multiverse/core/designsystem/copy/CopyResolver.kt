@@ -12,27 +12,49 @@ import io.github.davidru85.multiverse.core.designsystem.R
  *
  * Components take a copy **key name** (a `String` primitive) and never a presentation type, so
  * `:core:designsystem` keeps its Compose-only, project-dependency-free build while the strings stay
- * in one place. This table is the compile-checked mapping from a key name to its `R.string`
- * resource: a key added to `CopyKeys` without its string here does not compile, and a string added
- * here without a `CopyKeys` entry fails `TEST-UNIT-036`.
+ * in one place. This table maps a key name to its `R.string` resource at run time, and the parity
+ * tests keep it whole: a key in `CopyKeys` without its string here, or a string here without a
+ * `CopyKeys` entry, fails `TEST-UNIT-036`. A key that still reaches [copy] unregistered follows
+ * [missingKeyPolicy] (`DEC-144`).
  *
  * The table is compared against the shipped `res/values/strings.xml` by
  * `CopyResolverTableTest`, so an entry cannot name a resource that does not exist.
  */
 public object CopyResolver {
+    /** What [copy] does with a key that has no resource (`DEC-144`). */
+    public enum class MissingKeyPolicy {
+        /** Fail loudly: the debug and test builds, where a missing key is a defect to catch. */
+        FAIL,
+
+        /** Render the key itself: the release build, where a visible key is better than a crash. */
+        SHOW_KEY,
+    }
+
+    /**
+     * The policy for an unregistered key. It defaults to [MissingKeyPolicy.FAIL], so tests fail on a
+     * missing key; the release Application sets [MissingKeyPolicy.SHOW_KEY] at start-up.
+     */
+    @Volatile
+    public var missingKeyPolicy: MissingKeyPolicy = MissingKeyPolicy.FAIL
+
+    private fun missing(key: String): String =
+        when (missingKeyPolicy) {
+            MissingKeyPolicy.FAIL -> error("no Android resource is registered for the copy key `$key` (DEC-100)")
+            MissingKeyPolicy.SHOW_KEY -> key
+        }
+
     /** The resource id for a canonical copy key name, or `null` when the name is not registered. */
     @StringRes
     public fun resourceId(key: String): Int? = TABLE[key]
 
     /**
-     * Resolves a canonical copy key name against the device locale. An unregistered name fails
-     * loudly in debug rather than rendering an empty string, because a missing key is a defect the
-     * parity test exists to catch.
+     * Resolves a canonical copy key name against the device locale. An unregistered name follows
+     * [missingKeyPolicy]: a loud failure in debug and tests, the key itself in release — never an
+     * empty string.
      */
     @Composable
     public fun copy(key: String): String {
-        val id = TABLE[key]
-        requireNotNull(id) { "no Android resource is registered for the copy key `$key` (DEC-100)" }
+        val id = TABLE[key] ?: return missing(key)
         return stringResource(id)
     }
 
@@ -47,8 +69,7 @@ public object CopyResolver {
         key: String,
         vararg formatArgs: Any,
     ): String {
-        val id = TABLE[key]
-        requireNotNull(id) { "no Android resource is registered for the copy key `$key` (DEC-100)" }
+        val id = TABLE[key] ?: return missing(key)
         return if (formatArgs.isEmpty()) stringResource(id) else stringResource(id, *formatArgs)
     }
 

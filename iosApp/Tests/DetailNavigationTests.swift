@@ -29,11 +29,12 @@ final class DetailNavigationTests: XCTestCase {
         defer { window.isHidden = true }
         settle()
 
-        driver.opened = MultiverseBootstrap.shared.card(
+        driver.opened = CharacterCardUi(
             id: "1",
             name: "Rick Sanchez",
-            species: "Human",
-            statusLabelKey: "status_alive",
+            species: DisplayTextData(value: "Human"),
+            status: CharacterStatusAlive.shared,
+            statusLabel: CopyKeys.shared.STATUS_ALIVE,
             imageUrl: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
         )
         settle()

@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.app.debug
 
 import io.github.davidru85.multiverse.app.MultiverseApplication
+import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.app.di.ShellLogging
 import io.github.davidru85.multiverse.app.di.LogcatSink
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
@@ -35,4 +36,7 @@ public class DebugMultiverseApplication : MultiverseApplication() {
 
     /** The debug variant reads the DEBUG threshold, the same one its own logger enables (DEC-039). */
     override fun koinLevel(): KoinLevel = KoinLevel.DEBUG
+
+    /** A missing copy key fails loudly in the debug build, where it is a defect to catch (`DEC-144`). */
+    override fun missingCopyKeyPolicy(): CopyResolver.MissingKeyPolicy = CopyResolver.MissingKeyPolicy.FAIL
 }

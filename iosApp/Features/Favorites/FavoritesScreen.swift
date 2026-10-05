@@ -62,7 +62,7 @@ struct FavoritesScreen: View {
 
     /// The section's large title, at the same position as Discovery's (`UI_SPEC.md` §6.4).
     private var headline: some View {
-        Text(copy("nav_favorites"))
+        Text(copy(.navFavorites))
             .font(MultiverseType.largeTitleBold)
             .foregroundStyle(MultiverseLabelColors.primary)
             .padding(.horizontal, MultiverseDimensions.spaceL)
@@ -157,6 +157,10 @@ struct FavoritesScreen: View {
     // MARK: - Helpers
 
     private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }

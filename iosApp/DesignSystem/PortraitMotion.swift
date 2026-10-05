@@ -20,9 +20,6 @@ public enum PortraitMotion {
     /// The cross-fade Reduce Motion substitutes (`UI_SPEC.md` §7).
     public static let reducedMotionCrossfadeSeconds: Double = 0.300
 
-    /// The parallax factor the portrait translates at while it scrolls (`UI_SPEC.md` §7).
-    public static let parallaxFactor: Double = 0.85
-
     /// The shared-element key of one character's portrait.
     ///
     /// It is derived from the canonical id (`IC-001`), never from a position in a list, so the same

@@ -1,8 +1,10 @@
 package io.github.davidru85.multiverse.feature.characterdetail.di
 
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.feature.characterdetail.ui.CharacterDetailViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -22,6 +24,7 @@ public val characterDetailViewModelModule: Module =
                 toggleFavorite = get(),
                 observeFavoriteIds = get(),
                 formatters = get(),
+                dispatcher = get(named(PresentationBindings.MAIN_DISPATCHER)),
             )
         }
     }

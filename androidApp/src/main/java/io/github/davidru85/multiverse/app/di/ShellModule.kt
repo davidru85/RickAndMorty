@@ -1,17 +1,31 @@
 package io.github.davidru85.multiverse.app.di
 
 import android.content.Context
+import io.github.davidru85.multiverse.app.image.CoilImageSeam
+import io.github.davidru85.multiverse.app.image.CoilPortraitPixels
+import io.github.davidru85.multiverse.app.image.imageCacheDirectory
+import io.github.davidru85.multiverse.app.image.imageLoader
 import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
-import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.androidRickAndMortyHttpClient
+import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy
+import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
+import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
+import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
+import io.ktor.client.HttpClient
+import java.io.File
+import kotlin.time.Clock
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.Module
-import java.io.File
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 
 /**
  * The DataStore file `SECURITY.md` §3 classifies: favourites only, in the app's private storage.
@@ -58,20 +72,32 @@ public fun shellModules(
     return listOf(
         platformInputs(applicationScope, appContext, logger, client),
         imageLoaderModule(appContext, client),
+        presentationModule(),
     ) + logging.extraModules(logger)
 }
+
+/**
+ * The app-wide presentation dependencies, bound once here rather than by a feature (`DEC-145`): the two
+ * named dispatchers and the formatters every state holder renders through.
+ */
+public fun presentationModule(): Module =
+    module {
+        single<CoroutineDispatcher>(named(PresentationBindings.DEFAULT_DISPATCHER)) { Dispatchers.Default }
+        single<CoroutineDispatcher>(named(PresentationBindings.MAIN_DISPATCHER)) { Dispatchers.Main.immediate }
+        single<PresentationFormatters> { DefaultPresentationFormatters }
+    }
 
 /** The graph inputs, built once so both variants share every value except the logger. */
 public fun platformInputs(
     applicationScope: CoroutineScope,
     appContext: Context,
     logger: ValidatingAppLogger,
-    client: io.ktor.client.HttpClient = androidRickAndMortyHttpClient(),
+    client: HttpClient = androidRickAndMortyHttpClient(),
 ): Module =
     CoreGraphInputs(
         client = client,
         decodingDispatcher = Dispatchers.IO,
-        clock = kotlin.time.Clock.System,
+        clock = Clock.System,
         applicationScope = applicationScope,
         favoritesStore =
             DataStoreFavoritesLocalDataSource(
@@ -102,19 +128,19 @@ public fun platformInputs(
  * than building a second loader.
  */
 public fun imageLoaderModule(
-    context: android.content.Context,
-    client: io.ktor.client.HttpClient,
+    context: Context,
+    client: HttpClient,
 ): Module =
-    org.koin.dsl.module {
+    module {
         single {
-            io.github.davidru85.multiverse.app.image.imageLoader(
+            imageLoader(
                 context = context,
                 client = client,
-                diskCacheDirectory = io.github.davidru85.multiverse.app.image.imageCacheDirectory(context),
+                diskCacheDirectory = imageCacheDirectory(context),
             )
         }
-        single<io.github.davidru85.multiverse.core.designsystem.image.ImageSeam> {
-            io.github.davidru85.multiverse.app.image.CoilImageSeam(
+        single<ImageSeam> {
+            CoilImageSeam(
                 context = context,
                 imageLoader = get(),
             )
@@ -122,9 +148,9 @@ public fun imageLoaderModule(
         // The card accents of `UI_SPEC.md` §5.4: the pixels come through the same loader, and the
         // colour work runs off the main thread, memoised per URL for the process.
         single {
-            io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy(
-                pixels = io.github.davidru85.multiverse.app.image.CoilPortraitPixels(context = context, imageLoader = get()),
-                dispatcher = kotlinx.coroutines.Dispatchers.Default,
+            CharacterAccentPolicy(
+                pixels = CoilPortraitPixels(context = context, imageLoader = get()),
+                dispatcher = Dispatchers.Default,
             )
         }
     }

@@ -190,8 +190,8 @@ final class SettingsScreenTests: XCTestCase {
 
     func test_AC_REQ_FUNC_033_1_given_the_settings_copy_when_resolved_then_each_key_exists_in_both_locales() {
         for key in SettingsCopy.all {
-            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "en"), "en must carry \(key)")
-            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key, in: "es"), "es must carry \(key)")
+            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key.rawValue, in: "en"), "en must carry \(key)")
+            XCTAssertTrue(LocalizedCopy.shared.hasEntry(for: key.rawValue, in: "es"), "es must carry \(key)")
         }
     }
 
@@ -206,13 +206,13 @@ final class SettingsScreenTests: XCTestCase {
     /// asserted in both locales by the parity case, so this checks the binding rather than an English
     /// literal that a Spanish simulator would fail (`REQ-UX-008`).
     func test_UI_SPEC_6_5_given_the_section_headers_when_bound_then_they_are_the_specified_keys() {
-        XCTAssertEqual(SettingsCopy.title, "nav_settings")
-        XCTAssertEqual(SettingsCopy.preferencesSection, "settings_section_preferences")
-        XCTAssertEqual(SettingsCopy.dataSection, "settings_section_data")
-        XCTAssertEqual(SettingsCopy.favoritesSection, "nav_favorites")
-        XCTAssertEqual(SettingsCopy.deleteConfirmTitle, "settings_delete_confirm_title")
-        XCTAssertEqual(SettingsCopy.cancel, "action_cancel")
-        XCTAssertEqual(SettingsCopy.delete, "action_delete")
+        XCTAssertEqual(SettingsCopy.title.rawValue, "nav_settings")
+        XCTAssertEqual(SettingsCopy.preferencesSection.rawValue, "settings_section_preferences")
+        XCTAssertEqual(SettingsCopy.dataSection.rawValue, "settings_section_data")
+        XCTAssertEqual(SettingsCopy.favoritesSection.rawValue, "nav_favorites")
+        XCTAssertEqual(SettingsCopy.deleteConfirmTitle.rawValue, "settings_delete_confirm_title")
+        XCTAssertEqual(SettingsCopy.cancel.rawValue, "action_cancel")
+        XCTAssertEqual(SettingsCopy.delete.rawValue, "action_delete")
     }
 
     // MARK: - Helpers

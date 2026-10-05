@@ -66,6 +66,7 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
@@ -83,26 +84,26 @@ import io.github.davidru85.multiverse.feature.characterdetail.presentation.Chara
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.InfoRowKind
 
 /** The hero's height (`UI_SPEC.md` §6.3, Figma `21:1217`): 468 dp, full-bleed under the status bar. */
-private val HeroHeight = 468.dp
+private val HeroHeight = MultiverseComponentDimensions.detailHeroHeight
 
 /** The controls bar under the status bar (Figma `21:1237`): 64 dp, its 48 dp targets 8 dp from the edges. */
-private val ControlsBarHeight = 64.dp
+private val ControlsBarHeight = MultiverseComponentDimensions.detailControlsBarHeight
 
 /** A control's tonal container (`UI_SPEC.md` §4.1): 40 dp at 72 %, inside a 48 dp target, with a 24 dp glyph. */
-private val ControlContainer = 40.dp
-private val ControlTarget = 48.dp
-private val ControlGlyph = 24.dp
+private val ControlContainer = MultiverseComponentDimensions.detailControlContainer
+private val ControlTarget = MultiverseComponentDimensions.detailControlTarget
+private val ControlGlyph = MultiverseComponentDimensions.icon
 
 /** The hero scrolls at half the content's speed (`UI_SPEC.md` §7, "parallax 0.5×"). */
 private const val PARALLAX = 0.5f
 
 /** The top scrim and the bottom fade over the hero (`UI_SPEC.md` §6.3). */
-private val TopScrimHeight = 160.dp
-private val BottomFadeHeight = 200.dp
+private val TopScrimHeight = MultiverseComponentDimensions.detailTopScrimHeight
+private val BottomFadeHeight = MultiverseComponentDimensions.detailBottomFadeHeight
 private const val TOP_SCRIM_ALPHA = 0.55f
 
 /** Room under the content for the floating FAB: 80 dp, plus 16 dp above it and 16 dp below it. */
-private val FabClearance = 112.dp
+private val FabClearance = MultiverseComponentDimensions.detailFabClearance
 
 /**
  * The Character detail screen (`UI_SPEC.md` §6.3, `TASK-002`, `TASK-023`).
@@ -357,7 +358,12 @@ private fun TitleBlock(
     val header = state.header ?: return
     Column(
         // Inside the hero, 20 dp from its start (Figma `21:1251`).
-        modifier = modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = MultiverseDimensions.spaceL),
+        modifier =
+            modifier.fillMaxWidth().padding(
+                start = MultiverseComponentDimensions.detailTitleInset,
+                end = MultiverseComponentDimensions.detailTitleInset,
+                bottom = MultiverseDimensions.spaceL,
+            ),
         verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
     ) {
         val status = CopyResolver.copy(header.statusLabel.value)
@@ -438,7 +444,14 @@ private fun Stats(state: CharacterDetailUiState) {
             )
         }
     if (tiles.isEmpty()) return
-    Box(modifier = Modifier.fillMaxWidth().padding(start = MultiverseDimensions.spaceL, end = MultiverseDimensions.spaceL, top = 12.dp)) {
+    Box(
+        modifier =
+            Modifier.fillMaxWidth().padding(
+                start = MultiverseDimensions.spaceL,
+                end = MultiverseDimensions.spaceL,
+                top = MultiverseDimensions.spaceM,
+            ),
+    ) {
         StatTileRow(tiles = tiles, modifier = Modifier.fillMaxWidth())
     }
 }
@@ -462,7 +475,14 @@ private fun Info(
     }
     if (state.info.isEmpty()) return
     // 20 dp below the stats (Figma `21:1271`).
-    Box(modifier = Modifier.fillMaxWidth().padding(start = MultiverseDimensions.spaceL, end = MultiverseDimensions.spaceL, top = 20.dp)) {
+    Box(
+        modifier =
+            Modifier.fillMaxWidth().padding(
+                start = MultiverseDimensions.spaceL,
+                end = MultiverseDimensions.spaceL,
+                top = MultiverseComponentDimensions.detailTitleInset,
+            ),
+    ) {
         InfoListGroup {
             state.info.forEach { row ->
                 InfoListItem(
@@ -530,9 +550,9 @@ private fun FavoriteAction(
                     shape = FloatingActionButtonDefaults.mediumExtendedFabShape,
                     shadow =
                         Shadow(
-                            radius = 28.dp,
+                            radius = MultiverseComponentDimensions.fabGlowRadius,
                             color = MultiverseBrandColors.portalGreen.copy(alpha = 0.45f),
-                            offset = DpOffset(0.dp, 8.dp),
+                            offset = DpOffset(0.dp, MultiverseComponentDimensions.fabGlowOffset),
                         ),
                 ).semantics { toggleableState = ToggleableState(isFavorite) },
         containerColor = MultiverseColors.primary,

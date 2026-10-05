@@ -3,6 +3,7 @@ package io.github.davidru85.multiverse.app
 import android.app.Application
 import io.github.davidru85.multiverse.app.di.ShellLogging
 import io.github.davidru85.multiverse.app.di.shellModules
+import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.data.di.coreModule
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
 import io.github.davidru85.multiverse.feature.favorites.di.favoritesModule
@@ -41,8 +42,15 @@ public open class MultiverseApplication : Application() {
     /** The variant's logging seams; the base implementation is the release behaviour. */
     protected open fun logging(): ShellLogging = ShellLogging()
 
+    /**
+     * What an unregistered copy key renders as in this variant (`DEC-144`): the key itself in the base
+     * (release) class, a loud failure in the debug subclass.
+     */
+    protected open fun missingCopyKeyPolicy(): CopyResolver.MissingKeyPolicy = CopyResolver.MissingKeyPolicy.SHOW_KEY
+
     override fun onCreate() {
         super.onCreate()
+        CopyResolver.missingKeyPolicy = missingCopyKeyPolicy()
         startKoin {
             // Koin's own log lines follow the variant threshold DEC-039 fixes: the base (release)
             // class passes ERROR, and the debug subclass carries the DEBUG threshold of its own

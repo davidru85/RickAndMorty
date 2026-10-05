@@ -87,11 +87,11 @@ public struct EmptyState: View {
 /// so a call site names a key instead of typing a string and `TEST-UNIT-036` keeps the two
 /// platforms identical.
 public enum EmptyStateCopy {
-    public static let episodesHeading = "episodes_heading"
-    public static let episodesBody = "episodes_body"
-    public static let favoritesHeading = "favorites_heading"
-    public static let favoritesBody = "favorites_body"
-    public static let browseCharacters = "browse_characters"
+    public static let episodesHeading: CopyKey = .episodesHeading
+    public static let episodesBody: CopyKey = .episodesBody
+    public static let favoritesHeading: CopyKey = .favoritesHeading
+    public static let favoritesBody: CopyKey = .favoritesBody
+    public static let browseCharacters: CopyKey = .browseCharacters
 
     /// The SF Symbols `UI_SPEC.md` §6.4 fixes for the two sections.
     public static let episodesSymbol = "play.tv.fill"

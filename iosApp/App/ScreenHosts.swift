@@ -19,10 +19,11 @@ struct DiscoveryHost: View {
 
     init(onOpenDetail: @escaping (CharacterCardUi) -> Void) {
         self.onOpenDetail = onOpenDetail
-        let scope = MultiverseBootstrap.shared.screenScope()
+        // The holder builds the pager on its own scope (`IC-014`), and `StateObject` builds the holder
+        // once, so a re-initialised host makes no scope of its own.
         _holder = StateObject(
             wrappedValue: DiscoveryStateHolder(
-                pager: MultiverseBootstrap.shared.characterPager(scope: scope),
+                pagerFactory: { MultiverseBootstrap.shared.characterPager(scope: $0) },
                 initialFilter: DiscoveryHost.defaultFilter
             )
         )

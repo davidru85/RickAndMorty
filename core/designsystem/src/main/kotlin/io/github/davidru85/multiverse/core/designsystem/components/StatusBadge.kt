@@ -20,10 +20,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /**
  * The status mirror a badge renders (`UI_SPEC.md` §4.1): the dot's colour is data, the label is copy
@@ -54,15 +55,17 @@ public fun StatusBadge(
             modifier
                 .clip(CircleShape)
                 .background(MultiverseColors.surfaceContainerHighest.copy(alpha = 0.9f))
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-                .clearAndSetSemantics { contentDescription = announcement },
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(
+                    horizontal = MultiverseComponentDimensions.badgePaddingHorizontal,
+                    vertical = MultiverseComponentDimensions.badgePaddingVertical,
+                ).clearAndSetSemantics { contentDescription = announcement },
+        horizontalArrangement = Arrangement.spacedBy(MultiverseComponentDimensions.badgeGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.foundation.layout.Box(
             modifier =
                 Modifier
-                    .size(8.dp)
+                    .size(MultiverseComponentDimensions.badgeDot)
                     .then(if (tone == StatusTone.Alive) Modifier.drawBehind { drawGlow(dot) } else Modifier)
                     .clip(CircleShape)
                     .background(dot),
@@ -98,8 +101,8 @@ private fun StatusTone.dotColor(): Color =
 private fun StatusBadgePreview() {
     MultiverseTheme {
         Row(
-            modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(MultiverseDimensions.spaceS),
+            horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),
         ) {
             StatusBadge(StatusTone.Alive, "Alive")
             StatusBadge(StatusTone.Dead, "Dead")

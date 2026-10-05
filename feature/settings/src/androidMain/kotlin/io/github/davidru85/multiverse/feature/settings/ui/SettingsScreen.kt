@@ -49,6 +49,7 @@ import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
 import io.github.davidru85.multiverse.feature.settings.R
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsIntent
 import io.github.davidru85.multiverse.feature.settings.presentation.SettingsUiState
@@ -86,7 +87,7 @@ public fun SettingsScreen(
                     .padding(MultiverseDimensions.spaceL),
             verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceXl),
         ) {
-            ScreenTitle(text = CopyResolver.copy("nav_settings"))
+            ScreenTitle(text = CopyResolver.copy(CopyKeys.NAV_SETTINGS.value))
 
             PreferencesSection(state = state, onIntent = onIntent)
             DataSection(state = state, onIntent = onIntent)
@@ -109,13 +110,13 @@ private fun PreferencesSection(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     SettingsSection(
-        header = CopyResolver.copy("settings_section_preferences"),
+        header = CopyResolver.copy(CopyKeys.SETTINGS_SECTION_PREFERENCES.value),
         content = {
-            val soundTitle = CopyResolver.copy("settings_sound_title")
+            val soundTitle = CopyResolver.copy(CopyKeys.SETTINGS_SOUND_TITLE.value)
             ListItem(
                 colors = TransparentRow,
                 leadingContent = { RowGlyph(R.drawable.ic_volume_up) },
-                supportingContent = { Text(CopyResolver.copy("settings_sound_body")) },
+                supportingContent = { Text(CopyResolver.copy(CopyKeys.SETTINGS_SOUND_BODY.value)) },
                 trailingContent = {
                     Switch(
                         // The switch carries its row's title as its label, so a screen reader
@@ -159,14 +160,14 @@ private fun DataSection(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     SettingsSection(
-        header = CopyResolver.copy("settings_section_data"),
+        header = CopyResolver.copy(CopyKeys.SETTINGS_SECTION_DATA.value),
         content = {
             ListItem(
                 colors = TransparentRow,
                 leadingContent = { RowGlyph(R.drawable.ic_swap_horiz) },
-                supportingContent = { Text(CopyResolver.copy("settings_data_source_body")) },
+                supportingContent = { Text(CopyResolver.copy(CopyKeys.SETTINGS_DATA_SOURCE_BODY.value)) },
             ) {
-                Text(CopyResolver.copy("settings_data_source_title"))
+                Text(CopyResolver.copy(CopyKeys.SETTINGS_DATA_SOURCE_TITLE.value))
             }
             // The connected single-select picker (`UI_SPEC.md` §4.1): two equal segments, the selected
             // one Secondary / On Secondary, the other Secondary Container / On Secondary Container.
@@ -182,13 +183,13 @@ private fun DataSection(
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
             ) {
                 ProtocolSegment(
-                    label = CopyResolver.copy("settings_data_rest"),
+                    label = CopyResolver.copy(CopyKeys.SETTINGS_DATA_REST.value),
                     checked = state.remoteProtocol == RemoteProtocol.Rest,
                     shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     onSelect = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.Rest)) },
                 )
                 ProtocolSegment(
-                    label = CopyResolver.copy("settings_data_graphql"),
+                    label = CopyResolver.copy(CopyKeys.SETTINGS_DATA_GRAPHQL.value),
                     checked = state.remoteProtocol == RemoteProtocol.GraphQl,
                     shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     onSelect = { onIntent(SettingsIntent.RemoteProtocolSelected(RemoteProtocol.GraphQl)) },
@@ -211,10 +212,10 @@ private fun FavoritesSection(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     SettingsSection(
-        header = CopyResolver.copy("nav_favorites"),
+        header = CopyResolver.copy(CopyKeys.NAV_FAVORITES.value),
         content = {
             Text(
-                text = CopyResolver.copy("settings_delete_explanation"),
+                text = CopyResolver.copy(CopyKeys.SETTINGS_DELETE_EXPLANATION.value),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MultiverseColors.onSurfaceVariant,
                 modifier = Modifier.padding(MultiverseDimensions.spaceL),
@@ -245,7 +246,7 @@ private fun FavoritesSection(
                 )
                 Spacer(modifier = Modifier.width(MultiverseDimensions.spaceS))
                 Text(
-                    text = CopyResolver.copy("settings_delete_action"),
+                    text = CopyResolver.copy(CopyKeys.SETTINGS_DELETE_ACTION.value),
                     style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight),
                 )
             }
@@ -299,7 +300,7 @@ private val TransparentRow: ListItemColors
 @Composable
 private fun DeleteConfirmation(onIntent: (SettingsIntent) -> Unit) {
     val titleFocus = remember { FocusRequester() }
-    val title = CopyResolver.copy("settings_delete_confirm_title")
+    val title = CopyResolver.copy(CopyKeys.SETTINGS_DELETE_CONFIRM_TITLE.value)
     AlertDialog(
         onDismissRequest = { onIntent(SettingsIntent.DeleteFavoritesDismissed) },
         title = {
@@ -312,7 +313,7 @@ private fun DeleteConfirmation(onIntent: (SettingsIntent) -> Unit) {
         },
         text = {
             Text(
-                text = CopyResolver.copy("settings_delete_confirm_message"),
+                text = CopyResolver.copy(CopyKeys.SETTINGS_DELETE_CONFIRM_MESSAGE.value),
                 style = MaterialTheme.typography.bodyMedium,
             )
         },
@@ -321,12 +322,12 @@ private fun DeleteConfirmation(onIntent: (SettingsIntent) -> Unit) {
                 onClick = { onIntent(SettingsIntent.DeleteFavoritesConfirmed) },
                 colors = ButtonDefaults.textButtonColors(contentColor = MultiverseColors.error),
             ) {
-                Text(CopyResolver.copy("action_delete"))
+                Text(CopyResolver.copy(CopyKeys.ACTION_DELETE.value))
             }
         },
         dismissButton = {
             TextButton(onClick = { onIntent(SettingsIntent.DeleteFavoritesDismissed) }) {
-                Text(CopyResolver.copy("action_cancel"))
+                Text(CopyResolver.copy(CopyKeys.ACTION_CANCEL.value))
             }
         },
     )

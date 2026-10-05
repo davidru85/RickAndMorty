@@ -8,7 +8,7 @@ import io.github.davidru85.multiverse.feature.favorites.domain.ResolveFavoriteCa
 import io.github.davidru85.multiverse.feature.favorites.presentation.FavoritesIntent
 import io.github.davidru85.multiverse.feature.favorites.presentation.FavoritesStateHolder
 import io.github.davidru85.multiverse.feature.favorites.presentation.FavoritesUiState
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -26,13 +26,14 @@ public class FavoritesViewModel(
     observeFavoriteIds: ObserveFavoriteIds,
     resolveFavoriteCards: ResolveFavoriteCards,
     formatters: PresentationFormatters,
+    dispatcher: CoroutineDispatcher,
 ) : ViewModel() {
     private val holder =
         FavoritesStateHolder(
             observeFavoriteIds = observeFavoriteIds,
             resolveFavoriteCards = resolveFavoriteCards,
             scope = viewModelScope,
-            dispatcher = Dispatchers.Main.immediate,
+            dispatcher = dispatcher,
             formatters = formatters,
         )
 

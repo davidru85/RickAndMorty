@@ -1,5 +1,10 @@
 package io.github.davidru85.multiverse.app.splash
 
+import android.content.ContentResolver
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -8,6 +13,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,22 +22,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.shadow.Shadow
-import kotlin.random.Random
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -43,6 +54,10 @@ import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.presentation.CopyKeys
+import kotlin.random.Random
 import kotlinx.coroutines.isActive
 
 /** The acceleration of `UI_SPEC.md` §7: 360° over 1.2 s on the stated curve. */
@@ -81,7 +96,7 @@ public fun BrandedSplash(
             1f
         }
 
-    val loadingLabel = CopyResolver.copy("splash_loading")
+    val loadingLabel = CopyResolver.copy(CopyKeys.SPLASH_LOADING.value)
     Box(
         modifier =
             modifier
@@ -98,14 +113,14 @@ public fun BrandedSplash(
         Column(
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
         ) {
             Box(
                 modifier =
                     Modifier
-                        .size(240.dp)
+                        .size(MultiverseComponentDimensions.splashCookie)
                         // The Portal Glow around the cookie (`UI_SPEC.md` §6.1).
-                        .dropShadow(Cookie9, Shadow(radius = 48.dp, color = MultiverseBrandColors.portalGlow.copy(alpha = 0.45f)))
+                        .dropShadow(Cookie9, Shadow(radius = MultiverseComponentDimensions.splashGlowRadius, color = MultiverseBrandColors.portalGlow.copy(alpha = 0.45f)))
                         .clip(Cookie9)
                         .background(MultiverseColors.primaryContainer),
                 contentAlignment = Alignment.Center,
@@ -113,24 +128,24 @@ public fun BrandedSplash(
                 PortalMark(
                     modifier =
                         Modifier
-                            .size(160.dp)
+                            .size(MultiverseComponentDimensions.splashPortal)
                             .rotate(rotation)
                             .alpha(pulse),
                 )
             }
             Text(
-                text = CopyResolver.copy("splash_wordmark"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_WORDMARK.value),
                 style = MaterialTheme.typography.displayMediumEmphasized,
                 color = MultiverseColors.onSurface,
             )
             Text(
-                text = CopyResolver.copy("splash_wordmark_sub"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_WORDMARK_SUB.value),
                 // "EXPLORER" carries +8 sp tracking (`UI_SPEC.md` §3.4).
                 style = MaterialTheme.typography.labelLargeEmphasized.copy(letterSpacing = 8.sp),
                 color = MultiverseColors.primary,
             )
             Text(
-                text = CopyResolver.copy("splash_tagline"),
+                text = CopyResolver.copy(CopyKeys.SPLASH_TAGLINE.value),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MultiverseColors.onSurfaceVariant,
             )
@@ -139,21 +154,29 @@ public fun BrandedSplash(
 }
 
 /**
- * Whether the platform asks for reduced motion: Android keeps the setting in the animator duration
- * scale, which is `0` when animations are disabled. The value is read at composition, so a screen
- * honours a setting change the next time it is composed.
+ * Whether the platform asks for reduced motion (`REQ-UX-007`): Android keeps the setting in the animator
+ * duration scale, which is `0` when animations are disabled. The setting is **observed**, not read once:
+ * a change made while the app runs reaches every composition that reads it.
  */
 @Composable
 public fun rememberReduceMotion(): Boolean {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    return androidx.compose.runtime.remember(context) {
-        android.provider.Settings.Global.getFloat(
-            context.contentResolver,
-            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) == 0f
+    val resolver = LocalContext.current.contentResolver
+    var reduced by remember(resolver) { mutableStateOf(readReduceMotion(resolver)) }
+    DisposableEffect(resolver) {
+        val observer =
+            object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean) {
+                    reduced = readReduceMotion(resolver)
+                }
+            }
+        resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, observer)
+        onDispose { resolver.unregisterContentObserver(observer) }
     }
+    return reduced
 }
+
+private fun readReduceMotion(resolver: ContentResolver): Boolean =
+    Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
 /**
  * The portal's angle while it spins (`UI_SPEC.md` §7), read on the frame clock: the elapsed time since
@@ -211,10 +234,8 @@ private val PortalAcceleration = CubicBezierEasing(0.32f, 0f, 0.67f, 0f)
 /** The portal itself: Figma's multi-tone spiral, drawn untinted so the rotation is visible. */
 @Composable
 private fun PortalMark(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.Image(
-        painter =
-            androidx.compose.ui.res
-                .painterResource(id = SPLASH_PORTAL_DRAWABLE),
+    Image(
+        painter = painterResource(id = SPLASH_PORTAL_DRAWABLE),
         contentDescription = null,
         modifier = modifier,
     )

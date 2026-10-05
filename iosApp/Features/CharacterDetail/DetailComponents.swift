@@ -90,16 +90,16 @@ struct DetailStatsRow: View {
             if let episodeCount {
                 stat(
                     value: String(episodeCount),
-                    label: copy("detail_stat_episodes"),
+                    label: copy(.detailStatEpisodes),
                     tint: MultiverseBrandColors.portalGlow
                 )
                 separator
             }
             if let dimension {
-                stat(value: dimension, label: copy("detail_stat_dimension"), tint: MultiverseLabelColors.primary)
+                stat(value: dimension, label: copy(.detailStatDimension), tint: MultiverseLabelColors.primary)
                 separator
             }
-            stat(value: species, label: copy("detail_stat_species"), tint: MultiverseLabelColors.primary)
+            stat(value: species, label: copy(.detailStatSpecies), tint: MultiverseLabelColors.primary)
         }
     }
 
@@ -134,6 +134,10 @@ struct DetailStatsRow: View {
     }
 
     private func copy(_ key: String) -> String {
+        LocalizedCopy.shared.text(for: key)
+    }
+
+    private func copy(_ key: CopyKey) -> String {
         LocalizedCopy.shared.text(for: key)
     }
 }

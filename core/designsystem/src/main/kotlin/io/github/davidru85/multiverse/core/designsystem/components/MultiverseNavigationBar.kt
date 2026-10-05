@@ -18,17 +18,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /** One destination of the app-wide navigation bar (`UI_SPEC.md` §4.1). */
 public data class NavigationDestination(
@@ -75,7 +74,7 @@ public fun MultiverseNavigationBar(
         Column {
             rows.forEach { rowDestinations ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = MultiverseDimensions.spaceXs),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     rowDestinations.forEach { destination ->
@@ -112,22 +111,6 @@ public fun MultiverseNavigationBar(
             Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
     }
-}
-
-/** The 24 dp gesture-inset area the Figma component adds below the bar (`UI_SPEC.md` §1.2). */
-@Composable
-public fun NavigationBarGestureInset(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.layout
-        .Box(modifier = modifier.fillMaxWidth().padding(vertical = 12.dp))
-}
-
-/** A painter-shaped overload for a caller whose icons are painters rather than vectors. */
-@Composable
-public fun NavigationBarIcon(
-    painter: Painter,
-    modifier: Modifier = Modifier,
-) {
-    Icon(painter = painter, contentDescription = null, modifier = modifier)
 }
 
 @Preview

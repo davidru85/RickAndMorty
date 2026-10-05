@@ -15,7 +15,7 @@ final class DiscoveryStateHolderTests: XCTestCase {
         let pager = RecordingCharacterPager()
         let initial = CharacterFilter(query: "", status: StatusFilter.alive)
 
-        let holder = DiscoveryStateHolder(pager: pager, initialFilter: initial)
+        let holder = DiscoveryStateHolder(pagerFactory: { _ in pager }, initialFilter: initial)
 
         // The reducer runs on the main dispatcher, so the request lands after this frame yields.
         for _ in 0..<50 where pager.requestedFilters.isEmpty {
@@ -29,11 +29,11 @@ final class DiscoveryStateHolderTests: XCTestCase {
         XCTAssertTrue(holder.state.loadState is LoadStateLoading, "nothing has loaded yet, so the state stays Loading")
     }
 
-    func test_PERF_004_given_an_unchanged_state_when_the_holder_polls_then_it_publishes_nothing() async {
-        // The holder polls the shared `StateFlow` every frame; republishing an unchanged value makes
-        // SwiftUI re-evaluate the whole screen 60 times a second while nothing happens.
+    func test_PERF_004_given_an_unchanged_state_when_the_holder_observes_then_it_publishes_nothing() async {
+        // The holder observes the shared `StateFlow` (`DEC-143`); republishing an unchanged value would
+        // make SwiftUI re-evaluate the whole screen while nothing happens.
         let holder = DiscoveryStateHolder(
-            pager: RecordingCharacterPager(),
+            pagerFactory: { _ in RecordingCharacterPager() },
             initialFilter: CharacterFilter(query: "", status: StatusFilter.all)
         )
         try? await Task.sleep(nanoseconds: 100_000_000)
@@ -48,7 +48,7 @@ final class DiscoveryStateHolderTests: XCTestCase {
 }
 
 /// A `CharacterPager` that records the filters it is asked for and never publishes a page.
-private final class RecordingCharacterPager: CharacterPager {
+final class RecordingCharacterPager: CharacterPager {
     private(set) var requestedFilters: [CharacterFilter] = []
 
     /// A flow that never emits: the case is about the request, not about rendering a result.

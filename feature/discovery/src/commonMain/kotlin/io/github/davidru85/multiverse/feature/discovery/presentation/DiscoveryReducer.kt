@@ -1,6 +1,7 @@
 package io.github.davidru85.multiverse.feature.discovery.presentation
 
 import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
+import io.github.davidru85.multiverse.core.domain.model.CharacterSummary
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.paging.PagerState
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
@@ -72,11 +73,16 @@ public class DiscoveryReducer(
 
     /**
      * The pager's last published state. `IC-014` exposes `Flow`, not `StateFlow` (`DEC-091` keeps the
-     * contract free of presentation types), so the last observed value is kept here for the places
-     * that need it synchronously: an intent arriving before any filter choice, and `Retry`, whose
-     * meaning depends on whether a failure or stale content is on screen.
+     * contract free of presentation types), so the reducer holds it as one, for the places that need it
+     * synchronously — an intent arriving before any filter choice, and `Retry`, whose meaning depends on
+     * whether a failure or stale content is on screen — and for [state], which renders from it. Holding
+     * it is a collection of its own, so no transform writes state as a side effect.
      */
-    private val observed = MutableStateFlow<PagerState?>(null)
+    private val observed: StateFlow<PagerState?> = pager.state.stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** The last rendered items and their cards, so a render re-maps only the summaries that changed. */
+    private var lastItems: List<CharacterSummary> = emptyList()
+    private var lastCards: List<CharacterCardUi> = emptyList()
 
     /** The filter the user has chosen; only a settled query or an immediate status change replaces it. */
     private val desired = MutableStateFlow<CharacterFilter?>(null)
@@ -94,7 +100,7 @@ public class DiscoveryReducer(
      */
     public val state: StateFlow<CharacterListUiState> =
         combine(
-            pager.state.onEach { observed.value = it },
+            observed.filterNotNull(),
             loading,
             refreshing,
             ::render,
@@ -260,7 +266,7 @@ public class DiscoveryReducer(
         val content = loadState == LoadState.Content
         return CharacterListUiState(
             filter = state.filter,
-            items = state.items.map { CharacterCardUi.from(it, formatters) },
+            items = cardsFor(state.items),
             totalCount = state.totalCount,
             loadState = loadState,
             isAppending = content && state.isAppending,
@@ -268,6 +274,22 @@ public class DiscoveryReducer(
             contentFailure = state.failure?.takeIf { content && !state.isAppending && !isRefreshing },
             isRefreshing = isRefreshing,
         )
+    }
+
+    /**
+     * The cards for [items], re-mapping only what changed (`REQ-NFR-003`): an unchanged list is the
+     * previous list itself, and a summary equal to the one rendered last keeps its card. An emission that
+     * only flips a flag — `isAppending`, `isStale` — therefore hands the grid the same list, and a grown
+     * page maps only its new summaries.
+     */
+    private fun cardsFor(items: List<CharacterSummary>): List<CharacterCardUi> {
+        if (items == lastItems) return lastCards
+        val known = HashMap<CharacterSummary, CharacterCardUi>(lastItems.size)
+        lastItems.forEachIndexed { index, summary -> known[summary] = lastCards[index] }
+        val cards = items.map { summary -> known[summary] ?: CharacterCardUi.from(summary, formatters) }
+        lastItems = items
+        lastCards = cards
+        return cards
     }
 
     public companion object {

@@ -76,19 +76,17 @@ enum CharacterPresentation {
     /// inspects the template to guess a type. A message without a placeholder carries no argument and
     /// is returned as the resource file has it.
     static func message(_ message: FailureMessage, copy: LocalizedCopy = .shared) -> String {
-        let template = copy.text(for: key(message.key))
-        guard !message.arguments.isEmpty else { return template }
-        let values: [CVarArg] = message.arguments.map { argument -> CVarArg in
+        let arguments = message.arguments.map { argument -> CopyArgument in
             switch argument {
             case let number as MessageArgumentNumber:
-                return number.value
+                return .number(number.value)
             case let text as MessageArgumentText:
-                return text.value as NSString
+                return .text(text.value)
             default:
                 preconditionFailure("unsupported MessageArgument case \(type(of: argument))")
             }
         }
-        return String(format: template, locale: Locale.current, arguments: values)
+        return copy.text(for: key(message.key), arguments: arguments)
     }
 
     /// The accessibility label of one card (`UI_SPEC.md` §9): the card is **one** merged element, so

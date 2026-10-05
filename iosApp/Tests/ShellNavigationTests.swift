@@ -60,9 +60,9 @@ final class ShellNavigationTests: XCTestCase {
     }
 
     func test_UI_SPEC_6_4_given_each_placeholder_when_it_renders_then_it_uses_its_canonical_copy_keys() {
-        XCTAssertEqual(ShellDestination.episodes.labelKey, "nav_episodes")
-        XCTAssertEqual(ShellDestination.favorites.labelKey, "nav_favorites")
-        XCTAssertEqual(ShellDestination.settings.labelKey, "nav_settings")
-        XCTAssertEqual(ShellDestination.characters.labelKey, "nav_characters")
+        XCTAssertEqual(ShellDestination.episodes.labelKey.rawValue, "nav_episodes")
+        XCTAssertEqual(ShellDestination.favorites.labelKey.rawValue, "nav_favorites")
+        XCTAssertEqual(ShellDestination.settings.labelKey.rawValue, "nav_settings")
+        XCTAssertEqual(ShellDestination.characters.labelKey.rawValue, "nav_characters")
     }
 }

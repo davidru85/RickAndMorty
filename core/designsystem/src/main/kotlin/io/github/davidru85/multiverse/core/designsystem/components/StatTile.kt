@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /** Where a tile sits in its connected group, which decides its corners (`UI_SPEC.md` §4.1). */
@@ -53,10 +54,10 @@ public fun StatTile(
     Column(
         modifier =
             modifier
-                .heightIn(min = 76.dp)
+                .heightIn(min = MultiverseComponentDimensions.statTileMinHeight)
                 .clip(position.shape())
                 .background(containerColor)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = MultiverseDimensions.spaceM, vertical = MultiverseComponentDimensions.statTilePaddingVertical),
         verticalArrangement = Arrangement.Center,
     ) {
         // The value wraps rather than truncating: the 76 dp minimum grows with its text (`UI_SPEC.md` §4.1).
@@ -86,11 +87,11 @@ public fun StatTileRow(
 ) {
     val stacked = MultiverseGrid.columnsFor(LocalDensity.current.fontScale) == 1
     if (stacked) {
-        Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceXs)) {
             Tiles(tiles = tiles) { Modifier.fillMaxWidth() }
         }
     } else {
-        Row(modifier = modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceXs)) {
             Tiles(tiles = tiles) { Modifier.weight(1f).fillMaxHeight() }
         }
     }
@@ -147,9 +148,13 @@ public fun InfoListItem(
 ) {
     if (value == null) return
     Row(
-        modifier = modifier.heightIn(min = 72.dp).padding(horizontal = 16.dp),
+        modifier =
+            modifier
+                .heightIn(
+                    min = MultiverseComponentDimensions.statRowMinHeight,
+                ).padding(horizontal = MultiverseDimensions.spaceL),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
     ) {
         SectionGlyph(icon = icon, contentDescription = null)
         Column(modifier = Modifier.weight(1f)) {
@@ -191,7 +196,7 @@ public fun InfoListGroup(
 @Composable
 private fun StatTileRowPreview() {
     MultiverseTheme {
-        Box(modifier = Modifier.padding(12.dp)) {
+        Box(modifier = Modifier.padding(MultiverseDimensions.spaceM)) {
             StatTileRow(
                 tiles =
                     listOf(
@@ -208,7 +213,7 @@ private fun StatTileRowPreview() {
 @Composable
 private fun InfoListItemPreview() {
     MultiverseTheme {
-        Box(modifier = Modifier.padding(12.dp).size(320.dp, 90.dp)) {
+        Box(modifier = Modifier.padding(MultiverseDimensions.spaceM).size(320.dp, 90.dp)) {
             InfoListGroup {
                 InfoListItem(label = "Species", value = "Human", icon = PortraitPreviewIcons.Dot)
             }

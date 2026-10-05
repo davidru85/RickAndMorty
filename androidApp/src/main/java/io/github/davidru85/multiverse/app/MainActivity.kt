@@ -8,10 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
-import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
+import io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.presentation.DetailHandoff
+import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.android.inject
 
@@ -31,7 +32,7 @@ public class MainActivity : ComponentActivity() {
     private val imageSeam: ImageSeam by inject()
 
     /** The one card-accent policy (`UI_SPEC.md` §5.4): every card in the app asks it for its colour. */
-    private val accentPolicy: io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy by inject()
+    private val accentPolicy: CharacterAccentPolicy by inject()
 
     /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()
