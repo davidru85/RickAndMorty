@@ -26,6 +26,7 @@ class MultiverseIconsTest {
         val glyphs =
             mapOf(
                 "Groups" to MultiverseIcons.Groups,
+                "GroupsOutlined" to MultiverseIcons.GroupsOutlined,
                 "PlayArrow" to MultiverseIcons.PlayArrow,
                 "PlayArrowOutlined" to MultiverseIcons.PlayArrowOutlined,
                 "Favorite" to MultiverseIcons.Favorite,
@@ -36,8 +37,17 @@ class MultiverseIconsTest {
             )
         glyphs.forEach { (name, vector) ->
             assertTrue("$name must parse with a non-empty canvas", vector.defaultWidth.value > 0f)
-            val path = (vector.root.first() as androidx.compose.ui.graphics.vector.VectorPath)
-            assertTrue("$name must produce at least one path node", path.pathData.isNotEmpty())
+            val path = firstPath(vector.root)
+            assertTrue("$name must produce at least one path node", path != null && path.pathData.isNotEmpty())
         }
     }
+
+    /** The first path in [group]'s tree: a glyph may sit inside a group that places it on its grid. */
+    private fun firstPath(group: androidx.compose.ui.graphics.vector.VectorGroup): androidx.compose.ui.graphics.vector.VectorPath? =
+        group.firstNotNullOfOrNull { node ->
+            when (node) {
+                is androidx.compose.ui.graphics.vector.VectorPath -> node
+                is androidx.compose.ui.graphics.vector.VectorGroup -> firstPath(node)
+            }
+        }
 }
