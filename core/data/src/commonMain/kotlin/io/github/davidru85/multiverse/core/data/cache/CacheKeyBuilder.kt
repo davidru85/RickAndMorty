@@ -37,18 +37,25 @@ internal object CacheKeyBuilder {
         return key(protocol, method(protocol), characterListPath(protocol), canonicalQuery(parameters))
     }
 
-    /** The key of one character-detail request; `enrich` decides whether the enriched value is stored. */
+    /**
+     * The key of one character-detail request; `enrich` decides whether the enriched value is stored.
+     *
+     * REST names the character in the path; GraphQL posts every request to `/graphql` and names it in
+     * the body's variables, so there the id is a parameter of the key. Without it every GraphQL detail
+     * shared one entry, and the first detail cached answered for every other character (`GAP-035`).
+     */
     fun details(
         protocol: RemoteProtocol,
         id: CharacterId,
         enrich: Boolean,
-    ): CacheKey =
-        key(
-            protocol,
-            method(protocol),
-            detailsPath(protocol, id),
-            canonicalQuery(if (enrich) listOf("enrich" to "true") else emptyList()),
-        )
+    ): CacheKey {
+        val parameters =
+            buildList {
+                if (enrich) add("enrich" to "true")
+                if (protocol == RemoteProtocol.GraphQl) add("id" to id.value)
+            }
+        return key(protocol, method(protocol), detailsPath(protocol, id), canonicalQuery(parameters))
+    }
 
     private fun key(
         protocol: RemoteProtocol,
