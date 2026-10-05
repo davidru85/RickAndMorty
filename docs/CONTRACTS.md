@@ -130,6 +130,7 @@ FavoritesLocalDataSource                 CONTRACTS.md IC-013       :core:data   
 CharacterPager, PagerState               CONTRACTS.md IC-014       :core:domain  commonMain (implemented in :core:data)
 AppSettingsLocalDataSource               CONTRACTS.md IC-022       :core:data    commonMain
 DetailHandoff                            CONTRACTS.md IC-025       :core:presentation  commonMain
+SplashGate                               CONTRACTS.md IC-026       :core:presentation  commonMain (splash package)
 LoadState                                CONTRACTS.md IC-015       :core:presentation  commonMain
 CharacterCardUi                          CONTRACTS.md IC-016       :core:presentation  commonMain
 CopyKey, CopyKeys, DisplayText,          CONTRACTS.md IC-017       :core:presentation  commonMain
@@ -799,8 +800,31 @@ class DetailHandoff {
   - It holds at most one card, and never a list, a page or any network state: a screen reads it once on entry.
   - `consume` returns the held card only when its id equals the requested one; a deep link or a process restart consumes nothing, which is why the detail screen renders from its own state in that case.
   - It is not a cache: the card a consumer receives is the one that was published, and `clear` drops it rather than retaining it.
-  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`), which is the only composition-root edge to it beyond the shared copy keys.
+  - `:androidApp` links `:core:presentation` in production for this declaration (`R11`) and for `IC-026`; beyond those two and the shared copy keys the composition root uses nothing from it.
 - **Traceability:** `REQ-FUNC-002`, `REQ-FUNC-009`, `DESIGN.md` §4.2, `DEC-013`.
+
+### IC-026 — `SplashGate`
+
+- **Declaration** (`:core:presentation`, `commonMain`, `splash` package):
+
+```kotlin
+class SplashGate(
+    repository: CharacterRepository,
+    dispatcher: CoroutineDispatcher,
+    val minimum: Duration = MINIMUM,   // 1.2 s
+    val maximum: Duration = MAXIMUM,   // 3 s
+) {
+    suspend fun awaitReady(): DataResult<*>?
+}
+```
+
+- **Semantics:** the splash readiness gate of `DEC-098`, shared by both shells since `DEC-136`. The Android shell awaits it in its splash overlay, and the iOS root view awaits it through `MultiverseBootstrap.awaitSplashReady(onReady)`, so the two splashes end by one policy (`REQ-FUNC-007`, `UI_SPEC.md` §6.1).
+- **Invariants**
+  - `awaitReady` returns no sooner than `minimum` and no later than `maximum`, measured on the injected dispatcher's clock; no wall clock is read.
+  - It completes on the first page's **outcome** — a success or a failure — and returns it; it returns `null` when the ceiling expired first. A failure never holds the splash (`AC-REQ-FUNC-007-2`).
+  - Its one request is `CharacterRepository.page(CharacterFilter(), 1)` under the default policy, the page the first screen loads, so the splash warms that entry instead of costing a request of its own.
+  - A shell shows the splash once per launch: the Android "ready" flag lives in saved state, so a configuration change does not replay it.
+- **Traceability:** `REQ-FUNC-007`, `DEC-098`, `DEC-136`, `TEST-UI-006`, `TEST-UNIT-084`, `TEST-UI-026`.
 
 ### IC-018 — `CharacterListUiState` and `CharacterListIntent`
 
@@ -1101,6 +1125,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-05 | `IC-026` added (`TASK-112`): the splash gate moves from `:androidApp` to `:core:presentation` and serves both shells; iOS awaits it through `MultiverseBootstrap.awaitSplashReady`. | `DEC-136` |
 | 2026-10-05 | `IC-017` (`TASK-112`): `PluralKey`, `CopyKeys.plurals` and the first plural key `detail_appears_in_episodes`; Android `<plurals>` through `CopyResolver.plural`, Apple `Localizable.stringsdict` through `LocalizedCopy.plural`. Additive for the Swift consumer. | `DEC-132` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `Recovery`, `recovery(failure)` and `inlineFailureMessage(failure)`; a not-found Detail is recovered by Back, and a failure without a header renders the full-surface error. Additive for the Swift consumer. | `DEC-131` |
 | 2026-10-05 | `IC-017`/`IC-019` (`TASK-112`): `genderKey(CharacterGender)` and the keys `gender_female`, `gender_male`, `gender_genderless`; `CharacterDetailUiState.gender: CopyKey?`. Breaking for the Swift consumer (§8.2), whose initialiser gains the parameter; the iOS app and its tests change in the same commit. | `DEC-131` |

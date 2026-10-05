@@ -16,6 +16,7 @@ import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
+import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
 import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavorite
@@ -33,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -159,6 +161,22 @@ public object MultiverseBootstrap {
      * Android shell loads, and this function is how the Swift side receives a dependency.
      */
     public fun characterPager(scope: CoroutineScope): CharacterPager = IosGraph.koin.get { parametersOf(scope) }
+
+    /**
+     * Awaits the shared splash gate (`IC-026`, `DEC-136`) and then calls [onReady] on the main thread:
+     * at least 1.2 s, at most 3 s, ended by the first page's outcome — the policy the Android shell
+     * awaits, over the graph's own repository, so the splash warms the page Discovery loads first.
+     *
+     * A callback rather than a suspending function, like every other Swift entry here: the Swift
+     * caller resumes its own continuation, and no Kotlin coroutine is driven from Swift.
+     */
+    public fun awaitSplashReady(onReady: () -> Unit) {
+        val gate = SplashGate(IosGraph.koin.get<CharacterRepository>(), Dispatchers.Default)
+        CoroutineScope(Dispatchers.Main).launch {
+            gate.awaitReady()
+            onReady()
+        }
+    }
 
     /**
      * The Detail screen's dependencies (`IC-019`, `TASK-055`).

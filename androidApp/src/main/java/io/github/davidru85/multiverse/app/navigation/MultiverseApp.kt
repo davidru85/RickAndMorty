@@ -52,7 +52,7 @@ import io.github.davidru85.multiverse.feature.settings.navigation.Settings
 public fun MultiverseApp(
     navController: androidx.navigation.NavHostController = rememberNavController(),
     /** The readiness gate (`TASK-007`); a caller may supply one, and `null` skips the splash. */
-    splashGate: io.github.davidru85.multiverse.app.splash.SplashGate? = null,
+    splashGate: io.github.davidru85.multiverse.core.presentation.splash.SplashGate? = null,
     /** The one image seam every portrait draws through (`DEC-097`); the shell owns the loader. */
     imageSeam: io.github.davidru85.multiverse.core.designsystem.image.ImageSeam = NO_IMAGE_SEAM,
     /** The card-to-detail hand-off (`IC-025`); the shell owns the one instance. */
@@ -186,9 +186,15 @@ public fun MultiverseApp(
  * with the composition rather than leaking a request.
  */
 @Composable
-private fun rememberSplashReady(gate: io.github.davidru85.multiverse.app.splash.SplashGate): Boolean {
-    val ready = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+private fun rememberSplashReady(gate: io.github.davidru85.multiverse.core.presentation.splash.SplashGate): Boolean {
+    // Saved state, not `remember`: a configuration change recreates the activity, and the splash
+    // must not replay over a list that is already on screen (`DEC-136`).
+    val ready =
+        androidx.compose.runtime.saveable.rememberSaveable {
+            androidx.compose.runtime.mutableStateOf(false)
+        }
     androidx.compose.runtime.LaunchedEffect(gate) {
+        if (ready.value) return@LaunchedEffect
         gate.awaitReady()
         ready.value = true
     }
