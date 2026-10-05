@@ -21,12 +21,14 @@ import org.gradle.api.tasks.VerificationTask
  * `TESTING.md` §3.3 would if they were prose, so the conditions a build can decide are enforced here:
  *
  * - `DOC1` every document carries the header block of `AGENTS.md` §10;
- * - `DOC2` every relative link to a Markdown file resolves;
- * - `DOC4` no identifier is duplicated **within its own namespace**;
- * - `DOC6` every `CONF-###`/`GAP-###` row in the audit names a severity, an owner and a blocked
- *   artifact;
- * - `DOC8` no placeholder marker survives (an assumption with an owner and a date is documentation
- *   and is not a placeholder, which `DEFINITION.md` §6 states explicitly).
+ * - `DOC2` every relative link resolves, whatever kind of file it names;
+ * - `DOC4` an identifier is defined once in the file that defines it: a `DEC-###`, `ADR-####` or
+ *   `TASK-###` table row, and a heading that opens with an identifier (`LOG-####`, `REQ-*`, `IC-###`);
+ * - `DOC6` every `CONF-###`/`GAP-###` row in the audit fills the columns its table declares, and an
+ *   open one names a severity;
+ * - `DOC8` no placeholder marker and no angle-bracket template survives in prose, table rows
+ *   included (an assumption with an owner and a date is documentation and is not a placeholder,
+ *   which `DEFINITION.md` §6 states explicitly; a marker quoted in code is prose about the rule).
  *
  * `DOC3`, `DOC5` and `DOC7` are review conditions — they need a judgement about whether two files
  * claim one topic, whether every requirement maps to a task and a test, and whether the audit matches
@@ -34,7 +36,7 @@ import org.gradle.api.tasks.VerificationTask
  * a text search that would pass without settling them.
  *
  * The task fails closed and reports a repository-relative path with a line where it has one; it never
- * rewrites a document.
+ * rewrites a document. `TEST-UNIT-063` holds each decision.
  */
 public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), VerificationTask {
     /** The documentation files the gate reads. */
@@ -66,10 +68,9 @@ public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), Verifica
             checkHeader(relative, text, findings)
             checkLinks(relative, file, root, text, findings)
             checkPlaceholders(relative, lines, findings)
-            checkIdentifiers(relative, text, findings)
+            checkDefinitions(relative, text, findings)
             if (relative == "docs/DOCUMENTATION_AUDIT.md") checkAuditRows(relative, lines, findings)
         }
-        checkNoDuplicateIdentifiersAcrossFiles(files, root, findings)
 
         val report =
             buildString {
@@ -104,7 +105,7 @@ public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), Verifica
         }
     }
 
-    /** `DOC2`: every relative `*.md` link resolves. */
+    /** `DOC2`: every relative link in prose resolves, to a document, a source file or an export. */
     private fun checkLinks(
         relative: String,
         file: File,
@@ -112,102 +113,115 @@ public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), Verifica
         text: String,
         findings: MutableList<String>,
     ) {
-        LINK.findAll(text).forEach { match ->
-            val target = match.groupValues[1]
-            if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("#")) return@forEach
-            val resolved = File(file.parentFile, target).canonicalFile
-            if (!resolved.exists()) {
-                findings += "$relative: the link `$target` does not resolve (DOC2)"
+        prose(text.lines()).forEach { (_, line) ->
+            LINK.findAll(line).forEach { match ->
+                val target = match.groupValues[1].substringBefore('#')
+                // An anchor in the same document and a URL with a scheme are not relative links.
+                if (target.isEmpty() || SCHEME.containsMatchIn(target)) return@forEach
+                if (!File(file.parentFile, target).canonicalFile.exists()) {
+                    findings += "$relative: the link `$target` does not resolve (DOC2)"
+                }
             }
         }
     }
 
-    /** `DOC8`: no placeholder marker. An assumption with an owner and a date is not a placeholder. */
+    /**
+     * `DOC8`: no placeholder marker and no angle-bracket template, in any line of prose — a table row
+     * is prose too, and is where most of the set's content lives.
+     *
+     * A marker quoted in a fenced block or an inline code span is prose *about* the rule, which the
+     * gate's own documents need. A template (`docs/templates/`, the ADR template) keeps the
+     * metavariables its author replaces (`AGENTS.md` §3). An assumption with an owner and a date is
+     * not a placeholder.
+     */
     private fun checkPlaceholders(
         relative: String,
         lines: List<String>,
         findings: MutableList<String>,
     ) {
-        lines.forEachIndexed { index, line ->
-            // The gate's own documentation quotes the markers, and a document may *describe* the rule,
-            // so a line inside a fenced code block or an inline code span is prose about the rule.
-            if (line.trimStart().startsWith("```") || line.trimStart().startsWith("|")) return@forEachIndexed
-            PLACEHOLDER_MARKERS.forEach { marker ->
-                if (line.contains(marker)) {
-                    findings += "$relative:${index + 1}: the placeholder `$marker` remains (DOC8)"
+        val template = relative.startsWith("docs/templates/") || relative == "docs/adr/0000-adr-template.md"
+        prose(lines).forEach { (index, line) ->
+            PLACEHOLDER.findAll(line).forEach { match ->
+                findings += "$relative:${index + 1}: the placeholder `${match.value}` remains (DOC8)"
+            }
+            if (template) return@forEach
+            ANGLE_BRACKETS.findAll(line).forEach { match ->
+                val content = match.groupValues[1]
+                val element = content.substringBefore(' ').trimEnd('/').lowercase()
+                if (element !in HTML_ELEMENTS && !content.contains("://") && !content.contains('@')) {
+                    findings += "$relative:${index + 1}: the template `${match.value}` remains (DOC8)"
                 }
             }
         }
     }
 
-    /** `DOC4`: an identifier may not appear twice **within one namespace in one file**. */
-    private fun checkIdentifiers(
+    /**
+     * The lines outside a fenced block, with their index. Unless [keepCode] is set, an inline code
+     * span is removed, so a quoted marker, path or template is not read as the thing it quotes; a
+     * definition keeps it, because an identifier cell or heading is often written in code.
+     */
+    private fun prose(
+        lines: List<String>,
+        keepCode: Boolean = false,
+    ): List<Pair<Int, String>> {
+        var fenced = false
+        return lines.mapIndexedNotNull { index, line ->
+            val trimmed = line.trimStart()
+            if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+                fenced = !fenced
+                return@mapIndexedNotNull null
+            }
+            when {
+                fenced -> null
+                keepCode -> index to line
+                else -> index to CODE_SPAN.replace(line, "")
+            }
+        }
+    }
+
+    /**
+     * `DOC4`, the decidable half: an identifier is defined once in the file that defines it.
+     *
+     * A definition is a table row whose **own** first cell is a `DEC-###`, `ADR-####` or `TASK-###`
+     * and nothing else, or a heading that opens with an identifier (`### LOG-0114 · …`,
+     * `#### REQ-FUNC-001 — …`, `### IC-007 …`). A block table, a phase table or a membership list
+     * names a task inside a text cell, which is a citation; counting those was the first draft's
+     * false positive. Whether one id was given to two different artefacts in two different tables
+     * stays with the review.
+     */
+    private fun checkDefinitions(
         relative: String,
         text: String,
         findings: MutableList<String>,
     ) {
-        val seen = mutableMapOf<String, Int>()
-        IDENTIFIER.findAll(text).forEach { match ->
-            val id = match.groupValues[1]
-            val namespace = id.substringBefore('-')
-            val key = "$namespace:$id"
-            seen[key] = (seen[key] ?: 0) + 1
+        // A decision has one definition (§2) and a deferred register (§4) that lists it again by
+        // design, so only the region before the deferred register is checked for definitions.
+        val definitionText = if (relative == "docs/DECISION_BOARD.md") text.substringBefore("## 4.") else text
+        val defined = mutableMapOf<String, Int>()
+        prose(definitionText.lines(), keepCode = true).forEach { (_, line) ->
+            val trimmed = line.trimStart()
+            val id =
+                when {
+                    trimmed.startsWith("|") ->
+                        trimmed.removePrefix("|").substringBefore('|').trim().trim('`').takeIf { DEFINED_IN_ROWS.matches(it) }
+                    trimmed.startsWith("#") -> DEFINED_IN_HEADINGS.find(trimmed)?.groupValues?.get(1)
+                    else -> null
+                }
+            if (id != null) defined[id] = (defined[id] ?: 0) + 1
         }
-        // A repeated citation is normal (`DEC-046`, `TASK-068` and a requirement id are cited many
-        // times); what would be a defect is one identifier **defined** twice, which a per-file recount
-        // cannot distinguish from citation. The cross-file check below reports a *defining* clash on
-        // the one namespace where duplication is unambiguous.
-    }
-
-    /**
-     * `DOC4`, the decidable half: a `DEC-###`, `ADR-####` or `TASK-###` row is defined once.
-     *
-     * The table rows of the owning indexes are the definitions; a second row with the same id, in the
-     * same file, is a duplicate definition. Citations elsewhere are not definitions, so they are not
-     * counted.
-     */
-    private fun checkNoDuplicateIdentifiersAcrossFiles(
-        files: List<File>,
-        root: File,
-        findings: MutableList<String>,
-    ) {
-        files.forEach { file ->
-            val relative = file.relativeTo(root).path
-            val defined = mutableMapOf<String, Int>()
-            // A decision has one definition (§2) and a deferred register (§4) that lists it again by
-            // design, so only the region before the deferred register is checked for definitions.
-            val definitionText =
-                file.readText().let { text ->
-                    if (relative != "docs/DECISION_BOARD.md") {
-                        text
-                    } else {
-                        text.substringBefore("## 4.")
-                    }
-                }
-            val tableRows = definitionText.lines().filter { it.trimStart().startsWith("|") }
-            tableRows.forEach { row ->
-                // A definition is a row whose **own** first cell is the identifier and nothing else.
-                // A block table, a phase table or a membership list names a task inside a text cell,
-                // which is a citation; counting those was the first draft's false positive.
-                val firstCell = row.removePrefix("|").substringBefore('|').trim().trim('`')
-                if (DEFINED_IDENTIFIERS.matches(firstCell)) {
-                    defined[firstCell] = (defined[firstCell] ?: 0) + 1
-                }
-            }
-            defined.filterValues { it > 1 }.keys.sorted().forEach { id ->
-                findings += "$relative: `$id` is defined more than once (DOC4)"
-            }
+        defined.filterValues { it > 1 }.keys.sorted().forEach { id ->
+            findings += "$relative: `$id` is defined more than once (DOC4)"
         }
     }
 
     /**
-     * `DOC6`: every **open** conflict and gap row names a severity, an owner and a blocked artifact.
+     * `DOC6`: every conflict and gap row fills the columns its table declares, and every row of an
+     * open register names a severity.
      *
-     * The audit has two row shapes and the check must respect both: §6.1 is the *resolved* table
+     * The audit has two row shapes and the check respects both: §6.1 is the *resolved* table
      * (`ID | Item | Resolution`) where a severity would be wrong, while §6.2 and §6.3 are the open
-     * registers (`ID | Sev | … | Owner | …`). The first draft asserted one shape everywhere and
-     * reported a conforming set 76 times, then 117; the third draft below reads the section a row
-     * sits in and asserts only the columns that section's own header declares.
+     * registers (`ID | Sev | … | Owner | …`). Each table's header row declares the shape its rows are
+     * held to, and a table whose header is not an `ID` table is not an id register.
      */
     private fun checkAuditRows(
         relative: String,
@@ -220,48 +234,42 @@ public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), Verifica
             val trimmed = line.trim()
             if (trimmed.startsWith("#")) {
                 // Only the open registers carry a severity column; the resolved table does not.
-                inOpenRegister = OPEN_REGISTER_HEADINGS.any { trimmed.startsWith(it) }
+                inOpenRegister = OPEN_REGISTER_HEADINGS.any { trimmed == it }
                 expectedColumns = 0
                 return@forEachIndexed
             }
             if (!trimmed.startsWith("|")) return@forEachIndexed
-            // A cell's text may contain a `|` (a quoted table fragment, an expression), so the row is
-            // split at its **structural** separators only: the leading and trailing pipes and the
-            // first separator after the id. The first draft split on every pipe and read the id's own
-            // text as extra columns.
-            val cells = splitRow(trimmed)
-            val id = cells.getOrNull(1)?.trim('`').orEmpty()
-            if (cells.getOrNull(1)?.trim() == "ID") {
-                // The header row declares the shape this section asserts.
-                expectedColumns = cells.count { it.isNotEmpty() && it != "ID" && it != "---" }
+            val cells = cells(trimmed)
+            if (cells.first() == "ID") {
+                // The header row declares the shape this table asserts.
+                expectedColumns = cells.size - 1
                 return@forEachIndexed
             }
-            // A section with no declared shape yet is not checked: the gate asserts what the file
-            // itself declares rather than imposing one shape on tables that differ by design.
-            if (expectedColumns == 0) return@forEachIndexed
-            if (!AUDIT_ID.matches(id)) return@forEachIndexed
-            val populated = cells.drop(2).filter { it.isNotEmpty() && it != "---" }
-            if (populated.size < expectedColumns) {
+            val id = cells.first().trim('`')
+            if (expectedColumns == 0 || !AUDIT_ID.matches(id)) return@forEachIndexed
+            val columns = cells.drop(1)
+            val populated = columns.count { it.isNotEmpty() }
+            if (populated < expectedColumns) {
                 findings +=
-                    "$relative:${index + 1}: `$id` carries ${populated.size} of the $expectedColumns " +
-                        "columns its section declares (DOC6)"
+                    "$relative:${index + 1}: `$id` carries $populated of the $expectedColumns " +
+                        "columns its table declares (DOC6)"
             }
-            if (inOpenRegister && populated.none { SEVERITY.matches(it) }) {
+            if (inOpenRegister && columns.none { SEVERITY.matches(it.trim('`', '*')) }) {
                 findings += "$relative:${index + 1}: `$id` names no severity (S1–S3) (DOC6)"
             }
         }
     }
 
     /**
-     * The structural cells of a table row: the leading and trailing pipes are stripped, and the id
-     * cell is separated from the text that follows so an embedded `|` cannot be read as a column.
+     * The cells of a table row. A literal `|` inside a cell is escaped (`\|`) in a GitHub table,
+     * even inside a code span, so only an unescaped pipe separates cells.
      */
-    private fun splitRow(row: String): List<String> {
-        val body = row.removePrefix("|").removeSuffix("|")
-        val firstSeparator = body.indexOf('|')
-        if (firstSeparator < 0) return listOf(body.trim())
-        return listOf(body.substring(0, firstSeparator).trim(), body.substring(firstSeparator + 1).trim())
-    }
+    private fun cells(row: String): List<String> =
+        row
+            .removePrefix("|")
+            .removeSuffix("|")
+            .split(CELL_SEPARATOR)
+            .map { it.trim() }
 
     private companion object {
         const val HEADER_WINDOW = 2500
@@ -269,19 +277,34 @@ public abstract class VerifyDocumentedCompletenessTask : DefaultTask(), Verifica
         val MISSING_HEADER_FIELDS =
             listOf("Status:", "Last verified:", "Owner:", "Authoritative for:", "Inputs:")
 
-        val LINK = Regex("""\]\(([^)#\s]+\.md)(?:#[^)]*)?\)""")
+        /** An inline or image link's destination, up to the first space (a title may follow it). */
+        val LINK = Regex("""\]\(([^)\s]+)""")
 
-        val PLACEHOLDER_MARKERS = listOf("TODO:", "TODO ", "FIXME:", "TBD")
+        /** A destination with a scheme (`https:`, `mailto:`) is not a relative link. */
+        val SCHEME = Regex("""^[A-Za-z][A-Za-z0-9+.-]*:""")
 
-        val IDENTIFIER = Regex("""\b(REQ-[A-Z]+-\d{3}|DEC-\d{3}|ADR-\d{4}|IC-\d{3}|TASK-\d{3}|TEST-[A-Z]+-\d{3}|SEC-\d{3}|PERF-\d{3}|LOG-\d{4}|CONF-\d{2,3}|GAP-\d{3})\b""")
+        /** An inline code span, of any backtick run length. */
+        val CODE_SPAN = Regex("""(`+).+?\1""")
 
-        val DEFINED_IDENTIFIERS = Regex("""(DEC-\d{3}|ADR-\d{4}|TASK-\d{3})""")
+        val PLACEHOLDER = Regex("""\b(TODO|FIXME|TBD)\b""")
+
+        /** A bracketed name: a template metavariable, unless it is an HTML element or an autolink. */
+        val ANGLE_BRACKETS = Regex("""<([A-Za-z][^<>]*)>""")
+
+        val HTML_ELEMENTS =
+            setOf("a", "b", "br", "code", "details", "em", "i", "img", "kbd", "p", "pre", "strong", "sub", "summary", "sup")
+
+        val DEFINED_IN_ROWS = Regex("""DEC-\d{3}|ADR-\d{4}|TASK-\d{3}""")
+
+        val DEFINED_IN_HEADINGS = Regex("""^#{2,6}\s+`?(LOG-\d{4}|REQ-[A-Z]+-\d{3}|IC-\d{3}|ADR-\d{4}|DEC-\d{3}|TASK-\d{3})\b""")
+
+        val CELL_SEPARATOR = Regex("""(?<!\\)\|""")
 
         val AUDIT_ID = Regex("""(CONF|GAP)-\d{2,3}""")
 
         /** The audit's open registers, where every row names a severity (`DEFINITION.md` §6 DOC6). */
         val OPEN_REGISTER_HEADINGS = listOf("### 6.2 Open gaps", "### 6.3 Open conflicts")
 
-        val SEVERITY = Regex("""\bS[123]\b""")
+        val SEVERITY = Regex("""S[123]""")
     }
 }
