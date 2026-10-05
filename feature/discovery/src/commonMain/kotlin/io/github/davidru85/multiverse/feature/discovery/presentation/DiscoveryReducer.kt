@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -63,15 +64,22 @@ public class DiscoveryReducer(
     /** `true` while no load has completed for the current filter: the `Loading` arm of the precedence. */
     private val loading = MutableStateFlow(true)
 
-    /** The filter the user has chosen; only a settled query or an immediate status change replaces it. */
-    private val desired = MutableStateFlow<CharacterFilter?>(null)
+    /** `true` while a user refresh is in flight (`DEC-124`). */
+    private val refreshing = MutableStateFlow(false)
+
+    /** Which refresh is the newest, so only that one's end clears [refreshing]. */
+    private val refreshGeneration = MutableStateFlow(0L)
 
     /**
-     * The filter the pager last published. `IC-014` exposes `Flow`, not `StateFlow` (`DEC-091` keeps
-     * the contract free of presentation types), so the last observed value is kept here for the two
-     * places that need it synchronously: the identity check and an intent arriving before any choice.
+     * The pager's last published state. `IC-014` exposes `Flow`, not `StateFlow` (`DEC-091` keeps the
+     * contract free of presentation types), so the last observed value is kept here for the places
+     * that need it synchronously: an intent arriving before any filter choice, and `Retry`, whose
+     * meaning depends on whether a failure or stale content is on screen.
      */
-    private val observedFilter = MutableStateFlow(CharacterFilter())
+    private val observed = MutableStateFlow<PagerState?>(null)
+
+    /** The filter the user has chosen; only a settled query or an immediate status change replaces it. */
+    private val desired = MutableStateFlow<CharacterFilter?>(null)
 
     /** The filter the pager was last asked for, so a settled query that changes nothing is no request. */
     private var requestedFilter: CharacterFilter? = null
@@ -85,8 +93,12 @@ public class DiscoveryReducer(
      * load has completed before [start] runs.
      */
     public val state: StateFlow<CharacterListUiState> =
-        combine(pager.state.onEach { observedFilter.value = it.filter }, loading, ::render)
-            .stateIn(scope, SharingStarted.Eagerly, CharacterListUiState())
+        combine(
+            pager.state.onEach { observed.value = it },
+            loading,
+            refreshing,
+            ::render,
+        ).stateIn(scope, SharingStarted.Eagerly, CharacterListUiState())
 
     /** Dispatches [intent]; a view never reaches a repository or a use case directly. */
     public fun onIntent(intent: CharacterListIntent) {
@@ -139,8 +151,31 @@ public class DiscoveryReducer(
             // so a query or status change made during a load supersedes it at once through `IC-014`'s
             // generation guard instead of waiting behind it (`DEC-124`).
             CharacterListIntent.LoadNextPage -> scope.launch(dispatcher) { pager.next() }
-            CharacterListIntent.Refresh -> scope.launch(dispatcher) { pager.refresh() }
-            CharacterListIntent.Retry -> retry()
+            CharacterListIntent.Refresh -> refresh()
+            // The failed load is what a Retry re-attempts; with none, stale content is what it
+            // revalidates — the stale banner's action (`ERROR_FLOW.md` §9) — and otherwise there is
+            // nothing to recover (`DEC-124`).
+            CharacterListIntent.Retry -> {
+                val current = observed.value
+                when {
+                    current?.failure != null -> retry()
+                    current?.isStale == true -> refresh()
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    /** Revalidates page 1 over the network; [refreshing] holds until the newest refresh ends. */
+    private fun refresh() {
+        val generation = refreshGeneration.updateAndGet { it + 1 }
+        refreshing.value = true
+        scope.launch(dispatcher) {
+            try {
+                pager.refresh()
+            } finally {
+                if (refreshGeneration.value == generation) refreshing.value = false
+            }
         }
     }
 
@@ -181,7 +216,7 @@ public class DiscoveryReducer(
     }
 
     /** The filter the user has settled on, or the pager's own before any choice was recorded. */
-    private fun activeFilter(): CharacterFilter = desired.value ?: observedFilter.value
+    private fun activeFilter(): CharacterFilter = desired.value ?: observed.value?.filter ?: CharacterFilter()
 
     /**
      * `IC-018`'s precedence over one [PagerState] and the session flag, evaluated in order:
@@ -189,11 +224,13 @@ public class DiscoveryReducer(
      * (1) `Loading` while no load has completed for the current filter; (2) `Error` when the newest
      * attempt failed and nothing is displayable; (3) `Empty` when a load completed with no failure and
      * zero items; (4) `Content` otherwise. `isAppending` is true only with `Content`, and `isStale`
-     * implies `Content`, so both are forced off in every other arm.
+     * implies `Content`, so both are forced off in every other arm. `contentFailure` is the pager's
+     * failure beside displayable content, withheld while a load re-attempts it (`DEC-124`).
      */
     public fun render(
         state: PagerState,
         isLoading: Boolean,
+        isRefreshing: Boolean = false,
     ): CharacterListUiState {
         val displayable = state.items.isNotEmpty()
         val loadState =
@@ -211,6 +248,8 @@ public class DiscoveryReducer(
             loadState = loadState,
             isAppending = content && state.isAppending,
             isStale = content && state.isStale,
+            contentFailure = state.failure?.takeIf { content && !state.isAppending && !isRefreshing },
+            isRefreshing = isRefreshing,
         )
     }
 

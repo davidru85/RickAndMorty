@@ -50,7 +50,7 @@ final class DiscoveryNoticeTests: XCTestCase {
         items: [CharacterCardUi]? = nil,
         loadState: any LoadState = LoadStateContent.shared,
         isStale: Bool = false,
-        contentFailure: ApiFailure? = nil,
+        contentFailure: (any ApiFailure)? = nil,
         isRefreshing: Bool = false
     ) -> CharacterListUiState {
         CharacterListUiState(

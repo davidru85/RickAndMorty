@@ -118,7 +118,7 @@ Rendered-state mapping ([`UI_SPEC.md`](UI_SPEC.md) §8 keeps the visuals):
 | `LoadState.Empty` | "Empty search" | List: see §5.1 | `TEST-UNIT-005`, `TEST-UI-009` |
 | `LoadState.Loading`, `isAppending` | "Initial loading", "Paging" | List: skeleton cards, contained loading indicator | Rendered by `TEST-UI-016`; the pager transitions that produce `Loading`/`isAppending` are covered by `TEST-UNIT-016` |
 
-"Non-blocking error" in the table means: the previously rendered content stays and the failure is surfaced alongside it; the exact affordance is owned by [`UI_SPEC.md`](UI_SPEC.md) §8.
+"Non-blocking error" in the table means: the previously rendered content stays and the failure is surfaced alongside it; the exact affordance is owned by [`UI_SPEC.md`](UI_SPEC.md) §8. On the list surface the failure travels as `IC-018.contentFailure` and is rendered by the same banner as the stale state — its class-specific message from §4.1 and a Retry that re-attempts the failed load: the failed page for an append, a refresh for a refresh, never discarding loaded pages (§10 rule 4, `DEC-124`).
 
 ### 4.1 Copy key register
 
@@ -209,7 +209,7 @@ Applies to `GetCharacterDetails(id, enrich = true)` and the bounded episode batc
 ## 9. Stale and offline rendering with cache
 
 - `isStale = true` means "the rendered value came from the cache and the freshness window has passed" ([`API_SPECS.md`](API_SPECS.md) §3, §7.3). It is set by the data layer, never by a view.
-- The stale banner binds `state_stale_banner` ("Showing saved results") and carries the Retry action; per [`UI_SPEC.md`](UI_SPEC.md) §8 it is a snackbar on Android and a bottom glass banner on iOS.
+- The stale banner binds `state_stale_banner` ("Showing saved results") and carries the Retry action; per [`UI_SPEC.md`](UI_SPEC.md) §8 it is a snackbar on Android and a bottom glass banner on iOS. With no failure to re-attempt, that Retry revalidates page 1 over the network (`refresh()`, `ForceNetwork`), so the banner's action always reaches the network rather than doing nothing; while that refresh is in flight the banner is withheld (`IC-018.isRefreshing`, `DEC-124`).
 - Stale content is still content: it renders the full grid or detail, never the error surface, while the entry is inside the 30-day offline window.
 - Outside the 30-day window the entry is not usable and the state degrades to the class-specific error for the failure that prevented revalidation.
 - An offline detail screen with a cached entry renders and shows the same banner; the header still comes from the list data for an immediate transition.
@@ -283,3 +283,4 @@ A test identifier is never cited here as evidence for copy wording. The failure-
 | 2026-10-03 | `TASK-022` delivered the failure chain: `IC-017` gains `failureMessage`, `failureTitle`, `retryAction` and `isAutomaticallyRetryable`, and the rate-limit countdown closes `GAP-027` — the number travels as an argument of `error_message_rate_limited`, so both platforms substitute the same value from their own resource file. The §4 matrix is driven fixture by fixture through the real REST adapter. | `TASK-022`, `GAP-027`, `REQ-FUNC-022`, `DEC-015` |
 | 2026-10-03 | §1 and §4.1 state where the copy lives: the key names in `CopyKeys` (`IC-017`), the English and Spanish strings in the platform resource files, held identical by `TEST-UNIT-036`; the earlier wording gave the strings to the key list (`CONF-75`). | `DEC-095`, `TASK-041` |
 | 2026-10-05 | §4 and §4.1: the rate-limit message without usable advice is its own key, `error_message_rate_limited_no_countdown`, and the countdown argument is typed (`IC-017`). Android had crashed formatting `%d` with a `String`; iOS rendered a pointer value or a raw `%1$ld`. | `DEC-123`, `TASK-111` |
+| 2026-10-05 | §4 and §9: the list surface carries a failure beside displayable content as `IC-018.contentFailure`, rendered by the stale banner's component with its own message and Retry; a Retry over stale content with no failure revalidates over the network. | `DEC-124`, `TASK-111` |

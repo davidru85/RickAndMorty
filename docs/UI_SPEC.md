@@ -535,7 +535,8 @@ These states are required by `REQUIREMENTS.md` (Should-Have: error handling) and
 | Paging | Contained loading indicator as the last grid item | `ProgressView` in a glass capsule as the last item |
 | Empty search | Portal logo (40%) + "No one in this dimension matches “query”" + "Clear filters" button | Same content in `ContentUnavailableView` |
 | Offline / error (no cache) | Portal logo + "Portal link lost" + `ApiFailure`-specific message + "Retry" | `ContentUnavailableView` + Retry glass button |
-| Stale / offline with cache | Content visible; snackbar "Showing saved results" with Retry | Content visible; glass banner in the bottom accessory |
+| Stale / offline with cache | Content visible; snackbar "Showing saved results" with Retry | Content visible; glass banner at the bottom with the same copy and Retry |
+| Failed page or refresh over content (`DEC-124`) | Content visible; the same snackbar with the failure's own message (`ERROR_FLOW.md` §4.1) and Retry | Content visible; the same bottom glass banner with the failure's message and Retry |
 | Detail load failure | Keep list data (name, image, status) and show inline retry in place of the info list | Same, inside the frosted panel |
 | Settings: no favorites | "Delete favorites" button in the M3 disabled colours; the explanation stays | `Row - Button` `Disabled` value (`.disabled(true)`); the footer stays |
 

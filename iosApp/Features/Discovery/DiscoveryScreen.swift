@@ -197,12 +197,11 @@ struct DiscoveryScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// The grid of glass cards, with the stale banner over it and the paging indicator as its last
-    /// item (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
+    /// The grid of glass cards, with the paging indicator as its last item and the non-blocking notice
+    /// at the bottom (`UI_SPEC.md` §8). The Tall/Regular alternation is the spec's `index % 4 == 0 || 3`.
     private var grid: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MultiverseDimensions.spaceM) {
-                if state.isStale { staleBanner }
                 LazyVGrid(columns: gridColumns, spacing: MultiverseDimensions.gridGutter) {
                     if state.loadState is LoadStateLoading {
                         skeletonGrid
@@ -214,6 +213,11 @@ struct DiscoveryScreen: View {
                 pagingSentinel
             }
             .padding(MultiverseDimensions.spaceM)
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let notice = DiscoveryNotice.make(for: state) {
+                noticeBanner(notice)
+            }
         }
     }
 
@@ -270,16 +274,22 @@ struct DiscoveryScreen: View {
         }
     }
 
-    /// The stale banner of `UI_SPEC.md` §8: the content stays visible while its provenance is stated
-    /// (`ERROR_FLOW.md` §9).
-    private var staleBanner: some View {
-        Text(copy("state_stale_banner"))
-            .font(MultiverseType.subheadline)
-            .foregroundStyle(MultiverseColors.onSecondaryContainer)
-            .padding(.horizontal, MultiverseDimensions.spaceL)
-            .padding(.vertical, MultiverseDimensions.spaceS)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassSurface(.capsule, tint: MultiverseColors.secondaryContainer)
+    /// The bottom glass banner of `UI_SPEC.md` §8: the content stays visible while the stale state or
+    /// the failed load is stated, and its Retry recovers either (`ERROR_FLOW.md` §4, §9, `DEC-124`).
+    private func noticeBanner(_ notice: DiscoveryNotice) -> some View {
+        HStack(spacing: MultiverseDimensions.spaceM) {
+            Text(notice.message)
+                .font(MultiverseType.subheadline)
+                .foregroundStyle(MultiverseColors.onSecondaryContainer)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            GlassTextButton(label: notice.actionLabel) {
+                onIntent(CharacterListIntentRetry.shared)
+            }
+        }
+        .padding(.horizontal, MultiverseDimensions.spaceL)
+        .padding(.vertical, MultiverseDimensions.spaceS)
+        .glassSurface(.rounded(MultiverseDimensions.spaceL), tint: MultiverseColors.secondaryContainer)
+        .padding(MultiverseDimensions.spaceM)
     }
 
     /// The paging indicator as the last grid item (`UI_SPEC.md` §8): a `ProgressView` in a glass

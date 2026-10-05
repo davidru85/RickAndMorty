@@ -19,6 +19,7 @@
 		2200BCA1C413F6A7CDCAFE8B /* GlassButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */; };
 		24399A57F641B15333EB01D6 /* PortraitMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B97A7C1A118838F11C3598 /* PortraitMotionTests.swift */; };
 		2529A0C56A8C0CA1F21E35B9 /* EpisodesPlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2469A5B508F9E036435F8F51 /* EpisodesPlaceholderScreen.swift */; };
+		25D903DA799F094D6FB9570D /* DiscoveryNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980EECE9B6EFFF2375C160D8 /* DiscoveryNotice.swift */; };
 		267BC68D43A11C59F00068F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83AEE7B6BD87BBBEB0B8478 /* RootView.swift */; };
 		279699C3BE84710C549ADB48 /* BrandedSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1AFE1EEBB5398C60FBB7AC /* BrandedSplashView.swift */; };
 		299283721CEAE203B18BFD98 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0422C1E40C05BA5AD16E9B67 /* Tokens.swift */; };
@@ -137,6 +138,7 @@
 		91B81B5ED7D526CB2E20FA0B /* ScreenSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenSnapshotTests.swift; sourceTree = "<group>"; };
 		94FD7939E012D8EBF0CC3B10 /* GlassCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCards.swift; sourceTree = "<group>"; };
 		9739581C43EEFA27FB213EC3 /* MultiverseExplorer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MultiverseExplorer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		980EECE9B6EFFF2375C160D8 /* DiscoveryNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryNotice.swift; sourceTree = "<group>"; };
 		A1554FAB0A3CCB227067C1DD /* DesignSystemSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemSnapshotTests.swift; sourceTree = "<group>"; };
 		A86A01252BFD6D8E063ACC8C /* GlassButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtons.swift; sourceTree = "<group>"; };
 		ABE02E389392D027F75DF3C7 /* HostedRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostedRendering.swift; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 		1CDF8AE67A05619CB6558F59 /* Discovery */ = {
 			isa = PBXGroup;
 			children = (
+				980EECE9B6EFFF2375C160D8 /* DiscoveryNotice.swift */,
 				837132E6AA12B68565764C17 /* DiscoveryScreen.swift */,
 				27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */,
 			);
@@ -518,6 +521,7 @@
 				9D9588F75BA35A86DCC9D383 /* CharacterPortrait.swift in Sources */,
 				B2EFC053776A70497721EF77 /* CharacterPresentation.swift in Sources */,
 				34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */,
+				25D903DA799F094D6FB9570D /* DiscoveryNotice.swift in Sources */,
 				3265BF815A15713DDFA6BDFE /* DiscoveryScreen.swift in Sources */,
 				A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */,
 				C12B109F91909463515EB506 /* EmptyState.swift in Sources */,
