@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -84,10 +85,8 @@ public class DiscoveryReducer(
      * load has completed before [start] runs.
      */
     public val state: StateFlow<CharacterListUiState> =
-        combine(pager.state, loading) { pagerState, isLoading ->
-            observedFilter.value = pagerState.filter
-            render(pagerState, isLoading)
-        }.stateIn(scope, SharingStarted.Eagerly, CharacterListUiState())
+        combine(pager.state.onEach { observedFilter.value = it.filter }, loading, ::render)
+            .stateIn(scope, SharingStarted.Eagerly, CharacterListUiState())
 
     /** Dispatches [intent]; a view never reaches a repository or a use case directly. */
     public fun onIntent(intent: CharacterListIntent) {
