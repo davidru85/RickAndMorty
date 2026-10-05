@@ -1057,7 +1057,7 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 
 ### LOG-0141 · 2026-10-05 · `TASK-115`: the code-review P3 quality items, and one escalation
 
-- **Event:** `TASK-115` is delivered as one pull request from `feat/task-115-p3`, which starts from `TASK-114`'s head and merges after it (`DEC-133`). Every behaviour increment was observed red, then green, as its own commit pair; the refactors keep their suites green before and after.
+- **Event:** `TASK-115` is delivered as PR #205 from `feat/task-115-p3`, which starts from `TASK-114`'s head and merges after it (`DEC-133`). Every behaviour increment was observed red, then green, as its own commit pair; the refactors keep their suites green before and after.
 - **iOS state and lifetime:**
   - The four Swift holders read their `StateFlow` every 16 ms, so the tab holders woke the main actor about 240 times a second with nothing changing. They now hear their state through `StateObserver` (`IC-027`, `TEST-UNIT-094`), owned with the screen's one scope by a `ScreenLifetime` that closes both with the holder (`DEC-143`).
   - Discovery built its pager on a second scope that was never cancelled; it now builds it from the holder's own (`TEST-UNIT-095`).
