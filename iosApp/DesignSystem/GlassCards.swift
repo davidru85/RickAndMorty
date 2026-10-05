@@ -21,8 +21,8 @@ import SwiftUI
 /// `glassEffect` on a current OS, the material fallback on iOS 18 or under Reduce Transparency.
 ///
 /// The portrait is a caller-supplied `Image`, so the card carries no image loader and no domain
-/// type; the spec's parallax (`.scrollTransition` at 0.85× over the 14 pt overscan) belongs to the
-/// scrolling screen that lays the grid out, not to the card.
+/// type. It is overscanned by 14 pt and moves at 0.85× the scroll of whatever scroll view holds the
+/// card ([CardParallax]); outside a scroll view, or with Reduce Motion, it stays centred.
 public struct GlassCharacterCard: View {
     private let name: String
     private let species: String
@@ -46,6 +46,9 @@ public struct GlassCharacterCard: View {
 
     /// The reader's text size (`UI_SPEC.md` §9): at the accessibility sizes the grid is one column.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Reduce Motion disables the portrait's parallax (`UI_SPEC.md` §7).
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public var body: some View {
         shaped
@@ -72,9 +75,18 @@ public struct GlassCharacterCard: View {
                 }
                 .clipped()
         } else {
+            // The portrait is taller than the card by the overscan at each end, and the parallax moves it
+            // within that margin, so no edge of the image ever shows.
             portrait
                 .resizable()
                 .scaledToFill()
+                .frame(
+                    width: MultiverseDimensions.glassCardWidth,
+                    height: MultiverseDimensions.glassCardHeight + 2 * CardParallax.overscan
+                )
+                .visualEffect { [reduceMotion] content, proxy in
+                    content.offset(y: CardParallax.offset(in: proxy, reduceMotion: reduceMotion))
+                }
                 .frame(
                     width: MultiverseDimensions.glassCardWidth,
                     height: MultiverseDimensions.glassCardHeight
@@ -110,6 +122,31 @@ public struct GlassCharacterCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(MultiverseDimensions.spaceM)
         .glassSurface(.rounded(MultiverseDimensions.glassCardBarCorner))
+    }
+}
+
+/// The glass card portrait's scroll parallax (`UI_SPEC.md` §4.2, §7): the portrait moves at 0.85× the
+/// scroll, so inside its card it lags by the remaining 0.15× of the card's distance from the scroll
+/// view's centre, within the 14 pt overscan, and is centred when the card is.
+public enum CardParallax {
+    /// The portrait's overscan at each end (`UI_SPEC.md` §4.2).
+    public static let overscan: CGFloat = MultiverseDimensions.glassCardPortraitOverscan
+
+    /// The portrait's speed relative to the scroll (`UI_SPEC.md` §4.2).
+    public static let speed: CGFloat = 0.85
+
+    /// The portrait's vertical offset inside its card for a card [distanceFromCenter] points below the
+    /// scroll view's centre (negative when above it); none with Reduce Motion.
+    public static func offset(distanceFromCenter: CGFloat, reduceMotion: Bool) -> CGFloat {
+        guard !reduceMotion else { return 0 }
+        return min(max(-distanceFromCenter * (1 - speed), -overscan), overscan)
+    }
+
+    /// The offset for the view [proxy] measures, from its place in the enclosing scroll view; none
+    /// outside a scroll view.
+    public static func offset(in proxy: GeometryProxy, reduceMotion: Bool) -> CGFloat {
+        guard let scroll = proxy.bounds(of: .scrollView) else { return 0 }
+        return offset(distanceFromCenter: proxy.size.height / 2 - scroll.midY, reduceMotion: reduceMotion)
     }
 }
 
