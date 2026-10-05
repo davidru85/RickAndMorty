@@ -1031,7 +1031,7 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 
 ### LOG-0140 · 2026-10-05 · `TASK-114`: the code-review P2 iOS fidelity items
 
-- **Event:** `TASK-114` is delivered as one pull request from `feat/task-114-p2b`, which starts from `TASK-113`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; where a first criterion proved not to discriminate, it was replaced in its own `test:` commit and observed red again on the old code before the fix.
+- **Event:** `TASK-114` is delivered as PR #204 from `feat/task-114-p2b`, which starts from `TASK-113`'s head and merges after it (`DEC-133`). Every increment was observed red, then green, as its own commit pair; where a first criterion proved not to discriminate, it was replaced in its own `test:` commit and observed red again on the old code before the fix.
 - **Shell and canvas:**
   - The tab bar renders through the design system's glass tab items: each tab carries its SF Symbol, the selected one in Portal Glow and the others white (`TEST-UNIT-090`).
   - The four top-level screens draw on the cosmic canvas — Space Black with Figma's Cosmic Violet and Portal Green glows — instead of the system background or the M3 Surface (`TEST-UI-036`).
