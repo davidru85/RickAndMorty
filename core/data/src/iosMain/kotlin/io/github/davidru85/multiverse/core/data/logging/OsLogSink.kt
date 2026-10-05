@@ -18,9 +18,18 @@ import platform.Foundation.NSLog
  */
 public object OsLogSink : LogSink {
     override fun write(record: LogRecord) {
+        // One `%s` argument, never `%@`: in a C variadic call a Kotlin `String` arrives as a C string,
+        // not as an Objective-C object, so `%@` would read its characters as a pointer and crash. The
+        // line is ASCII by construction — catalogue ids, enum names, numbers and hex ids — so `%s`
+        // renders it exactly, and no field can ever be read as part of the format (`TEST-UNIT-074`).
+        NSLog("%s", render(record))
+    }
+
+    /** The level, the catalogue id, then the field pairs in their wire names. */
+    internal fun render(record: LogRecord): String {
         val fields =
             record.fields.entries
                 .joinToString(separator = " ") { (field, value) -> "${field.wireName}=$value" }
-        NSLog("%@ %@%@", record.level.name, record.catalogueId, if (fields.isEmpty()) "" else " $fields")
+        return "${record.level.name} ${record.catalogueId}${if (fields.isEmpty()) "" else " $fields"}"
     }
 }
