@@ -12,11 +12,12 @@ import XCTest
 @MainActor
 final class CardNameRenderTests: XCTestCase {
     func test_TEST_UI_013_given_a_card_when_rendered_then_its_name_is_painted_into_the_image() throws {
-        let card = MultiverseBootstrap.shared.card(
+        let card = CharacterCardUi(
             id: "1",
             name: "Rick Sanchez",
-            species: "Human",
-            statusLabelKey: "status_alive",
+            species: DisplayTextData(value: "Human"),
+            status: CharacterStatusAlive.shared,
+            statusLabel: CopyKeys.shared.STATUS_ALIVE,
             imageUrl: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
         )
         // The **cell** rather than the bare card: the grid wraps the glass card in a `Button` with

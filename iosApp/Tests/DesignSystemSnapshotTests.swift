@@ -56,14 +56,6 @@ final class DesignSystemSnapshotTests: XCTestCase {
     }
 
     func test_TEST_UI_010_designSystemBaselines() {
-        let card = MultiverseBootstrap.shared.card(
-            id: "1",
-            name: "Rick Sanchez",
-            species: "Human",
-            statusLabelKey: "status_alive",
-            imageUrl: "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
-        )
-        _ = card
         // The card on both OS paths: the fallback is baselined beside the glass so it cannot drift.
         record("card-glass", glassPath: .glass) { sampleCard() }
         record("card-material", glassPath: .material) { sampleCard() }
