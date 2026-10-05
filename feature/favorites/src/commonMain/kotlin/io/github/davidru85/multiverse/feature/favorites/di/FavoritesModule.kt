@@ -1,10 +1,6 @@
 package io.github.davidru85.multiverse.feature.favorites.di
 
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
-import io.github.davidru85.multiverse.core.domain.repository.FavoritesRepository
-import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
-import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
-import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
 import io.github.davidru85.multiverse.feature.favorites.domain.ResolveFavoriteCards
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -24,12 +20,10 @@ import org.koin.dsl.module
  * `ObserveFavoriteIds` is `:core:domain`'s and `coreModule` registers it, so it is resolved here rather
  * than re-declared: one observation instance is shared by every feature that reads it.
  *
- * [PresentationFormatters] is `IC-017`'s shared implementation, bound here with the module so the graph
- * is resolvable without a shell-side binding; a shell may override it.
+ * `PresentationFormatters`, `IC-017`'s shared implementation, is bound once by the composition root
+ * (`DEC-145`), not here.
  */
 public val favoritesModule: Module =
     module {
         single { ResolveFavoriteCards(repository = get<CharacterRepository>()) }
-        single { ObserveFavoriteIds(repository = get<FavoritesRepository>()) }
-        single<PresentationFormatters> { DefaultPresentationFormatters }
     }

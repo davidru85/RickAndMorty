@@ -63,6 +63,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // The screen names its copy through `CopyKeys` (`DEC-144`) and the module resolves the
+            // composition root's named dispatcher through `PresentationBindings` (`DEC-145`).
+            implementation(project(":core:presentation"))
             // `SettingsStateHolder`'s surface and the state contracts `IC-018`/`IC-019` are the module's
             // own public shape, so both edges it composes them from are `api`.
             api(project(":core:domain"))
@@ -73,9 +76,6 @@ kotlin {
             api(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
-            // The screen names its copy through the canonical `CopyKeys` constants rather than typing
-            // the key names (`DEC-144`).
-            implementation(project(":core:presentation"))
             // The screen composes design-system components and resolves their copy; the edge is used
             // rather than exposed, so it stays `implementation` (dependency analysis, ADR-0001,
             // `DESIGN.md` §3.4 rule 5).

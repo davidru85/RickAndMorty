@@ -14,6 +14,9 @@ import io.github.davidru85.multiverse.core.domain.logging.AppLogger
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
+import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
+import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
 import io.github.davidru85.multiverse.core.presentation.splash.SplashGate
 import io.github.davidru85.multiverse.feature.characterdetail.di.characterDetailModule
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
@@ -36,6 +39,8 @@ import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 import platform.Foundation.NSUserDefaults
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.Platform
@@ -215,7 +220,7 @@ public object IosGraph {
                 favoritesModule,
                 settingsModule,
             )
-            modules(iOSPlatformInputs())
+            modules(iOSPlatformInputs(), presentationModule())
         }.koin
     }
 }
@@ -252,3 +257,14 @@ private fun iOSPlatformInputs(): Module {
         logger = logger,
     ).asModule()
 }
+
+/**
+ * The app-wide presentation dependencies, bound once by the iOS root as the Android shell binds them
+ * (`DEC-145`): the two named dispatchers and the shared formatters.
+ */
+private fun presentationModule(): Module =
+    module {
+        single<CoroutineDispatcher>(named(PresentationBindings.DEFAULT_DISPATCHER)) { Dispatchers.Default }
+        single<CoroutineDispatcher>(named(PresentationBindings.MAIN_DISPATCHER)) { Dispatchers.Main }
+        single<PresentationFormatters> { DefaultPresentationFormatters }
+    }

@@ -1,8 +1,10 @@
 package io.github.davidru85.multiverse.feature.settings.di
 
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.feature.settings.ui.SettingsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -14,5 +16,5 @@ import org.koin.dsl.module
  */
 public val settingsViewModelModule: Module =
     module {
-        viewModel { SettingsViewModel(get(), get(), get(), get()) }
+        viewModel { SettingsViewModel(get(), get(), get(), get(), get(named(PresentationBindings.MAIN_DISPATCHER))) }
     }

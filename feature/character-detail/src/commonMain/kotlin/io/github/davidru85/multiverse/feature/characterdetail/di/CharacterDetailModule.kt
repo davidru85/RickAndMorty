@@ -2,7 +2,6 @@ package io.github.davidru85.multiverse.feature.characterdetail.di
 
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.repository.FavoritesRepository
-import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import io.github.davidru85.multiverse.feature.characterdetail.domain.GetCharacterDetails
 import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavorite
 import org.koin.core.module.Module
@@ -21,5 +20,4 @@ public val characterDetailModule: Module =
     module {
         single { GetCharacterDetails(repository = get<CharacterRepository>()) }
         single { ToggleFavorite(repository = get<FavoritesRepository>()) }
-        single { ObserveFavoriteIds(repository = get<FavoritesRepository>()) }
     }

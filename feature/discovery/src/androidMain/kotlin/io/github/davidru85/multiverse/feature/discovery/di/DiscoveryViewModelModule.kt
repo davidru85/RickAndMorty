@@ -1,13 +1,13 @@
 package io.github.davidru85.multiverse.feature.discovery.di
 
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
-import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
 import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
 import io.github.davidru85.multiverse.feature.discovery.ui.DiscoveryViewModel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -27,10 +27,9 @@ public val discoveryViewModelModule: Module =
                             .parametersOf(scope)
                     }
                 },
-                dispatcher = get<CoroutineDispatcher>(),
+                // Bound once by the composition root, by name (`DEC-145`).
+                dispatcher = get<CoroutineDispatcher>(named(PresentationBindings.DEFAULT_DISPATCHER)),
                 formatters = get<PresentationFormatters>(),
             )
         }
-        single<CoroutineDispatcher> { Dispatchers.Default }
-        single<PresentationFormatters> { DefaultPresentationFormatters }
     }

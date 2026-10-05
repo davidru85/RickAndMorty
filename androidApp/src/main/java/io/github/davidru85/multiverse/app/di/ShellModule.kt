@@ -2,16 +2,22 @@ package io.github.davidru85.multiverse.app.di
 
 import android.content.Context
 import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
-import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
 import io.github.davidru85.multiverse.core.data.favorites.preferencesDataStore
 import io.github.davidru85.multiverse.core.data.logging.ValidatingAppLogger
 import io.github.davidru85.multiverse.core.data.remote.androidRickAndMortyHttpClient
+import io.github.davidru85.multiverse.core.data.settings.DataStoreAppSettingsLocalDataSource
+import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
+import io.github.davidru85.multiverse.core.presentation.PresentationBindings
+import io.github.davidru85.multiverse.core.presentation.PresentationFormatters
+import java.io.File
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.Module
-import java.io.File
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 
 /**
  * The DataStore file `SECURITY.md` §3 classifies: favourites only, in the app's private storage.
@@ -58,8 +64,20 @@ public fun shellModules(
     return listOf(
         platformInputs(applicationScope, appContext, logger, client),
         imageLoaderModule(appContext, client),
+        presentationModule(),
     ) + logging.extraModules(logger)
 }
+
+/**
+ * The app-wide presentation dependencies, bound once here rather than by a feature (`DEC-145`): the two
+ * named dispatchers and the formatters every state holder renders through.
+ */
+public fun presentationModule(): Module =
+    module {
+        single<CoroutineDispatcher>(named(PresentationBindings.DEFAULT_DISPATCHER)) { Dispatchers.Default }
+        single<CoroutineDispatcher>(named(PresentationBindings.MAIN_DISPATCHER)) { Dispatchers.Main.immediate }
+        single<PresentationFormatters> { DefaultPresentationFormatters }
+    }
 
 /** The graph inputs, built once so both variants share every value except the logger. */
 public fun platformInputs(

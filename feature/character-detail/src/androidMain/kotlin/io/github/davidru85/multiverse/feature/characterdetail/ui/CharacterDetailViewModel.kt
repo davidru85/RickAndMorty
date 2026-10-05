@@ -11,7 +11,7 @@ import io.github.davidru85.multiverse.feature.characterdetail.domain.ToggleFavor
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailIntent
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailStateHolder
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailUiState
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -24,7 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * [header] is the list-provided card the navigation hand-off carried in (`IC-025`); a deep link or a
  * process restart passes `null`, and the screen renders from its own load state instead of treating
- * the missing payload as a failure.
+ * the missing payload as a failure. [dispatcher] is the composition root's main dispatcher, injected
+ * like every other holder's (`DEC-145`).
  */
 public class CharacterDetailViewModel(
     id: CharacterId,
@@ -33,6 +34,7 @@ public class CharacterDetailViewModel(
     toggleFavorite: ToggleFavorite,
     observeFavoriteIds: ObserveFavoriteIds,
     formatters: PresentationFormatters,
+    dispatcher: CoroutineDispatcher,
     enrich: Boolean = true,
 ) : ViewModel() {
     private val holder =
@@ -43,7 +45,7 @@ public class CharacterDetailViewModel(
             toggleFavorite = toggleFavorite,
             observeFavoriteIds = observeFavoriteIds,
             scope = viewModelScope,
-            dispatcher = Dispatchers.Main.immediate,
+            dispatcher = dispatcher,
             formatters = formatters,
             enrich = enrich,
         )
