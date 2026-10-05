@@ -74,9 +74,11 @@ struct DetailHost: View {
 struct FavoritesHost: View {
     @StateObject private var holder: FavoritesStateHolder
     private let onBrowse: () -> Void
+    private let onOpenDetail: (CharacterCardUi) -> Void
 
-    init(onBrowse: @escaping () -> Void) {
+    init(onBrowse: @escaping () -> Void, onOpenDetail: @escaping (CharacterCardUi) -> Void) {
         self.onBrowse = onBrowse
+        self.onOpenDetail = onOpenDetail
         let resolved = MultiverseBootstrap.shared.favoritesDependencies()
         _holder = StateObject(
             wrappedValue: FavoritesStateHolder(
@@ -90,7 +92,7 @@ struct FavoritesHost: View {
         FavoritesScreen(
             state: holder.state,
             onIntent: { holder.onIntent($0) },
-            onCharacterSelected: { _ in },
+            onCharacterSelected: onOpenDetail,
             onBrowseCharacters: onBrowse
         )
     }

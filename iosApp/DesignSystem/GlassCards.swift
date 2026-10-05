@@ -44,23 +44,46 @@ public struct GlassCharacterCard: View {
         self.portrait = portrait
     }
 
+    /// The reader's text size (`UI_SPEC.md` §9): at the accessibility sizes the grid is one column.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     public var body: some View {
-        portrait
-            .resizable()
-            .scaledToFill()
-            .frame(
-                width: MultiverseDimensions.glassCardWidth,
-                height: MultiverseDimensions.glassCardHeight
-            )
-            .clipped()
-            .overlay(alignment: .bottom) {
-                bar.padding(MultiverseDimensions.glassCardInset)
-            }
+        shaped
             .clipShape(
                 RoundedRectangle(cornerRadius: MultiverseDimensions.glassCard, style: .continuous)
             )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(name), \(statusLabel), \(species)"))
+    }
+
+    /// The specified 177 × 236 pt card at the default sizes. At the accessibility sizes the grid has
+    /// one column, so the card takes that column's width and grows to fit its text instead of
+    /// truncating it (`REQ-UX-006`, `AC-REQ-UX-006-1`); the portrait fills whatever size results.
+    @ViewBuilder
+    private var shaped: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            bar
+                .padding(MultiverseDimensions.glassCardInset)
+                .frame(maxWidth: .infinity, minHeight: MultiverseDimensions.glassCardHeight, alignment: .bottom)
+                .background {
+                    portrait
+                        .resizable()
+                        .scaledToFill()
+                }
+                .clipped()
+        } else {
+            portrait
+                .resizable()
+                .scaledToFill()
+                .frame(
+                    width: MultiverseDimensions.glassCardWidth,
+                    height: MultiverseDimensions.glassCardHeight
+                )
+                .clipped()
+                .overlay(alignment: .bottom) {
+                    bar.padding(MultiverseDimensions.glassCardInset)
+                }
+        }
     }
 
     /// The glass bar: the name and the status row, over the card's own glass surface.
@@ -69,7 +92,8 @@ public struct GlassCharacterCard: View {
             Text(name)
                 .font(MultiverseType.headline)
                 .foregroundStyle(MultiverseLabelColors.primary)
-                .lineLimit(2)
+                // No cap at the accessibility sizes: the card grows rather than truncating the name.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
             HStack(spacing: MultiverseDimensions.spaceS) {
                 Circle()
                     .fill(statusTone.dotColor)
@@ -80,7 +104,7 @@ public struct GlassCharacterCard: View {
                 Text("\(statusLabel) · \(species)")
                     .font(MultiverseType.caption1)
                     .foregroundStyle(MultiverseLabelColors.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

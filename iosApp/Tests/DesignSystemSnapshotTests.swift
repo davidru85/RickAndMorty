@@ -45,7 +45,9 @@ final class DesignSystemSnapshotTests: XCTestCase {
             .frame(width: 320)
         assertSnapshot(
             of: view,
-            as: .image(layout: .sizeThatFits),
+            // A perceptual tolerance absorbs the sub-visible differences two hosts' GPUs produce in
+            // glass and blur; a changed layout, colour or text still fails (`TESTING.md` §8.2).
+            as: .image(precision: 0.99, perceptualPrecision: 0.98, layout: .sizeThatFits),
             named: name,
             record: false,
             file: #filePath,
@@ -71,9 +73,35 @@ final class DesignSystemSnapshotTests: XCTestCase {
         record("card-opaque", glassPath: .opaqueMaterial) { sampleCard() }
         // The largest Dynamic Type size (`REQ-UX-006`).
         record("card-accessibility-text", glassPath: .glass, dynamicTypeSize: .accessibility5) { sampleCard() }
-        // The empty state, on both paths.
-        record("empty-state-glass", glassPath: .glass) { sampleEmptyState() }
-        record("empty-state-material", glassPath: .material) { sampleEmptyState() }
+        // The empty state draws its well only inside a window, so it renders through `HostedRendering`:
+        // off-screen it produced a blank image, which compares equal to any other blank image and so
+        // verified nothing. Only the material path is baselined — in a window, a Liquid Glass render
+        // differs between runs on the same simulator, and the glass path is pinned by `card-glass`.
+        recordInWindow("empty-state-material", glassPath: .material) { sampleEmptyState() }
+    }
+
+    private func recordInWindow(
+        _ name: String,
+        glassPath: GlassMaterial,
+        @ViewBuilder content: () -> some View
+    ) {
+        let view =
+            content()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(MultiverseBrandColors.spaceBlack)
+            .environment(\.multiverseGlassPath, glassPath)
+        guard let image = try? HostedRendering.render(UIHostingController(rootView: view)) else {
+            XCTFail("\(name) must render in a window")
+            return
+        }
+        assertSnapshot(
+            of: image,
+            as: .image(precision: 0.99, perceptualPrecision: 0.98),
+            named: name,
+            record: false,
+            file: #filePath,
+            testName: "designSystemBaselines"
+        )
     }
 
     private func sampleCard() -> some View {

@@ -34,6 +34,16 @@ enum CharacterPresentation {
         return identifier
     }
 
+    /// A card's identity in a lazy grid: its canonical id, never its position (`GAP-031`).
+    ///
+    /// A lazy container keeps a cell per identity. Keyed by position, the skeleton's cells 0…5 were
+    /// the same identities as the first six cards, so the grid kept painting skeletons after page 1
+    /// loaded, and a filter change reused a cell for a different character. The pager de-duplicates
+    /// by id (`IC-014`), so the canonical id is unique within a list.
+    static func gridIdentity(_ card: CharacterCardUi) -> String {
+        "card-\(identifier(card.id))"
+    }
+
     /// [display] resolved for a component that takes primitives (`IC-016`): a `Data` value as it is,
     /// a `Copy` key from the app's own resource files.
     static func text(_ display: any DisplayText) -> String {
@@ -227,4 +237,9 @@ struct CharacterCardCell: View {
     private var species: String {
         CharacterPresentation.text(card.species)
     }
+}
+
+extension CharacterCardUi {
+    /// The grid identity of `CharacterPresentation.gridIdentity(_:)`, as a key path `ForEach` can read.
+    var gridIdentity: String { CharacterPresentation.gridIdentity(self) }
 }

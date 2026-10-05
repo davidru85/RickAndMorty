@@ -243,7 +243,9 @@ struct DiscoveryScreen: View {
 
     /// Six skeletons in the Tall/Regular pattern while no load has completed (`UI_SPEC.md` §8).
     private var skeletonGrid: some View {
-        ForEach(Array(0..<DiscoveryLayout.skeletonCount), id: \.self) { _ in
+        // The skeletons carry identities no card can have, so the grid replaces them when content
+        // arrives instead of keeping their cells (`GAP-031`).
+        ForEach(DiscoveryLayout.skeletonIdentities, id: \.self) { _ in
             GlassCharacterCard(
                 name: "",
                 species: "",
@@ -257,9 +259,8 @@ struct DiscoveryScreen: View {
     }
 
     private var cardGrid: some View {
-        // The shared card id crosses the boundary erased to `Any`, so the grid identifies a cell by
-        // its position; the card itself carries the canonical id for the accessibility identifier.
-        ForEach(Array(state.items.enumerated()), id: \.offset) { _, card in
+        // Each cell is identified by its card's canonical id, never by its position (`GAP-031`).
+        ForEach(state.items, id: \.gridIdentity) { card in
             CharacterCardCell(
                 card: card,
                 loader: loader,
@@ -303,4 +304,7 @@ struct DiscoveryScreen: View {
 enum DiscoveryLayout {
     /// The skeleton count of `UI_SPEC.md` §8, "Initial loading".
     static let skeletonCount = 6
+
+    /// One identity per skeleton, disjoint from every card's `CharacterPresentation.gridIdentity`.
+    static let skeletonIdentities = (0..<skeletonCount).map { "skeleton-\($0)" }
 }

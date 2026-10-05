@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-04 (**B6–B8 prepared across their phase pull requests**); must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-05: B6 is merged (PRs #153, #156, #158; the `v0.1.0` tag and release are the owner's); B7 Phases 7.1–7.3 with B8 Phases 8.1–8.2 are in review in PR #161 (`DEC-120`), B8 Phase 8.3 in PR #178 and B9 Phase 9.1 in PR #182, each prepared on the previous one's head. The latest review is recorded in §1.19; earlier state descriptions are historical phase baselines. Must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-04
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -11,33 +11,41 @@
 
 ### B6 closure — 2026-10-04
 
-**Block 6 is complete through its three phase pull requests, prepared and not yet merged** (`DEC-107`):
+**Block 6 is merged; the M1 tag and release are the owner's** (`DEC-107`):
 
 | Phase | PR | Members | State |
 | --- | --- | --- | --- |
-| 6.1 Visual and accessibility evidence | #153 | `TASK-045`, `TASK-046` | In review; `android` observed FAILURE on the first head, corrected in `09c68af` |
-| 6.2 Security and performance evidence | #156 | `TASK-048`, `TASK-049` | In review; stacked on 6.1's head so it merges cleanly after |
-| 6.3 M1 release | this phase | `TASK-050` | Prepared; `REL3`/`REL4` (tag, publish) are the owner's |
+| 6.1 Visual and accessibility evidence | #153 | `TASK-045`, `TASK-046` | Merged as `f77f333`; both `Done` |
+| 6.2 Security and performance evidence | #156 | `TASK-048`, `TASK-049` | Merged as `e70def4`; `TASK-048` `Done`, `TASK-049` `In progress` (device budgets, `DEC-115`) |
+| 6.3 M1 release | #158 | `TASK-050` | Merged as `644a2b3`; `REL3`/`REL4` (tag `v0.1.0`, publish) are the owner's |
 
-**Delivered evidence:** 46 committed Roborazzi baselines across the component catalogue, the seven `ERROR_FLOW.md` states, the four feature surfaces and the shell, each proved byte-identical in light and dark (`TEST-UI-012`, `TEST-UI-016`); the automated accessibility cases `TEST-A11Y-002`…`006`; the four security policy checks with seeded red evidence; `TEST-PERF-003` asserting zero network requests on a cache-hit render against the real transport; and `TEST-UNIT-019` proving the Android milestone assembles with iOS absent. Local suite total 831 tests, 0 failures (B5 close: 735).
+**Delivered evidence:** 52 committed Roborazzi baselines across the component catalogue, the seven `ERROR_FLOW.md` states, the four feature surfaces and the shell (Episodes and the maximum-text captures included), each proved byte-identical in light and dark (`TEST-UI-012`, `TEST-UI-016`); the automated accessibility cases `TEST-A11Y-002`…`006` and the `DEC-119` emulator checklist; the four security policy checks, with `TEST-UNIT-027` covering every shipped persistence site and `TEST-UNIT-028` reading the release APK; `TEST-PERF-003` asserting zero network requests on a cache-hit render against the real transport; and `TEST-UNIT-019` proving the Android milestone assembles with iOS absent, run by the `app-artifacts` worker. The executed checks of each reviewed head are in `PROJECT_LOG.md` LOG-0125…LOG-0128.
 
 **Two real product defects were fixed, and both were required by the criteria the phase verifies** (`DEC-114`): the tone-30 accent container placed its tone on the mean sRGB channel, so containers sat at L* 40–57 and On Surface text over a saturated accent measured **2.79:1** against the 4.5:1 floor — the tone is now solved in CIE L\* and the worst case is **7.33:1**; and both grids hard-coded two columns, so `REQ-UX-006`'s collapse at the largest text sizes never happened — a shared `MultiverseGrid` now decides the count.
 
-**Carried as unmet, named rather than waived (`DEC-115`, `DEC-116`):** `M1-4` (budgets on the named reference device) and `M1-5` (the `DEC-023` device checklist) cannot be evidenced — `A-PERF-1` is still unassigned and no physical device is available to this workstation. The release is prepared at `v0.1.0` and the tag/publish remain the owner's.
+**Carried as unmet, named rather than waived (`DEC-115`, `DEC-116`):** `M1-4` (budgets on the named reference device) cannot be evidenced while `A-PERF-1` is unassigned and `PERF-Q1` is undecided. `M1-5` is evidenced by the `DEC-119` emulator checklist. The release is prepared at `v0.1.0` and the tag/publish remain the owner's.
 
-**Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `GAP-006`/`GAP-010` unchanged.
+**Still open:** `GAP-029` (`:androidApp` never received the ktlint plugin, so the shell's Kotlin is unchecked by the formatter the codebase names as its owner); `CONF-84` (four feature modules declare the Material 3 alpha that ADR-0008 confines to `:core:designsystem`); `GAP-006`/`GAP-010` unchanged.
 
 **B7 entry condition:** B6 Phase 6.3 merged and the M1 release published by the owner.
 
-### B8 closure — 2026-10-04
+### B8 closure — 2026-10-05
 
-**Block 8 is prepared through its three phase pull requests** (`DEC-109`): 8.1 the iOS journey, motion fallback and image cache (#170), 8.2 the placeholders, Settings and the snapshot baselines (#174), 8.3 the M2 evidence and the M1 non-regression.
+**Block 8 is prepared in two pull requests:** Phases 8.1 and 8.2 are delivered inside PR #161 with B7 (`DEC-120`), and Phase 8.3, the M2 evidence and release preparation, is PR #178 (`DEC-109`).
 
-**Delivered:** the iOS Discovery, Detail, Favorites and Settings screens over the shared `IC-018`/`IC-019`/`IC-020`/`IC-023` contracts; the Episodes placeholder; the zoom transition with its Reduce Motion fallback; the image cache with both `REQ-FUNC-021` assertions; six committed snapshot baselines covering the glass path, the pre-iOS-26 fallback, Reduce Transparency and the largest Dynamic Type size; and the response-cache backend iOS never had. 96 iOS tests green; the M1 Android verification set re-run green on the same tree, so iOS added no regression.
+**Delivered:**
+- The iOS Discovery, Detail, Favorites and Settings screens over the shared `IC-018`/`IC-019`/`IC-020`/`IC-023` contracts, with the Episodes placeholder.
+- The zoom transition with its Reduce Motion fallback, the image cache with both `REQ-FUNC-021` assertions, and the response-cache backend iOS never had.
+- Ten committed iOS baselines (five component, five screen) in the `ios` job, and 104 iOS tests green.
+- The M1 Android verification set re-run green on the same tree.
+- M2 prepared at `v0.2.0` (`DEC-121`).
 
-**Carried as unevidenced, named rather than claimed (`DEC-117`):** `M2-1`/`M2-2` need an **iOS 18** simulator or device and every runtime here starts at 26.4, so the deployment-floor run and the "iOS 18 renders the fallback" pair could not be executed; `M2-4` needs a physical device; and the `DEC-023`-style on-device checklist claims (VoiceOver traversal, colour-picker contrast, target measurements) remain unrecorded.
+**Carried as unevidenced, named rather than claimed (`DEC-117`):**
+- `M2-1`/`M2-2` need an **iOS 18** simulator or device. Xcode 27 offers no iOS 18 runtime, so neither the deployment-floor run nor the iOS 18 fallback pair can be executed here.
+- `M2-4` needs a physical device.
+- The on-device checklist claims (VoiceOver traversal, contrast and target measurements) remain unrecorded.
 
-**Open:** `GAP-031` (the Discovery grid paints its skeleton branch on the device while its own body logs `Content`), `GAP-029`, `GAP-030`, `CONF-79`, `CONF-80`, `CONF-81`.
+**Open:** `GAP-029`, `GAP-030`, `CONF-79`, `CONF-80`, `CONF-81`, `CONF-84`. `GAP-031` is resolved (PR #161).
 
 **B9 entry condition:** B8 Phase 8.3 merged by the owner.
 
@@ -243,6 +251,77 @@ gh api repos/davidru85/RickAndMorty/rulesets/24241444 --jq '.rules[] | select(.t
 - **`WorkflowGateGuard`:** a new `HOST_DISABLED_EXCLUSIONS` allow-list (the `android` job may exclude `iosSimulatorArm64Test`, the `ios` job may exclude nothing), enforced per job and per step, so the fix cannot be widened into a general `-x`; the existing execution filter now strips the sanctioned exclusion before deciding a step still executes its other commands.
 - **Observed locally:** red first — 3 guard-test failures against the unfixed guard; green after — the 40-test `WorkflowGateGuardTest` class and `:build-logic:convention:check ktlintCheck` all pass. `check --dry-run`: 1158 → 982 tasks, 30 → 0 Kotlin/Native tasks, with every Linux-executable step unchanged.
 **Obligation this change inherits:** its own pull-request run must be observed, and `GAP-028` is closed only on that evidence (`LOG-0097`).
+
+## 1.13 PR #153 sequential review (2026-10-04)
+
+TASK-045/TASK-046 now carry actual maximum-text regressions, complete component catalogues, Episodes coverage, a real composition-root startup test and reduced-motion integration tests. The review fixed the concrete image-type injection crash, unused NavHost policy, frozen scale-zero pulse, clipped stats/empty actions, system-bar overlap and split navigation labels. The owner accepted emulator checklist execution through DEC-119; [the evidence](evidence/pr153/README.md) retains screenshots, TalkBack focus records and measured contrast. The source fixes are new commits; the original commits are preserved.
+
+The owner merged PR #153 as `f77f333` on 2026-10-04; TASK-045/TASK-046 are Done with the reviewed head's successful CI and retained checklist. PR #156 follows against that merged main (§1.14), then PR #158 against the merged #156. The PR description names the executed checks and final-head CI result. This review does not declare M1 released or replace performance-device evidence.
+
+
+## 1.14 PR #156 conflict resolution after Phase 6.1 (2026-10-04)
+
+GH CLI confirms PR #153 was merged by the owner as `f77f333349599a0d1698ffac8306991545ed90fb`. The owner explicitly requested resolving PR #156's conflicts next. The branch update merges that main commit into the existing Phase 6.2 head `197a20014b8ab3621297aaa4b309d23a25f8da5f`, preserving both histories. `CONF-83` records the two documentation resolutions: keep both log entries, the zero-network test activation and the corrected 96-pair contrast coverage. Product, test, build and workflow files combine without content conflicts.
+
+The branch-update verification commands and observed results are recorded in `PROJECT_LOG.md` LOG-0126 and the PR description. This compatibility update does not measure the remaining performance budgets: `DEC-115` and TASK-049 retain that limitation. Review and merge PR #156 before starting PR #158. No emulator or simulator is needed for this conflict-resolution work.
+
+## 1.15 PR #156 sequential review (2026-10-04)
+
+PR #156 was reviewed against `main` containing the PR #153 merge. Two security checks were narrower than their criteria and are now fixed with red-then-green commits: `TEST-UNIT-027` also searches every shipped source for a persistence site outside the inventoried stores, and `TEST-UNIT-028` gains `:androidApp:verifyShippedPermissions`, which reads the release APK's merged permission table and is pinned in the `app-artifacts` worker. A stray `iosApp/` Xcode workspace file was removed, and the README baseline count, the `PERFORMANCE.md` result register and `TESTING.md` §17 now match the code. `PROJECT_LOG.md` LOG-0127 has the commits and the observed verification.
+
+`TASK-048` and `TASK-049` stay In review until the owner merges. `TASK-049`'s device budgets remain unmeasured under `DEC-115`: the owner must name the reference device (A-PERF-1) and decide the harness module (PERF-Q1) before `M1-4` can be evidenced. Next is PR #158, reviewed against `main` containing the #156 merge. **When PR #161 merges `main`, it must keep `iosApp/MultiverseExplorer.xcodeproj/project.xcworkspace/contents.xcworkspacedata`:** Git drops it silently because that branch inherited it from `197a200` without modifying it.
+
+## 1.16 PR #158 sequential review (2026-10-04)
+
+The owner merged PR #156 as `e70def4`; PR #158 then conflicted in `HANDOFF.md` and `PROJECT_LOG.md` only, and a merge commit resolves both, keeping every log entry. The review found that `TEST-UNIT-019` had never run in CI: since `DEC-112` no worker runs `:androidApp:check`. The `app-artifacts` worker now runs it, `ModularWorkflowGate` pins it, and its rule moved into a tested `MilestoneIndependencePolicy` (red-then-green commits). Four statements went stale or were wrong, and are now corrected: `DEC-116`, `LOG-0104` and this file's B6 closure said `M1-5` was unmet, although `DEC-119` evidences it; `README.md` §11 said no module declares the Material 3 alpha, but five do (`CONF-84`, escalated); the `TASK-050` row was still `Proposed`; and no release-note draft existed, so the PR description now carries one, generated by the command in `PROJECT_LOG.md` LOG-0128.
+
+Owner actions after merging PR #158: tag `v0.1.0` on the merge commit (`REL3`), publish the GitHub Release with the release APK and the note generated by LOG-0128's command for that commit (`REL4`, `REL5`), close issues #154 and #157, and decide `CONF-84`, `A-PERF-1` and `PERF-Q1`. Next is PR #161, reviewed against `main` containing the #158 merge; it must keep its `iosApp/…/contents.xcworkspacedata` (§1.15).
+
+## 1.17 PR #161 review: B7 Phases 7.1–7.3 and B8 Phases 8.1–8.2 combined (2026-10-05)
+
+A back-merge of `feat/b8-phase-8-2` into the 7.1 branch (`7d7edaf`) left PR #161 carrying five phases and PRs #164, #166, #170 and #174 tree-identical to it. The owner chose to review it as one delivery (`DEC-120`). The review merged `main` (after PR #158), kept the Xcode workspace file the merge would have dropped, and fixed the defects `PROJECT_LOG.md` LOG-0129 lists, each with a failing case first where a case is possible:
+- Discovery never loaded, and the grid then kept its skeleton cells (`GAP-031`).
+- A tapped card never opened its detail, and a favourite did nothing.
+- The detail hero covered the whole screen.
+- Cards, the filter control and the hero buttons clipped at the largest text size.
+- Device and Release builds linked a simulator object.
+- The holders re-rendered every frame and leaked their Kotlin scopes.
+- The `ios` job never built the app or ran its tests and baselines.
+
+The `ios` job now runs `xcodebuild test` on iPhone 17 / iOS 27.0, the only iPhone runtime the runner provides. The iOS baselines are re-recorded there with a perceptual tolerance; an off-screen render was blank for some surfaces and a window render of Liquid Glass is not deterministic, so window-rendered baselines use the material path (`TESTING.md` §8.3).
+
+Owner actions after merging PR #161:
+- Add the `ios` context to the `main protection` ruleset (`TASK-108`, `DEC-049`).
+- Close PRs #164, #166, #170 and #174, which then carry no change of their own (`DEC-120`).
+
+Next is PR #178 (B8 Phase 8.3), prepared on PR #161's final head so it merges cleanly once #161 is merged.
+
+## 1.18 PR #178 review: B8 Phase 8.3, the M2 evidence and release preparation (2026-10-05)
+
+PR #178 is prepared on PR #161's reviewed head, so it merges cleanly once #161 is merged. Phase 8.3 had no code of its own; the merge commit takes #161's tree and re-applies the phase's four documents. The review:
+- Corrected its stale facts: 104 iOS tests, ten baselines, and `GAP-031` resolved, so `M2-7` no longer carries that exception.
+- Recorded why `M2-1`/`M2-2` cannot be evidenced. With the owner's agreement, the iOS 18 runtime download was attempted; Xcode 27 does not offer one.
+- Added `tools/ios-version.sh --check` to the `ios` job, red first, so the iOS version cannot drift from `VERSION`.
+- Prepared M2 at `v0.2.0` (`DEC-121`); the PR description carries the draft note for the range after `v0.1.0`.
+
+Owner actions after merging PR #178:
+- Tag `v0.2.0` on the merge commit and publish the GitHub Release with the APK and the regenerated note.
+- Decide whether M2 is published with `M2-1`/`M2-2`/`M2-4` named as unevidenced (`DEC-117`).
+
+Next is PR #182 (B9 Phase 9.1), prepared on PR #178's head.
+
+## 1.19 PR #182 review: B9 Phase 9.1, hardening and advisory review (2026-10-05)
+
+PR #182 is prepared on PR #178's head. Phase 9.1 had no code of its own. The review made its three tasks evidence-based:
+- `TASK-064` compared iOS "render something" cases rather than baselines. It now has seven committed iOS state baselines for `ERROR_FLOW.md` §12, matching the Android set.
+- `TASK-067` claimed a scan configuration that did not exist. It now has a recorded advisory review (270 pinned packages, 0 advisories, OSV, 2026-10-05) and `.github/dependabot.yml` for security updates.
+- `TASK-065` states its own reason (`DEC-115`, `DEC-117`) instead of a copied one.
+
+Owner actions after merging PR #182:
+- Enable Dependabot alerts and security updates in the repository settings; until then the configuration raises nothing (`SECURITY.md` §9.3).
+- Name the reference devices that `TASK-065` needs.
+
+Next is PR #186 (B9 Phase 9.2), prepared on PR #182's head.
 
 ## 2. Completed work
 
