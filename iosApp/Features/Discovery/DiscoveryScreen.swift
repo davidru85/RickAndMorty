@@ -252,21 +252,20 @@ struct DiscoveryScreen: View {
                 }
             }
             if state.isAppending { pagingIndicator }
-            pagingSentinel
         }
     }
 
-    /// The paging trigger of `API_SPECS.md` §8: the last item's appearance requests the next page,
-    /// and the reducer's own guards — in flight, end reached, failure — decide what happens. It is a
-    /// zero-height sentinel that exists only with `Content`, so neither a loading nor an error
-    /// surface can request a page.
-    @ViewBuilder
-    private var pagingSentinel: some View {
-        if state.loadState is LoadStateContent {
-            Color.clear
-                .frame(height: 0)
-                .onAppear { onIntent(CharacterListIntentLoadNextPage.shared) }
-        }
+    /// The paging trigger of `API_SPECS.md` §8 (`TASK-136`): a card within
+    /// `DiscoveryLayout.prefetchDistance` of the end requests the next page as it appears, and the
+    /// reducer's own guards — in flight, end reached, failure — decide what happens. The cards are the
+    /// grid's lazy cells, so they appear as the user scrolls to them, and each page brings new ones, so
+    /// the trigger re-arms; a trigger in the non-lazy stack around the grid appeared with the first render
+    /// and never again. Only `Content` requests a page, so neither a loading nor an error surface can.
+    private func requestNextPageIfNearEnd(_ index: Int) {
+        guard state.loadState is LoadStateContent,
+            index >= state.items.count - 1 - DiscoveryLayout.prefetchDistance
+        else { return }
+        onIntent(CharacterListIntentLoadNextPage.shared)
     }
 
     private var gridColumns: [GridItem] {
@@ -299,13 +298,14 @@ struct DiscoveryScreen: View {
 
     private var cardGrid: some View {
         // Each cell is identified by its card's canonical id, never by its position (`GAP-031`).
-        ForEach(state.items, id: \.gridIdentity) { card in
+        ForEach(Array(state.items.enumerated()), id: \.element.gridIdentity) { index, card in
             CharacterCardCell(
                 card: card,
                 loader: loader,
                 identifierPrefix: "discovery.card",
                 action: { onOpenDetail(card) }
             )
+            .onAppear { requestNextPageIfNearEnd(index) }
         }
     }
 
@@ -356,6 +356,10 @@ enum DiscoveryLayout {
 
     /// The count line's fade when the count leaves or returns (`UI_SPEC.md` §6.2), in seconds.
     static let countLineFade: Double = 0.15
+
+    /// How many cards before the end a card's appearance requests the next page (`API_SPECS.md` §8): the
+    /// distance Android's grid uses, so both platforms prefetch at the same point.
+    static let prefetchDistance = 2
 
     /// One identity per skeleton, disjoint from every card's `CharacterPresentation.gridIdentity`.
     static let skeletonIdentities = (0..<skeletonCount).map { "skeleton-\($0)" }
