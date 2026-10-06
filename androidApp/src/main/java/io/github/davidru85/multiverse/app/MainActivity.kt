@@ -20,10 +20,11 @@ import org.koin.android.ext.android.inject
  * The one activity (`TASK-044`, `TASK-007`): it installs the system splash, draws edge to edge with
  * light system bars, and composes [MultiverseApp] inside the design system's theme.
  *
- * The system phase is handed over here: `installSplashScreen()` shows the launcher icon's foreground
- * over the splash theme's background for as long as the process takes to start. The **branded** phase
- * is the app's own, and it is driven by the [SplashGate] this activity supplies from the graph, so the
- * splash is a real loading indicator rather than decoration (`UI_SPEC.md` §6.1, `DEC-098`).
+ * The system phase is handed over here: `installSplashScreen()` shows the splash theme's Surface
+ * background, with no icon, for as long as the process takes to start (`TASK-127`); Android 12+ cannot
+ * skip that window, so it is left empty and the user sees one splash. The **branded** phase is the
+ * app's own, and it is driven by the [SplashGate] this activity supplies from the graph, so the splash
+ * is a real loading indicator rather than decoration (`UI_SPEC.md` §6.1, `DEC-098`).
  */
 public class MainActivity : ComponentActivity() {
     private val characterRepository: CharacterRepository by inject()

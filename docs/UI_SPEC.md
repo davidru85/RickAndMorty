@@ -1,7 +1,7 @@
 # UI_SPEC.md - UI/UX Visual Specification
 
 - **Status:** Active — implemented on both platforms with known visual deviations, which the code reviews of 2026-10-05 list and `TASK-113` (Android) and `TASK-114` (iOS) remediate; the drift rule is `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** UI/UX Designer (see `AGENTS.md`)
 - **Authoritative for:** the visual and interaction specification — tokens, component specs per platform, screen specs, motion, states, accessibility, iconography, canonical user-visible copy.
 - **Not authoritative for:** behaviour requirements (`REQUIREMENTS.md`), architecture (`DESIGN.md`), failure handling (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`).
@@ -331,7 +331,7 @@ On iOS, glass surfaces do not need an accent: the glass picks up the portrait's 
 | Mark | Portal logo (160 dp) on an M3 Expressive **Cookie-9** shape (240 dp, Primary Container), Portal Glow | Portal logo (176 pt) seen through a 212 pt **Liquid Glass lens** (continuous corner 60, `Liquid Glass/Clear`) that refracts it |
 | Wordmark | "Multiverse" (Display Medium Emphasized) / "EXPLORER" (Label Large Emphasized, Primary, +8 tracking) / tagline "Every Rick. Every Morty. Every dimension." (Body Medium) | "Multiverse" (Editorial Display) / "EXPLORER" (Caption 2, Portal Green, +7 tracking) / tagline (Subheadline) |
 | Loading indicator | The rotating portal: it starts very slowly, accelerates, then spins at a constant speed until the data has loaded (§7). No other progress UI | Same: the portal rotates behind the glass lens (§7). No other progress UI |
-| Implementation | `installSplashScreen()` for the system icon phase (it shows the launcher icon's foreground, see §10.1), then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
+| Implementation | `installSplashScreen()` for the system phase, which shows only the Surface background and no icon (§10.1, `DEC-154`): Android 12+ always shows a starting window and it cannot be skipped, so it stays empty and the branded splash is the only splash the user sees. Then an in-app composable for the branded animation | Launch screen (static background) → SwiftUI splash view |
 
 The splash stays on screen while the first page of characters loads, with the spinning portal as the loading indicator.
 - **Timing:** it lasts at least 1.2 s so the acceleration completes, and at most 3 s; then it cross-fades (350–400 ms) to Discovery.
@@ -611,7 +611,7 @@ The masters are 432 px, which is the 108 dp canvas at xxxhdpi. Launchers show on
 - **Wiring:** `mipmap-anydpi-v26/ic_launcher.xml` (and `ic_launcher_round.xml`) is an `<adaptive-icon>` with `<background>` and `<foreground>` only. With `minSdk` 26 or higher, no legacy PNG mipmaps are needed.
 - **No monochrome layer (decision):** the app ships no themed icon, in line with its single appearance. When the user turns on themed icons (Android 13+), launchers keep showing the full-colour icon; some newer Android versions may generate a tinted version automatically.
 - **Mask previews:** circle, squircle, rounded square and teardrop, so the design is checked against common launcher shapes.
-- **System splash (Android 12+):** set `windowSplashScreenAnimatedIcon` to the foreground drawable and `windowSplashScreenBackground` to `#0F0E12`. The cookie and portal fit inside the 160 dp splash icon circle, so the handoff to the in-app splash (§6.1) is seamless.
+- **System splash (Android 12+):** set `windowSplashScreenBackground` to `#0F0E12` and `windowSplashScreenAnimatedIcon` to a transparent drawable (`ic_splash_blank`), so the starting window shows only Surface and the branded splash (§6.1) is the only splash (`DEC-154`). The launcher foreground is not used there: the system centres its icon while the branded splash draws the cookie above the wordmark, so the handoff showed two different splashes (`GAP-037`).
 - **Play Store:** `Android/Play Store icon`, a 512 × 512 32-bit PNG. It is a full-bleed square; Google Play applies the rounded mask and shadow, so the file must not include them.
 
 ### 10.2 iOS — app icon (iOS 26+ Liquid Glass)

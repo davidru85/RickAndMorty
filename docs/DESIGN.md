@@ -1,7 +1,7 @@
 # DESIGN.md - System Architecture Design
 
 - **Status:** Active — the architecture below is target state; the Gradle/KMP build skeleton (TASK-014) and the shared core of B3 — domain, REST adapter, repository with coalescing and retry, pager, logging and the diagnostic API, the favourites store on both platforms, and the presentation primitives with the copy-parity verifier — exist, no feature behaviour does (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** System Architect (see `AGENTS.md`)
 - **Authoritative for:** architecture — layers, module boundaries, dependency direction, navigation ownership, presentation-state data flow, DI.
 - **Not authoritative for:** requirement IDs and acceptance criteria (`REQUIREMENTS.md`), internal interface signatures and invariants (`CONTRACTS.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), visual specification (`UI_SPEC.md`).
@@ -244,7 +244,7 @@ classifies targets.
 **Shared brand assets:** the Figma page `00 · Shared — Brand & Sample Data` holds the platform-neutral assets (`UI_SPEC.md` §1):
 - **Portal logo:** exported once as SVG. It becomes a VectorDrawable in `:core:designsystem` and a vector asset (preserve vector data) in the iOS `DesignSystem` asset catalog. Each platform wraps it in its own `PortalLogo` component, and the splash treatments stay platform-specific.
 - **App icons:** both are built on the portal logo but live on the platform pages, because each follows its own platform format (`UI_SPEC.md` §10).
-  - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The same foreground drives the Android 12+ system splash.
+  - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The Android 12+ system splash does not use them: its starting window shows no icon, so the branded splash is the only one (`UI_SPEC.md` §6.1, `DEC-154`).
   - iOS: the single 1024 px master (no Dark, Clear or Tinted variants) feeds an Icon Composer `.icon` file in the iOS app target.
 - **Sample portraits:** mock content only, never bundled in the release apps. The apps always load portraits from the API through the image cache. The same files may be used as local fixtures for previews and screenshot tests (§8), so those never hit the network.
 

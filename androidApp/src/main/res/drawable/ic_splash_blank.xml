@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The system splash's icon (`UI_SPEC.md` §6.1, `TASK-127`): nothing. Android 12+ always shows a starting
+  window before the first frame and it cannot be turned off, so the window shows only the Surface
+  background and the branded splash is the only splash the user sees. The one path is fully
+  transparent because a vector drawable needs a path to be valid.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0h1v1h-1z" />
+</vector>
