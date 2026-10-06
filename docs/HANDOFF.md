@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the owner re-admitted the sound effects (`DEC-162`), delivered by `TASK-139`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the owner re-admitted the sound effects (`DEC-162`), delivered by `TASK-139` and merged (PR #253, `0eff567`); the owner's request for previews of every presentation-layer view is `TASK-140` (`DEC-164`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -9,13 +9,21 @@
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
 
+### Owner's preview request — 2026-10-06
+
+The owner asked for a review of every view on Android and iOS, adding its previews, in the presentation layer only and in one pull request. `GUIDELINES.md` §5.4 and §6.5 already required those previews. `DEC-164` records the scope, the preview kit on each platform and the write authorization. Rendering every preview on a device surfaced two defects outside the task, registered for the owner to schedule: `GAP-049` (iOS Settings at the largest Dynamic Type) and `GAP-050` (the Android Detail error's missing portal mark).
+
+| Work | Branch | State |
+| --- | --- | --- |
+| `TASK-140` — previews for every presentation-layer view, on both platforms | `chore/task-140-view-previews`, from `main` at `0eff567` | In review (issue #254; `LOG-0167`) |
+
 ### Owner's sound effects — 2026-10-06
 
 The owner asked to enable the sound effects the Settings "Sounds" preference was built for, which `DEC-055` had deferred as `DEF-005`. The owner specified the sound set: one sound — a recording the owner supplied — played while Sounds is on when the user switches destination on the navigation bar and on every tap of the Discovery status selector. `DEC-162` re-admits `REQ-FUNC-036` as a Should-have requirement and authorizes the writes outside the documentation, and `DEC-163` records how the sound plays. The work is one task with its own issue and pull request. Open for the owner: the bar-change rule, the silent-mode behaviour and the file's preparation are the agent's recommendations (`DEC-163`), and the recording's origin and licence — it is published in this public repository — were not stated.
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In review (PR #253, issue #252; `LOG-0166`) |
+| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | **Merged** (PR #253, `0eff567`; issue #252 closed; `LOG-0166`) |
 
 ### Owner's Android defects — 2026-10-06
 
@@ -184,7 +192,7 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Merged | The set is integrated on `main` (TASK-032 PR #25, TASK-034 PR #32, TASK-090 PR #45); inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` §6 |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-161` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-164` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |

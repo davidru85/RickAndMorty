@@ -246,7 +246,7 @@ classifies targets.
 - **App icons:** both are built on the portal logo but live on the platform pages, because each follows its own platform format (`UI_SPEC.md` §10).
   - Android: the adaptive-icon layers (background and foreground; no monochrome/themed layer) are exported as SVG and converted to vector drawables in `:androidApp`. The Android 12+ system splash does not use them: its starting window shows no icon, so the branded splash is the only one (`UI_SPEC.md` §6.1, `DEC-154`).
   - iOS: the single 1024 px master (no Dark, Clear or Tinted variants) feeds an Icon Composer `.icon` file in the iOS app target.
-- **Sample portraits:** mock content only, never bundled in the release apps. The apps always load portraits from the API through the image cache. The same files may be used as local fixtures for previews and screenshot tests (§8), so those never hit the network.
+- **Sample portraits:** mock content only, never bundled in the release apps. The apps always load portraits from the API through the image cache. The same files may be used as local fixtures for screenshot tests (§8), so those never hit the network; previews, which live in the main source sets, use token stand-ins instead (`DEC-164`).
 
 ### 3.5 Build toolchain and build logic
 
@@ -588,7 +588,7 @@ This section covers the architectural testing seams only; `TESTING.md` owns the 
 - **`:core:designsystem`:** screenshot tests per component and screen, compared with the Figma frames in `UI_SPEC.md` §1.1. Each is rendered with the system in both light and dark mode, and both results must be identical (single appearance). Semantics tests cover merged card descriptions and status labels.
 - **iOS:** snapshot tests of `DesignSystem` views and of each feature's screens, including Reduce Transparency and the largest Dynamic Type size.
 - **Tokens:** a parity test against the `tokens.json` export (§4.3).
-- **Fixtures:** previews and screenshot tests use the sample portraits from the shared Figma page (§3) as local image fixtures, with a fake image loader instead of the network.
+- **Fixtures:** screenshot tests may use the sample portraits from the shared Figma page (§3) as local image fixtures, with a fake image loader instead of the network. Previews render fixtures declared beside them and token stand-ins through the same kind of seam — `PreviewImageSeam` on Android, `PreviewPortraitLoader` on iOS — because a main source set reaches neither `:core:testing` nor the portraits the apps never bundle (`DEC-164`).
 - **Module graph:** a dependency-analysis check asserts the rules in §3.4, including the prohibition on feature-to-feature edges.
 
 ## 9. Decisions
