@@ -1,7 +1,7 @@
 # TECHNICAL_PLAN.md — Milestones, Sequencing and Gates
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-10-04
+- **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see `AGENTS.md` §3)
 - **Authoritative for:** milestone phasing and objectives, build order, sequencing and prerequisite constraints, the phase plan, risk-sequencing consequences, the release readiness checklist and release mechanics, and the milestone → requirement coverage matrix.
 - **Inputs:** [`assessment.md`](../assessment.md), [`REQUIREMENTS.md`](REQUIREMENTS.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), [`DEFINITION.md`](DEFINITION.md), [`TESTING.md`](TESTING.md), [`DESIGN.md`](DESIGN.md), [`API_SPECS.md`](API_SPECS.md), [`UI_SPEC.md`](UI_SPEC.md), [`CONTRACTS.md`](CONTRACTS.md), [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md)
@@ -242,12 +242,13 @@ The coverage rules are owned by `REQUIREMENTS.md` §15 and audited in `DOCUMENTA
 | M2 | The functional, UX, reliability and platform set of M1, plus `REQ-PLAT-003` and the cross-platform half of `REQ-UX-008` | Adds the iOS-specific platform requirement and copy parity |
 | M3 | `REQ-NFR-003`, `REQ-NFR-005`, `REQ-NFR-007`, `REQ-NFR-011`, `REQ-UX-009`, `REQ-SEC-006` | Final measurement, traceability and advisory closure across both platforms |
 
-`REQ-FUNC-030`…`REQ-FUNC-032` and `REQ-FUNC-036` are deferred (`REQUIREMENTS.md` §1.3, `DECISION_BOARD.md` §4) and MUST NOT appear in any milestone scope.
+`REQ-FUNC-030`…`REQ-FUNC-032` are deferred (`REQUIREMENTS.md` §1.3, `DECISION_BOARD.md` §4) and MUST NOT appear in any milestone scope. `REQ-FUNC-036` was deferred with them until `DEC-162` re-admitted it on 2026-10-06; it is delivered in M3 by `TASK-139`, on both platforms.
 
 ## 11. Change log
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | §10 no longer lists `REQ-FUNC-036` among the deferred requirements: `DEC-162` re-admitted it, and `TASK-139` delivers it in M3. | `DEC-162` |
 | 2026-10-04 | §7 records the runner-fit consequence of a pinned toolchain: the `android` gate excludes the KMP-disabled native suite and takes a 60-minute ceiling (`DEC-111`, `GAP-028`); no milestone objective, exit criterion or required check changes. | `DEC-111`, `GAP-028`, `TASK-109` |
 | 2026-10-03 | §9 records the B5–B9 three-phase packaging as block exceptions (`DEC-106`…`DEC-110`); all remaining blocks are packaged in three phases each, while milestone objectives, exit criteria and the T0–T8 ordering are unchanged. | `DEC-106`, `DEC-107`, `DEC-108`, `DEC-109`, `DEC-110` |
 | 2026-10-03 | §9 records the B4 three-phase packaging as the second block exception after B3; the milestone objectives, exit criteria and the T0–T8 ordering are unchanged. | `DEC-096` |

@@ -305,6 +305,7 @@ Objective, entry and exit criteria: `TECHNICAL_PLAN.md` §2.4. Phase P12 in that
 | TASK-136 | — | Page the iOS character list as the user scrolls | Product | M3 | `GAP-046`: the paging sentinel sits in a non-lazy stack, so its `onAppear` fires once at the first render (page 2 loads at launch) and never again. | `REQ-FUNC-001` (`AC-REQ-FUNC-001-1`, `AC-REQ-FUNC-001-2`) | TASK-135 | Must | S | No page is requested before the user scrolls; reaching the end requests the next page, and again after each page | `TEST-UI-048` | Done (PR #245, merged as `77422f6`; issue #235 closed): the iOS list pages as the user scrolls (`LOG-0161`) |
 | TASK-137 | — | Keep the Android Discovery app bar's colour while the grid scrolls | Product | M3 | `GAP-047`: the band behind the search field turns Surface Container as soon as the grid scrolls, although the grid scrolls below the chips and never passes under it; the owner reports the change as a defect. | `REQ-FUNC-003`, `REQ-UX-002` | — | Should | S | The app bar is Surface at rest and stays Surface while the grid scrolls; the search field keeps its own container | `TEST-UI-049` | Done (PR #249, merged as `d111db1`; issue #247 closed): the Android Discovery app bar stays Surface while the grid scrolls (`DEC-161`, `LOG-0163`) |
 | TASK-138 | — | Keep the Detail together during the Android predictive back gesture | Product | M3 | `GAP-048`: during the edge back gesture the hero returns to its card while the rest of the Detail shrinks toward the centre of the screen, because the shell leaves the gesture to Navigation Compose's default scale-out. | `REQ-FUNC-009` (`AC-REQ-FUNC-009-1`, `AC-REQ-FUNC-009-2`) | TASK-137 | Must | S | The gesture runs the Back button's transition, seeked by its progress: the hero returns to its card and the rest of the Detail fades in place, neither scaled nor moved; with Reduce Motion it is the cross-fade | `TEST-UI-050` | Done (PR #250, merged as `5d246cc`; issue #248 closed): the Android predictive back gesture runs the Back button's transition (`LOG-0164`) |
+| TASK-139 | — | Play the selection sound while Sounds is on | Product | M3 | The owner enabled the sound effects the Sounds preference was built for, re-admitting `DEF-005` (`DEC-162`): one sound, on a navigation-bar destination change and on every status-selector tap, in each platform's low-latency form. | `REQ-FUNC-036`, `REQ-FUNC-033` (`AC-REQ-FUNC-033-3`) | TASK-074, TASK-077 | Should | L | Criteria `AC-REQ-FUNC-036-1`…`AC-REQ-FUNC-036-4` and the amended `AC-REQ-FUNC-033-3`, on both platforms | `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051`, `TEST-UI-052` | In progress (issue #252; authorized, `DEC-162`) |
 
 ## 7. Deferred work
 
@@ -316,7 +317,7 @@ Deferred items are not tasks. They are recorded decisions and MUST NOT be starte
 | `DEF-002` / `REQ-FUNC-031` | Real Episodes list and detail screens | `REQUIREMENTS.md` §1.3; `DECISION_BOARD.md` §4 | After the iOS milestone, using the batch episode endpoints already documented in `API_SPECS.md`. **Re-read 2026-10-05 (`DEC-118`):** not yet met — M2 is prepared at `v0.2.0` (`DEC-121`) and is released by the owner's tag; even then a Could-have needs a new accepted decision before work begins | DEC-005 |
 | `DEF-003` / `REQ-FUNC-032` | Real Locations screens | `REQUIREMENTS.md` §1.3; `DECISION_BOARD.md` §4 | Same as `DEF-002`, plus a decision on how Locations is reached, since it has no navigation destination | DEC-005, DEC-055 |
 | `DEF-004` | Kotlin Swift export as the single interop path, replacing the current bridging split | `REQUIREMENTS.md` §1.3; `DECISION_BOARD.md` §4 | Kotlin's Swift export leaves Alpha | DEC-013 |
-| `DEF-005` / `REQ-FUNC-036` | Sound effects played while the Sounds preference is on | `REQUIREMENTS.md` §1.3; `DECISION_BOARD.md` §4 | A sound set is specified and traced to an accepted decision | DEC-055 |
+| `DEF-005` / `REQ-FUNC-036` | Sound effects played while the Sounds preference is on | `REQUIREMENTS.md` §1.3; `DECISION_BOARD.md` §4 | A sound set is specified and traced to an accepted decision. **Met 2026-10-06:** the owner specified one sound and its two triggers, so the item is re-admitted as `TASK-139` and is no longer deferred | DEC-055, DEC-162 |
 | `TASK-035` follow-up | No further deferral: the PNG exports are committed work in M0. If project access is not granted, the item stays open with the gap recorded in `DOCUMENTATION_AUDIT.md` rather than being closed as done | `DOCUMENTATION_AUDIT.md` | Project access to the Figma file is granted, or the exports are produced by another route | DEC-045, `CON-005` |
 
 Deferred decisions that are not scope items — the `DEC-025` question of iOS snapshot breadth and the `DEC-029` question of moving live contract tests into the gate — are tracked on `DECISION_BOARD.md` §4 and their re-entry conditions live there. The `DEC-029` question is now only about the live-network job: the fixture/replay contract suite is already required in the gate by DEC-054 (`TASK-026`).
@@ -352,6 +353,7 @@ Deferred decisions that are not scope items — the `DEC-025` question of iOS sn
 | `REQ-FUNC-033` | Should | `TASK-074`, `TASK-077` |
 | `REQ-FUNC-034` | Should | `TASK-075`, `TASK-077` |
 | `REQ-FUNC-035` | Should | `TASK-076`, `TASK-077` |
+| `REQ-FUNC-036` | Should | `TASK-139` |
 
 ### 8.2 Non-functional, platform, UX, reliability, security and observability requirements
 
@@ -445,6 +447,7 @@ The audit's open items are `CONF-50` and `CONF-54` and the open `GAP-*` rows of 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `TASK-139` is registered from the owner's directive to enable the sound effects (issue #252): `DEF-005` is re-admitted, so its §7 row is closed and `REQ-FUNC-036` joins the §8.1 coverage index. | `DEC-162` |
 | 2026-10-06 | `TASK-137` and `TASK-138` are merged by the owner (PRs #249 and #250, the last as `5d246cc`); issues #247 and #248 are closed, and the owner's report has no open task. | `DEC-160` |
 | 2026-10-06 | `TASK-138` is `In review`: the Android predictive back gesture keeps the Detail together. | `DEC-160` |
 | 2026-10-06 | `TASK-137` is `In review`: the Android Discovery app bar stays Surface while the grid scrolls. | `DEC-161` |

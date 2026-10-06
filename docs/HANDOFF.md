@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the owner re-admitted the sound effects (`DEC-162`), delivered by `TASK-139`; the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -8,6 +8,14 @@
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### Owner's sound effects — 2026-10-06
+
+The owner asked to enable the sound effects the Settings "Sounds" preference was built for, which `DEC-055` had deferred as `DEF-005`. The owner specified the sound set: one sound — the owner's own recording — played while Sounds is on when the user switches destination on the navigation bar and on every tap of the Discovery status selector. `DEC-162` re-admits `REQ-FUNC-036` as a Should-have requirement and authorizes the writes outside the documentation. The work is one task with its own issue and pull request.
+
+| Work | Branch | State |
+| --- | --- | --- |
+| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In progress (issue #252) |
 
 ### Owner's Android defects — 2026-10-06
 
