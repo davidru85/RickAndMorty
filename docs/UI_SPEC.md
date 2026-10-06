@@ -450,6 +450,7 @@ Presentation per platform:
 | Navigation | Navigation bar with the section's item selected | Glass tab bar variant for the section |
 
 Behaviour:
+- **Placement (Android):** the illustration, heading, body and button are centred vertically in the area below the title, and scroll when they do not fit at large text sizes (`GAP-041`, `TASK-131`). The Discovery empty and error states and the Detail's full-surface error use the same component and are centred the same way in the area they are given.
 - **Browse characters:** selects the Characters tab (Discovery). It doesn't push a new screen.
 - **Favorites:** when the user has favourites, this screen becomes the list of favourite characters, using the same cards as Discovery. The empty state only shows while the list is empty.
 - **When Episodes is built:** its placeholder is replaced by a real screen with the same title and navigation.
