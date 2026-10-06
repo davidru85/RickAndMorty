@@ -28,6 +28,12 @@ struct DiscoveryScreen: View {
     /// the shared refresh ends. A preview or a case that does not refresh passes nothing.
     let onRefresh: () async -> Void
 
+    /// Every tap on the status selector, the option already selected included, so the caller can answer the
+    /// tap itself — the shell plays the selection sound (`REQ-FUNC-036`, `AC-REQ-FUNC-036-2`). The filter
+    /// change is still the intent's; a reset the app makes ("Clear filters") is not a tap and is not
+    /// reported.
+    let onStatusSelected: (StatusFilter) -> Void
+
     /// The one image seam (`TASK-058`, `UI_SPEC.md` §5.1): a card's portrait resolves through it, so a
     /// test substitutes an in-memory loader and never touches the network. `nil` uses the app's own
     /// pipeline, which is the only implementation the shipped app resolves.
@@ -38,13 +44,15 @@ struct DiscoveryScreen: View {
         loader: (any PortraitImageLoading)? = nil,
         onIntent: @escaping (any CharacterListIntent) -> Void,
         onOpenDetail: @escaping (CharacterCardUi) -> Void,
-        onRefresh: @escaping () async -> Void = {}
+        onRefresh: @escaping () async -> Void = {},
+        onStatusSelected: @escaping (StatusFilter) -> Void = { _ in }
     ) {
         self.state = state
         self.loader = loader
         self.onIntent = onIntent
         self.onOpenDetail = onOpenDetail
         self.onRefresh = onRefresh
+        self.onStatusSelected = onStatusSelected
     }
 
     /// The typed query, held by the view only until the intent leaves.
@@ -149,9 +157,9 @@ struct DiscoveryScreen: View {
         GlassSegmentedControl(
             selection: Binding(
                 get: { CharacterPresentation.filterIdentifier(state.filter.status) },
+                // The control assigns its selection on every tap, the selected option's too.
                 set: { identifier in
-                    guard let status = CharacterPresentation.statusFilter(identifier) else { return }
-                    onIntent(CharacterListIntentStatusSelected(status: status))
+                    Self.selectStatus(identifier, onIntent: onIntent, onStatusSelected: onStatusSelected)
                 }
             ),
             options: filterOptions
@@ -170,6 +178,19 @@ struct DiscoveryScreen: View {
             .init(id: CharacterPresentation.filterIdentifier(StatusFilter.unknown), label: copy(.valueUnknown))
         )
         return options
+    }
+
+    /// A tap on the status selector (`AC-REQ-FUNC-036-2`): the option's intent, then the report of the tap,
+    /// on every tap, the option already selected included. An identifier that names no status does
+    /// neither.
+    static func selectStatus(
+        _ identifier: String,
+        onIntent: (any CharacterListIntent) -> Void,
+        onStatusSelected: (StatusFilter) -> Void
+    ) {
+        guard let status = CharacterPresentation.statusFilter(identifier) else { return }
+        onIntent(CharacterListIntentStatusSelected(status: status))
+        onStatusSelected(status)
     }
 
     // MARK: - Content

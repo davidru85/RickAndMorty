@@ -12,7 +12,11 @@ import SwiftUI
 /// `:androidApp` is on Android: it resolves the shared graph through `MultiverseBootstrap` and hands
 /// the screen a state holder, and a screen never resolves a dependency itself.
 struct RootView: View {
-    @StateObject private var navigation = ShellNavigation()
+    /// The navigation state and the one selection sound (`REQ-FUNC-036`), built once with the shell, so
+    /// the sound is prepared at launch, long before the splash lets the first tap through.
+    @StateObject private var navigation = ShellNavigation(
+        selectionSound: SelectionSound(player: BundledSoundPlayer())
+    )
 
     /// The splash gate: the branded splash shows until its floor elapses, and it completes with no
     /// network (`AC-REQ-FUNC-007-3`).
@@ -33,7 +37,7 @@ struct RootView: View {
         GlassTabBar(
             selection: Binding(
                 get: { navigation.selected.id },
-                set: { id in ShellDestination(tabID: id).map(navigation.select) }
+                set: { id in ShellDestination(tabID: id).map(navigation.selectFromTabBar) }
             ),
             items: ShellDestination.allCases.map(\.tabItem)
         ) { item in
@@ -128,9 +132,11 @@ struct DestinationView<Detail: View>: View {
         case .characters:
             // Discovery owns its own state holder: the pager is per-screen (`IC-014`), so the holder
             // builds it from the shared graph through the bootstrap.
-            DiscoveryHost { card in
-                opened = card
-            }
+            DiscoveryHost(
+                onOpenDetail: { card in opened = card },
+                // Every status tap, the selected option included (`AC-REQ-FUNC-036-2`).
+                onStatusSelected: { _ in navigation.playSelectionSound() }
+            )
         case .favorites:
             // A favourite opens the same detail destination Discovery's cards do (`IC-020`).
             FavoritesHost(
