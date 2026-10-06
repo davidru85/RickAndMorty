@@ -270,7 +270,7 @@ private fun rememberSplashReady(gate: SplashGate): Boolean {
 @Composable
 internal fun topLevelDestinations(): List<NavigationDestination> =
     listOf(
-        NavigationDestination(KEY_CHARACTERS, CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value), MultiverseIcons.Groups, MultiverseIcons.Groups),
+        NavigationDestination(KEY_CHARACTERS, CopyResolver.copy(CopyKeys.NAV_CHARACTERS.value), MultiverseIcons.Groups, MultiverseIcons.GroupsOutlined),
         NavigationDestination(
             KEY_EPISODES,
             CopyResolver.copy(CopyKeys.NAV_EPISODES.value),
