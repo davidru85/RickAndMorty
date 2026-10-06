@@ -387,7 +387,7 @@ Behaviour:
   - "All" sends no `status`
 - **Not offered:** species and gender filters. The API supports them (`API_SPECS.md` §4.4), but the UI deliberately limits filtering to status plus name search.
 - **The selected filter must match the content.** Both designs show "All" selected with mixed statuses.
-- **Paging:** incremental; prefetch the next page near the end.
+- **Paging:** incremental; prefetch the next page near the end. Both platforms request it when a card within two of the end becomes visible, and only then: Android from the grid's last visible index, iOS from the lazy grid cell's appearance (`GAP-046`, `TASK-136`). Nothing outside the lazy grid may trigger it, because a non-lazy view appears with the first render and never again.
 - **The count line keeps its space** (`GAP-039`): a filter change resets the count until the new page answers. The line keeps its height and only its text hides: it fades out over 150 ms, keeping the last count's text, and fades back in with the new count, so the controls and the grid never move. A hidden count is not exposed to a screen reader. Android: `TASK-129`; iOS: `TASK-135`.
 - **Search:** 300 ms debounce; a new query resets to page 1.
 - **Voice search (speech-to-text) — DEFERRED (`DEC-002`, `REQ-FUNC-030`), not part of M1/M2.** The specification below is retained so the design is not lost, but the mic affordance `MUST NOT` be rendered and no microphone or speech permission `MUST` be requested (`REQ-SEC-004`) until a new decision reactivates it. Both search-field specifications in §4.1/§4.2 therefore ship without the trailing `mic` control.

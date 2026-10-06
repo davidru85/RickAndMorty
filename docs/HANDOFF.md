@@ -24,7 +24,7 @@ The owner's manual audit of 2026-10-05 listed eight Android defects and two iOS 
 | `TASK-133` — smaller Detail stat tiles on Android (`GAP-043`) | `fix/task-133-smaller-stat-tiles`, from `TASK-132`'s head | In review (PR #242; issue #232; `LOG-0158`) |
 | `TASK-134` — a smaller favourite button with the right heart on Android (`GAP-044`) | `fix/task-134-favorite-button`, from `TASK-133`'s head | In review (PR #243; issue #233; `LOG-0159`) |
 | `TASK-135` — the iOS count line keeps its space (`GAP-045`) | `fix/task-135-ios-count-line-space`, from `TASK-134`'s head | In review (PR #244; issue #234; `LOG-0160`) |
-| `TASK-136` — the iOS list pages as the user scrolls (`GAP-046`) | `fix/task-136-ios-paging`, from `TASK-135`'s head | Not started (issue #235) |
+| `TASK-136` — the iOS list pages as the user scrolls (`GAP-046`) | `fix/task-136-ios-paging`, from `TASK-135`'s head | In review (issue #235; `LOG-0161`) |
 
 ### Code-review remediation — 2026-10-05
 
