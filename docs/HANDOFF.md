@@ -15,7 +15,7 @@ The owner asked to enable the sound effects the Settings "Sounds" preference was
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In review (issue #252; `LOG-0166`) |
+| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In review (PR #253, issue #252; `LOG-0166`) |
 
 ### Owner's Android defects — 2026-10-06
 
