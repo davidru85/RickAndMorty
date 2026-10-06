@@ -54,6 +54,9 @@ struct DiscoveryScreen: View {
     /// a "Clear filters" action is reflected immediately.
     @State private var query: String = ""
 
+    /// The last count the line showed, so the hidden line keeps its text and its height (`TASK-135`).
+    @State private var lastCount: Int32 = 0
+
     /// The reader's text size (`UI_SPEC.md` §9): at the accessibility sizes the grid drops to one
     /// column.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -86,8 +89,14 @@ struct DiscoveryScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .cosmicCanvas()
-        .onAppear { query = state.filter.query }
+        .onAppear {
+            query = state.filter.query
+            if let count = state.totalCount { lastCount = count.int32Value }
+        }
         .onChange(of: state.filter.query) { _, next in query = next }
+        .onChange(of: state.totalCount?.int32Value) { _, next in
+            if let next { lastCount = next }
+        }
     }
 
     // MARK: - Search field
@@ -110,14 +119,20 @@ struct DiscoveryScreen: View {
 
     /// The count line under the large title (`AC-REQ-FUNC-001-3`). The number is the shared formatter's
     /// output over the state's `totalCount`, so both platforms render the same template.
-    @ViewBuilder
+    ///
+    /// It **keeps its line** while the count is unknown (`TASK-135`, `UI_SPEC.md` §6.2): a filter change
+    /// resets the total until the new page answers, and removing the line moved the search field, the
+    /// segments and the grid up and back. While unknown it keeps the last count's text — `0` before any —
+    /// at zero opacity and hidden from VoiceOver, so it holds the same height and is never read stale.
     private var countLine: some View {
-        if let count = state.totalCount {
-            Text(countLine(count: count.int32Value))
-                .font(MultiverseType.subheadline)
-                .foregroundStyle(MultiverseLabelColors.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        let known = state.totalCount != nil
+        return Text(countLine(count: state.totalCount?.int32Value ?? lastCount))
+            .font(MultiverseType.subheadline)
+            .foregroundStyle(MultiverseLabelColors.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .opacity(known ? 1 : 0)
+            .accessibilityHidden(!known)
+            .animation(.easeInOut(duration: DiscoveryLayout.countLineFade), value: known)
     }
 
     private func countLine(count: Int32) -> String {
@@ -338,6 +353,9 @@ struct DiscoveryScreen: View {
 enum DiscoveryLayout {
     /// The skeleton count of `UI_SPEC.md` §8, "Initial loading".
     static let skeletonCount = 6
+
+    /// The count line's fade when the count leaves or returns (`UI_SPEC.md` §6.2), in seconds.
+    static let countLineFade: Double = 0.15
 
     /// One identity per skeleton, disjoint from every card's `CharacterPresentation.gridIdentity`.
     static let skeletonIdentities = (0..<skeletonCount).map { "skeleton-\($0)" }

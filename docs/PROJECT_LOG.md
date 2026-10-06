@@ -1485,6 +1485,27 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 271 test reports hold 1368 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0160 · 2026-10-06 · `TASK-135`: the iOS count line keeps its space (`GAP-045`)
+
+- **Event:** the owner reported that switching Todos, Vivo, Muerto and Desconocido makes the "N personajes en el multiverso" line disappear and reappear, moving the list.
+- **The cause:** the same state fact as `GAP-039`. `totalCount` is `nil` while the new filter's page 1 loads, and `DiscoveryScreen.swift` rendered the line only inside `if let`, so the search field, the segments and the grid moved up one line and back.
+- **The change:**
+  - The line is always rendered. While the count is unknown it keeps the last count's text (`0` before any count is known), at zero opacity with a 0.15 s fade, and `accessibilityHidden`.
+  - The last count is `@State`, updated as the count changes.
+  - `UI_SPEC.md` §6.2 names iOS beside Android.
+- **Red, then green:**
+  - `TEST-UI-047` hosts the real screen, moves it from a known count to an unknown one, and aligns the two frames' horizontal-edge profiles below the line, so the static background cannot hide a shift.
+  - It failed with `the content below the count line moved -30 pt while the count was unknown`, and passes after the change.
+  - A VoiceOver case was tried and dropped: SwiftUI built no accessibility tree in the unit-test host, so even the known count was not found.
+  - The refactor commit formats the case for SwiftLint and swift-format.
+- **Validation:**
+  - `xcodebuild … -destination 'platform=iOS Simulator,id=<iPhone 17, iOS 27.0>' test` — 166 tests, 0 failures, with no snapshot reference changed.
+  - `bash tools/swift-lint.sh` — 0 violations.
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 271 test reports hold 1368 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** a filter switch on the simulator, which cannot receive taps on this host, and VoiceOver.
+- **Affected documents:** `docs/UI_SPEC.md` §6.2, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-045`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
