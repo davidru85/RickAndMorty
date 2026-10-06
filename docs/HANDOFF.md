@@ -176,7 +176,7 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Merged | The set is integrated on `main` (TASK-032 PR #25, TASK-034 PR #32, TASK-090 PR #45); inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` §6 |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-159` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-161` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
