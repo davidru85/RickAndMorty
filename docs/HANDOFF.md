@@ -15,7 +15,7 @@ After merging PR #255, the owner asked for three things in a new pull request: t
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-141` — the READMEs synchronised with the code, with screenshots, and the repository's About updated | `docs/task-141-readme-sync`, from `main` at `24d2753` | In review (issue #256; `LOG-0168`) |
+| `TASK-141` — the READMEs synchronised with the code, with screenshots, and the repository's About updated | `docs/task-141-readme-sync`, from `main` at `24d2753` | In review (PR #257, issue #256; `LOG-0168`) |
 
 ### Owner's preview request — 2026-10-06
 
