@@ -48,6 +48,8 @@ import io.github.davidru85.multiverse.core.designsystem.image.LocalCharacterAcce
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitTransitionScope
 import io.github.davidru85.multiverse.core.designsystem.motion.LocalPortraitVisibilityScope
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.domain.model.CharacterId
@@ -341,5 +343,18 @@ internal fun NavHostController.selectTopLevel(key: String) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * The shell's navigation bar with the Material Symbols it bundles (`DEC-156`), Characters selected. The
+ * graph itself is not previewed: its routes resolve the shared graph, which reaches the network and the
+ * stores, so each destination's screen carries its own previews instead.
+ */
+@MultiverseComponentPreviews
+@Composable
+private fun ShellNavigationBarPreview() {
+    MultiversePreviewSurface {
+        MultiverseNavigationBar(destinations = topLevelDestinations(), selectedKey = KEY_CHARACTERS, onSelect = {})
     }
 }
