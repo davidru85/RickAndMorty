@@ -1317,6 +1317,35 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 - **Not verified:** API 26–30, where the AndroidX library draws an emulated starting window from the same attribute. The case resolves the attribute through that library, but no run on those levels was observed.
 
+### LOG-0153 · 2026-10-06 · `TASK-128`: the Android accent samples at most 32 px, one extraction at a time (`GAP-038`)
+
+- **Event:** the owner reported that the Discovery grid scrolls with lag and asked for smaller, resized images.
+- **The cause the repository shows:**
+  - Every card runs two image jobs. The displayed portrait is one hardware-bitmap decode at the source's 300 px (`UI_SPEC.md` §5.1).
+  - The accent is a second job: a 64 px software decode and a quantizer pass, started for every card a fling brings on screen, in parallel on `Dispatchers.Default`.
+  - A throwaway JVM benchmark of `AccentPipeline.containerFor` on photo-like pixels (Apple Silicon, warmed) measured 8.0 ms per card at 64 px and 1.8 ms at 32 px. ART on a phone is several times slower [INFERENCE].
+- **The change (`DEC-155`):**
+  - `CoilPortraitPixels` samples at most 32 px on the longest side, which is a quarter of the pixels and still yields 128 quantized colours.
+  - `CharacterAccentPolicy` runs one extraction at a time behind a one-permit semaphore.
+  - The memo, the in-flight de-duplication, the quantizer and the tone-30 container are unchanged.
+  - The displayed portrait keeps its 300 px decode, because going lower would blur it.
+- **Red, then green:**
+  - `TEST-UNIT-106` failed with `the accent sample holds at most 32 × 32 pixels, but it held 4096`.
+  - `TEST-UNIT-107` failed with `at most one extraction runs at a time expected:<1> but was:<4>`.
+  - Both pass after the change, with `CardAccentTest`, `ImageCacheTest` and the other policy cases (18 tests).
+  - The refactor phase changed nothing: no test exercises the k-means loop directly, so restructuring it was left out rather than done without a characterization test.
+- **Measured on the `Pixel_9_Pro` emulator** (API 37, release builds before and after, 25 flings after a cold start, `PERFORMANCE.md` §5):
+  - `DefaultDispatcher` CPU fell from 260 and 230 ms to 200 and 150 ms.
+  - Janky frames stayed within noise: 1.35 %, 0.08 % and 1.28 % before, against 1.16 % and 1.42 % after.
+  - The RenderThread (about 1.8 s, software-rendered) and the main thread (0.6–0.8 s) dominate there.
+  - **The emulator does not reproduce the owner's lag in a release build**, so the change is the cause the repository can show, not a proven fix on the owner's device.
+  - The debug build janks markedly more on the same emulator: 63.5 % "legacy" janky frames and a p99 of 36 ms, against 36 % and 22 ms on release. A debug install exaggerates the lag.
+- **Affected documents:** `docs/UI_SPEC.md` §5.4, `docs/PERFORMANCE.md` §5, `docs/DECISION_BOARD.md` (`DEC-155`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-038`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 266 test reports hold 1358 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** a physical device, or the `TEST-PERF-002` harness, which `PERF-Q1` leaves undecided.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

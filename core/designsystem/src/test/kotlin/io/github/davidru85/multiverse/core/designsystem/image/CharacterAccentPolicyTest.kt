@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.toArgb
 import io.github.davidru85.multiverse.core.designsystem.color.TonalPalette
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -129,6 +131,33 @@ class CharacterAccentPolicyTest {
 
             assertEquals("the memo answers the second call", first, second)
             assertEquals("extraction runs at most once per URL per process", 1, reads)
+        }
+
+    /**
+     * `TEST-UNIT-107` (`TASK-128`, `GAP-038`): extractions run **one at a time**. A fling brings several
+     * cards on screen at once; when each started its own extraction on the shared dispatcher, the colour
+     * work took every core the UI thread and the render thread needed. The fake source suspends inside
+     * each read, so overlapping extractions are observable as reads in flight together.
+     */
+    @Test
+    fun `TEST-UNIT-107 given_several_portraits_at_once_when_their_accents_resolve_then_one_extraction_runs_at_a_time`() =
+        runTest {
+            var inFlight = 0
+            var peak = 0
+            val source =
+                PortraitPixels {
+                    inFlight += 1
+                    peak = maxOf(peak, inFlight)
+                    delay(10)
+                    inFlight -= 1
+                    redPixels
+                }
+            val policy = policy(source)
+
+            val accents = (1..4).map { index -> async { policy.accentFor("portrait-$index") } }.awaitAll()
+
+            assertEquals("every portrait still resolves its accent", 4, accents.size)
+            assertEquals("TEST-UNIT-107: at most one extraction runs at a time", 1, peak)
         }
 
     /** A pixel source that counts its reads per URL, so the memo is observed through what it saves. */

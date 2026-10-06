@@ -1,7 +1,7 @@
 # PERFORMANCE.md - Performance Budgets and Measurement Method
 
 - **Status:** Active - target state. The Android app is runnable since TASK-044, but no budget has been measured: the reference device is unassigned (A-PERF-1) and the harness module is undecided (PERF-Q1), so every budget below is a *target* (DEC-115). No number in this file is a device measurement; the recorded results are the deterministic zero-request half of `PERF-006` and the release APK size of `PERF-009`, a measurement of the build artifact (§5).
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** Implementation Engineer (see `AGENTS.md` §3.5); measurement evidence is recorded by the QA & Validation Engineer (`AGENTS.md` §3.6)
 - **Authoritative for:** the numeric performance budgets (`PERF-###`), the reference device definition, the measurement method and tools per platform, the result register, and the regression and budget-change policy. Nothing else in the repository may state a numeric performance budget (DEC-033).
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md) §6 (`REQ-NFR-003`) · [`API_SPECS.md`](API_SPECS.md) §8, §12 · [`DESIGN.md`](DESIGN.md) §4, §5 · [`UI_SPEC.md`](UI_SPEC.md) §5, §6 · [`TESTING.md`](TESTING.md) · [`PROJECT_LOG.md`](PROJECT_LOG.md) · [`DECISION_BOARD.md`](DECISION_BOARD.md)
@@ -115,6 +115,7 @@ No device measurement exists yet. The Android app is runnable since `TASK-044`, 
 | `PERF-003` | Android | `TEST-PERF-001` trace section | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-003` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-004` | Android | `TEST-PERF-002` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
+| `PERF-004` | Android | Emulator scroll script (`TASK-128`), not `TEST-PERF-002` | 25 flings after a cold start with cleared data, `dumpsys gfxinfo`: janky frames 1.35 %, 0.08 %, 1.28 % before and 1.16 %, 1.42 % after (p99 20–22 ms before, 22–30 ms after); `DefaultDispatcher` workers' CPU over the session 260 and 230 ms before, 200 and 150 ms after | 2026-10-06 | None - `Pixel_9_Pro` emulator, API 37, on an Apple Silicon host (not the reference device, A-PERF-1) | `0.2.0` release (R8), signed locally with the debug key, before and after `TASK-128` | `PROJECT_LOG.md` LOG-0153 | Indicative only: the emulator does not reproduce the owner's lag; the frame numbers move within noise |
 | `PERF-004` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-005` | Android | Instrumented header assertion; perf id pending assignment in `TESTING.md` | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
 | `PERF-005` | iOS | Manual procedure (§4.2), no test id | Not measured | Not measured | Not assigned (A-PERF-1) | Build-only; no runnable feature code | None | Unmeasured - no runnable app |
@@ -190,6 +191,7 @@ A budget regression `MUST` be reported as a regression, not reclassified as nois
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `TASK-128`: an indicative emulator scroll row (`PERF-004`, Android) before and after the accent change. | `DEC-155`, `LOG-0153` |
 | 2026-09-29 | Created: scope and constraints, reference device profile, `PERF-001`…`PERF-009` budgets with method/tool/recording, Android Macrobenchmark harness plan, iOS manual procedure, result register, design levers, regression and budget-change policy, open items. | DEC-033, DEC-027, DEC-038, DEC-052, DEC-054 |
 | 2026-09-29 | Added a `Verification` column to the budget table and a `Test id producing the value` column to the result register, so every row names the test or method that produces its number; aligned the regression policy with the measurement job described in `TESTING.md` §10/§14.3; `PERF-Q1` records the missing harness-module decision. | DEC-052, DEC-054 |
 | 2026-10-04 | B6 Phase 6.2: §5 records the zero-request half of `PERF-006` (`TEST-PERF-003`, passing in the blocking gate) as a new row, and the status line and §5 state why every device budget stays unmeasured now that the app runs: no reference device (A-PERF-1) and no harness decision (PERF-Q1). | `DEC-115`, `TASK-049`, `LOG-0127` |

@@ -10,7 +10,9 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandCo
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 /**
@@ -29,7 +31,9 @@ public fun interface PortraitPixels {
  *
  * Three rules the specification fixes, each observable:
  *
- * - the computation runs **off the main thread**, on the injected [dispatcher] — never on the caller's;
+ * - the computation runs **off the main thread**, on the injected [dispatcher] — never on the caller's —
+ *   and **one extraction at a time** (`TASK-128`): a fling brings several cards on screen together, and
+ *   parallel extractions took the cores the UI thread and the render thread needed;
  * - the result is memoised **once per URL** in a bounded LRU, so extraction happens at most once per
  *   character per process and the cache evicts in a documented order; callers asking for a URL whose
  *   extraction is already running wait for that one rather than starting another;
@@ -48,6 +52,9 @@ public class CharacterAccentPolicy(
     private val cache = LinkedHashMap<String, Color>()
     private val inFlight = mutableMapOf<String, CompletableDeferred<Color>>()
     private val lock = Mutex()
+
+    /** One permit: at most one extraction runs at a time, whatever the dispatcher's parallelism. */
+    private val extraction = Semaphore(1)
 
     /**
      * The container colour for [imageUrl]. The first call computes and remembers it; every later call
@@ -71,10 +78,12 @@ public class CharacterAccentPolicy(
 
         val computed =
             try {
-                withContext(dispatcher) {
-                    val sampled = pixels.pixelsFor(imageUrl)
-                    val container = sampled?.let(AccentPipeline::containerFor)
-                    Color(container ?: TonalPalette.container(MultiverseBrandColors.portalGreen.toArgb()))
+                extraction.withPermit {
+                    withContext(dispatcher) {
+                        val sampled = pixels.pixelsFor(imageUrl)
+                        val container = sampled?.let(AccentPipeline::containerFor)
+                        Color(container ?: TonalPalette.container(MultiverseBrandColors.portalGreen.toArgb()))
+                    }
                 }
             } catch (failure: Throwable) {
                 // Cancellation included: the waiting callers see the same outcome, and the next caller
