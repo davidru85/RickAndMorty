@@ -15,7 +15,7 @@ The owner asked for a review of every view on Android and iOS, adding its previe
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-140` — previews for every presentation-layer view, on both platforms | `chore/task-140-view-previews`, from `main` at `0eff567` | In review (issue #254; `LOG-0167`) |
+| `TASK-140` — previews for every presentation-layer view, on both platforms | `chore/task-140-view-previews`, from `main` at `0eff567` | In review (PR #255, issue #254; `LOG-0167`) |
 
 ### Owner's sound effects — 2026-10-06
 
