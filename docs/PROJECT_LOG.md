@@ -1506,6 +1506,31 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Not verified:** a filter switch on the simulator, which cannot receive taps on this host, and VoiceOver.
 - **Affected documents:** `docs/UI_SPEC.md` §6.2, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-045`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0161 · 2026-10-06 · `TASK-136`: the iOS list pages as the user scrolls (`GAP-046`)
+
+- **Event:** the owner reported that scrolling to the end of the iOS list never appends more characters.
+- **The cause:**
+  - The paging trigger was a zero-height `Color.clear` with `onAppear { LoadNextPage }`, in the non-lazy `VStack` that wraps the `LazyVGrid` inside the `ScrollView`.
+  - A non-lazy stack inserts its children at once, so the sentinel appeared with the first render. A cold launch logged `LOG-005 page=2` 55 ms after page 1, with no scroll.
+  - It then stayed in the hierarchy, because `loadState` stays `Content` while appending, so it never appeared again, and the list stopped at two pages.
+  - Android is unaffected: it reads the lazy grid's last visible index.
+- **The change:**
+  - The sentinel is gone. Each card within `DiscoveryLayout.prefetchDistance` (2, Android's distance) of the end requests the next page in its `onAppear`, and only with `Content`.
+  - The cells are the lazy grid's, so they appear as the user scrolls to them, and each page brings new ones, so the trigger re-arms. The shared pager's guards de-duplicate.
+  - `UI_SPEC.md` §6.2 states the rule for both platforms.
+- **Red, then green:**
+  - `TEST-UI-048` hosts the real screen with 20 cards, scrolls its `UIScrollView` to the end, delivers 40 cards, and scrolls again, counting `LoadNextPage`.
+  - It failed with `no page is requested before the user scrolls` (1, not 0) and `reaching the end again after page 2 arrived requests another page` (1, not more than 1).
+  - It passes after the change.
+- **Validation:**
+  - `xcodebuild … -destination 'platform=iOS Simulator,id=<iPhone 17, iOS 27.0>' test` — 167 tests, 0 failures.
+  - `bash tools/swift-lint.sh` — 0 violations.
+  - On the simulator, a cold launch now logs only `page=1` (two `LOG-005` and one `LOG-010`, all page 1), and the screen renders the grid as before.
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 271 test reports hold 1368 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+- **Not verified:** a finger scroll on the simulator, which cannot receive input on this host. The hosted test scrolls the same `UIScrollView` programmatically.
+- **Affected documents:** `docs/UI_SPEC.md` §6.2, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-046`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
