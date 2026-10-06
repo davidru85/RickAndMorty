@@ -2,8 +2,11 @@ package io.github.davidru85.multiverse.feature.favorites.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.ColorPainter
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
 
@@ -33,4 +36,16 @@ public fun FavoritesEmptyState(
         onAction = onBrowseCharacters,
         modifier = modifier,
     )
+}
+
+@MultiverseComponentPreviews
+@Composable
+private fun FavoritesEmptyStatePreview() {
+    MultiversePreviewSurface {
+        FavoritesEmptyState(
+            onBrowseCharacters = {},
+            // The shell passes its heart; a token stand-in shows where the illustration draws.
+            illustration = ColorPainter(MultiverseColors.onPrimaryContainer),
+        )
+    }
 }

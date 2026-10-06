@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.ColorPainter
 import io.github.davidru85.multiverse.core.designsystem.components.EmptyState
 import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.presentation.CopyKeys
@@ -52,6 +55,18 @@ public fun EpisodesPlaceholder(
             illustrationTint = MultiverseColors.onSecondaryContainer,
             onAction = onBrowseCharacters,
             modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@MultiverseScreenPreviews
+@Composable
+private fun EpisodesPlaceholderPreview() {
+    MultiversePreviewSurface {
+        EpisodesPlaceholder(
+            onBrowseCharacters = {},
+            // The shell passes its play glyph; a token stand-in shows where the illustration draws.
+            illustration = ColorPainter(MultiverseColors.onSecondaryContainer),
         )
     }
 }

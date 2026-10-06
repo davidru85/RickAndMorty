@@ -47,6 +47,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import io.github.davidru85.multiverse.core.designsystem.components.ScreenTitle
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 import io.github.davidru85.multiverse.core.domain.model.RemoteProtocol
@@ -384,5 +386,27 @@ private fun SettingsSection(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) { content() }
         }
+    }
+}
+
+/** A fresh install: Sounds off, REST in force and no favourites, so the delete action is disabled (`AC-REQ-FUNC-035-3`). */
+@MultiverseScreenPreviews
+@Composable
+private fun SettingsFreshInstallPreview() = SettingsPreview(SettingsUiState())
+
+@MultiverseScreenPreviews
+@Composable
+private fun SettingsConfiguredPreview() =
+    SettingsPreview(SettingsUiState(soundsEnabled = true, remoteProtocol = RemoteProtocol.GraphQl, canDeleteFavorites = true))
+
+/** The delete confirmation open over the screen (`AC-REQ-FUNC-035-1`). */
+@MultiverseScreenPreviews
+@Composable
+private fun SettingsDeleteConfirmationPreview() = SettingsPreview(SettingsUiState(canDeleteFavorites = true, isConfirmingDelete = true))
+
+@Composable
+private fun SettingsPreview(state: SettingsUiState) {
+    MultiversePreviewSurface {
+        SettingsScreen(state = state, onIntent = {})
     }
 }

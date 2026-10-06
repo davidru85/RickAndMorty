@@ -26,8 +26,12 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.PreviewImageSeam
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -221,3 +225,64 @@ private fun CharacterStatus.tone(): StatusTone =
 
 /** The mix of card heights: a `Tall` card at 0 and 3 of every 4 (`UI_SPEC.md` §4.1). */
 private const val TALL_EVERY: Int = 4
+
+@MultiverseScreenPreviews
+@Composable
+private fun FavoritesContentPreview() =
+    FavoritesPreview(
+        FavoritesUiState(
+            items =
+                listOf(
+                    previewCard("1", "Rick Sanchez", CharacterStatus.Alive),
+                    previewCard("2", "Morty Smith", CharacterStatus.Alive),
+                    previewCard("8", "Adjudicator Rick", CharacterStatus.Dead),
+                ),
+            loadState = LoadState.Content,
+        ),
+    )
+
+@MultiverseScreenPreviews
+@Composable
+private fun FavoritesEmptyPreview() = FavoritesPreview(FavoritesUiState(loadState = LoadState.Empty))
+
+@MultiverseScreenPreviews
+@Composable
+private fun FavoritesErrorPreview() = FavoritesPreview(FavoritesUiState(loadState = LoadState.Error(ApiFailure.Offline)))
+
+/** The first store emission is awaited: the section holds its surface under the title (`CONF-79`). */
+@MultiverseScreenPreviews
+@Composable
+private fun FavoritesLoadingPreview() = FavoritesPreview(FavoritesUiState(loadState = LoadState.Loading))
+
+/**
+ * The section in the preview frame, its portraits drawn by the no-I/O preview seam and a token stand-in
+ * for the heart the shell passes (`GUIDELINES.md` §5.4).
+ */
+@Composable
+private fun FavoritesPreview(state: FavoritesUiState) {
+    MultiversePreviewSurface {
+        FavoritesScreen(
+            state = state,
+            seam = PreviewImageSeam.Loaded,
+            onCharacterSelected = {},
+            onIntent = {},
+            onBrowseCharacters = {},
+            illustration = ColorPainter(MultiverseColors.onPrimaryContainer),
+        )
+    }
+}
+
+/** A favourite's card as the shared mapping builds it (`IC-016`); its URL never reaches a loader. */
+private fun previewCard(
+    id: String,
+    name: String,
+    status: CharacterStatus,
+): CharacterCardUi =
+    CharacterCardUi(
+        id = CharacterId(id),
+        name = name,
+        species = DisplayText.Data("Human"),
+        status = status,
+        statusLabel = DefaultPresentationFormatters.statusKey(status),
+        imageUrl = "https://example.invalid/avatar/$id.jpeg",
+    )

@@ -67,9 +67,14 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.PreviewImageSeam
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.domain.model.CharacterFilter
+import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.model.StatusFilter
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
@@ -548,3 +553,66 @@ private object PreviewSeam : ImageSeam {
         heightPx: Int,
     ): ImageSeamResult = ImageSeamResult.Loading
 }
+
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryLoadingPreview() = DiscoveryPreview(CharacterListUiState(loadState = LoadState.Loading))
+
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryContentPreview() = DiscoveryPreview(PreviewContent)
+
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryAppendingPreview() = DiscoveryPreview(PreviewContent.copy(isAppending = true))
+
+/** Stale content; its "Showing saved results" notice is a snackbar an effect shows, so it appears in interactive mode. */
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryStalePreview() = DiscoveryPreview(PreviewContent.copy(isStale = true))
+
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryEmptyPreview() =
+    DiscoveryPreview(CharacterListUiState(filter = CharacterFilter(query = "Xyzzy"), loadState = LoadState.Empty))
+
+@MultiverseScreenPreviews
+@Composable
+private fun DiscoveryErrorPreview() = DiscoveryPreview(CharacterListUiState(loadState = LoadState.Error(ApiFailure.Offline)))
+
+/** The screen in the preview frame, its portraits drawn by the no-I/O preview seam (`GUIDELINES.md` §5.4). */
+@Composable
+private fun DiscoveryPreview(state: CharacterListUiState) {
+    MultiversePreviewSurface {
+        DiscoveryScreen(state = state, onIntent = {}, seam = PreviewImageSeam.Loaded)
+    }
+}
+
+/** The first page: one card per status tone, so the badge's three colours show (`UI_SPEC.md` §3.2). */
+private val PreviewContent =
+    CharacterListUiState(
+        items =
+            listOf(
+                previewCard("1", "Rick Sanchez", CharacterStatus.Alive),
+                previewCard("2", "Morty Smith", CharacterStatus.Alive),
+                previewCard("8", "Adjudicator Rick", CharacterStatus.Dead),
+                previewCard("7", "Abradolf Lincler", CharacterStatus.Unknown),
+            ),
+        totalCount = 826,
+        loadState = LoadState.Content,
+    )
+
+/** A card as the shared mapping builds it (`IC-016`); its URL never reaches a loader. */
+private fun previewCard(
+    id: String,
+    name: String,
+    status: CharacterStatus,
+): CharacterCardUi =
+    CharacterCardUi(
+        id = CharacterId(id),
+        name = name,
+        species = DisplayText.Data("Human"),
+        status = status,
+        statusLabel = DefaultPresentationFormatters.statusKey(status),
+        imageUrl = "https://example.invalid/avatar/$id.jpeg",
+    )
