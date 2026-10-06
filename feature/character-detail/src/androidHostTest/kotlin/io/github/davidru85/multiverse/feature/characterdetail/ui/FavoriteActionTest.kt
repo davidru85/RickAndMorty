@@ -82,7 +82,10 @@ class FavoriteActionTest {
         }
         compose.waitForIdle()
 
-        val label = RuntimeEnvironment.getApplication().getString(requireNotNull(CopyResolver.resourceId(CopyKeys.DETAIL_ACTION_FAVORITE.value)))
+        val label =
+            RuntimeEnvironment.getApplication().getString(
+                requireNotNull(CopyResolver.resourceId(CopyKeys.DETAIL_ACTION_FAVORITE.value)),
+            )
         val fab = compose.onNodeWithContentDescription(label).getUnclippedBoundsInRoot()
         assertEquals("TEST-UI-046: the favourite action is the 56 dp small extended FAB", 56f, (fab.bottom - fab.top).value, 0.5f)
     }
@@ -92,7 +95,8 @@ class FavoriteActionTest {
         val lopsided =
             listOf(R.drawable.ic_heart_outline to "outline", R.drawable.ic_heart_filled to "filled").mapNotNull { (id, name) ->
                 val asymmetric = asymmetricPixels(id)
-                if (asymmetric <= HEART_PX * HEART_PX / 100) null else "the $name heart differs from its mirror image in $asymmetric of ${HEART_PX * HEART_PX} pixels"
+                val total = HEART_PX * HEART_PX
+                if (asymmetric <= total / 100) null else "the $name heart differs from its mirror image in $asymmetric of $total pixels"
             }
 
         assertTrue("TEST-UI-046: every heart is mirror-symmetric:\n" + lopsided.joinToString("\n"), lopsided.isEmpty())
