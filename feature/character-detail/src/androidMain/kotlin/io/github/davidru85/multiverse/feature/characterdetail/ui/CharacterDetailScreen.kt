@@ -28,7 +28,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumExtendedFloatingActionButton
+import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -526,9 +526,10 @@ private fun InlineError(
 }
 
 /**
- * The favourite action (`UI_SPEC.md` §4.1, §6.3, §7, Figma `21:1295`): a Medium extended FAB floating
- * 16 dp from the end and above the gesture area, Primary with the Portal Glow shadow, collapsing to its
- * icon once the content scrolls. The heart springs from outline to filled.
+ * The favourite action (`UI_SPEC.md` §4.1, §6.3, §7): a **small** (56 dp) extended FAB floating 16 dp
+ * from the end and above the gesture area, Primary with the Portal Glow shadow, collapsing to its icon
+ * once the content scrolls (`TASK-134`, `DEC-159`: smaller than Figma `21:1295`'s 80 dp Medium one). The
+ * heart, Material Symbols Rounded `favorite`, springs from outline to filled.
  *
  * It is one node named once: the animated extended FAB clears its text's semantics and takes its name
  * from the icon, so the icon carries the label and the text is not read again. It exposes its toggled
@@ -541,13 +542,13 @@ private fun FavoriteAction(
     onIntent: (CharacterDetailIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MediumExtendedFloatingActionButton(
+    SmallExtendedFloatingActionButton(
         onClick = { onIntent(CharacterDetailIntent.ToggleFavorite) },
         expanded = expanded,
         modifier =
             modifier
                 .dropShadow(
-                    shape = FloatingActionButtonDefaults.mediumExtendedFabShape,
+                    shape = FloatingActionButtonDefaults.smallExtendedFabShape,
                     shadow =
                         Shadow(
                             radius = MultiverseComponentDimensions.fabGlowRadius,
