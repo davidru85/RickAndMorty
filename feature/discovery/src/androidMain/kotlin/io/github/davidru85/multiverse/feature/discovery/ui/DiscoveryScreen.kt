@@ -1,6 +1,8 @@
 package io.github.davidru85.multiverse.feature.discovery.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -39,17 +41,21 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import io.github.davidru85.multiverse.core.designsystem.components.CardHeight
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCard
 import io.github.davidru85.multiverse.core.designsystem.components.CharacterCardSkeleton
@@ -229,19 +235,44 @@ private fun Headline(state: CharacterListUiState) {
                     top = MultiverseDimensions.spaceL,
                 ),
         )
-        state.totalCount?.let { count ->
-            Text(
-                text =
-                    CopyResolver
-                        .copy(CopyKeys.CHARACTERS_COUNT.value)
-                        .format(DefaultPresentationFormatters.charactersCount(count)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MultiverseColors.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = MultiverseDimensions.spaceL),
-            )
-        }
+        CountLine(totalCount = state.totalCount)
     }
 }
+
+/**
+ * The count line, which **keeps its line** while the count is unknown (`TASK-129`, `UI_SPEC.md` §6.2). A
+ * filter change resets the total until the new page answers; removing the line for that time moved the
+ * chips and the grid up and back. While the count is unknown the line keeps the last count's text —
+ * `0` before any — at zero opacity and cleared from semantics, so it holds the same height and a screen
+ * reader never hears a number that no longer applies.
+ */
+@Composable
+private fun CountLine(totalCount: Int?) {
+    val lastCount = remember { mutableIntStateOf(totalCount ?: 0) }
+    SideEffect { if (totalCount != null) lastCount.intValue = totalCount }
+    val known = totalCount != null
+    val opacity by animateFloatAsState(
+        targetValue = if (known) 1f else 0f,
+        animationSpec = tween(COUNT_LINE_FADE_MILLIS),
+        label = "count-line",
+    )
+    Text(
+        text =
+            CopyResolver
+                .copy(CopyKeys.CHARACTERS_COUNT.value)
+                .format(DefaultPresentationFormatters.charactersCount(totalCount ?: lastCount.intValue)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MultiverseColors.onSurfaceVariant,
+        modifier =
+            Modifier
+                .padding(horizontal = MultiverseDimensions.spaceL)
+                .graphicsLayer { alpha = opacity }
+                .then(if (known) Modifier else Modifier.clearAndSetSemantics { }),
+    )
+}
+
+/** The count line's fade when the count leaves or returns (`UI_SPEC.md` §6.2). */
+private const val COUNT_LINE_FADE_MILLIS = 150
 
 /**
  * The four single-select filter chips (`UI_SPEC.md` §4.1, `AC-REQ-FUNC-004-2`). The option list is built
