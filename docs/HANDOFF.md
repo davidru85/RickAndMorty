@@ -16,7 +16,7 @@ After the audit's merge the owner reported two more Android defects: the Discove
 | Work | Branch | State |
 | --- | --- | --- |
 | `TASK-137` — the Android Discovery app bar keeps its colour while the grid scrolls (`GAP-047`) | `fix/task-137-steady-app-bar`, from `main` at `b7e00e2` | In review (PR #249; issue #247; `LOG-0163`) |
-| `TASK-138` — the Detail stays together during the Android predictive back gesture (`GAP-048`) | `fix/task-138-predictive-back`, from `TASK-137`'s head | In review (issue #248; `LOG-0164`) |
+| `TASK-138` — the Detail stays together during the Android predictive back gesture (`GAP-048`) | `fix/task-138-predictive-back`, from `TASK-137`'s head | In review (PR #250; issue #248; `LOG-0164`) |
 
 ### Owner audit remediation — 2026-10-06
 
