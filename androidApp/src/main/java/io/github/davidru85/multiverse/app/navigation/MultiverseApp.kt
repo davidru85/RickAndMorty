@@ -137,6 +137,11 @@ public fun MultiverseApp(
                             exitTransition = { exitMotion },
                             popEnterTransition = { enterMotion },
                             popExitTransition = { exitMotion },
+                            // The back gesture seeks the same pop, so the Detail fades in place while its
+                            // portrait returns to the card. Left unset, Navigation Compose shrinks the
+                            // Detail toward the centre and the two come apart (`GAP-048`).
+                            predictivePopEnterTransition = { enterMotion },
+                            predictivePopExitTransition = { exitMotion },
                         ) {
                             composable<CharacterList> {
                                 TopLevelInsets {
