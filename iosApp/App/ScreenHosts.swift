@@ -16,9 +16,14 @@ import SwiftUI
 struct DiscoveryHost: View {
     @StateObject private var holder: DiscoveryStateHolder
     private let onOpenDetail: (CharacterCardUi) -> Void
+    private let onStatusSelected: (StatusFilter) -> Void
 
-    init(onOpenDetail: @escaping (CharacterCardUi) -> Void) {
+    init(
+        onOpenDetail: @escaping (CharacterCardUi) -> Void,
+        onStatusSelected: @escaping (StatusFilter) -> Void = { _ in }
+    ) {
         self.onOpenDetail = onOpenDetail
+        self.onStatusSelected = onStatusSelected
         // The holder builds the pager on its own scope (`IC-014`), and `StateObject` builds the holder
         // once, so a re-initialised host makes no scope of its own.
         _holder = StateObject(
@@ -39,7 +44,8 @@ struct DiscoveryHost: View {
             state: holder.state,
             onIntent: { holder.onIntent($0) },
             onOpenDetail: onOpenDetail,
-            onRefresh: { await holder.refresh() }
+            onRefresh: { await holder.refresh() },
+            onStatusSelected: onStatusSelected
         )
     }
 }

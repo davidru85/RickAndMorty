@@ -1,7 +1,7 @@
 # SECURITY.md — Threat Model, Privacy Policy and Advisory Register
 
 - **Status:** Active — target state; no feature code exists yet. Two security-adjacent checks run locally in the root `check` today (`verifyRepositoryHygiene`, `verifyDependencyPolicy`); see `DOCUMENTATION_AUDIT.md` §5
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** Security Reviewer (see `../AGENTS.md` §3.7)
 - **Authoritative for:** the app-level threat model, trust boundaries, data classification, secret/permission/logging *prohibitions*, transport and storage security policy, dependency-security policy, the vulnerability-reporting route and the security advisory register (`SEC-###`).
 - **Not authoritative for:** the permitted log field list and the log catalogue (`OBSERVABILITY.md`), the failure→state→copy chain (`ERROR_FLOW.md`), the remote contract (`API_SPECS.md`), implementation conventions (`GUIDELINES.md`), requirement statements (`REQUIREMENTS.md`).
@@ -258,6 +258,7 @@ Since `TASK-047` the read-only API exists in `:core:diagnostics` and the exclusi
 - Android's `android.permission.INTERNET` is install-time and non-runtime. It is the only permission the app's network path requires; it cannot be withheld by the user and grants no access to user data.
 - Exported entry points are minimised: the launcher entry point on Android and no exported component that accepts a remote-host URL. The app `MUST NOT` declare a deep link or intent filter that hands an arbitrary URL to the network layer without the §5.1 allow-list checks.
 - No permission `MUST` be added for a convenience reason. A new permission is a decision plus a security review (`../AGENTS.md` §15).
+- The selection sound (`REQ-FUNC-036`, `DEC-162`) needs no permission on either platform: `SoundPool` and `AVAudioPlayer` play a file the app bundles, and nothing records. The app declares no audio permission, no audio entitlement and no background audio mode, and the iOS session is ambient, so it never takes the audio from another app (`AC-REQ-FUNC-033-3`).
 
 Verification: `TEST-UNIT-028` asserts the absence of microphone and speech permission entries in both shipped apps (`AC-REQ-SEC-004-1`): `verifyNoMicSpeechPermission` reads every source manifest and plist, and `:androidApp:verifyShippedPermissions` reads the release APK's merged permission table, so a permission a library manifest merges in is caught as well.
 
@@ -428,6 +429,7 @@ These are the rules a change must satisfy before review. They are target state, 
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-06 | §8.1 records that the selection sound needs no permission, entitlement or background audio mode on either platform; `TEST-UNIT-028` still guards the microphone and speech entries. | `TASK-139`, `DEC-162` |
 | 2026-10-05 | §5.1/§5.2: the iOS portrait pipeline applies the host rule through the shared predicate, refuses foreign redirects and admits only `2xx` responses; a payload could previously point it at any host (review item 13). | `DEC-126`, `TASK-111`, `TEST-UNIT-071` |
 | 2026-10-05 | B9 Phase 9.1 review (`TASK-067`): §9.1 names `.github/dependabot.yml` (security updates only) and the owner's alert setting; §9.3 replaces the stale "no CI exists" bullet with the observed gaps and records the manual OSV review of the 270 pinned packages (0 advisories); §11.1 dates the empty register to that review. | `TASK-067`, `DEC-037`, `LOG-0131` |
 | 2026-10-04 | B6 Phase 6.2 review: §8.1 names both halves of `TEST-UNIT-028` — the source manifests and plists, and the release APK's merged permission table. `TEST-UNIT-027` also fails on a persistence site outside the inventoried stores, so a new store cannot persist a field §3 does not classify. No classification, rule or register row changed. | `TASK-048`, `LOG-0127` |

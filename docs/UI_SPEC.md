@@ -488,7 +488,7 @@ Presentation per platform:
 | Navigation | Navigation bar with Settings selected | Glass tab bar with Settings selected |
 
 Behaviour:
-- **Sounds:** defaults to off and persists. It plays nothing until the sound set is defined (`REQ-FUNC-036`, `DEF-005`).
+- **Sounds:** defaults to off and persists. While it is on, the app plays its selection sound on the triggers of §7.1 (`REQ-FUNC-036`, `DEC-162`); turning it on or off plays nothing and applies from the next tap.
 - **Data source:** "REST API" is selected on a fresh install. Changing it applies at once: the character list reloads from page 1 through the chosen protocol (`REQ-FUNC-034`, `ADR-0011`). Nothing else on the screen changes.
 - **Delete favorites:** opens the confirmation. "Delete" clears every favorite and closes the confirmation, and Favorites then shows its empty state. "Cancel", a tap outside (Android) or the system dismiss gesture changes nothing. The action is disabled while there are no favorites: on Android the button uses the M3 disabled colours, and on iOS the row uses the kit's `Disabled` value. The disabled state is not drawn in Figma yet (§8).
 - **Accessibility:** each control is labelled by its row title. The switch and toggle announce their on/off state, the picker announces the selected option, and the confirmation takes focus when it opens and returns it to the action when it closes.
@@ -532,6 +532,29 @@ iOS:
 - Replace shared-element and zoom transitions with cross-fades.
 - Disable parallax and aurora drift.
 - The splash portal doesn't spin; because it's the loading indicator, it pulses its opacity gently (0.6 ↔ 1, 1.2 s) instead.
+
+### 7.1 Selection sound
+
+While Sounds is on (§6.5), both platforms play the same sound — a recording the owner supplied, 0.67 s long — as feedback for a selection the user makes (`REQ-FUNC-036`, `DEC-162`, `DEC-163`). The sound adds to the visual selection and never replaces it, so nothing depends on hearing it (`REQ-UX-005`).
+
+| Trigger | Sound |
+| --- | --- |
+| A tap on a navigation-bar destination other than the current one | Plays once |
+| A tap on the current destination | Nothing |
+| A tap on a Discovery status option (All · Alive · Dead · Unknown), the selected one included | Plays once, on every tap |
+| A selection the app makes itself: "Browse characters", "Clear filters" | Nothing |
+| A disabled status option (the first page is loading, §8) | Nothing: the option takes no tap |
+| Any tap while Sounds is off | Nothing |
+
+A tap while the sound is playing restarts it rather than playing a second one over it.
+
+| | Android | iOS |
+| --- | --- | --- |
+| File | `androidApp/src/main/res/raw/selection_sound.ogg`: Ogg Vorbis, mono, 48 kHz | `iosApp/Resources/Sounds/selection_sound.caf`: Linear PCM, 16-bit, mono, 48 kHz |
+| Start without delay | `SoundPool` decodes the file into memory at launch | `AVAudioPlayer` is prepared at launch; PCM needs no decoding |
+| Silenced phone | Sonification attributes: silent and vibrate modes mute it | Ambient session: the Ring/Silent switch mutes it, and other audio keeps playing |
+
+Both files are cut from one source, the owner's `burp.mp3` (`DEC-163`), mixed to mono, resampled to 48 kHz and trimmed of its leading and trailing silence, with a 2 ms margin before the sound and 5 ms after it (`TEST-UNIT-110`).
 
 ## 8. States (not drawn in Figma yet)
 

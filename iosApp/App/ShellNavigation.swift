@@ -83,13 +83,35 @@ public enum ShellDestination: String, CaseIterable, Identifiable, Hashable, Send
 public final class ShellNavigation: ObservableObject {
     @Published public private(set) var selected: ShellDestination
 
+    /// The shell's one selection sound (`REQ-FUNC-036`); `nil` is silent, for a preview or a case.
+    private let selectionSound: (any SelectionSoundPlaying)?
+
     public init(selected: ShellDestination = .characters) {
         self.selected = selected
+        selectionSound = nil
+    }
+
+    init(selected: ShellDestination = .characters, selectionSound: any SelectionSoundPlaying) {
+        self.selected = selected
+        self.selectionSound = selectionSound
     }
 
     /// Selects [destination] in one step. Idempotent, and it never accumulates history.
     public func select(_ destination: ShellDestination) {
         selected = destination
+    }
+
+    /// A destination the user chose on the tab bar (`AC-REQ-FUNC-036-1`): a change of destination asks
+    /// for the selection sound; the current one chosen again selects nothing new and asks nothing.
+    func selectFromTabBar(_ destination: ShellDestination) {
+        if destination != selected { selectionSound?.play() }
+        select(destination)
+    }
+
+    /// A tap on the Discovery status selector (`AC-REQ-FUNC-036-2`): every tap asks for the selection
+    /// sound, the option already selected included.
+    func playSelectionSound() {
+        selectionSound?.play()
     }
 
     /// The "Browse characters" action of `UI_SPEC.md` §6.4: select Characters without pushing.

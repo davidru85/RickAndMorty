@@ -34,6 +34,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import io.github.davidru85.multiverse.app.R
+import io.github.davidru85.multiverse.app.sound.SelectionSound
 import io.github.davidru85.multiverse.app.splash.BrandedSplash
 import io.github.davidru85.multiverse.app.splash.SplashExitCrossfadeMillis
 import io.github.davidru85.multiverse.app.splash.rememberReduceMotion
@@ -87,6 +88,11 @@ public fun MultiverseApp(
     detailHandoff: DetailHandoff? = null,
     /** The card accents (`UI_SPEC.md` §5.4); `null` keeps every card Surface Container High. */
     accentPolicy: CharacterAccentPolicy? = null,
+    /**
+     * The selection sound (`REQ-FUNC-036`): asked to play on a change of destination from the bar and on
+     * every status tap. Whether it sounds is its own decision; the default is silent.
+     */
+    selectionSound: SelectionSound = NO_SOUND,
 ) {
     val handoff = detailHandoff ?: remember { DetailHandoff() }
     val context = LocalContext.current
@@ -154,6 +160,8 @@ public fun MultiverseApp(
                                                 handoff.publish(card)
                                                 navController.navigate(CharacterDetail(card.id.value))
                                             },
+                                            // Every status tap, the selected chip included (`AC-REQ-FUNC-036-2`).
+                                            onStatusSelected = { selectionSound.play() },
                                         )
                                     }
                                 }
@@ -213,7 +221,12 @@ public fun MultiverseApp(
                         destinations = destinations,
                         selectedKey = selectedKey,
                         barDescription = null,
-                        onSelect = { key -> navController.selectTopLevel(key) },
+                        onSelect = { key ->
+                            // A change of destination is the user's selection; the current one tapped again
+                            // changes nothing and plays nothing (`AC-REQ-FUNC-036-1`).
+                            if (key != selectedKey) selectionSound.play()
+                            navController.selectTopLevel(key)
+                        },
                     )
                 }
             }
@@ -305,6 +318,9 @@ private val NO_IMAGE_SEAM: ImageSeam =
             heightPx: Int,
         ): ImageSeamResult = ImageSeamResult.Loading
     }
+
+/** The sound a destination uses when the caller supplies none: silence, for a preview or a case. */
+private val NO_SOUND: SelectionSound = SelectionSound { }
 
 /** A stable key per top-level destination, so the bar never depends on a route type. */
 internal const val KEY_CHARACTERS: String = "characters"

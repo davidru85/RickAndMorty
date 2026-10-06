@@ -1,7 +1,7 @@
 # CONTRACTS.md — Internal Kotlin Contract Baseline
 
 - **Status:** Active — mixed, **accepted as the internal interface baseline** (`TASK-019`, `TECHNICAL_PLAN.md` §5 S1). B3 Phase 3.1 implements the `:core:domain` declarations (`IC-001`…`IC-004`, `IC-007`, `IC-008` and `IC-021` as interfaces, `IC-010`) and `IC-011`'s REST adapter; every other row is target state. The `Flow`-based seams are coherent with the `DEC-066` amendment of ADR-0001. See `DOCUMENTATION_AUDIT.md` §5 for the drift rule
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** System Architect (see `AGENTS.md` §3)
 - **Authoritative for:** the internal Kotlin contracts `IC-###` — the source-level declarations that cross a module boundary (repository, data-source, cache, storage and pager seams), the shared UI-state types both platforms consume, and the invariants, ownership, reference and compatibility rules attached to each of them.
 - **Not authoritative for:** the remote-facing and domain model declarations (`API_SPECS.md` §3, §4.7, §5, §6), the failure → state → copy chain (`ERROR_FLOW.md`), module composition and dependency direction (`DESIGN.md` §3, `adr/0001-module-boundaries.md`), requirement ids and acceptance criteria (`REQUIREMENTS.md`), visual specification (`UI_SPEC.md`), test ids, layers and tooling (`TESTING.md`), user-visible copy strings (`UI_SPEC.md` §6.4, §8).
@@ -515,15 +515,15 @@ interface AppSettingsRepository {
 }
 ```
 
-- **Consumed by:** the `:feature:settings` use cases (`IC-009`) and, for `remoteProtocol` only, the repository implementation in `:core:data` that selects the `IC-011` implementation.
+- **Consumed by:** the `:feature:settings` use cases (`IC-009`); for `remoteProtocol` only, the repository implementation in `:core:data` that selects the `IC-011` implementation; and, for `soundsEnabled` only, the selection sound of each shell (`REQ-FUNC-036`, `DEC-162`) — `:androidApp` observes `observe()` itself, and `iosApp` through `MultiverseBootstrap.observeSoundsEnabled` in `:core:ios`.
 - **Invariants**
   - The defaults above are the fresh-install values: Sounds off, REST (`AC-REQ-FUNC-033-2`, `AC-REQ-FUNC-034-1`).
   - `observe()` is hot, conflated and never completes. It emits the current value to every new collector first, then each distinct change.
   - `update` applies the function to the latest persisted value and writes the result atomically; concurrent updates are serialised so none is lost. An update that produces an equal value writes and emits nothing.
   - `AppSettings` holds only these two fields. Adding a field is a contract change (§8) and needs a requirement; nothing personal may be added (`REQ-SEC-003`).
-  - `soundsEnabled` has no consumer that produces sound until `REQ-FUNC-036` is admitted.
+  - `soundsEnabled` gates the selection sound, and nothing else: while it is `false` no sound plays, and a change applies from the next selection without a restart (`AC-REQ-FUNC-036-3`). `MultiverseBootstrap.observeSoundsEnabled(onEach)` delivers the stored value and then each distinct change on the main queue, until the observation it returns is closed.
   - A `remoteProtocol` change is visible to the next remote request. It does not by itself evict the response cache (`IC-012`).
-- **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-SEC-003`, `DEC-055`, `DEC-056`, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md), [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md).
+- **Traceability:** `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-036`, `REQ-SEC-003`, `DEC-055`, `DEC-056`, `DEC-162`, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md), [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md).
 
 ### IC-022 — `AppSettingsLocalDataSource`
 
@@ -1166,6 +1166,7 @@ Rows marked **Resolved** were corrected in the owning document; the remaining op
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `IC-021` gains its `soundsEnabled` consumer (`TASK-139`): the selection sound of each shell, which the iOS side observes through `MultiverseBootstrap.observeSoundsEnabled`; the invariant that no consumer produces sound is replaced by the gate's rule. | `DEC-162` |
 | 2026-10-05 | `IC-027` and `IC-028` added (`TASK-115`): the state observer the iOS holders use instead of polling, and the names the composition roots bind the app-wide presentation dependencies under. | `DEC-143`, `DEC-145` |
 | 2026-10-05 | `IC-026` added (`TASK-112`): the splash gate moves from `:androidApp` to `:core:presentation` and serves both shells; iOS awaits it through `MultiverseBootstrap.awaitSplashReady`. | `DEC-136` |
 | 2026-10-05 | `IC-017` (`TASK-112`): `PluralKey`, `CopyKeys.plurals` and the first plural key `detail_appears_in_episodes`; Android `<plurals>` through `CopyResolver.plural`, Apple `Localizable.stringsdict` through `LocalizedCopy.plural`. Additive for the Swift consumer. | `DEC-132` |

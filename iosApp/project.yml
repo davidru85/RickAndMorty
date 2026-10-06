@@ -76,6 +76,11 @@ targets:
       # app icon (`DEC-150`).
       - path: Resources/Assets.xcassets
         buildPhase: resources
+      # The selection sound (`REQ-FUNC-036`, `DEC-162`): the owner's recording as Linear PCM in a CAF
+      # file, mono at 48 kHz, without its leading and trailing silence. A group, not a folder reference,
+      # so the file lands in the bundle root, where `BundledSoundPlayer` looks for it.
+      - path: Resources/Sounds
+        buildPhase: resources
     info:
       path: App/Info.plist
       properties:

@@ -368,7 +368,7 @@ The Episodes, Favorites and Settings destinations are wired in the MVP. Episodes
 - `:feature:favorites` observes `ObserveFavoriteIds` (§4.5) and shows its empty state while the set is empty.
 - "Browse characters" switches to the Characters destination rather than pushing a route.
 
-Real Episodes screens and sound effects remain deferred (DEF-002, DEF-005). Locations has no destination since DEC-055; real Locations screens remain deferred (DEF-003).
+Real Episodes screens remain deferred (DEF-002); the sound effects deferred as `DEF-005` were re-admitted by `DEC-162` (§4.6). Locations has no destination since DEC-055; real Locations screens remain deferred (DEF-003).
 
 ### 4.3 Design tokens pipeline
 
@@ -453,6 +453,13 @@ Both designs add a Favorite action (Android extended FAB, iOS prominent glass bu
 ### 4.6 App settings
 
 Preferences (Sounds, remote protocol) are exposed by `AppSettingsRepository` in `:core:domain` and persisted by an `expect/actual` store in `:core:data`. On each platform it reuses the store technology favorites already use (DataStore on Android, `UserDefaults` on iOS; DEC-017), so no dependency is added (DEC-055, [`adr/0010-settings-destination.md`](adr/0010-settings-destination.md)). `:core:data` reads the protocol preference to choose the remote data source per request (DEC-056, [`adr/0011-runtime-remote-protocol.md`](adr/0011-runtime-remote-protocol.md)). The store holds only the keys `CONTRACTS.md` `IC-021` names, and nothing personal (`REQ-SEC-003`).
+
+**Selection sound (`REQ-FUNC-036`, `DEC-162`, `DEC-163`).** The Sounds preference has one consumer per platform, and it lives in the shell, because playing a sound is platform work and only the shell knows both triggers (`UI_SPEC.md` §7.1):
+
+- **The features report, the shells play.** `:feature:discovery` reports every status tap through `DiscoveryRoute`'s `onStatusSelected` on Android and `DiscoveryScreen`'s on iOS, and knows nothing of sound. Each shell decides on a navigation-bar change itself: `MultiverseApp` on Android, `ShellNavigation.selectFromTabBar` on iOS.
+- **Android.** `:androidApp` binds one `SelectionSound`: `PreferenceGatedSelectionSound` observes `AppSettingsRepository` from the application scope, and `SoundPoolSelectionSound` plays `res/raw/selection_sound.ogg` from a one-stream `SoundPool` it loads at launch.
+- **iOS.** `:core:ios` hands the preference to Swift through `MultiverseBootstrap.observeSoundsEnabled` (`IC-021`). In `iosApp`, `SelectionSound` plays only while that preference is on, and `BundledSoundPlayer` plays `selection_sound.caf` from an `AVAudioPlayer` it prepares when the shell is built.
+- **No dependency or permission.** Both players are platform frameworks — `android.media.SoundPool` and AVFoundation — so the version catalog does not change and no audio permission is declared (`AC-REQ-FUNC-033-3`, `REQ-SEC-004`). Each platform has one player, so `REQ-NFR-002`'s cap of two solutions per concern holds.
 
 `:core:data` therefore holds three data sources, each with one responsibility, and no fourth is added for a concern that already has one (`REQ-NFR-002`). Only `:core:data` implements a data layer: a feature module consumes `:core:domain` contracts and declares no data source of its own (`adr/0001-module-boundaries.md`).
 
@@ -603,6 +610,7 @@ Architecture and tooling decisions are recorded with their status in [`DECISION_
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | §4.2 no longer lists the sound effects as deferred, and §4.6 records where the selection sound lives on each platform: the features report, the shells play, and neither adds a dependency (`TASK-139`). | `DEC-162`, `DEC-163` |
 | 2026-10-05 | §3.1: the `:core:designsystem` row names the three `CompositionLocal`s the shell provides — the portal mark, the card-accent policy and the transition scopes (`TASK-113`). | `DEC-097`, `DEC-135` |
 | 2026-10-05 | §3: `:core:ios` links `:core:diagnostics` for the iOS debug diagnostics sheet, without exporting it (`TASK-119`). | `DEC-147` |
 | 2026-10-05 | §5 records how the iOS holders observe the shared state and where the app-wide presentation bindings live (`TASK-115`). | `DEC-143`, `DEC-145` |

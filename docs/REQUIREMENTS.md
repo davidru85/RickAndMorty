@@ -1,7 +1,7 @@
 # REQUIREMENTS.md — Product Requirements
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-10-02
+- **Last verified:** 2026-10-06
 - **Owner:** Requirements Analyst (see `AGENTS.md`)
 - **Authoritative for:** *what* the product must do and *how well*. Not for *how* (see `DESIGN.md`, `API_SPECS.md`, `UI_SPEC.md`).
 - **Inputs:** [`assessment.md`](../assessment.md)
@@ -36,7 +36,7 @@ A client for the public [Rick and Morty API](https://rickandmortyapi.com/) that 
 | DEF-002 | Real Episodes list and detail screens | DEC-005 | After M2, using `API-EPI-*` batch endpoints already documented. **Re-read 2026-10-05 (`DEC-118`):** not yet met — M2 is prepared at `v0.2.0` (`DEC-121`) and is released by the owner's tag; even then `REQ-FUNC-031` is Could-have, so starting it needs a new accepted decision. |
 | DEF-003 | Real Locations screens | DEC-005, DEC-055 | Same as `DEF-002`, plus a decision on where Locations is reached from: it has no navigation destination since `DEC-055`. |
 | DEF-004 | Kotlin Swift export instead of the current bridging split | DEC-013 | When Kotlin's Swift export leaves Alpha. **Re-read 2026-10-05:** it is still Alpha (kotlinlang.org `native-swift-export.html`, page dated 2026-08-28; `DEC-118`). |
-| DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. Until then the Sounds preference (`REQ-FUNC-033`) is stored but plays nothing. **Re-read 2026-10-04:** no sound set is specified (`DEC-118`). |
+| DEF-005 | Sound effects: which sounds exist and when they play | DEC-055 | When a sound set is specified and traced to an accepted decision; carry `REQ-FUNC-036`. **Closed 2026-10-06 — re-admitted (`DEC-162`):** the owner specified the sound set — one sound, played on a navigation-bar destination change and on every status-selector tap — so `REQ-FUNC-036` is a Should-have requirement in §5.2 (`TASK-139`). |
 
 ## 2. Actors and journeys
 
@@ -222,11 +222,11 @@ When enrichment is requested, the app `MUST` fetch episode data in batch and der
 - Task: `TASK-023` · Tests: `TEST-UNIT-011`, `TEST-CONTRACT-002`
 
 #### REQ-FUNC-033 — Settings screen and sounds preference
-The Settings destination `MUST` present, in this order, a Sounds on/off control, the remote data-source choice (`REQ-FUNC-034`) and a "Delete favorites" action (`REQ-FUNC-035`), each using the platform's own controls (DEC-055). The Sounds preference `MUST` default to off and persist across restarts; until `DEF-005` defines the sound set, it `MUST NOT` cause any sound to play.
+The Settings destination `MUST` present, in this order, a Sounds on/off control, the remote data-source choice (`REQ-FUNC-034`) and a "Delete favorites" action (`REQ-FUNC-035`), each using the platform's own controls (DEC-055). The Sounds preference `MUST` default to off and persist across restarts; what it plays, and when, is `REQ-FUNC-036`'s.
 
 - `AC-REQ-FUNC-033-1` Settings shows exactly the three settings in the order above, with the copy of `UI_SPEC.md` §6.5 on both platforms.
 - `AC-REQ-FUNC-033-2` A changed Sounds value is shown again after the app restarts; a fresh install shows it off.
-- `AC-REQ-FUNC-033-3` No audio asset, audio permission or audio dependency exists in either app (`REQ-SEC-004`).
+- `AC-REQ-FUNC-033-3` No audio permission or audio dependency exists in either app (`REQ-SEC-004`); the one audio asset each app carries is `REQ-FUNC-036`'s sound (`DEC-162`).
 - Task: `TASK-074` · Tests: `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`
 
 #### REQ-FUNC-034 — Remote data-source selection
@@ -246,6 +246,15 @@ Settings `MUST` offer a "Delete favorites" action that, after an explicit confir
 - `AC-REQ-FUNC-035-3` The action is disabled while there are no favorites.
 - Task: `TASK-076` · Tests: `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017`
 
+#### REQ-FUNC-036 — Selection sound
+While the Sounds preference (`REQ-FUNC-033`) is on, the app `MUST` play its one selection sound when the user switches destination from the navigation bar, and each time the user taps an option of the Discovery status selector, the option already selected included (DEC-162). While the preference is off it `MUST NOT` play any sound. The sound `MUST` start without perceptible delay, and playing it `MUST NOT` need a permission or a dependency.
+
+- `AC-REQ-FUNC-036-1` With Sounds on, a tap on a navigation-bar destination other than the current one plays the sound once; a tap on the current destination, and a destination the app selects itself ("Browse characters"), play nothing.
+- `AC-REQ-FUNC-036-2` With Sounds on, every tap on an option of the status selector plays the sound once, the selected option included; a status the app resets itself ("Clear filters") plays nothing.
+- `AC-REQ-FUNC-036-3` With Sounds off — a fresh install included — no tap plays a sound; a change of the preference applies from the next tap, without a restart.
+- `AC-REQ-FUNC-036-4` Each app carries the one sound in its low-latency form — Ogg Vorbis on Android, Linear PCM in a CAF file on iOS — in mono, without its leading and trailing silence, and loads it before the first tap; no audio permission or audio dependency is added (`REQ-SEC-004`).
+- Task: `TASK-139` · Tests: `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051`, `TEST-UI-052`
+
 ### 5.3 Could have (deferred — do not implement in M1/M2)
 
 | ID | Requirement | Status |
@@ -253,7 +262,8 @@ Settings `MUST` offer a "Delete favorites" action that, after an explicit confir
 | REQ-FUNC-030 | Voice search populating the query field on both platforms | Deferred — DEC-002. Must not ship without the permission/privacy work in `SECURITY.md`. |
 | REQ-FUNC-031 | Episodes list and detail screens | Deferred — DEC-005 (DEF-002). |
 | REQ-FUNC-032 | Locations list and detail screens | Deferred — DEC-005 (DEF-003). No navigation destination since DEC-055. |
-| REQ-FUNC-036 | Sound effects played while the Sounds preference is on | Deferred — DEC-055 (DEF-005). |
+
+`REQ-FUNC-036` left this table on 2026-10-06: `DEC-162` re-admitted it as a Should-have requirement (§5.2).
 
 ## 6. Non-functional requirements
 
@@ -428,6 +438,7 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `DEF-005` closed: the owner specified the sound set, so `REQ-FUNC-036` moves from §5.3 to §5.2 as a Should-have requirement with `AC-REQ-FUNC-036-1`…`-4`; `REQ-FUNC-033` no longer forbids sound, and `AC-REQ-FUNC-033-3` keeps no audio permission or dependency but admits `REQ-FUNC-036`'s one asset per app. | `DEC-162` |
 | 2026-10-05 | §1.3 re-read against the tree (`TASK-071`): `DEF-001`, `DEF-004` and `DEF-005` stay deferred with their conditions checked; `DEF-002`/`DEF-003` wait for M2's release by the owner's tag and a new decision; `DEF-004` re-verified on kotlinlang.org (Swift export Alpha) | `DEC-118` |
 | 2026-10-01 | `REQ-FUNC-014`'s task citation corrected from `TASK-014` to `TASK-028` (`CONF-36`); `AC-REQ-NFR-006-2`/`-3` split by `DEC-067` and `AC-REQ-NFR-009-3` restated under the `DEC-066` amendment; the `REQ-NFR-008` identifier gap recorded as deliberate. | `TASK-019`, `DEC-066`, `DEC-067` |
 | 2026-09-29 | Rewritten from the initial 27-line draft: stable IDs, acceptance criteria, MoSCoW rebuilt against `assessment.md`, scope/non-goals, platform, UX, security and observability requirements added. | DEC-002, DEC-004, DEC-007, DEC-046 |

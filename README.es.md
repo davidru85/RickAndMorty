@@ -58,6 +58,7 @@ Solo teléfono en vertical; tablet, plegable y horizontal quedan fuera de alcanc
 | Caché de respuestas con política de frescura explícita | `REQ-FUNC-020` |
 | Caché de imágenes en memoria y disco | `REQ-FUNC-021` |
 | Ajustes: preferencia de sonidos (desactivada por defecto), origen de datos REST API o GraphQL (REST por defecto), borrar todos los favoritos con confirmación | `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-035` |
+| Un sonido de selección mientras Sounds está activado: al cambiar de destino desde la barra de navegación y en cada toque del filtro de estado | `REQ-FUNC-036` |
 
 ### Aplazadas por decisión
 
@@ -66,7 +67,6 @@ Solo teléfono en vertical; tablet, plegable y horizontal quedan fuera de alcanc
 | Búsqueda por voz (voz a texto) | Aplazada — `DEC-002`. No se solicita permiso de micrófono ni de reconocimiento de voz. |
 | Pantallas reales de Episodes | Aplazada — `DEC-005`. Episodes se entrega como pantalla provisional diseñada, con vuelta a Characters. |
 | Pantallas reales de Locations | Aplazada — `DEC-005`, `DEC-055`. Locations no está en la navegación. |
-| Efectos de sonido | Aplazada — `DEC-055`. El ajuste de sonidos se guarda, pero todavía no reproduce nada. |
 
 ### Pantallas y capturas previstas
 
@@ -203,7 +203,7 @@ El desarrollo sigue el protocolo TDD descrito en [`docs/CONTRIBUTING.md`](docs/C
 ## 11. Limitaciones conocidas
 
 1. **Las imágenes son de 300 × 300.** La API publica un único avatar cuadrado por personaje y nada mayor. El hero del detalle reescala la fuente; los degradados y el fondo difuminado de iOS convierten esto en una decisión estilística y no en un defecto visible ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
-2. **Una pestaña es provisional.** Episodes es una pantalla "próximamente"; Favorites y Settings son reales (`DEC-005`, `DEC-055`). El ajuste Sounds no reproduce nada hasta que se decida un conjunto de sonidos.
+2. **Una pestaña es provisional.** Episodes es una pantalla "próximamente"; Favorites y Settings son reales (`DEC-005`, `DEC-055`).
 3. **La búsqueda por voz no está implementada.** Está aplazada y no se solicita permiso de micrófono ni de voz (`DEC-002`).
 4. **Solo teléfono en vertical.** Sin tablet, plegable ni horizontal (`DEC-027`).
 5. **Sin analítica.** No hay SDK de analítica, seguimiento ni publicidad (`REQ-OBS-003`).
