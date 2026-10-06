@@ -1573,6 +1573,27 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
   - `./gradlew :feature:discovery:verifyRoborazziAndroidHostTest :androidApp:verifyRoborazziDebug` — BUILD SUCCESSFUL.
 
+### LOG-0164 · 2026-10-06 · `TASK-138`: the Detail stays together during the Android predictive back gesture (`GAP-048`)
+
+- **Event:** the owner reported that the edge back gesture from a character's Detail separates the portrait, which travels toward its card, from the rest of the Detail, which travels toward the centre of the screen.
+- **The cause:**
+  - The shell's `NavHost` named its enter, exit, pop-enter and pop-exit transitions, but not `predictivePopEnterTransition` and `predictivePopExitTransition`.
+  - Navigation Compose 2.10.2 gives those its own defaults (`DefaultNavTransitions`, read from the library's sources): `scaleOut(targetScale = 0.7f)` about the centre for the leaving Detail, and a spring fade-in for the list. The Back button runs the specified fade-through, so only the gesture differed.
+  - The portrait is a shared element drawn in the `SharedTransitionLayout`'s overlay, so it kept travelling to the card's bounds while the Detail around it shrank.
+  - On the emulator (gesture navigation, debug build at `b7e00e2`), a gesture held at mid-swipe showed the Detail at about three quarters of the screen, centred, with the portrait apart from it over the list.
+- **The change:** the `NavHost`'s predictive-pop pair is the pop pair `PortraitMotion.transition` already builds, so the gesture seeks the same transition as the Back button: the Detail fades in place while its portrait returns to the card, and with Reduce Motion it is the cross-fade. `UI_SPEC.md` §7 and `DESIGN.md` state it.
+- **Red, then green:**
+  - `TEST-UI-050` drives the gesture through the activity's `OnBackPressedDispatcher`, whose navigation event dispatcher is the one `NavHost` listens to, and holds it at progress 0.5.
+  - It failed with `the Detail is not scaled by the gesture (width) expected:<40.0> but was:<28.166504>`, and under Reduce Motion `but was:<29.580658>`. The list was already revealed underneath, so the gesture had started.
+  - Both cases pass after the fix, and the released gesture returns to Characters. The shell's transition, back and chrome cases still pass.
+- **Device:** after the change, the same held gesture shows the Detail at full size, fading in place, and the portrait on its way to Rick's card. Releasing it shows Characters with the navigation bar.
+- **Affected documents:** `docs/UI_SPEC.md` §7, `docs/DESIGN.md` (the card-to-detail transition), `docs/TESTING.md` (§3.2, the manual-check table, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-048`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 273 test reports hold 1371 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+  - `./gradlew :androidApp:verifyRoborazziDebug` — BUILD SUCCESSFUL; no shell baseline changes.
+- **Not verified:** a physical device, and the gesture from the right edge, which runs the same transition (the shell ignores the swipe edge).
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

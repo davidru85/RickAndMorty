@@ -513,7 +513,7 @@ Android:
 | Moment | Motion spec |
 | --- | --- |
 | Card → Detail | Container transform: card portrait → hero, 450 ms, Emphasized Decelerate; corner radius 20 → 0. The rest of the card fades through. Compose: `SharedTransitionLayout` + `Modifier.sharedElement(key = "portrait-$id")` |
-| Detail → Card | Reverse; supports predictive back (the hero scales with the gesture) |
+| Detail → Card | Reverse: the hero returns to the card while the rest of the Detail fades in place. The predictive back gesture seeks this same transition with its progress, so the Detail is never scaled or moved apart from its hero, and releasing the gesture completes it (`GAP-048`, `TASK-138`). Compose: the `NavHost`'s `predictivePopEnterTransition`/`predictivePopExitTransition` are the pop pair, not the library's default scale-out |
 | Favorite | `favorite` outline → filled; spring (stiffness ≈ 380, damping 0.6); one-off Primary ripple |
 | Splash | Portal rotates clockwise, starting very slowly and accelerating: 360° over 1.2 s, ease-in cubic `CubicBezierEasing(0.32f, 0f, 0.67f, 0f)`. It then keeps spinning at that final speed (≈ 900°/s) until the data has loaded. This rotation is the splash loading indicator. Prototype keyframes: 0° → −360° at 1.2 s (ease-in) → −1080° at 2 s (linear) |
 | Chips / filters | Grid content cross-fades; items animate placement (`Modifier.animateItem()`) |
