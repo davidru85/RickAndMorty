@@ -1603,6 +1603,37 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Open from the two tasks, recorded rather than pending:** neither change was checked on a physical device; the emulator showed both fixed (`LOG-0163`, `LOG-0164`).
 - **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0166 · 2026-10-06 · `TASK-139`: the selection sound plays while Sounds is on
+
+- **Event:** the owner enabled the sound effects the Settings "Sounds" preference was built for, which `DEC-055` had deferred as `DEF-005`. `DEC-162` re-admits `REQ-FUNC-036` with the sound set the owner specified, and `DEC-163` records how it plays. With Sounds on — it stays off by default — both apps play one sound when the user changes destination on the navigation bar, and on every tap of the Discovery status selector, the selected option included.
+- **Rationale:** the owner directed it on 2026-10-06, after an analysis-only pass the owner asked for first. That pass found the feature feasible with no permission and no dependency: playback is `SoundPool` on Android and `AVAudioPlayer` on iOS, both platform frameworks. It also found `AC-REQ-FUNC-033-3` forbidding any audio asset, so the criterion was amended rather than worked around. The owner chose where each half lives: a new `onStatusSelected` on `DiscoveryRoute` with `:androidApp` playing the sound, and the preference handed to Swift by `:core:ios`.
+- **The file:**
+  - The owner's `burp.mp3` lasts 0.758 s, in stereo at 44.1 kHz, with a −9.6 dBFS peak. Decoded, it starts with about 27 ms and ends with about 40 ms below −60 dBFS.
+  - It was mixed to mono, since its channels differ by −41 dB, resampled to 48 kHz and trimmed to the sound with 2 ms before it and 5 ms after it, both faded: 0.671 s.
+  - Android carries it as Ogg Vorbis (13 648 B). iOS carries it as 16-bit Linear PCM in a CAF file (68 488 B), which decodes bit-exact to the trimmed signal.
+  - This machine's ffmpeg has no libvorbis, only its experimental encoder. The Vorbis file was therefore written by libsndfile 1.2.2, through the `soundfile` package in a scratch virtual environment; nothing was installed on the machine itself.
+- **Red, then green:**
+  - `TEST-UI-052`, Android: `:feature:discovery:compileAndroidHostTest` failed with "No parameter with name 'onStatusSelected' found". Both cases pass once `DiscoveryScreen` and `DiscoveryRoute` report every chip tap, and `TEST-UI-030` still passes.
+  - `TEST-UNIT-109`, `TEST-UNIT-110` and `TEST-UI-051`, Android: the test compilation failed with "Unresolved reference 'SelectionSound'", "Unresolved reference 'raw'" and "No parameter with name 'selectionSound' found". All seven cases pass with the sound, the gate and the shell wiring. The shell case's fixture was corrected in the green commit: an empty catalogue answers page 1 with NotFound, as the API does, so Discovery showed its error rather than empty results.
+  - `TEST-UNIT-109`, iOS, the preference in Swift: the test build failed with "value of type 'MultiverseBootstrap' has no member 'observeSoundsEnabled'". The case passes once `:core:ios` delivers the preference.
+  - `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051` and `TEST-UI-052`, iOS: the test build failed with "cannot find type 'SelectionSound' in scope", "extra argument 'selectionSound' in call" and "type 'DiscoveryScreen' has no member 'selectStatus'". The five cases pass with the player, the gate and the wiring. A refactor commit wrapped six test lines that were over SwiftLint's 120 columns.
+- **Emulator:** API 37, a debug build, audio output off. Playback starts were read from `dumpsys audio`.
+  - The app creates its `SoundPool` player at launch, with sonification usage.
+  - With Sounds off on a cleared install, tab changes and a chip tap started nothing.
+  - With Sounds on, Settings → Characters started the sound once, and tapping Characters again did not. The selected "All" chip started it on each of two taps, Characters → Episodes started it, and "Browse characters" did not.
+  - After a force-stop and a relaunch, with Sounds stored on, the first tab change started it.
+- **Affected documents:** `docs/REQUIREMENTS.md` (`DEF-005`, `REQ-FUNC-033`, `REQ-FUNC-036`, §5.3), `docs/DECISION_BOARD.md` (`DEC-162`, `DEC-163`, §4), `docs/UI_SPEC.md` (§6.5, new §7.1), `docs/DESIGN.md` (§4.2, §4.6), `docs/CONTRACTS.md` (`IC-021`), `docs/TESTING.md` (§3.2, §16, §16.1, §16.2, §17, §18), `docs/SECURITY.md` (§8.1), `docs/PERFORMANCE.md` (`PERF-009`), `docs/TECHNICAL_PLAN.md` (§10), `docs/BACKLOG.md`, `docs/HANDOFF.md`, `README.md`, `README.es.md`, and this entry.
+- **Validation (observed on the branch):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1231 actionable tasks, and 277 test reports holding 1380 tests with 0 failures. `verifyReleaseApkSize` reported 2 368 742 B (2.26 MiB).
+  - `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` — 173 tests, 0 failures.
+  - `bash tools/swift-lint.sh iosApp` — 0 violations in 84 files.
+  - The README's screenshot command (every `verifyRoborazzi*` task) — BUILD SUCCESSFUL; no baseline changes.
+- **Not verified:**
+  - Hearing the sound on a phone: the emulator's audio output was off, and no physical device was used.
+  - The delay from a tap to the sound, which has no budget and no reference device (A-PERF-1).
+  - The iOS app driven by taps, because the simulator has no input tool.
+  - The recording's origin and licence, which the owner has not stated (`DEC-163`).
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

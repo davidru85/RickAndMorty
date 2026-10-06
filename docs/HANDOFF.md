@@ -11,11 +11,11 @@
 
 ### Owner's sound effects — 2026-10-06
 
-The owner asked to enable the sound effects the Settings "Sounds" preference was built for, which `DEC-055` had deferred as `DEF-005`. The owner specified the sound set: one sound — the owner's own recording — played while Sounds is on when the user switches destination on the navigation bar and on every tap of the Discovery status selector. `DEC-162` re-admits `REQ-FUNC-036` as a Should-have requirement and authorizes the writes outside the documentation. The work is one task with its own issue and pull request.
+The owner asked to enable the sound effects the Settings "Sounds" preference was built for, which `DEC-055` had deferred as `DEF-005`. The owner specified the sound set: one sound — a recording the owner supplied — played while Sounds is on when the user switches destination on the navigation bar and on every tap of the Discovery status selector. `DEC-162` re-admits `REQ-FUNC-036` as a Should-have requirement and authorizes the writes outside the documentation, and `DEC-163` records how the sound plays. The work is one task with its own issue and pull request. Open for the owner: the bar-change rule, the silent-mode behaviour and the file's preparation are the agent's recommendations (`DEC-163`), and the recording's origin and licence — it is published in this public repository — were not stated.
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In progress (issue #252) |
+| `TASK-139` — the selection sound while Sounds is on (`REQ-FUNC-036`), on both platforms | `feat/task-139-selection-sound`, from `main` at `cf58f1a` | In review (issue #252; `LOG-0166`) |
 
 ### Owner's Android defects — 2026-10-06
 
@@ -505,7 +505,7 @@ From 2026-10-02 the actions map onto the execution blocks of `BACKLOG.md` §2.6 
 
 ## 5. Unresolved decisions and deferred items
 
-Do not implement a deferred item. The authoritative lists are the ones below, and they were **reconciled** in Phase 9.3 (`DEC-118`, corrected in review): `DEC-025` is closed after its condition fired, `DEF-002`/`DEF-003` wait for M2's release by the owner's `v0.2.0` tag and then for a new decision because they are Could-have, and `DEF-001`, `DEF-004`, `DEF-005` and `DEC-029` stay deferred with their conditions re-read. The authoritative lists are:
+Do not implement a deferred item. The authoritative lists are the ones below, and they were **reconciled** in Phase 9.3 (`DEC-118`, corrected in review): `DEC-025` is closed after its condition fired, `DEF-002`/`DEF-003` wait for M2's release by the owner's `v0.2.0` tag and then for a new decision because they are Could-have, and `DEF-001`, `DEF-004` and `DEC-029` stay deferred with their conditions re-read. `DEF-005` is closed: its condition fired on 2026-10-06, when the owner specified the sound set (`DEC-162`, `TASK-139`). The authoritative lists are:
 
 - `docs/DECISION_BOARD.md` §4 — decisions with status `Deferred`, with the condition that reopens each one.
 - `docs/REQUIREMENTS.md` §1.3 — deferred scope items `DEF-001`…`DEF-005`, with their re-entry conditions re-read on 2026-10-04 (`DEC-118`). `docs/REQUIREMENTS.md` §14 records that nothing there is blocking.

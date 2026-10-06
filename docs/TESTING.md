@@ -190,6 +190,7 @@ An automated end-to-end layer would re-exercise what the shared tests and snapsh
 | iOS paging trigger (`TASK-136`) | The hosted iOS Discovery screen requests no page before the user scrolls, requests the next page at the end of page 1, and requests another at the end once page 2 has arrived (048) | `TEST-UI-048` |
 | Steady app bar (`TASK-137`) | The Discovery app bar's gutter is Surface at rest and still Surface after the grid scrolls, and the search field keeps its container (049) | `TEST-UI-049` |
 | Predictive back (`TASK-138`) | Half-way through the back gesture from the Detail, with and without Reduce Motion, the list is revealed and the Detail's controls are neither scaled nor moved; releasing it returns to Characters (050) | `TEST-UI-050` |
+| Selection sound (`TASK-139`) | The sound plays only while Sounds is on: from the stored value at start-up, and from the next tap after a change in Settings, which reaches Swift through `core/ios` (109); each app carries the trimmed, mono, 48 kHz low-latency form — Ogg Vorbis on Android, Linear PCM CAF on iOS — and loads it before the first tap (110); the shell asks for the sound on a change of destination from the bar and on every status tap, never for the current destination, "Browse characters" or "Clear filters" (051); the status selector reports every tap, the selected option included (052) | `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051`, `TEST-UI-052` |
 | P3 quality (`TASK-115`) | The state observer that replaces polling (094) and the one scope per iOS screen (095); copy keys named in Swift (097) and filled one way (098), and an unregistered key's behaviour per build (096); one accent extraction per URL in flight (099); Reduce Motion observed on Android (100); app-wide presentation bindings owned by the composition roots (101); Discovery re-mapping only changed cards (102); and `TEST-UNIT-035` now reading the real `Dp` tokens | `TEST-UNIT-094`…`TEST-UNIT-102` |
 | P2-B iOS fidelity (`TASK-114`) | The tabs as glass tab items with their symbols (090); the card portrait's parallax within its overscan, still under Reduce Motion (091); the splash portal's shared rotation curve and the Reduce Motion pulse (092); one fetch per URL in flight and the decoded memory cost (093); the cosmic canvas behind every top-level screen (UI-036); Discovery's and Favorites' 16 pt margins, the portal mark on the empty search and a failed portrait, the white selected segment and the circular empty-state well (UI-037); the Detail's title over the hero, its stats row and circular wells (UI-038); the Detail without the tab bar and navigation bar, with the edge swipe still beginning (UI-039); the Settings subtitle, destructive red and header inset (UI-040) | `TEST-UNIT-090`…`TEST-UNIT-093`, `TEST-UI-036`…`TEST-UI-040` |
 | P2-A Android fidelity (`TASK-113`) | The bundled Roboto Flex type scale with its Emphasized slots (085); the portal turning clockwise at a constant speed after its 1.2 s ease-in (086); the bar only on top-level screens, not a tab itself, and growing back in with the destination change instead of jumping over the leaving Detail (UI-028); a card as one button with no English role word, the status sentence on a standalone badge, the shell's portal mark on a failed portrait and no second crossfade (UI-029); the chips disabled during the initial load (UI-030); every top-level title a heading (UI-031); the Detail's favourite toggle and its overlaid title (UI-032); the Settings rows, header inset and 56 dp action (UI-033); the card accent from its portrait and the pixels read through the one loader (UI-034) | `TEST-UNIT-085`, `TEST-UNIT-086`, `TEST-UI-028`…`TEST-UI-034` |
@@ -700,9 +701,10 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-FUNC-021` — Image caching | Should | `TEST-INT-002` |
 | `REQ-FUNC-022` — Error handling | Should | `TEST-UNIT-010`, `TEST-UNIT-067`, `TEST-UNIT-068`, `TEST-UI-018`, `TEST-UI-019` |
 | `REQ-FUNC-023` — Detail enrichment | Should | `TEST-UNIT-011`, `TEST-CONTRACT-002` |
-| `REQ-FUNC-033` — Settings screen and sounds preference | Should | `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`; `AC-REQ-FUNC-033-3` by the manifest/`Info.plist` and dependency checks `TEST-UNIT-028` |
+| `REQ-FUNC-033` — Settings screen and sounds preference | Should | `TEST-UNIT-046`, `TEST-UNIT-050`, `TEST-UI-017`; `AC-REQ-FUNC-033-3` by the manifest/`Info.plist` and dependency checks `TEST-UNIT-028` (no audio permission or dependency) and by `TEST-UNIT-110` (the one audio asset per app) |
 | `REQ-FUNC-034` — Remote data-source selection | Should | `TEST-UNIT-046`, `TEST-UNIT-048`, `TEST-UNIT-049`, `TEST-CONTRACT-005`, `TEST-UI-017`, `TEST-UNIT-077`, `TEST-UI-044` (the selected protocol carries a check) |
 | `REQ-FUNC-035` — Delete all favorites | Should | `TEST-UNIT-047`, `TEST-UNIT-050`, `TEST-UI-017` |
+| `REQ-FUNC-036` — Selection sound | Should | `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051`, `TEST-UI-052` |
 | `REQ-FUNC-014` — Branch and pull-request delivery | Must | `TEST-UNIT-045`, human branch-protection action (§14.2) |
 | `REQ-NFR-001` — Architecture and separation of concerns | Must | `TEST-UNIT-012`, `TEST-UNIT-017`, `TEST-UNIT-052` |
 | `REQ-NFR-002` — Dependency restraint | Must | `TEST-UNIT-013`, `TEST-UNIT-034`, `TEST-UNIT-051` |
@@ -745,7 +747,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 
 ### 16.1 Gaps and boundaries
 
-- Requirements marked **Could** (`REQ-FUNC-030`, `REQ-FUNC-031`, `REQ-FUNC-032`, `REQ-FUNC-036`) are deferred (`REQUIREMENTS.md` §5.3) and have no tests by design.
+- Requirements marked **Could** (`REQ-FUNC-030`, `REQ-FUNC-031`, `REQ-FUNC-032`) are deferred (`REQUIREMENTS.md` §5.3) and have no tests by design. `REQ-FUNC-036` was among them until `DEC-162` re-admitted it as Should-have on 2026-10-06; its row is in the table above.
 - The acceptance criteria themselves are not listed per row here: each `AC-` of a mapped requirement is asserted inside the mapped ids, and the combined requirement → contract → task → acceptance matrix is maintained in `DOCUMENTATION_AUDIT.md` §6.
 - Three rows are partly manual by nature and say so in §16.2: `REQ-SEC-002` and `REQ-SEC-006` (secret scanning and advisory review also happen outside the test code) and `REQ-SEC-007` (the test asserts the route is documented and identical in both files; the wording itself is a documentation review). A manual check `MUST NOT` stand in for an automated one where an automated one is possible.
 - Adding a test id, or retiring one, is a change to this document in the same commit as the test (`DEC-046`).
@@ -759,6 +761,7 @@ Every Must and Should requirement in `REQUIREMENTS.md` maps to at least one test
 | `REQ-SEC-007` | `TEST-UNIT-031` asserts the reporting route is documented and identical in `SECURITY.md` and `CONTRIBUTING.md` | Review that the route actually works (a test message reaches the maintainer) |
 | `REQ-UX-003`, `REQ-UX-004` | `TEST-A11Y-002`, `TEST-A11Y-003` assert the recorded ratios and measured sizes | On-device measurement on the rendered surfaces (§9.2) |
 | `REQ-PLAT-003` | `TEST-UI-010` snapshots both glass and fallback paths | Running on a real iOS 26 device and on iOS 18 |
+| `REQ-FUNC-036` | `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051`, `TEST-UI-052` assert the gate, the bundled file and when each shell asks for the sound | Hearing it on a phone, and the delay from a tap to the sound, which has no budget and no reference device (A-PERF-1). On the API 37 emulator, whose audio output is off, the app's `SoundPool` player reported one start per trigger and none otherwise (`LOG-0166`); the iOS simulator has no input tool, so its taps were not driven |
 
 ## 17. Test case inventory
 
@@ -786,6 +789,8 @@ The complete set of allocated ids and the module that owns each. Level names mat
 | `TEST-UNIT-106` | `:androidApp` | unit | `TASK-128`: the accent's pixel source samples a full-size portrait at most 32 px on its longest side (106) |
 | `TEST-UNIT-107` | `:core:designsystem` | unit | `TASK-128`: the accent policy runs one extraction at a time (107) |
 | `TEST-UNIT-108` | `:androidApp` | unit | `TASK-130`: every navigation glyph draws its official Material Symbols Rounded shape; the six shell baselines (`TEST-UI-016`) show the bar (108) |
+| `TEST-UNIT-109` | `:androidApp`, `iosApp` (with `:core:ios`'s observation) | unit | `TASK-139`: the selection sound plays only while Sounds is on, from the stored value and from the next tap after a change; on iOS the change made through the Settings state holder reaches Swift (109) |
+| `TEST-UNIT-110` | `:androidApp`, `iosApp` | unit | `TASK-139`: the bundled sound is trimmed, mono, 48 kHz Ogg Vorbis on Android and Linear PCM CAF on iOS, and the player has it loaded before the first tap (110) |
 | `TEST-UNIT-051` | Build root | unit | The README dependency inventory against the catalog and the build scripts (`AC-REQ-NFR-002-1`) |
 | `TEST-UNIT-052`…`055` | `:core:domain` (052), `:core:testing` (053), `:core:data` (054, 055) | unit | Domain value invariants (`TASK-036`), the behavioural fakes honouring `IC-007`/`IC-011` (`TASK-036`, `TASK-037`), the REST client configuration (`TASK-037`), the REST repository composition of `IC-007` (`TASK-038`) |
 | `TEST-UNIT-017`…`024` | Build root (017–019), `:core:data` (020–023), build root (024) | unit | Module-boundary graph and destination ownership (`TEST-UNIT-017`, `TEST-UNIT-043`, both from the `multiverse.module.boundaries` plugin of `TASK-017`), SDK configuration, milestone independence, cache identity, request coalescing, retry boundaries, freshness with a fake clock, no-network guard |
@@ -811,6 +816,8 @@ The complete set of allocated ids and the module that owns each. Level names mat
 | `TEST-UI-048` | `iosApp/Tests` | ui | `TASK-136`: the iOS list requests a page only when a card near the end appears, at each end (048) |
 | `TEST-UI-049` | `:feature:discovery` | ui | `TASK-137`: the Discovery app bar stays Surface while the grid scrolls; the appending baselines (`TEST-UI-016`), which scroll to the end of the grid, show it (049) |
 | `TEST-UI-050` | `:androidApp` | ui | `TASK-138`: the predictive back gesture from the Detail seeks the pop transition, so half-way the Detail fades in place rather than shrinking toward the centre (050) |
+| `TEST-UI-051` | `:androidApp`, `iosApp` | ui | `TASK-139`: the shell asks for the selection sound on a change of destination from the bar and on every status tap, and never for the current destination, "Browse characters" or "Clear filters"; on iOS through `ShellNavigation`, because a unit test cannot tap the system tab bar (051) |
+| `TEST-UI-052` | `:feature:discovery`, `iosApp` | ui | `TASK-139`: the status selector reports every tap, the selected option included, and "Clear filters" reports none; on iOS through `DiscoveryScreen.selectStatus`, the mapping the segmented control calls (052) |
 | `TEST-A11Y-001`…`006` | Both platforms | a11y | Splash progress semantics, contrast record, target sizes, accessibility tree, text scaling, Reduce Motion/Transparency |
 | `TEST-PERF-001`…`003` | `:androidApp` (001–003) plus the iOS procedure | perf | Cold start (001), scroll frame timing (002), zero-network cached render (003) |
 
@@ -820,6 +827,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `TASK-139`: `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051` and `TEST-UI-052` are allocated and implemented on both platforms, each observed red before its implementation (a missing `onStatusSelected`, `SelectionSound`, `R.raw.selection_sound`, `observeSoundsEnabled` or `selectStatus`); `REQ-FUNC-036` leaves the §16.1 Could list and gains its §16 row. | `DEC-162`, `LOG-0166` |
 | 2026-10-06 | `TASK-138`: `TEST-UI-050` is allocated and implemented, observed red with the Detail's Share control drawn 28 px wide instead of 40 half-way through the gesture. | `DEC-160`, `LOG-0164` |
 | 2026-10-06 | `TASK-137`: `TEST-UI-049` is allocated and implemented, observed red with the bar at Surface Container `#1A191F` after a scroll; `TEST-UI-016`'s `discovery-appending` pair re-records with the Surface bar. | `DEC-160`, `DEC-161`, `LOG-0163` |
 | 2026-10-06 | `TASK-136`: `TEST-UI-048` is allocated and implemented, observed red with a request before any scroll and none after page 2. | `DEC-153`, `LOG-0161` |

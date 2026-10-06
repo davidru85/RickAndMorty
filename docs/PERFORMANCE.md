@@ -130,6 +130,7 @@ No device measurement exists yet. The Android app is runnable since `TASK-044`, 
 | `PERF-009` | Android | `:androidApp:verifyReleaseApkSize`; no test id | 12 974 772 B (12.37 MiB) universal release APK, unsigned; neither code nor resources shrunk | 2026-10-05 | None - build artifact | `0.1.0`, `TASK-120` red commit | `PROJECT_LOG.md` LOG-0139, LOG-0144; `GAP-034` | Over budget by 391 860 B |
 | `PERF-009` | Android | `:androidApp:verifyReleaseApkSize`; no test id | 2 337 826 B (2.23 MiB) universal release APK, unsigned; R8 and resource shrinking | 2026-10-05 | None - build artifact | `0.1.0`, `TASK-120` | `PROJECT_LOG.md` LOG-0144; `apk-size.txt` report | Within budget; blocking in `check` (`DEC-148`) |
 | `PERF-009` | Android | `:androidApp:verifyReleaseApkSize`; no test id | 2 354 210 B (2.25 MiB) universal release APK, unsigned; R8 and resource shrinking | 2026-10-05 | None - build artifact | `0.1.0`, `TASK-125` (after `TASK-121`…`TASK-124`) | `PROJECT_LOG.md` LOG-0149 | Within budget; blocking in `check` and in CI (`DEC-151`) |
+| `PERF-009` | Android | `:androidApp:verifyReleaseApkSize`; no test id | 2 368 742 B (2.26 MiB) universal release APK, unsigned; R8 and resource shrinking; it carries the 13 648 B selection sound | 2026-10-06 | None - build artifact | `0.2.0`, `TASK-139` | `PROJECT_LOG.md` LOG-0166 | Within budget; blocking in `check` and in CI (`DEC-151`) |
 | `PERF-009` | iOS | Not applicable | - | - | - | - | - | Not applicable - the deliverable is an APK (DEC-043) with no size budget on the iOS archive |
 
 ## 6. Levers the design already uses
@@ -191,6 +192,7 @@ A budget regression `MUST` be reported as a regression, not reclassified as nois
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-06 | `TASK-139`: a `PERF-009` row with the release APK that carries the selection sound (2.26 MiB). | `DEC-162`, `LOG-0166` |
 | 2026-10-06 | `TASK-128`: an indicative emulator scroll row (`PERF-004`, Android) before and after the accent change. | `DEC-155`, `LOG-0153` |
 | 2026-09-29 | Created: scope and constraints, reference device profile, `PERF-001`…`PERF-009` budgets with method/tool/recording, Android Macrobenchmark harness plan, iOS manual procedure, result register, design levers, regression and budget-change policy, open items. | DEC-033, DEC-027, DEC-038, DEC-052, DEC-054 |
 | 2026-09-29 | Added a `Verification` column to the budget table and a `Test id producing the value` column to the result register, so every row names the test or method that produces its number; aligned the regression policy with the measurement job described in `TESTING.md` §10/§14.3; `PERF-Q1` records the missing harness-module decision. | DEC-052, DEC-054 |

@@ -58,6 +58,7 @@ Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`do
 | Response caching with an explicit freshness policy | `REQ-FUNC-020` |
 | Memory and disk image caching | `REQ-FUNC-021` |
 | Settings: Sounds preference (off by default), REST API or GraphQL data source (REST by default), delete all favorites with confirmation | `REQ-FUNC-033`, `REQ-FUNC-034`, `REQ-FUNC-035` |
+| A selection sound while Sounds is on: on a change of destination from the navigation bar and on every tap of the status filter | `REQ-FUNC-036` |
 
 ### Deferred by decision
 
@@ -66,7 +67,6 @@ Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`do
 | Voice search (speech-to-text) | Deferred — `DEC-002`. No microphone or speech permission is requested. |
 | Real Episodes screens | Deferred — `DEC-005`. Episodes ships as a designed placeholder with a route back to Characters. |
 | Real Locations screens | Deferred — `DEC-005`, `DEC-055`. Locations is not in the navigation. |
-| Sound effects | Deferred — `DEC-055`. The Sounds setting is stored but plays nothing yet. |
 
 ### Planned screens and screenshots
 
@@ -225,7 +225,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 ## 11. Known limitations
 
 1. **Images are 300 × 300.** The API publishes one square avatar per character and nothing larger. The detail hero therefore upscales the source; scrims and the blurred iOS backdrop make this a stylistic choice rather than a visible defect ([`docs/UI_SPEC.md`](docs/UI_SPEC.md) §5.3, `CON-002`).
-2. **One tab is a placeholder.** Episodes is a designed coming-soon screen; Favorites and Settings are real (`DEC-005`, `DEC-055`). The Sounds setting plays nothing until a sound set is decided.
+2. **One tab is a placeholder.** Episodes is a designed coming-soon screen; Favorites and Settings are real (`DEC-005`, `DEC-055`).
 3. **Voice search is not implemented.** It is deferred, and no microphone or speech permission is requested (`DEC-002`).
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).
