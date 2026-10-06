@@ -11,7 +11,7 @@ import XCTest
 /// Whether the sound then plays is `TEST-UNIT-109`'s.
 @MainActor
 final class SelectionSoundShellTests: XCTestCase {
-    func test_TEST_UI_051_given_the_tab_bar_when_the_destination_changes_then_the_sound_plays_and_otherwise_it_does_not() {
+    func test_TEST_UI_051_given_the_tab_bar_when_the_destination_changes_then_only_a_change_plays() {
         let sound = RecordingSelectionSound()
         let navigation = ShellNavigation(selected: .characters, selectionSound: sound)
 
@@ -33,7 +33,7 @@ final class SelectionSoundShellTests: XCTestCase {
         XCTAssertEqual(sound.plays, 6, "TEST-UI-051: a status tap asks the shell's one sound")
     }
 
-    func test_TEST_UI_052_given_the_status_selector_when_an_option_is_tapped_then_every_tap_is_reported_the_selected_one_included() {
+    func test_TEST_UI_052_given_the_status_selector_when_an_option_is_tapped_then_every_tap_is_reported() {
         var sent: [any CharacterListIntent] = []
         var reported: [StatusFilter] = []
         let taps = [StatusFilter.all, .all, .alive, .alive, .dead, .unknown]
@@ -45,7 +45,11 @@ final class SelectionSoundShellTests: XCTestCase {
                 onStatusSelected: { reported.append($0) }
             )
         }
-        DiscoveryScreen.selectStatus("not a status", onIntent: { sent.append($0) }, onStatusSelected: { reported.append($0) })
+        DiscoveryScreen.selectStatus(
+            "not a status",
+            onIntent: { sent.append($0) },
+            onStatusSelected: { reported.append($0) }
+        )
 
         XCTAssertEqual(reported, taps, "TEST-UI-052: one report per tap, in order, a repeated tap included")
         XCTAssertEqual(

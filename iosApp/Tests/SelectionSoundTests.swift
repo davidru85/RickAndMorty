@@ -37,7 +37,7 @@ final class SelectionSoundTests: XCTestCase {
         XCTAssertTrue(ended, "TEST-UNIT-109: the observation ends with the sound")
     }
 
-    func test_TEST_UNIT_110_given_the_bundled_sound_when_it_is_read_then_it_is_trimmed_mono_linear_pcm_at_48_khz() throws {
+    func test_TEST_UNIT_110_given_the_bundled_sound_when_it_is_read_then_it_is_trimmed_mono_pcm() throws {
         let url = try XCTUnwrap(
             Bundle.main.url(forResource: "selection_sound", withExtension: "caf"),
             "TEST-UNIT-110: the app bundle carries the selection sound"
@@ -50,9 +50,14 @@ final class SelectionSoundTests: XCTestCase {
         XCTAssertEqual(format.sampleRate, 48_000, "TEST-UNIT-110: at the 48 kHz the hardware plays")
 
         let seconds = Double(file.length) / format.sampleRate
-        XCTAssertTrue((0.664...0.700).contains(seconds), "TEST-UNIT-110: the sound is whole, its silence gone (\(seconds) s)")
+        XCTAssertTrue(
+            (0.664...0.700).contains(seconds),
+            "TEST-UNIT-110: the sound is whole, its silence gone (\(seconds) s)"
+        )
 
-        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)))
+        let buffer = try XCTUnwrap(
+            AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length))
+        )
         try file.read(into: buffer)
         let channel = try XCTUnwrap(buffer.floatChannelData?[0])
         let samples = UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength))
