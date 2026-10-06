@@ -110,13 +110,19 @@ public fun DiscoveryScreen(
      * the detail destination exists (`ADR-0001`).
      */
     onOpenDetail: (CharacterCardUi) -> Unit = {},
+    /**
+     * Every tap on a status chip, the selected one included, so the caller can answer the tap itself —
+     * the shell plays the selection sound (`REQ-FUNC-036`, `AC-REQ-FUNC-036-2`). The filter change is
+     * still the intent's; a reset the app makes ("Clear filters") is not a tap and is not reported.
+     */
+    onStatusSelected: (StatusFilter) -> Unit = {},
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             SearchField(state = state, onIntent = onIntent)
             Headline(state = state)
-            FilterRow(state = state, onIntent = onIntent)
+            FilterRow(state = state, onIntent = onIntent, onStatusSelected = onStatusSelected)
             when (val loadState = state.loadState) {
                 is LoadState.Empty -> DiscoveryEmptyState(state = state, onIntent = onIntent)
 
@@ -274,6 +280,7 @@ private const val COUNT_LINE_FADE_MILLIS = 150
 private fun FilterRow(
     state: CharacterListUiState,
     onIntent: (CharacterListIntent) -> Unit,
+    onStatusSelected: (StatusFilter) -> Unit,
 ) {
     val options =
         listOf(
@@ -304,7 +311,10 @@ private fun FilterRow(
             ElevatedFilterChip(
                 selected = selected,
                 enabled = enabled,
-                onClick = { onIntent(CharacterListIntent.StatusSelected(status)) },
+                onClick = {
+                    onIntent(CharacterListIntent.StatusSelected(status))
+                    onStatusSelected(status)
+                },
                 label = { Text(CopyResolver.copy(key.value), maxLines = 1) },
                 leadingIcon =
                     if (selected) {
