@@ -16,6 +16,7 @@ import io.github.davidru85.multiverse.core.diagnostics.rows
 import io.github.davidru85.multiverse.core.domain.logging.AppLogger
 import io.github.davidru85.multiverse.core.domain.logging.LogSink
 import io.github.davidru85.multiverse.core.domain.paging.CharacterPager
+import io.github.davidru85.multiverse.core.domain.repository.AppSettingsRepository
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
 import io.github.davidru85.multiverse.core.domain.usecase.ObserveFavoriteIds
 import io.github.davidru85.multiverse.core.presentation.DefaultPresentationFormatters
@@ -38,6 +39,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
@@ -164,6 +167,25 @@ public object MultiverseBootstrap {
     }
 
     /**
+     * Observes the Sounds preference (`IC-021`, `REQ-FUNC-036`): [onEach] receives the stored value, then
+     * each change, on the main queue, until the returned observation is closed. The iOS selection sound
+     * plays only while the last value delivered is `true`, as the Android shell's gate does, so a change
+     * made in Settings applies from the next tap.
+     */
+    public fun observeSoundsEnabled(onEach: (Boolean) -> Unit): SoundsObservation {
+        val settings: AppSettingsRepository = IosGraph.koin.get()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        scope.launch {
+            settings
+                .observe()
+                .map { it.soundsEnabled }
+                .distinctUntilChanged()
+                .collect { onEach(it) }
+        }
+        return SoundsObservation(scope)
+    }
+
+    /**
      * The Detail screen's dependencies (`IC-019`, `TASK-055`).
      *
      * Koin's Swift surface cannot name a generic resolution, so each screen's dependency set is
@@ -211,6 +233,15 @@ public class DiagnosticsObservation internal constructor(
 ) {
     public fun close() {
         observer.close()
+    }
+}
+
+/** A running Sounds observation; closing it stops the deliveries. */
+public class SoundsObservation internal constructor(
+    private val scope: CoroutineScope,
+) {
+    public fun close() {
+        scope.cancel()
     }
 }
 
