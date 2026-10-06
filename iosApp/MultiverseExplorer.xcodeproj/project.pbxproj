@@ -102,6 +102,7 @@
 		CEE1E61520BAE07B35A6EE56 /* DiagnosticsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 095B2B334FAADEEBF19804C7 /* DiagnosticsSheet.swift */; };
 		CF603221E05A16526BC5D9B0 /* DiscoveryCountLineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E511022E42AB3CF51790883A /* DiscoveryCountLineTests.swift */; };
 		D234ED5A0CC85BE7DDCCA2BA /* CardNameRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F217F29258E9937278C812DC /* CardNameRenderTests.swift */; };
+		D24DCCC61CD166073602CD74 /* DiscoveryLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DE2BE738314DAA2EC39778 /* DiscoveryLayout.swift */; };
 		D4EEA0FBF36FC245150EE144 /* PortalSpinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82F8C3ACC75820F177BAC31D /* PortalSpinTests.swift */; };
 		E2AE6CBD79A08B595322D247 /* DetailComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2159CDEEE005B0C51F5E15 /* DetailComponents.swift */; };
 		E685EF6CFE6B93135BD3DC4B /* DiscoveryStateHolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45AA43D5184905279B496215 /* DiscoveryStateHolderTests.swift */; };
@@ -163,6 +164,7 @@
 		45AA43D5184905279B496215 /* DiscoveryStateHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryStateHolderTests.swift; sourceTree = "<group>"; };
 		45FDE3CEA2139C12B7B9CA4E /* DetailFidelityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailFidelityTests.swift; sourceTree = "<group>"; };
 		501701CF05557148FB7E82BB /* screenBaselines.discovery-empty.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "screenBaselines.discovery-empty.png"; sourceTree = "<group>"; };
+		51DE2BE738314DAA2EC39778 /* DiscoveryLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryLayout.swift; sourceTree = "<group>"; };
 		52E70E5D71457D346BF26D4B /* ShellNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigation.swift; sourceTree = "<group>"; };
 		536D11A7C633C64930CA43F5 /* PortraitMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitMotion.swift; sourceTree = "<group>"; };
 		5536017E77F302F6EB967132 /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 		1CDF8AE67A05619CB6558F59 /* Discovery */ = {
 			isa = PBXGroup;
 			children = (
+				51DE2BE738314DAA2EC39778 /* DiscoveryLayout.swift */,
 				980EECE9B6EFFF2375C160D8 /* DiscoveryNotice.swift */,
 				837132E6AA12B68565764C17 /* DiscoveryScreen.swift */,
 				27941B70FF61D57AADDA8704 /* DiscoveryStateHolder.swift */,
@@ -671,6 +674,7 @@
 				E2AE6CBD79A08B595322D247 /* DetailComponents.swift in Sources */,
 				34A129E0ADB945C20BF567DC /* DetailStateHolder.swift in Sources */,
 				CEE1E61520BAE07B35A6EE56 /* DiagnosticsSheet.swift in Sources */,
+				D24DCCC61CD166073602CD74 /* DiscoveryLayout.swift in Sources */,
 				25D903DA799F094D6FB9570D /* DiscoveryNotice.swift in Sources */,
 				3265BF815A15713DDFA6BDFE /* DiscoveryScreen.swift in Sources */,
 				A52244726C55D7990BB8A56F /* DiscoveryStateHolder.swift in Sources */,
