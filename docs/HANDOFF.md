@@ -1,6 +1,6 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are `TASK-137` and `TASK-138` (`DEC-160`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the tags and releases are the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
 - **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
@@ -11,12 +11,12 @@
 
 ### Owner's Android defects — 2026-10-06
 
-After the audit's merge the owner reported two more Android defects: the Discovery app bar changes colour when the list scrolls, and the predictive back gesture from the Detail separates the portrait from the rest of the screen. Both were reproduced on the API 37 emulator and registered as `GAP-047` and `GAP-048`. Each is one task with its own issue and pull request, stacked and merged in order as `DEC-153` set (`DEC-160`).
+After the audit's merge the owner reported two more Android defects: the Discovery app bar changes colour when the list scrolls, and the predictive back gesture from the Detail separates the portrait from the rest of the screen. Both were reproduced on the API 37 emulator and registered as `GAP-047` and `GAP-048`. Each is one task with its own issue and pull request, stacked and merged in order as `DEC-153` set (`DEC-160`). **Both are merged** (PRs #249 and #250, `main` at `5d246cc`; `LOG-0165`).
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-137` — the Android Discovery app bar keeps its colour while the grid scrolls (`GAP-047`) | `fix/task-137-steady-app-bar`, from `main` at `b7e00e2` | In review (PR #249; issue #247; `LOG-0163`) |
-| `TASK-138` — the Detail stays together during the Android predictive back gesture (`GAP-048`) | `fix/task-138-predictive-back`, from `TASK-137`'s head | In review (PR #250; issue #248; `LOG-0164`) |
+| `TASK-137` — the Android Discovery app bar keeps its colour while the grid scrolls (`GAP-047`) | `fix/task-137-steady-app-bar`, from `main` at `b7e00e2` | **Merged** (PR #249, `d111db1`; issue #247 closed) |
+| `TASK-138` — the Detail stays together during the Android predictive back gesture (`GAP-048`) | `fix/task-138-predictive-back`, from `TASK-137`'s head | **Merged** (PR #250, `5d246cc`; issue #248 closed) |
 
 ### Owner audit remediation — 2026-10-06
 
@@ -176,7 +176,7 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 | Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
 | Documentation system | Merged | The set is integrated on `main` (TASK-032 PR #25, TASK-034 PR #32, TASK-090 PR #45); inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` §6 |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-159` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-161` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; Figma file access required, PNG exports not committed |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |
