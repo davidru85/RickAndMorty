@@ -1437,6 +1437,30 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 270 test reports hold 1365 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0158 · 2026-10-06 · `TASK-133`: smaller Android Detail stat tiles (`GAP-043`)
+
+- **Event:** the owner found the Detail's Episodes, Dimension and Species tiles too large.
+- **The cause:** a specification change, not a deviation. The tiles matched `UI_SPEC.md` §4.1 and Figma `21:1258`: a 76 dp minimum height, a Headline Small Emphasized value (24 sp), and `DEC-151`'s whole-word floor at Title Medium.
+- **The change (`DEC-158`, the agent's recommended values for the owner's review):**
+  - The tile has a 56 dp minimum height with 8 dp vertical padding.
+  - The value is Title Medium Emphasized (16 sp), over the unchanged Label Medium label.
+  - The whole-word rule steps down to the Label Large Emphasized floor (14 sp).
+  - A long value still wraps between words and grows its tile, and the tiles still stack from font scale 1.5.
+  - `UI_SPEC.md` §3.4 and §4.1 state the new values.
+- **Red, then green:**
+  - `TEST-UI-045` failed with `the stats row is at most 56 dp tall, but it is 76.0.dp`.
+  - `TEST-UI-041`, amended to the new value size and floor, failed with `expected:<16.0> but was:<24.0>`.
+  - Both pass after the change.
+- **Baselines:**
+  - The catalogue and the eight Detail baselines that show the stats row re-record: content, loading, error with header, long dimension and maximum text, each light and dark.
+  - Rick's row is 56 dp. The GraphQL "Dimension C-137" wraps to two 16 sp lines, and at maximum text the stacked tiles still grow with their text.
+  - A fresh verify run of `:core:designsystem`, `:feature:character-detail` and `:androidApp` passes.
+- **Device:** on the emulator, Rick's Detail shows the compact row under the title.
+- **Affected documents:** `docs/UI_SPEC.md` (§3.4, §4.1), `docs/DECISION_BOARD.md` (`DEC-158`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-043`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 270 test reports hold 1366 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
