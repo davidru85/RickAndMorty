@@ -18,7 +18,11 @@ final class DiscoveryCountLineTests: XCTestCase {
 
         let shift = try verticalShift(from: frames[0], to: frames[1])
 
-        XCTAssertEqual(shift, 0, "TEST-UI-047: the content below the count line moved \(shift) pt while the count was unknown")
+        XCTAssertEqual(
+            shift,
+            0,
+            "TEST-UI-047: the content below the count line moved \(shift) pt while the count was unknown"
+        )
     }
 
     // MARK: - Hosting
@@ -97,8 +101,9 @@ final class DiscoveryCountLineTests: XCTestCase {
         return (0..<height).map { row in
             var energy = 0.0
             for column in 1..<width {
-                energy += abs(luminance(pixels, row: row, column: column, width: width)
-                    - luminance(pixels, row: row, column: column - 1, width: width))
+                let current = luminance(pixels, row: row, column: column, width: width)
+                let previous = luminance(pixels, row: row, column: column - 1, width: width)
+                energy += abs(current - previous)
             }
             return energy
         }
