@@ -187,13 +187,13 @@ The rim is a vertical gradient: white 55% → 6% → 25%. It gives each glass su
 | --- | --- | --- | --- | --- |
 | Display Medium Emphasized | Black | 45 / 52 | −0.5 | Splash wordmark, Detail name |
 | Display Small Emphasized | ExtraBold | 36 / 44 | −0.25 | "Characters" headline |
-| Headline Small Emphasized | Bold | 24 / 32 | 0 | Stat values |
-| Title Medium Emphasized | Bold | 16 / 24 | 0.15 | Card name |
+| Headline Small Emphasized | Bold | 24 / 32 | 0 | Empty-state heading, dialog headline |
+| Title Medium Emphasized | Bold | 16 / 24 | 0.15 | Card name, stat values (`DEC-158`) |
 | Title Medium | Medium | 16 / 24 | 0.15 | List-item value, detail meta |
 | Title Small | Medium | 14 / 20 | 0.1 | Reserved (section headers); not used on current screens |
 | Body Medium | Regular | 14 / 20 | 0.25 | Supporting text |
 | Body Small | Regular | 12 / 16 | 0.4 | Card species |
-| Label Large Emphasized | Bold | 14 / 20 | 0.1 (+8 px on "EXPLORER") | Splash sub-wordmark |
+| Label Large Emphasized | Bold | 14 / 20 | 0.1 (+8 px on "EXPLORER") | Splash sub-wordmark, the stat value's floor (`DEC-158`) |
 | Label Medium | Medium | 12 / 16 | 0.5 | Badges, list labels, stat labels |
 
 Also defined but not yet used: Display Large, Headline Large Emphasized, Headline Medium, Title Large, Body Large, Label Large, Label Small.
@@ -242,7 +242,7 @@ Figma's glass effect approximates the SwiftUI `glassEffect` material. In code, u
 | Staggered grid | 2 columns below font scale 1.5, 1 column from 1.5 (including the maximum 2.0), 12 dp gutters; Tall and Regular cards mixed so the two lanes never line up | `LazyVerticalStaggeredGrid(MultiverseGrid.columns())` places each item in the shorter lane. Use Tall when `index % 4` is 0 or 3; the Figma frame shows one possible arrangement |
 | Navigation bar | 4 destinations in this order: Characters (`groups`), Episodes (`play_arrow`), Favorites (`favorite`), Settings (`settings`, outlined); each glyph is the official Material Symbols Rounded path data (weight 400, grade 0, optical size 24), filled (`FILL 1`) for the selected destination and outlined otherwise (`DEC-156`); container Surface Container. Selected item: Secondary Container indicator, On Secondary Container icon, Secondary label; unselected items: On Surface Variant icon and label. Figma component `Android/Navigation bar` (§1.2) | `NavigationBar`; the selected item follows the current section. Episodes opens its placeholder, Favorites its list or empty state (§6.4), Settings the settings screen (§6.5). At font scale ≥1.5, arrange the same ordered destinations in two rows so each label fits |
 | Detail icon buttons | 48 dp touch target, 40 dp container at Surface Container Highest @72% over the image | `FilledTonalIconButton` with custom container colour |
-| Stat tiles | Row of 3 below font scale 1.5, vertical connected group from 1.5, with each tile filling the available width and a 76 dp minimum height that grows with its text. 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim **A value wider than its tile (`DEC-151`):** the value steps its size down from Headline Small Emphasized toward the Title Medium floor, in 2 sp steps, until no line ends inside a word, and it still wraps between words. Only a single word wider than the tile at the floor may break. A value that fits keeps Headline Small Emphasized. | Custom `StatTile`; `RoundedCornerShape` per position |
+| Stat tiles | Row of 3 below font scale 1.5, vertical connected group from 1.5, with each tile filling the available width and a **56 dp** minimum height (8 dp vertical padding) that grows with its text; the value is Title Medium Emphasized over a Label Medium label (`DEC-158`, `TASK-133`: Figma `21:1258` still draws 76 dp tiles with Headline Small values, which this supersedes). 4 dp gaps ("connected group"). Shapes: start tile 28/8/8/28, middle 8, end 8/28/28/8. Colours: Primary Container / Tertiary Container / Secondary Fixed Dim **A value wider than its tile (`DEC-151`):** the value steps its size down from Title Medium Emphasized toward the Label Large Emphasized floor, in 2 sp steps, until no line ends inside a word, and it still wraps between words. Only a single word wider than the tile at the floor may break. A value that fits keeps Title Medium Emphasized. | Custom `StatTile`; `RoundedCornerShape` per position |
 | Info list | Surface Container, corner 28. Items: 72 dp min height, 48 dp leading icon container (Secondary Container, corner 16), label in Label Medium, value in Title Medium | `ListItem` inside `Surface` |
 | Extended FAB | Medium (80 dp), Primary colour, "Favorite" label, Portal Glow shadow. 16 dp from the end, 16 dp above the gesture area. Unmarked (as drawn): outline `favorite` icon. Marked: filled heart | M3 Expressive medium extended FAB |
 | Loading indicator | 48 dp contained indicator, Secondary Container; the active shape morphs. Used only for paging (§8), not on the splash | `ContainedLoadingIndicator` |

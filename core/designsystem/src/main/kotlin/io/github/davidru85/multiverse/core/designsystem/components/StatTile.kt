@@ -45,8 +45,8 @@ import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseType
 public enum class TilePosition { Start, Middle, End }
 
 /**
- * One stat tile (`UI_SPEC.md` §4.1): a value in Headline Small Emphasized over its label in Label
- * Medium, on the caller's container colour.
+ * One stat tile (`UI_SPEC.md` §4.1): a value in Title Medium Emphasized over its label in Label Medium,
+ * on the caller's container colour, 56 dp tall at the standard text size (`TASK-133`, `DEC-158`).
  *
  * The three shapes are the connected group of the spec — start 28/8/8/28, middle 8, end 8/28/28/8 —
  * so a row of three tiles reads as one shape.
@@ -69,11 +69,11 @@ public fun StatTile(
                 .padding(horizontal = MultiverseDimensions.spaceM, vertical = MultiverseComponentDimensions.statTilePaddingVertical),
         verticalArrangement = Arrangement.Center,
     ) {
-        // The value wraps between words rather than truncating, and the 76 dp minimum grows with its text;
+        // The value wraps between words rather than truncating, and the 56 dp minimum grows with its text;
         // a value whose widest word does not fit steps its size down first (`UI_SPEC.md` §4.1, `DEC-151`).
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmallEmphasized.copy(lineHeight = VALUE_LINE_HEIGHT),
+            style = MaterialTheme.typography.titleMediumEmphasized.copy(lineHeight = VALUE_LINE_HEIGHT),
             color = contentColor,
             autoSize = WholeWordAutoSize,
         )
@@ -87,14 +87,14 @@ public fun StatTile(
     }
 }
 
-/** Headline Small's 32/24 line height as a ratio, so a stepped-down value keeps its proportions. */
+/** Title Medium's 24/16 line height as a ratio, so a stepped-down value keeps its proportions. */
 private val VALUE_LINE_HEIGHT =
-    (MultiverseType.headlineSmallEmphasizedLineHeight.value / MultiverseType.headlineSmallEmphasizedSize.value).em
+    (MultiverseType.titleMediumEmphasizedLineHeight.value / MultiverseType.titleMediumEmphasizedSize.value).em
 
 /**
- * The stat value's size rule (`UI_SPEC.md` §4.1, `DEC-151`, `GAP-036`): the largest size, from Headline
- * Small Emphasized down to the Title Medium floor in [MultiverseComponentDimensions.statValueSizeStep]
- * steps, at which no line ends inside a word. Lines still break between words, so a long value grows its
+ * The stat value's size rule (`UI_SPEC.md` §4.1, `DEC-151`, `GAP-036`, `DEC-158`): the largest size, from
+ * Title Medium Emphasized down to the Label Large Emphasized floor in
+ * [MultiverseComponentDimensions.statValueSizeStep] steps, at which no line ends inside a word. Lines still break between words, so a long value grows its
  * tile rather than shrinking further. Only a single word wider than the tile at the floor can still
  * break, which no size can prevent.
  */
@@ -103,8 +103,8 @@ internal object WholeWordAutoSize : TextAutoSize {
         constraints: Constraints,
         text: AnnotatedString,
     ): TextUnit {
-        val floor = MultiverseType.titleMediumEmphasizedSize.value
-        var size = MultiverseType.headlineSmallEmphasizedSize.value
+        val floor = MultiverseType.labelLargeEmphasizedSize.value
+        var size = MultiverseType.titleMediumEmphasizedSize.value
         while (size > floor) {
             if (!performLayout(constraints, text, size.sp).breaksAWord()) return size.sp
             size -= MultiverseComponentDimensions.statValueSizeStep.value
