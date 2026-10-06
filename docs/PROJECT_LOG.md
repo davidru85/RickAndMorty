@@ -1531,6 +1531,21 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
 - **Not verified:** a finger scroll on the simulator, which cannot receive input on this host. The hosted test scrolls the same `UIScrollView` programmatically.
 - **Affected documents:** `docs/UI_SPEC.md` §6.2, `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-046`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0162 · 2026-10-06 · The owner's audit remediation is merged
+
+- **Event:** the owner reviewed, approved and merged `TASK-127`…`TASK-136` in order, by merge commit (`DEC-153`):
+  - PR #236 as `a987be8`, PR #237 as `48969f7`, PR #238 as `90ecaf6`, PR #239 as `fdfefa5` and PR #240 as `24dea8d`;
+  - PR #241 as `28af923`, PR #242 as `8aa1fc7`, PR #243 as `9c27985`, PR #244 as `dc7df49` and PR #245 as `77422f6`.
+  - Issues #226–#235 are closed, each with a comment naming its pull request and merge commit. The pull requests named their issue only in a table cell, which GitHub does not read as a closing keyword.
+- **Observed before the merges:** every pull request's own CI run passed its 19 checks. A local simulation merged the ten branches into `main` in order with `--no-ff` and hit no conflict, and the result's tree equals `TASK-136`'s head.
+- **Observed after the merges:** `main`'s run `37429334099` at `77422f6` concluded `success`, with 19 of 19 jobs. The runs of the intermediate merge commits were cancelled as superseded.
+- **Open from the remediation, recorded rather than pending:**
+  - The Discovery scroll on the owner's device. The emulator did not reproduce the lag in a release build (`TASK-128`, `LOG-0153`).
+  - The owner's view of the sizes the agent recommended (`DEC-158`, `DEC-159`).
+  - Figma still draws the earlier stat tiles (`21:1258`), favourite FAB (`21:1295`) and picker colours, which `UI_SPEC.md` now supersedes.
+  - VoiceOver on the iOS count line (`LOG-0160`).
+- **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
