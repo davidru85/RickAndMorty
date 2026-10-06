@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.davidru85.multiverse.app.navigation.MultiverseApp
+import io.github.davidru85.multiverse.app.sound.SelectionSound
 import io.github.davidru85.multiverse.core.designsystem.image.CharacterAccentPolicy
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.domain.repository.CharacterRepository
@@ -35,6 +36,12 @@ public class MainActivity : ComponentActivity() {
     /** The one card-accent policy (`UI_SPEC.md` §5.4): every card in the app asks it for its colour. */
     private val accentPolicy: CharacterAccentPolicy by inject()
 
+    /**
+     * The one selection sound (`REQ-FUNC-036`). It is resolved in [onCreate], so its decode starts at
+     * launch and is done long before the splash lets the first tap through (`AC-REQ-FUNC-036-4`).
+     */
+    private val selectionSound: SelectionSound by inject()
+
     /** The one hand-off (`IC-025`); the shell owns it because it knows both destinations exist. */
     private val detailHandoff: DetailHandoff = DetailHandoff()
 
@@ -46,11 +53,18 @@ public class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(scrim = android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(scrim = android.graphics.Color.TRANSPARENT),
         )
+        val sound = selectionSound
         setContent {
             // The gate is built once per composition from the graph's repository, so the splash waits on
             // the same first page the Discovery screen will render.
             val gate = remember { SplashGate(characterRepository, Dispatchers.IO) }
-            MultiverseApp(splashGate = gate, imageSeam = imageSeam, detailHandoff = detailHandoff, accentPolicy = accentPolicy)
+            MultiverseApp(
+                splashGate = gate,
+                imageSeam = imageSeam,
+                detailHandoff = detailHandoff,
+                accentPolicy = accentPolicy,
+                selectionSound = sound,
+            )
         }
     }
 }

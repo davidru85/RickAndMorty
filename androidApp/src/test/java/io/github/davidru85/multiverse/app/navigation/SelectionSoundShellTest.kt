@@ -3,6 +3,7 @@ package io.github.davidru85.multiverse.app.navigation
 import android.app.Application
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -46,8 +47,9 @@ import org.robolectric.annotation.Config
  * `TEST-UI-051` — the shell plays the selection sound on the selections the user makes
  * (`REQ-FUNC-036`, `AC-REQ-FUNC-036-1`, `AC-REQ-FUNC-036-2`, `TASK-139`, `DEC-162`).
  *
- * The real shell runs over the production graph with in-memory doubles (`REQ-REL-004`) and an empty
- * catalogue, so Discovery settles on its empty-results state with the chips enabled. The sound is a
+ * The real shell runs over the production graph with in-memory doubles (`REQ-REL-004`) and a catalogue
+ * of one living character, so Discovery settles on content with the chips enabled, and the Dead status
+ * matches nothing, which shows the empty-results state with "Clear filters". The sound is a
  * recording double: whether the preference lets it play is `TEST-UNIT-109`'s, so this case asserts when
  * the shell asks. It asks on a change of destination from the bar and on every status tap, the selected
  * chip included; a tap on the current destination, "Browse characters" and "Clear filters" are not
@@ -85,7 +87,7 @@ class SelectionSoundShellTest {
             module {
                 single<FavoritesLocalDataSource> { FakeFavoritesStore() }
                 single<AppSettingsLocalDataSource> { FakeAppSettingsStore() }
-                single<CharacterRepository> { FakeCharacterRepository(FakeCatalogue(emptyList())) }
+                single<CharacterRepository> { FakeCharacterRepository(FakeCatalogue(listOf(FakeCatalogue.character("1")))) }
             },
         )
     }
@@ -127,8 +129,8 @@ class SelectionSoundShellTest {
     @Test
     fun `TEST-UI-051 given_the_status_selector_when_a_chip_is_tapped_then_every_tap_plays_and_clear_filters_does_not`() {
         launch()
-        // The empty catalogue settles Discovery on its empty-results state, where the chips are enabled.
-        compose.waitUntilAtLeastOneExists(hasText("Clear filters"), timeoutMillis = 5_000)
+        // The first page settles Discovery on content, where the chips are enabled.
+        compose.waitUntilAtLeastOneExists(hasContentDescription("Character 1, Alive", substring = true), timeoutMillis = 5_000)
 
         // `All` is the selected chip: tapping it requests nothing new, so the chips stay enabled.
         tap("All")
@@ -137,7 +139,7 @@ class SelectionSoundShellTest {
         tap("Dead")
         assertEquals("TEST-UI-051: a tap that changes the status plays", 3, plays)
 
-        // The new status reloads the list, which settles on the empty-results state again.
+        // No character is dead, so the reload settles on the empty-results state and its "Clear filters".
         compose.waitUntilAtLeastOneExists(hasText("Clear filters"), timeoutMillis = 5_000)
         tap("Clear filters")
         assertEquals("TEST-UI-051: Clear filters is the app's reset, not a tap on a chip", 3, plays)

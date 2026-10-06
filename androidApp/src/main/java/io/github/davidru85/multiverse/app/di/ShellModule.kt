@@ -5,6 +5,9 @@ import io.github.davidru85.multiverse.app.image.CoilImageSeam
 import io.github.davidru85.multiverse.app.image.CoilPortraitPixels
 import io.github.davidru85.multiverse.app.image.imageCacheDirectory
 import io.github.davidru85.multiverse.app.image.imageLoader
+import io.github.davidru85.multiverse.app.sound.PreferenceGatedSelectionSound
+import io.github.davidru85.multiverse.app.sound.SelectionSound
+import io.github.davidru85.multiverse.app.sound.SoundPoolSelectionSound
 import io.github.davidru85.multiverse.core.data.cache.FileCacheStorage
 import io.github.davidru85.multiverse.core.data.di.CoreGraphInputs
 import io.github.davidru85.multiverse.core.data.favorites.DataStoreFavoritesLocalDataSource
@@ -73,8 +76,27 @@ public fun shellModules(
         platformInputs(applicationScope, appContext, logger, client),
         imageLoaderModule(appContext, client),
         presentationModule(),
+        selectionSoundModule(appContext, applicationScope),
     ) + logging.extraModules(logger)
 }
+
+/**
+ * The one selection sound (`REQ-FUNC-036`, `DEC-162`): the bundled sound, decoded once for the process,
+ * behind the Sounds preference, which the gate observes from the application scope.
+ */
+public fun selectionSoundModule(
+    context: Context,
+    applicationScope: CoroutineScope,
+): Module =
+    module {
+        single<SelectionSound> {
+            PreferenceGatedSelectionSound(
+                settings = get(),
+                scope = applicationScope,
+                sound = SoundPoolSelectionSound(context),
+            )
+        }
+    }
 
 /**
  * The app-wide presentation dependencies, bound once here rather than by a feature (`DEC-145`): the two
