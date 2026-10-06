@@ -69,3 +69,13 @@ struct EpisodesPlaceholderScreen: View {
         .environment(\.multiverseGlassPath, .material)
         .preferredColorScheme(.dark)
 }
+
+#Preview("Episodes placeholder — Reduce Transparency") {
+    EpisodesPlaceholderScreen {}
+        .previewVariant(.reduceTransparency)
+}
+
+#Preview("Episodes placeholder — largest Dynamic Type") {
+    EpisodesPlaceholderScreen {}
+        .previewVariant(.largestDynamicType)
+}

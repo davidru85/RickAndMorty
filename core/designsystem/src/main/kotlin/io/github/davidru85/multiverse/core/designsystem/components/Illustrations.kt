@@ -1,7 +1,10 @@
 package io.github.davidru85.multiverse.core.designsystem.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -16,10 +19,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -132,3 +138,22 @@ public fun SectionGlyph(
         )
     }
 }
+
+@MultiverseComponentPreviews
+@Composable
+private fun IllustrationsPreview() {
+    MultiversePreviewSurface {
+        // The empty states' Cookie-9 illustration and a list item's glyph well, each in its default colours.
+        Row(
+            modifier = Modifier.padding(MultiverseDimensions.spaceM),
+            horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceL),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Cookie9Illustration(icon = PreviewGlyph, contentDescription = null)
+            SectionGlyph(icon = PreviewGlyph, contentDescription = null)
+        }
+    }
+}
+
+/** A plain painter standing in for a glyph, so the preview needs no icon artifact. */
+private val PreviewGlyph: Painter = ColorPainter(Color.White)

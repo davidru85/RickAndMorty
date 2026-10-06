@@ -14,9 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.diagnostics.DiagnosticsCopy
@@ -83,3 +85,9 @@ private fun PanelRow(
     }
 }
 
+/** A panel opened before any request: each value says it is not observed yet or names who delivers it. */
+@MultiverseScreenPreviews
+@Composable
+private fun DiagnosticsPanelPreview() {
+    DiagnosticsPanel(recorder = remember { DiagnosticsRecorder() })
+}

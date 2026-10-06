@@ -346,3 +346,18 @@ extension SettingsScreen {
     )
     .preferredColorScheme(.dark)
 }
+
+#Preview("Settings — largest Dynamic Type") {
+    SettingsScreen(state: PreviewFixtures.settingsConfigured, onIntent: { _ in })
+        .previewVariant(.largestDynamicType)
+}
+
+#Preview("Settings — Reduce Transparency") {
+    SettingsScreen(state: PreviewFixtures.settingsConfigured, onIntent: { _ in })
+        .previewVariant(.reduceTransparency)
+}
+
+#Preview("Settings — material fallback") {
+    SettingsScreen(state: PreviewFixtures.settingsConfigured, onIntent: { _ in })
+        .previewVariant(.materialFallback)
+}

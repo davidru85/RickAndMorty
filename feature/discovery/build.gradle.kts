@@ -157,3 +157,11 @@ kotlin {
         }
     }
 }
+
+// Compose Preview renders this module's previews — declared with the design system's preview set, which
+// carries `@Preview` — through `ui-tooling` at run time. The Android-KMP plugin has no `debug` build type
+// to scope it to, so it goes on the Android runtime classpath only: it is neither compiled against nor
+// published to the app (`TASK-140`, `DEC-164`).
+dependencies {
+    "androidRuntimeClasspath"(libs.androidx.compose.ui.tooling)
+}

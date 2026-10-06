@@ -1,13 +1,17 @@
 package io.github.davidru85.multiverse.core.designsystem.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
+import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
 
 /**
  * A top-level screen's title (`UI_SPEC.md` §6.2, §6.4, §6.5; Figma `20:1842`, `101:499`, `101:637`,
@@ -26,4 +30,12 @@ public fun ScreenTitle(
         color = MultiverseColors.onSurface,
         modifier = modifier.fillMaxWidth().semantics { heading() },
     )
+}
+
+@MultiverseComponentPreviews
+@Composable
+private fun ScreenTitlePreview() {
+    MultiversePreviewSurface {
+        ScreenTitle(text = "Characters", modifier = Modifier.padding(MultiverseDimensions.spaceL))
+    }
 }

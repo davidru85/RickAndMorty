@@ -1,7 +1,7 @@
 # GUIDELINES.md — Engineering Guidelines
 
 - **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); every code rule below describes the code that will be written, not code that exists yet
-- **Last verified:** 2026-10-05
+- **Last verified:** 2026-10-06
 - **Owner:** Implementation Engineer (see `../AGENTS.md` §3.5)
 - **Authoritative for:** the coding rules for Kotlin, Compose and SwiftUI, the source-set and presentation rules a change must apply inside the module layout owned by [`adr/0001-module-boundaries.md`](adr/0001-module-boundaries.md), repository naming and identifier conventions, and — for every rule — the artefact that enforces it. Not for the contribution process (`CONTRIBUTING.md`), the gates (`DEFINITION.md`), the test strategy (`TESTING.md`), the architecture rationale and module graph (`DESIGN.md` §1/§3.4, `adr/`), the interface invariants (`CONTRACTS.md`), the remote contract (`API_SPECS.md`), the visual specification (`UI_SPEC.md`), the failure-to-copy chain (`ERROR_FLOW.md`), the logging contract (`OBSERVABILITY.md`) or security policy (`SECURITY.md`).
 - **Inputs:** `../assessment.md`; `REQUIREMENTS.md`; `API_SPECS.md`; `DESIGN.md`; `CONTRACTS.md`; `UI_SPEC.md`; `ERROR_FLOW.md`; `OBSERVABILITY.md`; `SECURITY.md`; `TESTING.md`; `DEFINITION.md`; `CONTRIBUTING.md`; `adr/0001-module-boundaries.md`…`adr/0009-pagination-strategy.md`; `DECISION_BOARD.md` (`DEC-008`, `DEC-010`, `DEC-011`, `DEC-012`, `DEC-013`, `DEC-015`, `DEC-019` superseded by `DEC-052`, `DEC-032`, `DEC-041` as amended by `DEC-053`, `DEC-052`, `DEC-053`, `DEC-054`); verified toolchain and API facts dated 2026-09-29.
@@ -312,9 +312,10 @@ The app renders one appearance regardless of the system light/dark setting or wa
 ### 5.4 Previews
 
 - Every reusable component in `:core:designsystem` and every screen in a `:feature:*` module has at least one `@Preview` in the same file as the composable. A new component without a preview is not done (`DEFINITION.md` §3 D3 covers the accompanying test; this rule covers the development surface).
-- A preview MUST NOT perform network or storage I/O: it is rendered with the local fixtures of `:core:testing` and a fake image loader, never with a real Coil request or a real store (`DESIGN.md` §8).
+- A preview MUST NOT perform network or storage I/O: it renders fixtures declared beside it, and portraits through the design system's `PreviewImageSeam`, never through a real Coil request or a real store (`DESIGN.md` §8). A main source set has no edge to `:core:testing` (`ADR-0001`), which is why the fixtures live in the preview's file (`DEC-164`).
 - Preview coverage includes the states the component can render — loading, content, empty, stale, error, and the largest text scale — not only the happy path (`UI_SPEC.md` §8).
 - A preview is rendered with the system in both light and dark mode; both results are expected to be identical (§5.3).
+- A component's preview is annotated `@MultiverseComponentPreviews` and a screen's `@MultiverseScreenPreviews`, and both render inside `MultiversePreviewSurface`. Each annotation renders the system in light, in dark and at the largest font scale, so every preview meets the two bullets above (`DEC-164`).
 
 **Enforcement:** `Review:` preview presence, isolation from I/O and state coverage.
 
@@ -401,7 +402,8 @@ Colour, font, shape and spacing come from the `iosApp/DesignSystem` tokens (`Col
 ### 6.5 Previews
 
 - Every `DesignSystem` view and every feature screen has a preview in the same file, and the preview variants cover: the default state, the largest Dynamic Type size, Reduce Transparency, and both the glass and fallback paths where the component has them (`DEC-025`).
-- A preview MUST NOT perform network or storage I/O; it renders from local fixtures with the fake image loader (`DESIGN.md` §8).
+- A preview MUST NOT perform network or storage I/O; it renders the shared states of `PreviewFixtures` through the in-memory `PreviewPortraitLoader` (`DESIGN.md` §8, `DEC-164`).
+- A variant is applied with `previewVariant(_:)`, which also sets the single dark appearance (`UI_SPEC.md` §9). When the variants would push a file past SwiftLint's `file_length`, supporting declarations move to a sibling file; the previews stay with their view (`DEC-164`).
 - Previews are the development surface; snapshots (`TESTING.md` §8.3) are the evidence. A preview is not evidence for a visual claim (`TESTING.md` §1 P9).
 
 **Enforcement:** `Review:` preview presence and variant coverage.

@@ -234,3 +234,20 @@ private var segmentedPreviewOptions: [GlassSegmentedControl.Option] {
     .dynamicTypeSize(.accessibility5)
     .preferredColorScheme(.dark)
 }
+
+#Preview("Glass controls — Reduce Transparency") {
+    VStack(spacing: MultiverseDimensions.spaceL) {
+        GlassSearchField(text: .constant(""), placeholder: LocalizedCopy.shared.text(for: .searchCharacters))
+        GlassSegmentedControl(selection: .constant("all"), options: segmentedPreviewOptions)
+        GlassPanel {
+            GlassInfoRow(
+                symbol: "globe",
+                label: LocalizedCopy.shared.text(for: .detailInfoOrigin),
+                value: "Earth (C-137)"
+            )
+        }
+    }
+    .padding()
+    .background(MultiverseBrandColors.spaceBlack)
+    .previewVariant(.reduceTransparency)
+}

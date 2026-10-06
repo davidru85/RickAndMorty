@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.davidru85.multiverse.core.designsystem.components.Cookie9
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
@@ -277,3 +279,13 @@ private const val STAR_COUNT = 70
 
 /** The portal vector the shell bundles (`DEC-103`); the design system names no icon artifact. */
 private val SPLASH_PORTAL_DRAWABLE = io.github.davidru85.multiverse.app.R.drawable.ic_portal_mark
+
+/** The splash as it opens: the spin runs on the frame clock, so it turns in interactive mode. */
+@MultiverseScreenPreviews
+@Composable
+private fun BrandedSplashPreview() = MultiversePreviewSurface { BrandedSplash(reduceMotion = false) }
+
+/** With Reduce Motion the portal holds still and pulses its opacity instead (`AC-REQ-UX-007-1`). */
+@MultiverseScreenPreviews
+@Composable
+private fun BrandedSplashReduceMotionPreview() = MultiversePreviewSurface { BrandedSplash(reduceMotion = true) }

@@ -227,3 +227,13 @@ private struct SeededGenerator: RandomNumberGenerator {
         return value ^ (value >> 31)
     }
 }
+
+#Preview("Splash") { BrandedSplashView(reduceMotion: false).previewVariant() }
+
+#Preview("Splash — Reduce Motion") { BrandedSplashView(reduceMotion: true).previewVariant() }
+
+#Preview("Splash — largest Dynamic Type") { BrandedSplashView(reduceMotion: false).previewVariant(.largestDynamicType) }
+
+#Preview("Splash — Reduce Transparency") { BrandedSplashView(reduceMotion: false).previewVariant(.reduceTransparency) }
+
+#Preview("Splash — material fallback") { BrandedSplashView(reduceMotion: false).previewVariant(.materialFallback) }

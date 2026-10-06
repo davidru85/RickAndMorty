@@ -9,8 +9,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +32,9 @@ import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.image.LocalPortalMark
 import io.github.davidru85.multiverse.core.designsystem.motion.portraitSharedElement
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.PreviewImageSeam
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -185,3 +191,23 @@ public fun Modifier.portraitCorner(): Modifier =
         androidx.compose.foundation.shape
             .RoundedCornerShape(PortraitCorner),
     )
+
+@MultiverseComponentPreviews
+@Composable
+private fun CharacterPortraitPreview() {
+    MultiversePreviewSurface {
+        // The three states of `UI_SPEC.md` §5.3, left to right: placeholder, image, error.
+        Row(
+            modifier = Modifier.padding(MultiverseDimensions.spaceM),
+            horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceM),
+        ) {
+            listOf(PreviewImageSeam.Loading, PreviewImageSeam.Loaded, PreviewImageSeam.Failed).forEach { seam ->
+                CharacterPortrait(
+                    imageUrl = "https://example.invalid/avatar/1.jpeg",
+                    seam = seam,
+                    modifier = Modifier.size(MultiverseComponentDimensions.cardPortraitRegular).portraitCorner(),
+                )
+            }
+        }
+    }
+}

@@ -64,10 +64,14 @@ import io.github.davidru85.multiverse.core.designsystem.components.StatusTone
 import io.github.davidru85.multiverse.core.designsystem.copy.CopyResolver
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
 import io.github.davidru85.multiverse.core.designsystem.motion.PortraitTransition
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseScreenPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.PreviewImageSeam
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
+import io.github.davidru85.multiverse.core.domain.model.CharacterId
 import io.github.davidru85.multiverse.core.domain.model.CharacterStatus
 import io.github.davidru85.multiverse.core.domain.result.ApiFailure
 import io.github.davidru85.multiverse.core.presentation.CharacterCardUi
@@ -82,6 +86,7 @@ import io.github.davidru85.multiverse.feature.characterdetail.R
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailIntent
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.CharacterDetailUiState
 import io.github.davidru85.multiverse.feature.characterdetail.presentation.InfoRowKind
+import io.github.davidru85.multiverse.feature.characterdetail.presentation.InfoRowUi
 
 /** The hero's height (`UI_SPEC.md` §6.3, Figma `21:1217`): 468 dp, full-bleed under the status bar. */
 private val HeroHeight = MultiverseComponentDimensions.detailHeroHeight
@@ -607,3 +612,61 @@ private fun InfoRowKind.glyph(): Int =
         InfoRowKind.LastKnownLocation -> R.drawable.ic_location
         InfoRowKind.FirstSeenIn -> R.drawable.ic_first_seen
     }
+
+/** The first frame: the list-provided header is already there while the detail loads (`AC-REQ-FUNC-002-1`). */
+@MultiverseScreenPreviews
+@Composable
+private fun CharacterDetailLoadingPreview() = CharacterDetailPreview(PreviewContent.copy(loadState = LoadState.Loading))
+
+@MultiverseScreenPreviews
+@Composable
+private fun CharacterDetailContentPreview() = CharacterDetailPreview(PreviewContent.copy(isFavorite = true))
+
+/** A failure with the header known: the inline retry replaces the info list only (`AC-REQ-FUNC-002-3`). */
+@MultiverseScreenPreviews
+@Composable
+private fun CharacterDetailInlineErrorPreview() =
+    CharacterDetailPreview(CharacterDetailUiState(header = PreviewHeader, loadState = LoadState.Error(ApiFailure.Offline)))
+
+/** A failure with nothing known: the full-surface error under the back control (`DEC-131`). */
+@MultiverseScreenPreviews
+@Composable
+private fun CharacterDetailErrorPreview() = CharacterDetailPreview(CharacterDetailUiState(loadState = LoadState.Error(ApiFailure.Offline)))
+
+/**
+ * The screen in the preview frame, its hero drawn by the no-I/O preview seam (`GUIDELINES.md` §5.4). It
+ * passes no `portalMark`, as the shell's route does not.
+ */
+@Composable
+private fun CharacterDetailPreview(state: CharacterDetailUiState) {
+    MultiversePreviewSurface {
+        CharacterDetailScreen(state = state, seam = PreviewImageSeam.Loaded, onIntent = {}, onBack = {}, onShare = {})
+    }
+}
+
+/** The list-provided card the navigation hand-off carries in (`IC-019`); its URL never reaches a loader. */
+private val PreviewHeader =
+    CharacterCardUi(
+        id = CharacterId("1"),
+        name = "Rick Sanchez",
+        species = DisplayText.Data("Human"),
+        status = CharacterStatus.Alive,
+        statusLabel = DefaultPresentationFormatters.statusKey(CharacterStatus.Alive),
+        imageUrl = "https://example.invalid/avatar/1.jpeg",
+    )
+
+/** The loaded detail (`UI_SPEC.md` §6.3): the three tiles and the three info rows in their fixed order. */
+private val PreviewContent =
+    CharacterDetailUiState(
+        header = PreviewHeader,
+        gender = CopyKeys.GENDER_MALE,
+        episodeCount = 51,
+        dimension = "C-137",
+        info =
+            listOf(
+                InfoRowUi(InfoRowKind.Origin, CopyKeys.DETAIL_INFO_ORIGIN, DisplayText.Data("Earth (C-137)")),
+                InfoRowUi(InfoRowKind.LastKnownLocation, CopyKeys.DETAIL_INFO_LAST_KNOWN_LOCATION, DisplayText.Data("Citadel of Ricks")),
+                InfoRowUi(InfoRowKind.FirstSeenIn, CopyKeys.DETAIL_INFO_FIRST_SEEN_IN, DisplayText.Data("Pilot")),
+            ),
+        loadState = LoadState.Content,
+    )

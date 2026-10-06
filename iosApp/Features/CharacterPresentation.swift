@@ -276,3 +276,27 @@ private struct ZoomSource: ViewModifier {
         }
     }
 }
+
+#Preview("Character card cell — portrait loaded, failed and loading") { cardCellPreview(.standard) }
+
+#Preview("Character card cell — largest Dynamic Type") { cardCellPreview(.largestDynamicType) }
+
+#Preview("Character card cell — Reduce Transparency") { cardCellPreview(.reduceTransparency) }
+
+#Preview("Character card cell — material fallback") { cardCellPreview(.materialFallback) }
+
+/// Three cells, one per portrait state (`UI_SPEC.md` §5.1), drawn through the preview loader.
+@MainActor
+private func cardCellPreview(_ variant: PreviewVariant) -> some View {
+    let cards = PreviewFixtures.cards
+    return ScrollView(.horizontal) {
+        HStack(alignment: .top, spacing: MultiverseDimensions.gridGutter) {
+            CharacterCardCell(card: cards[0], loader: PreviewPortraitLoader.loaded) {}
+            CharacterCardCell(card: cards[2], loader: PreviewPortraitLoader.failed) {}
+            CharacterCardCell(card: cards[3], loader: PreviewPortraitLoader.pending) {}
+        }
+        .padding(MultiverseDimensions.spaceL)
+    }
+    .background(MultiverseBrandColors.spaceBlack)
+    .previewVariant(variant)
+}

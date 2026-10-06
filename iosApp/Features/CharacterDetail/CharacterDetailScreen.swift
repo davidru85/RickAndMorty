@@ -351,3 +351,23 @@ struct CharacterDetailScreen: View {
         LocalizedCopy.shared.text(for: key)
     }
 }
+
+#Preview("Detail — loading") { CharacterDetailScreen.preview(PreviewFixtures.detailLoading) }
+
+#Preview("Detail — content") { CharacterDetailScreen.preview(PreviewFixtures.detailContent) }
+
+#Preview("Detail — inline error") { CharacterDetailScreen.preview(PreviewFixtures.detailInlineError) }
+
+#Preview("Detail — error") { CharacterDetailScreen.preview(PreviewFixtures.detailError) }
+
+#Preview("Detail — largest Dynamic Type") {
+    CharacterDetailScreen.preview(PreviewFixtures.detailContent, .largestDynamicType)
+}
+
+#Preview("Detail — Reduce Transparency") {
+    CharacterDetailScreen.preview(PreviewFixtures.detailContent, .reduceTransparency)
+}
+
+#Preview("Detail — material fallback") {
+    CharacterDetailScreen.preview(PreviewFixtures.detailContent, .materialFallback)
+}
