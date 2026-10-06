@@ -1546,6 +1546,33 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - VoiceOver on the iOS count line (`LOG-0160`).
 - **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
 
+### LOG-0163 · 2026-10-06 · The owner's two Android defects are registered; `TASK-137`: the Discovery app bar keeps its colour (`GAP-047`)
+
+- **Event:** after the audit's merge the owner reported two Android defects:
+  - the search field at the top of Characters changes colour when the user scrolls;
+  - the predictive back gesture from the Detail separates the portrait, which travels to the card, from the rest of the screen, which shrinks toward the centre.
+  - Both were reproduced on 2026-10-06 on the `Pixel_9_Pro` emulator (API 37, gesture navigation, debug build at `b7e00e2`) and are registered as `GAP-047` and `GAP-048`, `TASK-137` and `TASK-138`, with issues #247 and #248.
+  - The owner directed the fixes without restating the delivery, so `DEC-160` applies `DEC-153`'s: one stacked pull request per task, reviewed together and merged in order.
+- **`TASK-137`, the cause:**
+  - `DiscoveryScreen` animated the app bar's container from Surface `#0F0E12` to Surface Container `#1A191F` whenever the grid's first visible item or its offset was above zero, as `UI_SPEC.md` §6.2 asked ("Elevation On-scroll").
+  - The grid scrolls in its own area below the headline and the chips, so nothing passes under the bar. The fill only changed the band around the search field.
+  - On the emulator the pixel at x = 20 px inside the bar read `#0F0E12` at rest and `#1A191F` after one swipe. The field itself stayed `#211E26`.
+- **The change:**
+  - The bar is Surface and stays Surface while the grid scrolls (`DEC-161`). The scroll-derived state and the colour animation are removed.
+  - That animation was the module's only use of the `animation` composables, and `buildHealth` failed on the dependency once it was unused. `:feature:discovery` drops it, keeps `animation-core` for the count line's fade, and the dependency inventory in `README.md` and `README.es.md` names `:feature:character-detail` as its only declarer (`TEST-UNIT-051`).
+  - `UI_SPEC.md` §6.2 states the rule, and §3.5 no longer reserves an elevation for a scrolled app bar.
+- **Red, then green:**
+  - `TEST-UI-049` reads the bar's gutter beside the field at rest and after `performScrollToIndex(6)`.
+  - It failed with `the app bar stays Surface while the grid scrolls expected:<#FF[0F0E12]> but was:<#FF[1A191F]>`.
+  - It passes after the fix. All 47 `:feature:discovery` host tests pass.
+- **Baselines:** `TEST-UI-016`'s `discovery-appending` pair scrolls to the end of the grid, so it had recorded the Surface Container bar. It re-records, and the only difference from the old images is their top 64 px. The other Discovery baselines and the shell's are unchanged (`verifyRoborazziAndroidHostTest`, `:androidApp:verifyRoborazziDebug`).
+- **Device:** after the change, the emulator's screenshots before and after a swipe are pixel-identical from the status bar to the bottom of the app bar (y = 150–330 px), while the grid has moved.
+- **Affected documents:** `README.md` and `README.es.md` (the dependency inventory), `docs/UI_SPEC.md` (§3.5, §6.2), `docs/DECISION_BOARD.md` (`DEC-160`, `DEC-161`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-047`, `GAP-048`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 272 test reports hold 1369 tests and 0 failures. The first run failed `buildHealth` on the unused `animation` dependency, and the second failed `verifyDependencyInventory` on the README rows; both are fixed above.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+  - `./gradlew :feature:discovery:verifyRoborazziAndroidHostTest :androidApp:verifyRoborazziDebug` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

@@ -220,7 +220,7 @@ Icons are **SF Symbols** on iOS (hierarchical rendering, weight matched to adjac
 | Style | Definition | Used on |
 | --- | --- | --- |
 | `M3/Elevation 1` | y1 b2 @30% + y1 b3 s1 @15% | Character cards |
-| `M3/Elevation 2`, `M3/Elevation 3` | M3 levels 2 and 3 | Reserved (scrolled app bar, menus) |
+| `M3/Elevation 2`, `M3/Elevation 3` | M3 levels 2 and 3 | Reserved (menus) |
 | `M3/Portal Glow` | Portal Green @45%, y8, blur 28 | Primary FAB, splash logo |
 | `Liquid Glass/Regular` | Glass: refraction .7, depth 16, dispersion .25, frost 14, light −45° @ .55; drop shadow y12 b32 @28% | Search field, segmented control, card glass bar, accessory |
 | `Liquid Glass/Clear` | Glass: refraction .9, depth 22, dispersion .4, frost 3; shadow y8 b24 @22% | Splash lens, status capsule |
@@ -396,7 +396,7 @@ Behaviour:
   - Recognition uses the device language. Character names are proper nouns, so an imperfect transcript is corrected by typing; no custom vocabulary.
   - The transcript replaces the query text and follows the same debounce and page reset as typing.
 - **Scroll:**
-  - Android: the app bar gets a Surface Container fill on scroll (Elevation "On-scroll").
+  - Android: the app bar stays Surface while the grid scrolls; the search field keeps its Surface Container High container. The grid scrolls in its own area below the headline and the chips and never passes under the bar, so the bar takes no on-scroll fill (`DEC-161`, `GAP-047`, `TASK-137`).
   - iOS: the large title collapses into the inline title, and glass content scrolls under the tab bar.
 - **Card tap:** opens Detail with a shared-element transition (§7).
 
