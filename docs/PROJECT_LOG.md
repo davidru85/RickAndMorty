@@ -1660,6 +1660,40 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - The iOS previews that render through private helpers (the card cell, the glass surface, the tab bar and the settings section) are covered by the compile and lint only.
   - The iOS 18 material path on an iOS 18 runtime, which Xcode 27 does not offer (`DEC-117`).
 
+### LOG-0168 · 2026-10-06 · `TASK-141`: the READMEs match the code, with screenshots, and the repository's About is updated
+
+- **Event:** the owner merged PR #255 (`24d2753`, `TASK-140`). In a new pull request, the owner then asked for the merge to be recorded, for both READMEs to be synchronised with the code with screenshots, and for the GitHub "About" section and the repository's other information to be updated (`DEC-165`).
+- **What was stale:** both READMEs still described the repository before B5.
+  - The header called the application "target state", and the in-app screenshots were "pending".
+  - The clone command held a placeholder.
+  - The `ios` job was described as suspended, though it runs on every pull request.
+  - The counts had moved on: 52/17 baselines (now 54/18), 159 iOS tests (now 173), 18 contract cases (now 35 per target).
+  - Material 3 was said to be declared by four feature modules (three do).
+  - The status table stopped at B4, the repository tree showed only `docs/`, and nothing said that `v0.1.0` and `v0.2.0` are tagged.
+- **What changed:** sections 1–14 of both READMEs are rewritten against the code, and §15, the inventory `TEST-UNIT-051` checks, is unchanged. Every command marked executed was re-run on 2026-10-06, with its observed result. The section numbers stay, because other documents cite them. The Spanish file mirrors the English one section for section, and its gate block lists the same commands (`TEST-UNIT-015`).
+- **Screenshots:** six screens per platform in each language (24 images, 540 px JPEG, 1.4 MB, under `docs/screenshots/`). Each README shows its own language. The live data comes from the API.
+  - **Android:** the debug build was installed fresh on the API 37 emulator and driven with `adb`, marking Rick, Morty and Summer as favourites through the Detail. The Spanish set uses the per-app locale (`cmd locale set-app-locales … es-ES`).
+  - **iOS:** the simulator has no tap input. A throwaway XCTest, deleted before the commit, therefore rendered the app's own views and hosts (`GlassTabBar`, `DestinationView`, `DetailHost`) in a window of the app on the iPhone 17 simulator (iOS 27.0), after seeding the same favourites through the shared `ToggleFavorite` use case. Spanish used `xcodebuild -testLanguage es -testRegion ES`, since the test host ignores the device language. Settings is drawn over the real state holder's state, without the debug-only diagnostics button its Debug host adds.
+- **GitHub "About":**
+  - **Description:** it read "… over a shared Clean Architecture core. Documentation-first, TDD, measured performance budgets.", but the device budgets are not measured (`README.md` §11). It now names the app and the two native UIs, lists the features and ends "Built test-first and documented." (314 of 350 characters).
+  - **Topics:** seven added, from 13 to 20: `rick-and-morty`, `rick-and-morty-api`, `graphql`, `koin`, `coil`, `offline-first`, `tdd`.
+  - **Website:** unchanged, the API, since the project is its client and has no site of its own.
+  - **Social preview:** the API cannot set the image, so `docs/screenshots/social-preview.jpg` (1280 × 640) is prepared for the owner to upload. Its text is set in the bundled Roboto Flex (OFL), not a system font, so the image carries no font-licence question.
+- **Validation (observed on 2026-10-06):**
+  - `./gradlew projects`: 13 modules in 16 projects.
+  - `./gradlew build --continue`: BUILD SUCCESSFUL.
+  - `./gradlew allTests :build-logic:convention:test`: BUILD SUCCESSFUL.
+  - `./gradlew ktlintCheck lintDebug buildHealth`: BUILD SUCCESSFUL, with an empty dependency report.
+  - `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate verifyRepositoryHygiene`: all pass.
+  - The contract replays: 35 cases per target, 0 failures.
+  - `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64`: BUILD SUCCESSFUL.
+  - `./gradlew :androidApp:installDebug`: installed and launched on the API 37 emulator, with no crash record.
+  - The iOS app was installed and launched with `xcrun simctl`, and Discovery loaded 826 characters.
+  - On the edited documents, `./gradlew verifyDocumentedGate verifyDocumentedCompleteness verifyDependencyPolicy verifyRepositoryHygiene` passes, and every relative link and image path in both READMEs resolves.
+  - The emulator and the simulator were shut down after the captures; the simulator's language was left in Spanish, as it was before.
+- **Left to the owner:** publishing the `v0.1.0` and `v0.2.0` GitHub Releases (`REL4`), choosing a licence (the repository has none), uploading the social-preview image, and re-adding `ios` as a required check (`TASK-108`).
+- **Affected documents:** `README.md`, `README.es.md`, `docs/screenshots/` (new image assets), `docs/DECISION_BOARD.md` (`DEC-165`), `docs/BACKLOG.md` (`TASK-140` done, `TASK-141`), `docs/HANDOFF.md`, `docs/DOCUMENTATION_AUDIT.md` (change log), and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.

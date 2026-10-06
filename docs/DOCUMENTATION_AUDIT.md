@@ -344,6 +344,7 @@ Next actions, in order: **Block 2 is closed** — all nine rows `Done` (PRs #52,
 
 | Date | Change | Reference |
 | --- | --- | --- |
+| 2026-10-06 | `README.md` and `README.es.md` re-synchronised with the code in `TASK-141`; `docs/screenshots/` holds the screenshots of the running apps, as image assets rather than a document. | `LOG-0168` |
 | 2026-10-06 | `CONF-93` registered and resolved in `TASK-140` (`DEC-164`); `GAP-049` and `GAP-050` registered, open, from `TASK-140`'s preview renders. | `LOG-0167` |
 | 2026-10-06 | `GAP-048` resolved in `TASK-138`. | `LOG-0164` |
 | 2026-10-06 | `GAP-047` resolved in `TASK-137`. | `LOG-0163` |
