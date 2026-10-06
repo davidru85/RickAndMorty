@@ -130,3 +130,17 @@ public struct GlassTextButton: View {
         .transformEnvironment(\.multiverseGlassPath) { $0 = .opaqueMaterial }
         .preferredColorScheme(.dark)
 }
+
+#Preview("Glass buttons — largest Dynamic Type") {
+    VStack(spacing: MultiverseDimensions.spaceL) {
+        GlassIconButton(
+            systemImage: "heart",
+            style: .glass,
+            accessibilityLabel: LocalizedCopy.shared.text(for: .detailActionFavorite)
+        ) {}
+        GlassTextButton(label: LocalizedCopy.shared.text(for: .browseCharacters)) {}
+    }
+    .padding()
+    .background(MultiverseBrandColors.spaceBlack)
+    .previewVariant(.largestDynamicType)
+}

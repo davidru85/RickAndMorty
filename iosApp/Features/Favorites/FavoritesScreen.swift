@@ -164,3 +164,23 @@ struct FavoritesScreen: View {
         LocalizedCopy.shared.text(for: key)
     }
 }
+
+#Preview("Favorites — content") { FavoritesScreen.preview(PreviewFixtures.favoritesContent) }
+
+#Preview("Favorites — empty") { FavoritesScreen.preview(PreviewFixtures.favoritesEmpty) }
+
+#Preview("Favorites — error") { FavoritesScreen.preview(PreviewFixtures.favoritesError) }
+
+#Preview("Favorites — loading") { FavoritesScreen.preview(PreviewFixtures.favoritesLoading) }
+
+#Preview("Favorites — largest Dynamic Type") {
+    FavoritesScreen.preview(PreviewFixtures.favoritesContent, .largestDynamicType)
+}
+
+#Preview("Favorites — Reduce Transparency") {
+    FavoritesScreen.preview(PreviewFixtures.favoritesContent, .reduceTransparency)
+}
+
+#Preview("Favorites — material fallback") {
+    FavoritesScreen.preview(PreviewFixtures.favoritesContent, .materialFallback)
+}

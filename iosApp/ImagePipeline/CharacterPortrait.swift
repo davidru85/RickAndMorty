@@ -114,3 +114,15 @@ private struct PortraitPlaceholder: View {
 
     private static let shimmerSeconds: Double = 1.0
 }
+
+#Preview("Portrait — image, error and placeholder") {
+    HStack(spacing: MultiverseDimensions.gridGutter) {
+        CharacterPortrait(url: PreviewFixtures.portraitUrl(id: "1"), loader: PreviewPortraitLoader.loaded)
+        CharacterPortrait(url: PreviewFixtures.portraitUrl(id: "8"), loader: PreviewPortraitLoader.failed)
+        CharacterPortrait(url: PreviewFixtures.portraitUrl(id: "7"), loader: PreviewPortraitLoader.pending)
+    }
+    .frame(height: MultiverseDimensions.glassCardHeight)
+    .padding()
+    .background(MultiverseBrandColors.spaceBlack)
+    .previewVariant()
+}

@@ -125,3 +125,35 @@ extension SettingsRow where Trailing == EmptyView {
     .background(MultiverseBrandColors.spaceBlack)
     .preferredColorScheme(.dark)
 }
+
+#Preview("Settings section — largest Dynamic Type") { settingsSectionPreview(.largestDynamicType) }
+
+#Preview("Settings section — Reduce Transparency") { settingsSectionPreview(.reduceTransparency) }
+
+#Preview("Settings section — material fallback") { settingsSectionPreview(.materialFallback) }
+
+/// A section with a toggle row and its footer, and a destructive row, with the shipped copy.
+@MainActor
+private func settingsSectionPreview(_ variant: PreviewVariant) -> some View {
+    let copy = LocalizedCopy.shared
+    return VStack(alignment: .leading, spacing: MultiverseDimensions.spaceXl) {
+        SettingsSection(
+            header: copy.text(for: .settingsSectionPreferences),
+            footer: copy.text(for: .settingsDeleteExplanation)
+        ) {
+            SettingsRow(
+                symbol: "speaker.wave.2.fill",
+                title: copy.text(for: .settingsSoundTitle),
+                subtitle: copy.text(for: .settingsSoundBody)
+            ) {
+                Toggle(copy.text(for: .settingsSoundTitle), isOn: .constant(true)).labelsHidden()
+            }
+        }
+        SettingsSection(header: copy.text(for: .navFavorites)) {
+            SettingsRow(symbol: "trash.fill", title: copy.text(for: .settingsDeleteAction), isDestructive: true)
+        }
+    }
+    .padding()
+    .background(MultiverseBrandColors.spaceBlack)
+    .previewVariant(variant)
+}

@@ -126,3 +126,22 @@ public struct GlassTabBar<Content: View>: View {
         .tint(MultiverseBrandColors.portalGlow)
     }
 }
+
+#Preview("Glass tab bar") { glassTabBarPreview(.standard) }
+
+#Preview("Glass tab bar — largest Dynamic Type") { glassTabBarPreview(.largestDynamicType) }
+
+/// The four destinations of `UI_SPEC.md` §4.2 with Characters selected, each tab over the cosmic canvas.
+@MainActor
+private func glassTabBarPreview(_ variant: PreviewVariant) -> some View {
+    let copy = LocalizedCopy.shared
+    var items: [GlassTabBarItem] = []
+    items.append(GlassTabBarItem(id: "characters", symbol: .characters, label: copy.text(for: .navCharacters)))
+    items.append(GlassTabBarItem(id: "episodes", symbol: .episodes, label: copy.text(for: .navEpisodes)))
+    items.append(GlassTabBarItem(id: "favorites", symbol: .favorites, label: copy.text(for: .navFavorites)))
+    items.append(GlassTabBarItem(id: "settings", symbol: .settings, label: copy.text(for: .navSettings)))
+    return GlassTabBar(selection: .constant("characters"), items: items) { _ in
+        Color.clear.cosmicCanvas()
+    }
+    .previewVariant(variant)
+}

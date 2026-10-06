@@ -141,3 +141,25 @@ struct DetailStatsRow: View {
         LocalizedCopy.shared.text(for: key)
     }
 }
+
+#Preview("Detail stats row") {
+    DetailStatsRow(episodeCount: 51, dimension: "C-137", species: "Human")
+        .padding()
+        .background(MultiverseBrandColors.spaceBlack)
+        .previewVariant()
+}
+
+#Preview("Detail stats row — largest Dynamic Type") {
+    DetailStatsRow(episodeCount: 51, dimension: "C-137", species: "Human")
+        .padding()
+        .background(MultiverseBrandColors.spaceBlack)
+        .previewVariant(.largestDynamicType)
+}
+
+#Preview("Detail hero over its backdrop") {
+    DetailHeroPortrait(imageUrl: PreviewFixtures.portraitUrl(id: "1"), loader: PreviewPortraitLoader.loaded)
+        .background {
+            DetailBackdrop(imageUrl: PreviewFixtures.portraitUrl(id: "1"), loader: PreviewPortraitLoader.loaded)
+        }
+        .previewVariant()
+}

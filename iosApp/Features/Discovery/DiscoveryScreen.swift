@@ -369,3 +369,27 @@ struct DiscoveryScreen: View {
         LocalizedCopy.shared.text(for: key)
     }
 }
+
+#Preview("Discovery — loading") { DiscoveryScreen.preview(PreviewFixtures.discoveryLoading) }
+
+#Preview("Discovery — content") { DiscoveryScreen.preview(PreviewFixtures.discoveryContent) }
+
+#Preview("Discovery — next page") { DiscoveryScreen.preview(PreviewFixtures.discoveryAppending) }
+
+#Preview("Discovery — stale content") { DiscoveryScreen.preview(PreviewFixtures.discoveryStale) }
+
+#Preview("Discovery — empty search") { DiscoveryScreen.preview(PreviewFixtures.discoveryEmpty) }
+
+#Preview("Discovery — error") { DiscoveryScreen.preview(PreviewFixtures.discoveryError) }
+
+#Preview("Discovery — largest Dynamic Type") {
+    DiscoveryScreen.preview(PreviewFixtures.discoveryContent, .largestDynamicType)
+}
+
+#Preview("Discovery — Reduce Transparency") {
+    DiscoveryScreen.preview(PreviewFixtures.discoveryContent, .reduceTransparency)
+}
+
+#Preview("Discovery — material fallback") {
+    DiscoveryScreen.preview(PreviewFixtures.discoveryContent, .materialFallback)
+}

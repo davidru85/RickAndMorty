@@ -47,6 +47,10 @@ Every component carries this mapping in its own doc comment; this table is the i
 `GlassShape`, `GlassVariant`, `glassSurface(_:variant:tint:shadow:)`, `glassButton(_:tint:shape:)` and `GlassContainer` are
 the shared mechanism of §3.5/§4.2, not standalone components.
 
+`PreviewVariant` and `previewVariant(_:)` are the preview harness (`GUIDELINES.md` §6.5, `DEC-164`). Every preview renders
+through them in the dark appearance. The variants are the default, the largest Dynamic Type size, Reduce Transparency and
+the material fallback; the last is set through `\.multiverseGlassPath`.
+
 ## Tokens and parity
 
 `Tokens.swift` names every value the export carries, and `MultiverseTokens` maps each to its export

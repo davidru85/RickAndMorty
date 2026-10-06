@@ -300,3 +300,39 @@ public struct GlassContainer<Content: View>: View {
         }
     }
 }
+
+#Preview("Glass surface, button and container — Liquid Glass") { glassSurfacePreview(.standard) }
+
+#Preview("Glass surface, button and container — material fallback") { glassSurfacePreview(.materialFallback) }
+
+#Preview("Glass surface, button and container — Reduce Transparency") { glassSurfacePreview(.reduceTransparency) }
+
+/// The two shapes over the cosmic canvas, a button of each emphasis, and a container merging two surfaces.
+@MainActor
+private func glassSurfacePreview(_ variant: PreviewVariant) -> some View {
+    VStack(spacing: MultiverseDimensions.spaceXl) {
+        HStack(spacing: MultiverseDimensions.spaceL) {
+            Color.clear
+                .frame(width: MultiverseDimensions.space3Xl * 2, height: MultiverseDimensions.space3Xl * 2)
+                .glassSurface(.rounded(MultiverseDimensions.glassPanel))
+            Color.clear
+                .frame(width: MultiverseDimensions.space3Xl * 2, height: MultiverseDimensions.space3Xl)
+                .glassSurface(.capsule, tint: MultiverseGlassColors.tintGreen)
+        }
+        HStack(spacing: MultiverseDimensions.spaceL) {
+            Button(LocalizedCopy.shared.text(for: .actionRetry)) {}
+                .glassButton(.standard)
+            Button(LocalizedCopy.shared.text(for: .browseCharacters)) {}
+                .glassButton(.prominent)
+        }
+        GlassContainer(spacing: MultiverseDimensions.spaceS) {
+            HStack(spacing: MultiverseDimensions.spaceS) {
+                Image(systemName: "heart").padding().glassSurface(.capsule)
+                Image(systemName: "square.and.arrow.up").padding().glassSurface(.capsule)
+            }
+        }
+    }
+    .padding(MultiverseDimensions.spaceXl)
+    .cosmicCanvas()
+    .previewVariant(variant)
+}
