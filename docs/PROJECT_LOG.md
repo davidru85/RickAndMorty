@@ -1594,6 +1594,15 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew :androidApp:verifyRoborazziDebug` — BUILD SUCCESSFUL; no shell baseline changes.
 - **Not verified:** a physical device, and the gesture from the right edge, which runs the same transition (the shell ignores the swipe edge).
 
+### LOG-0165 · 2026-10-06 · The owner's two Android defects are merged
+
+- **Event:** the owner reviewed, approved and merged `TASK-137` and `TASK-138` in order, by merge commit (`DEC-160`): PR #249 as `d111db1` and PR #250 as `5d246cc`.
+  - Issues #247 and #248 closed on merge, because each pull request carried a plain `Closes #N` line as well as the table cell.
+- **Observed before the merges:** each pull request's own CI run passed its 19 checks. A local simulation merged the two branches into `main` in order with `--no-ff` and hit no conflict, and the result's tree equals `TASK-138`'s head.
+- **Observed after the merges:** `main`'s run `37439652312` at `5d246cc` had 17 of its 18 jobs passed and one still running when this entry was written. The owner asked not to wait for it, so its conclusion is not recorded here. The run of the intermediate merge commit `d111db1` was cancelled as superseded.
+- **Open from the two tasks, recorded rather than pending:** neither change was checked on a physical device; the emulator showed both fixed (`LOG-0163`, `LOG-0164`).
+- **Affected documents:** `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
