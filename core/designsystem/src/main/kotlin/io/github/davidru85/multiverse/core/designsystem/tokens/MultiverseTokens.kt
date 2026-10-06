@@ -154,11 +154,14 @@ public object MultiverseComponentDimensions {
     /** The portal mark a failed portrait shows (`UI_SPEC.md` §5.3). */
     public val portraitErrorMark: Dp = 48.dp
 
-    /** The Detail's hero, its top scrim and bottom fade, and the room the favourite action keeps clear (Figma `21:1217`). */
+    /**
+     * The Detail's hero, its top scrim and bottom fade (Figma `21:1217`), and the room the favourite action
+     * keeps clear: the 56 dp small extended FAB, its 16 dp inset and a 16 dp gap (`TASK-134`, `DEC-159`).
+     */
     public val detailHeroHeight: Dp = 468.dp
     public val detailTopScrimHeight: Dp = 160.dp
     public val detailBottomFadeHeight: Dp = 200.dp
-    public val detailFabClearance: Dp = 112.dp
+    public val detailFabClearance: Dp = 88.dp
     public val detailTitleInset: Dp = 20.dp
 
     /** The Detail's controls bar and one control's container and touch target. */

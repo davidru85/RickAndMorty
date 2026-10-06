@@ -1461,6 +1461,30 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 270 test reports hold 1366 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0159 · 2026-10-06 · `TASK-134`: a smaller favourite FAB with whole hearts on the Android Detail (`GAP-044`)
+
+- **Event:** the owner found the Detail's favourite button too large, and its icon wrong.
+- **The cause:**
+  - **Size:** the button was the 80 dp Medium extended FAB of `UI_SPEC.md` §4.1 and Figma `21:1295`, so the size is a requested change.
+  - **Icon:** `ic_heart_outline.xml` was a corrupted copy of `favorite_border`. Its inner contour sat one unit left (`C5.2 14.24 3 12.39 3 8.5` for `C7.14 14.24 4 11.39 4 8.5`, and so on), so the stroke was thin on the left and thick on the right, which a 3× crop of the emulator screenshot showed.
+  - The Favorites empty state carried the same corrupted path in `androidApp`.
+- **The change (`DEC-159`, the size is the agent's recommendation for the owner's review):**
+  - `SmallExtendedFloatingActionButton` (56 dp), with the same Primary colour, Portal Glow, collapse on scroll and semantics.
+  - The content's clearance goes from 112 to 88 dp.
+  - The three heart drawables are the official Material Symbols Rounded `favorite` glyphs (outline, and `FILL 1` for marked) on the 960 grid.
+- **Red, then green:**
+  - `TEST-UI-046` failed with `the favourite action is the 56 dp small extended FAB expected:<56.0> but was:<80.0>` and `the outline heart differs from its mirror image in 1138 of 9216 pixels`. The filled heart was already symmetric.
+  - Both cases pass after the change, with all 53 `:feature:character-detail` host tests.
+  - The first full gate failed on ktlint in the new case (a chained call on one line). The refactor commit formats it, and the rerun gate passes.
+- **Baselines:**
+  - The ten Detail baselines re-record with the smaller FAB, and a fresh verify run passes.
+  - The Favorites and shell baselines are unchanged, because their fixtures pass their own illustration.
+- **Device:** on the emulator, Rick's Detail shows the 56 dp FAB with a symmetric outline heart, which springs to the filled heart when tapped.
+- **Affected documents:** `docs/UI_SPEC.md` (§4.1, §6.3), `docs/DECISION_BOARD.md` (`DEC-159`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-044`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 271 test reports hold 1368 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
