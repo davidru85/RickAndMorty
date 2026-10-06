@@ -1,18 +1,23 @@
 # Multiverse Explorer
 
-- **Status:** Active — the Gradle/KMP build skeleton exists (TASK-014); the application itself is still target state (see [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) §5)
-- **Last verified:** 2026-10-04
+- **Status:** Active. Both apps are built and verified on `main`, and this file describes the code as it is. [`docs/HANDOFF.md`](docs/HANDOFF.md) separates what was verified from what was not.
+- **Last verified:** 2026-10-06
 - **Owner:** Delivery Planner (see [`AGENTS.md`](AGENTS.md))
 - **Authoritative for:** the developer entry point — prerequisites, build, run, test and quality commands, platform support, known limitations, documentation index.
 - **Not authoritative for:** requirements, architecture, the remote contract, the visual specification or process — each links below.
 - **Inputs:** [`assessment.md`](assessment.md), [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md), [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md)
 
-A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickandmortyapi.com/): browse every character, open one character, favourite the ones you like.
+[![Pull-request gate](https://github.com/davidru85/RickAndMorty/actions/workflows/pull-request.yml/badge.svg?branch=main)](https://github.com/davidru85/RickAndMorty/actions/workflows/pull-request.yml)
+![Kotlin 2.4.20](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
+![Android API 26+](https://img.shields.io/badge/Android-API%2026%2B-3DDC84?logo=android&logoColor=white)
+![iOS 18+](https://img.shields.io/badge/iOS-18%2B-000000?logo=apple&logoColor=white)
+
+A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickandmortyapi.com/): browse every character, open one character, and keep your favourites. It ships two native apps, Jetpack Compose with Material 3 Expressive on Android and SwiftUI with Liquid Glass on iOS. Both run on one shared Kotlin core.
 
 Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
 
-> **Project status: both apps are built and verified; the releases await the owner's tags.**
-> The repository holds the shared Kotlin Multiplatform core, the design system, the Android app (Compose, `minSdk` 26) and the iOS app (SwiftUI over one Kotlin framework). Both apps have Discovery, Character detail, Favorites and Settings, with the offline and error states. 52 Android and 17 iOS screenshot baselines are committed, and every policy and quality check blocks in CI. M1 is prepared as `v0.1.0` and M2 as `v0.2.0`; tagging and publishing are the owner's (`DEC-049`). The evidence only a device can give is carried as unevidenced rather than claimed: the performance budgets on a reference device, the iOS 18 floor run and the iOS VoiceOver checklist. [`docs/HANDOFF.md`](docs/HANDOFF.md) separates what was verified from what was not; commands marked *executed* were run on the recorded date.
+> **Project status: both apps are complete and verified. The milestones are tagged `v0.1.0` (Android) and `v0.2.0` (iOS), and publishing their GitHub Releases is the owner's step.**
+> Both apps have Discovery, Character detail, Favorites, Settings and the Episodes placeholder. They cover the offline, stale and error states, English and Spanish copy, and a REST or GraphQL data source chosen in Settings. Every view has its previews, and 54 Android and 18 iOS screenshot baselines are committed. Every quality and policy check runs on each pull request: 1,380 Gradle tests and 173 iOS tests, with 0 failures, on 2026-10-06. Some evidence only a reference device can give, and it is named rather than claimed (§11): the performance budgets, a run on iOS 18 and the iOS VoiceOver pass.
 
 ## 1. Assessment objectives
 
@@ -20,26 +25,26 @@ The assignment ([`assessment.md`](assessment.md)) asks for:
 
 | Requirement | How this project answers it |
 | --- | --- |
-| List all characters and inspect the selected one | Character list (paginated, searchable, filterable) and character detail |
-| Review how the project is structured, whether SOLID is applied | The 12 modules of ADR-0001 as amended (the debug-only `:core:diagnostics` included) with inward-only dependencies, Clean Architecture layers inside each feature, documented contracts and ADRs |
-| "Very image oriented company, UX is important" | Image-first design system, dynamic portrait accents, shared-element transitions, screenshot-tested UI |
-| Performance discussion | Numeric budgets with a measurement method in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) |
-| Extras: image caching, error handling, response caching, tests, filter/search | All committed — see the feature table in §3 |
-| "use them wisely, each third party library added is a dependency" | One library per concern, each justified in [`docs/DESIGN.md`](docs/DESIGN.md) or an ADR |
+| List all characters and inspect the selected one | A paginated, searchable and filterable character list, and a character detail, on both platforms |
+| Review how the project is structured, whether SOLID is applied | 13 Gradle modules with inward-only dependencies, which `verifyModuleBoundaries` enforces on every build. Each feature has Clean Architecture layers. `:core:domain` is the API and `:core:data` the implementation (ADR-0014). Internal contracts are documented, and decisions are recorded in 15 ADRs |
+| "Very image oriented company, UX is important" | An image-first design system on each platform, portrait accents sampled from each image, the card → detail shared-element transition, and snapshot-tested screens |
+| Performance discussion | Numeric budgets with a measurement method in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). The release APK measures 2.26 MiB against its 12 MiB budget on every pull request; the device budgets await a reference device (§11) |
+| Extras: image caching, error handling, response caching, tests, filter/search | All delivered: memory and disk image caches, response caching with a freshness policy, a typed failure model with designed states, search with a status filter, and the test suites above |
+| "use them wisely, each third party library added is a dependency" | One library per concern (Ktor, kotlinx.serialization, Koin, Coil 3, DataStore), each justified in [`docs/DESIGN.md`](docs/DESIGN.md) §3.5 or an ADR; §15 lists every pinned version |
 | Use Jetpack Compose or SwiftUI | Both, as two native clients over a shared Kotlin core |
 
 ## 2. Supported platforms
 
 | Platform | UI | Minimum | Status |
 | --- | --- | --- | --- |
-| Android | Jetpack Compose, Material 3 Expressive | API 26 (compile/target 37) | Milestone M1 — first deliverable |
-| iOS | SwiftUI, Liquid Glass on iOS 26+ with a material fallback | iOS 18.0 | Milestone M2 — second deliverable |
+| Android | Jetpack Compose, Material 3 Expressive | API 26 (compile and target 37) | Built and verified; milestone M1, tagged `v0.1.0` |
+| iOS | SwiftUI, Liquid Glass on iOS 26+ with a material fallback | iOS 18.0 | Built and verified on the iOS 27 simulator; milestone M2, tagged `v0.2.0`. Not yet run on iOS 18 (§11) |
 
 Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) §1.2).
 
 ## 3. Features
 
-### Committed for the deliverable
+### Delivered
 
 | Feature | Requirement |
 | --- | --- |
@@ -68,17 +73,26 @@ Phone portrait only; tablet, foldable and landscape are explicit non-goals ([`do
 | Real Episodes screens | Deferred — `DEC-005`. Episodes ships as a designed placeholder with a route back to Characters. |
 | Real Locations screens | Deferred — `DEC-005`, `DEC-055`. Locations is not in the navigation. |
 
-### Planned screens and screenshots
+### Screenshots
 
-The visual specification is [`docs/UI_SPEC.md`](docs/UI_SPEC.md). It defines seven frames per platform (Splash, Discovery, Detail, Episodes placeholder, Favorites empty state, Settings, and the Delete favorites confirmation) and cross-links every component to its Figma node.
+The running apps on 2026-10-06, with live data from the API.
 
-The rendered design exports are committed under [`docs/figma/`](docs/figma/README.md): every screen frame of `UI_SPEC.md` §1.1 and every component frame of §1.2, rendered from the actual Figma frames at 2× (see that directory's export log). The Figma source itself still requires project access, so these exports are the design evidence a reviewer can open.
+- **Android:** the debug build on the API 37 emulator.
+- **iOS:** the iOS 27 simulator. The simulator has no tap input, so each screen was rendered from the app's own views and hosts in a window of the app. The splash is the first frame of its animation.
 
-| Android | iOS |
-| --- | --- |
-| ![Splash](docs/figma/01-splash-android.png) | ![Splash](docs/figma/01-splash-ios.png) |
+The Spanish screens are in [`README.es.md`](README.es.md).
 
-In-app screenshots of the running apps are still pending: the first runnable milestone is the Android shell (`TASK-044`), and they join this section once a run is verified.
+| | Discovery | Character detail | Favorites | Settings |
+| --- | --- | --- | --- | --- |
+| **Android** | <img src="docs/screenshots/android/en/discovery.jpg" width="180" alt="Android Discovery"> | <img src="docs/screenshots/android/en/detail.jpg" width="180" alt="Android Character detail"> | <img src="docs/screenshots/android/en/favorites.jpg" width="180" alt="Android Favorites"> | <img src="docs/screenshots/android/en/settings.jpg" width="180" alt="Android Settings"> |
+| **iOS** | <img src="docs/screenshots/ios/en/discovery.jpg" width="180" alt="iOS Discovery"> | <img src="docs/screenshots/ios/en/detail.jpg" width="180" alt="iOS Character detail"> | <img src="docs/screenshots/ios/en/favorites.jpg" width="180" alt="iOS Favorites"> | <img src="docs/screenshots/ios/en/settings.jpg" width="180" alt="iOS Settings"> |
+
+| | Splash | Episodes placeholder |
+| --- | --- | --- |
+| **Android** | <img src="docs/screenshots/android/en/splash.jpg" width="180" alt="Android splash"> | <img src="docs/screenshots/android/en/episodes.jpg" width="180" alt="Android Episodes"> |
+| **iOS** | <img src="docs/screenshots/ios/en/splash.jpg" width="180" alt="iOS splash"> | <img src="docs/screenshots/ios/en/episodes.jpg" width="180" alt="iOS Episodes"> |
+
+The visual specification is [`docs/UI_SPEC.md`](docs/UI_SPEC.md). It cross-links every component to its Figma node, and the design exports are committed under [`docs/figma/`](docs/figma/README.md).
 
 ## 4. Architecture in brief
 
@@ -86,93 +100,86 @@ Clean Architecture with unidirectional data flow, in Kotlin Multiplatform:
 
 ```mermaid
 flowchart LR
-    subgraph Android
-        AC["Compose screens"] --> AVM["Feature ViewModels"]
+    subgraph Android[":androidApp"]
+        AC["Compose screens"] --> AVM["ViewModels"]
     end
-    subgraph iOS
-        IV["SwiftUI views"] --> IO["ObservableObjects"]
+    subgraph iOS["iosApp"]
+        IV["SwiftUI views"] --> IO["ObservableObject holders"]
     end
+    IO --> CIOS[":core:ios<br/>the one Kotlin framework"]
     AVM --> FEAT
-    IO --> FEAT
-    subgraph "Feature modules"
-        FEAT[":feature:discovery · character-detail · favorites<br/>· episodes · settings<br/>domain + presentation + ui"]
+    CIOS --> FEAT
+    subgraph Features["Feature modules"]
+        FEAT[":feature:discovery · character-detail<br/>· favorites · episodes · settings<br/>shared state holders + Compose UI"]
     end
-    FEAT --> CORE
-    subgraph Core
-        CORE[":core:domain"] 
-        CP[":core:presentation<br/>LoadState, formatters, copy keys"]
-        CDA[":core:data<br/>DTOs, mappers, Ktor, cache, pager, favorites, logger"]
-        CDS[":core:designsystem<br/>tokens + Compose components"]
-        CDG[":core:diagnostics<br/>debug-only diagnostic API"]
-    end
-    CDA --> CORE
-    CP --> CORE
-    CDG --> CORE
-    FEAT --> CDS
+    FEAT --> CP[":core:presentation<br/>LoadState, formatters, copy keys"]
+    FEAT --> CD[":core:domain<br/>models, use cases, ports"]
+    FEAT --> CDS[":core:designsystem<br/>tokens + Compose components"]
+    CP --> CD
+    CDA[":core:data<br/>Ktor REST + GraphQL, cache,<br/>pager, favourites store, logger"] --> CD
     CDA --> API[("rickandmortyapi.com")]
 ```
 
-- Dependencies point inward: features → core → domain. The `:core:domain` module has no framework, HTTP or UI dependency, and no feature module depends on another feature module.
-- API/IMPL boundary ([`ADR-0014`](docs/adr/0014-api-impl-boundary.md)): `:core:domain` is the API and `:core:data` the implementation. Features depend on the API only and never on `:core:data`; the app shell (and, on iOS, the `:core:ios` export module) is the composition root that wires the implementations, so no HTTP or storage type reaches feature code.
-- UI is native on each platform; domain, data, UI-state contracts, formatters and copy keys are shared.
-- Full detail, module table, dependency rules and class diagram: [`docs/DESIGN.md`](docs/DESIGN.md). Rationale: [`docs/adr/0001-module-boundaries.md`](docs/adr/0001-module-boundaries.md).
+- **Dependencies point inward:** features → core → domain. `:core:domain` has no framework, HTTP or UI dependency, and no feature module depends on another feature module.
+- **API/IMPL boundary ([`ADR-0014`](docs/adr/0014-api-impl-boundary.md)):** features depend on `:core:domain` only and never on `:core:data`. The composition roots — `:androidApp` and, for iOS, `:core:ios` — wire the implementations, so no HTTP or storage type reaches feature code.
+- **Shared and native parts:** each feature's state holder, reducer and UI-state contract are shared Kotlin. The UI is native: Compose in each feature's `androidMain`, SwiftUI in `iosApp`, which wraps the shared holders in `ObservableObject`s.
+- **Two support modules:** `:core:diagnostics` is a debug-only diagnostic API that release builds never link, and `:core:testing` holds the shared fakes and fixtures.
+- **More:** the full module table, dependency rules and class diagram are in [`docs/DESIGN.md`](docs/DESIGN.md), and the rationale in [`docs/adr/0001-module-boundaries.md`](docs/adr/0001-module-boundaries.md).
 
 ## 5. Repository structure
 
 ```text
 .
-├── assessment.md                 # The assignment (authoritative, frozen)
-├── AGENTS.md                     # Operating rules for AI agents
-├── README.md                     # This file
-├── README.es.md                  # Spanish translation of this file
-└── docs/
-    ├── REQUIREMENTS.md           # Requirements, acceptance criteria, traceability
-    ├── DESIGN.md                 # Architecture, modules, contracts, navigation
-    ├── API_SPECS.md              # Remote contract, errors, caching policy
-    ├── UI_SPEC.md                # Visual and interaction specification
-    ├── CONTRACTS.md              # Internal module interfaces and invariants
-    ├── ERROR_FLOW.md             # Failure → state → copy chain
-    ├── PERFORMANCE.md            # Budgets and measurement method
-    ├── OBSERVABILITY.md          # Logging contract and debug diagnostics
-    ├── SECURITY.md               # Threat model, privacy, advisory register
-    ├── TESTING.md                # Test strategy, tooling, traceability
-    ├── DEFINITION.md             # Ready, Done, release and documentation gates
-    ├── GUIDELINES.md             # Code conventions and where they are enforced
-    ├── CONTRIBUTING.md           # Setup, branch, PR and review process
-    ├── TECHNICAL_PLAN.md         # Milestones, sequencing, quality gates
-    ├── BACKLOG.md                # Canonical work index (TASK ids)
-    ├── DECISION_BOARD.md         # Decision status index (DEC ids)
-    ├── PROJECT_LOG.md            # Why the project evolved as it did
-    ├── HANDOFF.md                # Current state and next actions
-    ├── DOCUMENTATION_AUDIT.md    # Documentation inventory and open gaps
-    ├── adr/                      # Architecture decision records
-    ├── design/                   # Historical Figma generation briefs (inputs)
-    ├── figma/                    # Rendered PNG exports (pending)
-    └── templates/                # Backlog item, test case, PR, bug report
+├── androidApp/              # Android app: activity, navigation shell, Koin graph, Coil, splash, sound
+├── core/
+│   ├── domain/              # Models, use cases and ports; no framework, HTTP or UI type
+│   ├── data/                # Ktor REST and GraphQL clients, DTOs, cache, pager, favourites store, logger
+│   ├── presentation/        # Shared UI-state primitives, formatters and copy keys
+│   ├── designsystem/        # Android tokens, theme, Compose components and their previews
+│   ├── ios/                 # Exports the one Kotlin framework the iOS app links
+│   ├── diagnostics/         # Debug-only diagnostic API
+│   └── testing/             # Shared fakes, fixtures and test harness
+├── feature/
+│   ├── discovery/           # Character list: search, status filter, paging
+│   ├── character-detail/    # Character detail, episode enrichment, favourite toggle
+│   ├── favorites/           # Favourite characters
+│   ├── episodes/            # Designed placeholder
+│   └── settings/            # Sounds, data source, delete favourites
+├── iosApp/                  # SwiftUI app: App, DesignSystem, Features, ImagePipeline, Tests (XcodeGen project)
+├── build-logic/             # Gradle convention plugins and the policy checks
+├── gradle/                  # Version catalog, wrapper, daemon JDK, dependency-advice register
+├── tools/                   # Swift tool pins, lint, version and release-note scripts
+├── .github/workflows/       # Pull-request gate and the weekly live-contract probe
+├── docs/                    # Specifications, process, decisions, design exports, screenshots (§12)
+├── assessment.md            # The assignment (authoritative, frozen)
+├── AGENTS.md                # Operating rules for AI agents
+├── README.md · README.es.md # This file and its Spanish translation
+└── VERSION                  # The single version source
 ```
 
-The build adds `core/{domain,data,presentation,designsystem,testing}`, `feature/{discovery,character-detail,favorites,episodes,settings}` and `androidApp/` (TASK-014), then `core/ios` (the iOS framework export module, [`ADR-0012`](docs/adr/0012-ios-framework-export.md), TASK-078) and `iosApp/` (TASK-051); a `benchmark` module is still planned (`CONF-41` still needs the decision for the benchmark and `contract-live` artifacts). Each feature module contains its own Clean Architecture layers as packages. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
+Each feature module carries its own Clean Architecture layers as packages: `domain`, `presentation` (shared) and `ui` (Android). The live-contract suite is a source set of `:core:data` that only the weekly workflow runs. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
 
 ## 6. Prerequisites
 
 | Tool | Version | Notes |
 | --- | --- | --- |
-| JDK | 17 or newer | Required by the Gradle build |
-| Android SDK | Platform 37 (Android 17), Build Tools current | `minSdk` 26 |
-| Xcode | 26 or newer | Required to compile the iOS 26 Liquid Glass APIs |
-| Kotlin | 2.4.20 | Supplied by the Gradle toolchain; no local install needed |
-| Node.js | Not required | No web target |
+| JDK | 17 or newer to start Gradle | The build daemon runs on JDK 25, which Gradle provisions itself (`gradle/gradle-daemon-jvm.properties`) |
+| Android SDK | Platform 37 (Android 17), current build tools | Located through `local.properties` (`sdk.dir`) or `ANDROID_HOME` |
+| Xcode | 27.0 | The toolchain `tools/swift-tools.lock` pins; the iOS 26+ SDK provides the Liquid Glass APIs |
+| XcodeGen | 2.46.0 | Only to regenerate `iosApp/MultiverseExplorer.xcodeproj` from `iosApp/project.yml` |
+| SwiftLint | 0.65.1 | Downloaded and checksum-verified by `tools/swift-tools-setup.sh`; no manual install |
+| Kotlin | 2.4.20 | Supplied by the Gradle build; no local install needed |
 
 No API key, account or credential is needed: the Rick and Morty API is public, unauthenticated and read-only.
 
 ## 7. Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/davidru85/RickAndMorty.git
 cd RickAndMorty
 ```
 
-The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so no separate Gradle installation is required. There is nothing else to configure: the API base URL is a build constant, the package root is declared once in `gradle.properties`, and no property file, keystore or environment variable is needed.
+The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so no separate Gradle installation is required. There is nothing else to configure: the API host is a build constant, the package root is declared once in `gradle.properties`, and no property file, keystore or environment variable is needed beyond the Android SDK location.
 
 ## 8. Build and run
 
@@ -180,35 +187,37 @@ The Gradle wrapper is committed (Gradle 9.7.0, distribution checksum pinned), so
 
 | Task | Command | State |
 | --- | --- | --- |
-| List the module set | `./gradlew projects` | Executed 2026-10-02 — the 12 modules of ADR-0001 as amended by ADR-0013, grouped by the `:core` and `:feature` container projects (15 Gradle projects) |
-| Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-10-01 — succeeded, no Android Lint error |
-| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-10-01 — succeeded with no `iosApp/` present and from a clean clone |
-| Install on a connected device/emulator | `./gradlew :androidApp:installDebug` | **Executed 2026-10-03** — installed and launched on API 37 and API 26, activity resumed, no crash record (`TASK-044`) |
-| Build the shared framework for iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Executed 2026-10-05: BUILD SUCCESSFUL — the one static `MultiverseExplorer.framework` the iOS app links, exporting the five features, `:core:domain` and `:core:presentation` and no `:core:data` type (`TASK-078`, `DEC-058`, `DEC-091`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)). The app's pre-build step links the framework for the active SDK and configuration — `linkDebugFrameworkIosSimulatorArm64` for a simulator Debug build, `linkReleaseFrameworkIosArm64` for a device Release build |
-| Build the iOS app | `xcodebuild -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0' build` | Executed 2026-10-05: BUILD SUCCEEDED; a Release device build (`-configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO`) also succeeds, `CFBundleShortVersionString` 0.1.0 from `VERSION`, `MinimumOSVersion` 18.0 (`TASK-051`). `iosApp/project.pbxproj` is generated from `iosApp/project.yml` with XcodeGen 2.46.0 and committed. A Release simulator build (`-configuration Release -destination 'generic/platform=iOS Simulator'`) also succeeds, and a Kotlin-only change relinks the app in the same incremental build (`TASK-121`, `GAP-033`) |
+| List the module set | `./gradlew projects` | Executed 2026-10-06: 13 modules (seven core, five feature, and the Android app) in 16 Gradle projects, counting the root and the `:core` and `:feature` containers |
+| Build every module, Android and the iOS klibs | `./gradlew assemble` · `./gradlew build` | Executed 2026-10-06: `./gradlew build --continue` BUILD SUCCESSFUL |
+| Build the Android debug app | `./gradlew :androidApp:assembleDebug` | Executed 2026-10-06: succeeded |
+| Install and run on a connected device or emulator | `./gradlew :androidApp:installDebug` | Executed 2026-10-06: installed on the API 37 emulator and launched; `MainActivity` resumed with no crash record. The same build loaded Discovery's 826 characters for the screenshots of §3 |
+| Build the shared framework for iOS | `./gradlew :core:ios:linkDebugFrameworkIosSimulatorArm64` | Executed 2026-10-06: BUILD SUCCESSFUL. It builds the one static `MultiverseExplorer.framework` the iOS app links: the five features, `:core:domain` and `:core:presentation`, and no `:core:data` type (`DEC-058`, `DEC-091`, [`ADR-0012`](docs/adr/0012-ios-framework-export.md)). The app's pre-build step links it for the active SDK and configuration, so Xcode runs it on every build |
+| Build the iOS app | `xcodebuild -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0' build` | Executed 2026-10-06: built by the `xcodebuild test` run of §9 (TEST SUCCEEDED). A Release device build (`-configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO`) also succeeds, with `CFBundleShortVersionString` 0.2.0 from `VERSION` and `MinimumOSVersion` 18.0. `iosApp/MultiverseExplorer.xcodeproj` is generated from `iosApp/project.yml` with XcodeGen 2.46.0 and committed |
+| Run the iOS app | Open `iosApp/MultiverseExplorer.xcodeproj` in Xcode and run the `MultiverseExplorer` scheme on an iOS simulator. From the command line, after the build: `xcrun simctl install booted "$(find ~/Library/Developer/Xcode/DerivedData -path '*Debug-iphonesimulator/MultiverseExplorer.app' -maxdepth 6 \| head -1)"`, then `xcrun simctl launch booted io.github.davidru85.multiverse.app` | Executed 2026-10-06 from the command line, on the iPhone 17 simulator (iOS 27.0): the app launched, and Discovery loaded 826 characters |
 
-**Parallel CI (`DEC-112`).** Module checks, app tests, APK verification, tooling, policies, dependency health and contract replay run independently. The required `android` result passes only when every worker succeeds; the local commands below retain the comprehensive gate.
+**Continuous integration (`DEC-112`).** `.github/workflows/pull-request.yml` runs independent jobs on every pull request and every push to `main`: one check per module, the app tests, the APK verification, the build-logic suite, the repository policies, the dependency health, the contract replay, and the `ios` job on an Xcode 27 runner. The required `android` result passes only when every Linux job succeeds. The `ios` job runs on every pull request, but making it a required check again is the owner's step (`TASK-108`).
 
 ## 9. Test and quality commands
 
-Every pull request must pass the full suite on both platforms before it can be approved (`DEC-054`); the definitions of Ready, Done and the merge gate are in [`docs/DEFINITION.md`](docs/DEFINITION.md), and the test strategy is in [`docs/TESTING.md`](docs/TESTING.md).
+Every pull request must pass the full suite on both platforms before it can be approved (`DEC-054`). The definitions of Ready, Done and the merge gate are in [`docs/DEFINITION.md`](docs/DEFINITION.md), and the test strategy is in [`docs/TESTING.md`](docs/TESTING.md). The whole local gate is `./gradlew check buildHealth --continue`: on 2026-10-06 it ran 1,380 tests with 0 failures.
 
 | Task | Command | State |
 | --- | --- | --- |
 <!-- local-gate:begin -->
-| All shared and unit tests, plus the build-logic regression suite | `./gradlew allTests :build-logic:convention:test` | Executed 2026-10-02: the shared suites run on the JVM host-test target and on both Apple targets (`:core:testing:testAndroidHostTest`, `:core:testing:iosSimulatorArm64Test`) and the build-logic regression suite runs in the included build. The earlier row documented `./gradlew test`, which selects only the Android unit-test tasks and reaches neither the shared KMP suites nor the build-logic suite (`GAP-020`; `TASK-103`) |
-| Formatting, static analysis and dependency checks | `./gradlew ktlintCheck lintDebug buildHealth` | Executed 2026-10-01 — ktlint, Android Lint and `buildHealth` pass (TASK-029, `DEC-075`, `DEC-077`) |
-| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-02: all pass — 15 projects checked (`R1`–`R18`, `S1`–`S3`, effective inherited edges, Compose-only for `:core:designsystem`, and `:core:diagnostics` linked from debug configurations only with its release closure checked), `VERSION` validated with every Android artifact task depending on it, and no analytics artifact in the catalog or in `:androidApp`'s resolved release graph (`verifyNoAnalytics`, `TEST-UNIT-034`) |
-| Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`, no analytics artifact) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-02: passes; also runs as part of `./gradlew check` and `./gradlew build` |
-| Contract suite in fixture/replay mode on the Android host target (the `android` job's contract step) | `./gradlew :core:data:contractTestReplayAndroidHost` | Executed 2026-10-02: runs exactly the `TEST-CONTRACT-*` cases of `testAndroidHostTest` — 18 cases, 0 failures — and fails when its target executes none (`TASK-037`, `DEC-073`, `DEC-090`) |
-| Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-01: passes (0 findings over the working set, every reachable blob and every unique historical path); also runs as part of `./gradlew check` and `./gradlew build` |
+| All shared and unit tests, plus the build-logic regression suite | `./gradlew allTests :build-logic:convention:test` | Executed 2026-10-06: BUILD SUCCESSFUL. It runs the shared suites on the JVM host-test target and on the Apple simulator target (for example `:core:testing:testAndroidHostTest` and `:core:testing:iosSimulatorArm64Test`), and the build-logic regression suite in the included build |
+| Formatting, static analysis and dependency checks | `./gradlew ktlintCheck lintDebug buildHealth` | Executed 2026-10-06: ktlint, Android Lint and `buildHealth` pass, and the dependency-analysis report is empty (`DEC-075`, `DEC-077`) |
+| Module-boundary and version policy | `./gradlew verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts verifyWorkflowGate` | Executed 2026-10-06: all pass. 16 projects are checked against `R1`–`R18` and `S1`–`S3`, including the effective inherited edges, the Compose-only rule for `:core:designsystem`, and `:core:diagnostics` linked from debug configurations only. `VERSION` is validated, and no analytics artifact is in the catalog or in the app's release graph (`TEST-UNIT-034`) |
+| Verify the dependency policy (exact pins, rationale, inventory, single `VERSION`, no analytics artifact) | `./gradlew verifyDependencyPolicy` | Executed 2026-10-06: passes. It also runs as part of `./gradlew check` and `./gradlew build` |
+| Contract suite in fixture/replay mode on the Android host target (the `android` job's contract step) | `./gradlew :core:data:contractTestReplayAndroidHost` | Executed 2026-10-06: runs exactly the `TEST-CONTRACT-*` cases (35, REST and GraphQL, 0 failures), and fails when its target runs none (`DEC-073`, `DEC-090`) |
+| Verify repository and secret hygiene | `./gradlew verifyRepositoryHygiene` | Executed 2026-10-06: passes with 0 findings over the working set, every reachable blob and every unique historical path. It also runs as part of `./gradlew check` and `./gradlew build` |
 <!-- local-gate:end -->
-| Android screenshot verification (every committed baseline) | `./gradlew :core:designsystem:verifyRoborazziDebug :androidApp:verifyRoborazziDebug :feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest :feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest` | Executed 2026-10-04: passes — 52 committed baselines across the component catalogue, the seven `ERROR_FLOW.md` states, the four feature surfaces and the shell (Episodes and the maximum-text detail and shell captures included), each captured in system light and dark and proved byte-identical (`TEST-UI-012`, `TEST-UI-016`, `TASK-045`). The KMP modules use the `AndroidHostTest` variant name; `:androidApp` and `:core:designsystem` use the `Debug` one |
-| Record new screenshot baselines (review the diff before committing) | `./gradlew :core:designsystem:recordRoborazziDebug :androidApp:recordRoborazziDebug :feature:discovery:recordRoborazziAndroidHostTest :feature:character-detail:recordRoborazziAndroidHostTest :feature:favorites:recordRoborazziAndroidHostTest :feature:settings:recordRoborazziAndroidHostTest` | Executed 2026-10-04: writes the baselines under each module's `src/*/snapshots/`. Run it only for a state that exists and is correct (`TESTING.md` §8.2) |
-| iOS snapshots and state-holder tests | `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` | Executed 2026-10-05: 159 tests, 0 failures — the state-holder, navigation, transition, layout and screen cases and the committed component and screen baselines, recorded on that device and runtime (`TESTING.md` §8.3); the `ios` job runs the same command |
+| Android screenshot verification (every committed baseline) | `./gradlew :core:designsystem:verifyRoborazziDebug :androidApp:verifyRoborazziDebug :feature:discovery:verifyRoborazziAndroidHostTest :feature:character-detail:verifyRoborazziAndroidHostTest :feature:favorites:verifyRoborazziAndroidHostTest :feature:settings:verifyRoborazziAndroidHostTest` | Executed 2026-10-06 as part of `./gradlew check`: the 54 committed baselines pass. They cover the component catalogue, every `ERROR_FLOW.md` state, the feature surfaces and the shell, each captured with the system in light and in dark and proved byte-identical (`TEST-UI-012`, `TEST-UI-016`). The KMP modules use the `AndroidHostTest` variant name; `:androidApp` and `:core:designsystem` use the `Debug` one |
+| Record new screenshot baselines (review the diff before committing) | `./gradlew :core:designsystem:recordRoborazziDebug :androidApp:recordRoborazziDebug :feature:discovery:recordRoborazziAndroidHostTest :feature:character-detail:recordRoborazziAndroidHostTest :feature:favorites:recordRoborazziAndroidHostTest :feature:settings:recordRoborazziAndroidHostTest` | Writes the baselines under each module's `src/*/snapshots/`. Run it only for a state that exists and is correct (`TESTING.md` §8.2) |
+| iOS snapshots, state-holder and screen tests | `xcodebuild test -project iosApp/MultiverseExplorer.xcodeproj -scheme MultiverseExplorer -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0'` | Executed 2026-10-06: 173 tests, 0 failures, including the 18 committed baselines recorded on that device and runtime (`TESTING.md` §8.3). The `ios` job runs the same command |
+| Swift formatting and lint | `sh tools/swift-lint.sh iosApp` | Executed 2026-10-06: swift-format `--strict` is clean, and SwiftLint reports 0 violations in 87 files |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not defined: no benchmark module exists and `PERF-Q1` is unresolved, so the command is target state rather than a real task |
-| Contract suite in fixture/replay mode on the Apple simulator target, and on both targets | `./gradlew :core:data:contractTestReplayIosSimulator` · `./gradlew :core:data:contractTestReplay` | Executed 2026-10-02 locally on macOS: 18 contract cases on `iosSimulatorArm64Test`, and 36 across both targets for the aggregate. Not in CI while `DEC-083` suspends the `ios` job; the native entry point becomes blocking with `TASK-051`. Each entry point verifies its own target's reports, so a host report never satisfies the native one |
-| Live observation probes against the API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractLiveProbe` | Executed 2026-10-02: recorded the published totals and page count (`TASK-027`, `DEC-074`); `.github/workflows/contract-live.yml` runs it weekly and uploads the captures, and no pull-request- or push-triggered workflow may reach it |
+| Contract suite in fixture/replay mode on the Apple simulator target, and on both targets | `./gradlew :core:data:contractTestReplayIosSimulator` · `./gradlew :core:data:contractTestReplay` | Executed 2026-10-06: 35 contract cases on `iosSimulatorArm64Test`, and 70 across both targets for the aggregate. The `ios` job runs the simulator entry point on every pull request. Each entry point verifies its own target's reports, so a host report never satisfies the native one |
+| Live observation probes against the API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractLiveProbe` | Executed 2026-10-02: recorded the published totals and page count (`TASK-027`, `DEC-074`). `.github/workflows/contract-live.yml` runs it weekly and uploads the captures, and no pull-request or push workflow may reach it |
 
 Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): write the failing test and commit it (`test:`), make it pass and commit (`feat:`/`fix:`), refactor and commit (`refactor:`), then push.
 
@@ -216,11 +225,11 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 
 | Item | Value | Where |
 | --- | --- | --- |
-| API base URL | `https://rickandmortyapi.com/api/` | Build constant; not discovered at runtime |
-| App version | Single `VERSION` source (`0.2.0`, prepared for the M2 release; M1 is `0.1.0`). The Android `versionName` is that value verbatim; the iOS `CFBundleShortVersionString` derives from it through the generated `iosApp/App/Version.xcconfig`, which the `ios` job checks with `tools/ios-version.sh --check` (`DEC-043`, `DEC-067`, `DEC-121`) | `DEC-043` |
-| Remote protocol | Both ship and the user picks in Settings: REST API (default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
+| API endpoints | REST `https://rickandmortyapi.com/api/` and GraphQL `https://rickandmortyapi.com/graphql`, on the one allow-listed host | Build constant; not discovered at run time (`REQ-SEC-001`) |
+| App version | `0.2.0`, from the single `VERSION` file. The Android `versionName` is that value verbatim; the iOS `CFBundleShortVersionString` derives from it through the generated `iosApp/App/Version.xcconfig`, which the `ios` job checks with `tools/ios-version.sh --check` | `DEC-043`, `DEC-067`, `DEC-121` |
+| Remote protocol | Both ship, and the user picks one in Settings: REST API (the default) or GraphQL, through the one Ktor client | `DEC-056`, [`docs/API_SPECS.md`](docs/API_SPECS.md) §2 |
 | Cache freshness | 24 h fresh, 7 d stale-while-revalidate, 30 d offline fallback | `DEC-012` |
-| Release mechanism | Tag `vMAJOR.MINOR.PATCH`, GitHub Release with the APK attached | `DEC-043` |
+| Release mechanism | A `vMAJOR.MINOR.PATCH` tag, and a GitHub Release with the APK attached. `v0.1.0` and `v0.2.0` are tagged; their Releases are not published yet | `DEC-043` |
 
 ## 11. Known limitations
 
@@ -229,10 +238,11 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 3. **Voice search is not implemented.** It is deferred, and no microphone or speech permission is requested (`DEC-002`).
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).
-6. **Exactly one pre-release artifact ships.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and declared by `:core:designsystem` and by four feature modules (`:feature:character-detail`, `:feature:discovery`, `:feature:favorites`, `:feature:settings`), so the Android app contains it. The accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md), whose rule that only the design system declares it the four feature modules do not yet meet (`CONF-84`). The other two alpha-only components are not adopted.
-7. **The API is unversioned.** Its shape can change without notice, so contract tests run outside the merge gate (`DEC-029`).
-8. **The reference device for performance budgets is not yet locked.** Budgets and the measurement method exist; the named device is recorded as a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md), so no performance budget has been measured yet. Only the zero-network assertion on a cached page runs in the merge gate (`DEC-115`).
-9. **iOS 18 is the declared floor but has not been run.** The app targets iOS 18.0 and its non-glass fallback is snapshot-tested through a seam on the iOS 27 simulator, but no iOS 18 simulator or device run exists: Xcode 27 offers no iOS 18 runtime (`DEC-117`). The iOS app is not signed or distributed; the GitHub Release carries the Android APK.
+6. **Exactly one pre-release artifact ships.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and declared by `:core:designsystem` and by three feature modules (`:feature:character-detail`, `:feature:discovery`, `:feature:settings`), so the Android app contains it. The accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). That ADR says only the design system declares it, a rule the three feature modules do not yet meet (`CONF-84`, open with the owner).
+7. **The API is unversioned.** Its shape can change without notice, so the live contract probe runs weekly outside the merge gate (`DEC-029`).
+8. **The device performance budgets are not measured yet.** The budgets and their measurement method exist, but the reference device is still a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). The merge gate measures the release APK size and asserts zero network calls on a cached page (`DEC-115`).
+9. **iOS 18 is the declared floor but has not been run.** The app targets iOS 18.0, and its non-glass fallback is snapshot-tested through a seam on the iOS 27 simulator. No iOS 18 simulator or device run exists, because Xcode 27 offers no iOS 18 runtime (`DEC-117`). The iOS app is not signed or distributed.
+10. **Two known display defects are open.** At the largest iOS Dynamic Type size, the Settings title "Sounds" breaks inside the word (`GAP-049`). The Android Detail's full-surface error, a failure with nothing cached, draws its illustration without the portal logo (`GAP-050`). Both are registered in [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md).
 
 ## 12. Documentation index
 
@@ -260,6 +270,8 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 | [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) | Chronological record of why things changed | Everyone |
 | [`docs/HANDOFF.md`](docs/HANDOFF.md) | Current state and next actions | Incoming developer or agent |
 | [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md) | Inventory, ownership, open gaps | Documentation maintainer |
+| [`docs/figma/`](docs/figma/README.md) | The Figma design exports and the token export | Design, reviewers |
+| [`docs/screenshots/`](docs/screenshots/) | Screenshots of the running apps, in English and Spanish | Everyone |
 | [`docs/templates/`](docs/templates/) | Working templates for recurring artifacts | Contributors |
 
 Deliberately not created, with reasons in [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) §3: `ARCHITECTURE.md` (merged into `DESIGN.md`), `SPECIFICATION.md` (would duplicate requirements), `ANALYTICS.md` (no analytics — replaced by `OBSERVABILITY.md`), `SECURITY_ADVISORY_REGISTER.md` (a section of `SECURITY.md` for now), `CHANGELOG.md` (superseded by `PROJECT_LOG.md` plus generated release notes).
@@ -275,19 +287,17 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Area | State |
 | --- | --- |
 | Assignment analysis | Complete — [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) |
-| Remote contract | Complete and verified against the live API on 2026-09-29 — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
-| Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/adr/`](docs/adr/), [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
-| Visual specification | Complete, pending two Figma screens (error states) — [`docs/UI_SPEC.md`](docs/UI_SPEC.md) |
-| Process documentation | Complete — `GUIDELINES`, `CONTRIBUTING`, `DEFINITION`, `TESTING`, `SECURITY`, `OBSERVABILITY` |
-| Build skeleton | Done — TASK-014, merged in PR #6 on 2026-09-30: the 11 modules of ADR-0001 build, with the Android app assembling while no `iosApp/` exists yet |
-| Implementation | Shared core complete (B3) and the Android surface landed (B4 Phases 4.2–4.3): `MultiverseTheme`, the component vocabulary, the portrait transport with its accent policy, the Koin graph with `coreModule`, the branded splash as a real loading indicator, four reachable destinations with both placeholders, the launcher icon and the debug-only diagnostics panel. The feature screens arrive with B5 — see [`docs/HANDOFF.md`](docs/HANDOFF.md) §1.8 |
-| Version catalog | Done — TASK-015, merged in PR #10 on 2026-09-30: the catalog pins the full planned inventory, `DESIGN.md` §3.5 carries the rationale and §15 below the inventory, and `verifyDependencyPolicy` enforces both |
-| `VERSION` | Done — TASK-018, merged in PR #34 on 2026-10-01: one `VERSION` file (`0.1.0`) is the single version source; the Android `versionName` is that value verbatim, `verifyDependencyPins` rejects every malformed value, and every Android artifact task depends on its validation (TASK-089). The iOS `CFBundleShortVersionString` derivation arrives with `TASK-051` |
-| CI | Active — TASK-025, PR #52: `.github/workflows/pull-request.yml` gates every pull request and every push to `main`. The `ios` job is suspended by `DEC-083` until `TASK-051` introduces the iOS app; the independent Linux module and verification jobs feed the required `android` result meanwhile (`DEC-112`, `docs/TESTING.md` §14.2) |
-| `.gitignore` | Done — TASK-016, merged in PR #13 on 2026-09-30: `verifyRepositoryHygiene` (`TEST-UNIT-026`) scans the working set, every reachable blob and every unique historical path, in `check` and `build` (see [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) LOG-0036…LOG-0039) |
-| Contracts | Accepted — TASK-019, merged in PR #31 on 2026-10-01: `docs/CONTRACTS.md` is the `IC-###` baseline |
-| Process documents | Reconciled — TASK-034, merged in PR #32 on 2026-10-01: DOC1–DOC8 audit recorded |
-| Screenshots | Figma exports committed (32 PNGs under `docs/figma/`, `TASK-035`); in-app screenshots pending the first runnable milestone (`TASK-044`) |
+| Remote contract | Complete, verified against the live API, and probed weekly — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
+| Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), 15 ADRs in [`docs/adr/`](docs/adr/), and `DEC-001`…`DEC-165` in [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
+| Visual specification | Complete — [`docs/UI_SPEC.md`](docs/UI_SPEC.md), with 32 Figma exports in [`docs/figma/`](docs/figma/README.md) |
+| Shared core and Android app | Done — blocks B1–B6; milestone M1 tagged `v0.1.0` |
+| iOS app | Done — blocks B7–B8; milestone M2 tagged `v0.2.0` |
+| Hardening and handover | Done — block B9 |
+| Since `v0.2.0` | Merged on `main`: the code-review remediation (`TASK-111`…`TASK-126`), the owner's audit fixes (`TASK-127`…`TASK-138`), the selection sound (`TASK-139`) and previews for every view (`TASK-140`) |
+| Tests | 1,380 Gradle tests and 173 iOS tests, 0 failures (2026-10-06); 54 Android and 18 iOS screenshot baselines |
+| CI | Every check runs on each pull request; `android` is the required context, and `ios` runs without being required (§8) |
+| Releases | Tags `v0.1.0` and `v0.2.0`; their GitHub Releases are not published yet (`DEC-049`) |
+| Open items | `CONF-84`, `GAP-049` and `GAP-050`, and the device-only evidence of §11 — see [`docs/HANDOFF.md`](docs/HANDOFF.md) |
 
 ## 15. Dependency inventory
 
