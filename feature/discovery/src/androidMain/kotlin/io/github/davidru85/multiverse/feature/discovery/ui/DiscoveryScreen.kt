@@ -1,6 +1,5 @@
 package io.github.davidru85.multiverse.feature.discovery.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -115,11 +114,7 @@ public fun DiscoveryScreen(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // The app bar takes Surface Container once the grid has scrolled under it (`UI_SPEC.md` §6.2).
-            val scrolled by remember(gridState) {
-                derivedStateOf { gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0 }
-            }
-            SearchField(state = state, onIntent = onIntent, scrolled = scrolled)
+            SearchField(state = state, onIntent = onIntent)
             Headline(state = state)
             FilterRow(state = state, onIntent = onIntent)
             when (val loadState = state.loadState) {
@@ -156,30 +151,26 @@ public fun DiscoveryScreen(
 /**
  * The 64 dp top app bar holding the M3 search bar (`UI_SPEC.md` §4.1, §6.2, Figma `20:1752`): a leading
  * search glyph and the spec's placeholder, and no mic and no avatar (`DEC-002`). Its container is
- * Surface, animating to Surface Container once the grid has scrolled under it.
+ * Surface and stays Surface while the grid scrolls (`DEC-161`): the grid scrolls in its own area below
+ * the chips and never passes under the bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchField(
     state: CharacterListUiState,
     onIntent: (CharacterListIntent) -> Unit,
-    scrolled: Boolean,
 ) {
     val searchBarState = rememberSearchBarState()
     val textFieldState = remember { TextFieldState(state.filter.query) }
     // The text the state last wrote into the field. Its echo through the edit stream is not a user
     // edit, so it is not sent back as a `QueryChanged` (`DEC-129`); every other edit is.
     val stateWritten = remember { mutableStateOf<String?>(state.filter.query) }
-    val appBar by animateColorAsState(
-        targetValue = if (scrolled) MultiverseColors.surfaceContainer else MultiverseColors.surface,
-        label = "app-bar-container",
-    )
     Box(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .height(AppBarHeight)
-                .background(appBar)
+                .background(MultiverseColors.surface)
                 .padding(horizontal = MultiverseDimensions.spaceL),
         contentAlignment = Alignment.Center,
     ) {
