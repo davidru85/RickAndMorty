@@ -20,7 +20,7 @@ The owner's manual audit of 2026-10-05 listed eight Android defects and two iOS 
 | `TASK-129` — the Android count line keeps its space (`GAP-039`) | `fix/task-129-count-line-space`, from `TASK-128`'s head | In review (PR #238; issue #228; `LOG-0154`) |
 | `TASK-130` — Material Symbols glyphs in the Android navigation bar (`GAP-040`) | `fix/task-130-nav-glyphs`, from `TASK-129`'s head | In review (PR #239; issue #229; `LOG-0155`) |
 | `TASK-131` — the Episodes placeholder centred on Android (`GAP-041`) | `fix/task-131-centred-placeholder`, from `TASK-130`'s head | In review (PR #240; issue #230; `LOG-0156`) |
-| `TASK-132` — REST API shown as the selected data source on Android (`GAP-042`) | `fix/task-132-selected-protocol`, from `TASK-131`'s head | Not started (issue #231) |
+| `TASK-132` — REST API shown as the selected data source on Android (`GAP-042`) | `fix/task-132-selected-protocol`, from `TASK-131`'s head | In review (PR #241; issue #231; `LOG-0157`) |
 | `TASK-133` — smaller Detail stat tiles on Android (`GAP-043`) | `fix/task-133-smaller-stat-tiles`, from `TASK-132`'s head | Not started (issue #232) |
 | `TASK-134` — a smaller favourite button with the right heart on Android (`GAP-044`) | `fix/task-134-favorite-button`, from `TASK-133`'s head | Not started (issue #233) |
 | `TASK-135` — the iOS count line keeps its space (`GAP-045`) | `fix/task-135-ios-count-line-space`, from `TASK-134`'s head | Not started (issue #234) |

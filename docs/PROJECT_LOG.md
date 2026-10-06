@@ -1416,6 +1416,27 @@ Documentation is written against a **target** state (DEC-046). Where this log sa
   - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 269 test reports hold 1363 tests and 0 failures.
   - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
 
+### LOG-0157 · 2026-10-06 · `TASK-132`: the Android data-source picker marks REST as selected (`GAP-042`)
+
+- **Event:** the owner asked for REST API to be selected by default in Settings, with GraphQL as the option.
+- **The cause:**
+  - The data was already right: a missing preference reads as REST, the state defaults to REST, and the REST segment was the checked one.
+  - The presentation was ambiguous. The checked segment was pale Secondary `#B5CDB4` without a check, and the unchecked one was Secondary Container `#2C402E`, the colour the Discovery filter chips use for *their* selected chip.
+  - A fresh install on the emulator showed REST as a pale pill and GraphQL as the saturated, "selected-looking" segment. The choice was conveyed by colour alone.
+- **The change (`DEC-157`):**
+  - The selected segment leads with an 18 dp check on Secondary Container / On Secondary Container (6.1:1).
+  - The unselected one is neutral: Surface Container Highest / On Surface Variant (6.6:1).
+  - The role stays `RadioButton`, and REST stays the default.
+- **Red, then green:**
+  - `TEST-UI-044` failed in both states with `exactly one segment carries the check expected:<1> but was:<0>`.
+  - It passes after the change, with the 31 `:feature:settings` host tests.
+- **Baselines:** the six Settings baselines re-record. The compare images show only the picker: the check moves to the selected segment and the unselected one turns neutral.
+- **Device:** a fresh install on the emulator shows "✓ REST API" selected and GraphQL neutral.
+- **Affected documents:** `docs/UI_SPEC.md` §4.1, `docs/DECISION_BOARD.md` (`DEC-157`), `docs/TESTING.md` (§3.2, §16, §17, §18), `docs/DOCUMENTATION_AUDIT.md` (`GAP-042`), `docs/BACKLOG.md`, `docs/HANDOFF.md`, and this entry.
+- **Validation (observed on the branch head):**
+  - `./gradlew check buildHealth --continue` — BUILD SUCCESSFUL: 1227 tasks, whose 270 test reports hold 1365 tests and 0 failures.
+  - `./gradlew verifyDocumentedCompleteness verifyDocumentedGate verifyRepositoryHygiene verifyModuleBoundaries verifyDependencyPolicy verifyNoLiveHosts :verifyDependencyInventory` — BUILD SUCCESSFUL.
+
 ## 3. Verification performed on this repository
 
 Verification was documentation-only for the whole lifetime of the repository up to `LOG-0025`. The first executed verification of any artifact is `LOG-0026` (2026-09-30), and the build was re-verified under the pinned daemon JDK in the same change, which built the Gradle/KMP skeleton and ran the commands it lists; before that entry, no build, test, lint, static-analysis, benchmark or application run had ever been executed here, because the repository contained no source code and no build files.
