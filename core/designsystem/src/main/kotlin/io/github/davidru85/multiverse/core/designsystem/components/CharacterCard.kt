@@ -32,11 +32,11 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import io.github.davidru85.multiverse.core.designsystem.image.ImageSeam
-import io.github.davidru85.multiverse.core.designsystem.image.ImageSeamResult
 import io.github.davidru85.multiverse.core.designsystem.image.LocalCharacterAccentPolicy
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.PreviewImageSeam
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
@@ -250,7 +250,7 @@ public fun CharacterCardSkeleton(
     }
 }
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun CharacterCardPreview() {
     MultiverseTheme {
@@ -272,19 +272,9 @@ private fun CardPreviewRow() {
             statusTone = StatusTone.Alive,
             statusLabel = "Alive",
             imageUrl = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
-            seam = PreviewSeam,
+            seam = PreviewImageSeam.Loaded,
             height = CardHeight.Regular,
         )
         CharacterCardSkeleton(height = CardHeight.Tall)
     }
-}
-
-/** A preview seam that never performs I/O: it reports the placeholder state. */
-private object PreviewSeam : ImageSeam {
-    @Composable
-    override fun rememberPainter(
-        url: String,
-        widthPx: Int,
-        heightPx: Int,
-    ): ImageSeamResult = ImageSeamResult.Loading
 }

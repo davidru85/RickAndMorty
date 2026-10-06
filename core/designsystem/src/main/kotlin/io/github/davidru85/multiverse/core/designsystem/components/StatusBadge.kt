@@ -19,8 +19,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseBrandColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
@@ -96,10 +96,10 @@ private fun StatusTone.dotColor(): Color =
         StatusTone.Unknown -> MultiverseBrandColors.statusUnknown
     }
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun StatusBadgePreview() {
-    MultiverseTheme {
+    MultiversePreviewSurface {
         Row(
             modifier = Modifier.padding(MultiverseDimensions.spaceS),
             horizontalArrangement = Arrangement.spacedBy(MultiverseDimensions.spaceS),

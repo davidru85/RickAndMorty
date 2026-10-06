@@ -19,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -103,10 +103,10 @@ public fun EmptyState(
 /** The body's measure (`UI_SPEC.md` §6.4): 320 dp, centred. */
 private val BodyWidth = MultiverseComponentDimensions.emptyStateBodyWidth
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun EmptyStatePreview() {
-    MultiverseTheme {
+    MultiversePreviewSurface {
         Column(modifier = Modifier.padding(MultiverseDimensions.spaceL)) {
             EmptyState(
                 heading = "No favorites yet",

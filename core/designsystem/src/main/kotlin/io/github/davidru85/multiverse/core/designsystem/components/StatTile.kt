@@ -28,14 +28,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
-import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiversePreviewSurface
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseComponentDimensions
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -242,10 +242,10 @@ public fun InfoListGroup(
     }
 }
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun StatTileRowPreview() {
-    MultiverseTheme {
+    MultiversePreviewSurface {
         Box(modifier = Modifier.padding(MultiverseDimensions.spaceM)) {
             StatTileRow(
                 tiles =
@@ -259,10 +259,10 @@ private fun StatTileRowPreview() {
     }
 }
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun InfoListItemPreview() {
-    MultiverseTheme {
+    MultiversePreviewSurface {
         Box(modifier = Modifier.padding(MultiverseDimensions.spaceM).size(320.dp, 90.dp)) {
             InfoListGroup {
                 InfoListItem(label = "Species", value = "Human", icon = PortraitPreviewIcons.Dot)

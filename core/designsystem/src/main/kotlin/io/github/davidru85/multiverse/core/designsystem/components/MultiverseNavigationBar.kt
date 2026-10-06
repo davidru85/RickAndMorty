@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import io.github.davidru85.multiverse.core.designsystem.layout.MultiverseGrid
+import io.github.davidru85.multiverse.core.designsystem.preview.MultiverseComponentPreviews
 import io.github.davidru85.multiverse.core.designsystem.theme.MultiverseTheme
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseColors
 import io.github.davidru85.multiverse.core.designsystem.tokens.MultiverseDimensions
@@ -113,7 +113,7 @@ public fun MultiverseNavigationBar(
     }
 }
 
-@Preview
+@MultiverseComponentPreviews
 @Composable
 private fun NavigationBarPreview() {
     MultiverseTheme {
