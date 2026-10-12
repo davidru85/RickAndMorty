@@ -149,7 +149,7 @@ flowchart LR
 ├── build-logic/             # Plugins de convención de Gradle y comprobaciones de política
 ├── gradle/                  # Catálogo de versiones, wrapper, JDK del daemon, registro de dependency-advice
 ├── tools/                   # Versiones fijadas de herramientas Swift y scripts de lint, versión y notas de release
-├── .github/workflows/       # Puerta de pull request y la sonda semanal del contrato en vivo
+├── .github/workflows/       # Puerta de pull request y la sonda del contrato en vivo (programación semanal suspendida)
 ├── docs/                    # Especificaciones, proceso, decisiones, exportaciones de diseño, capturas (§12)
 ├── assessment.md            # La prueba (autoritativa, congelada)
 ├── AGENTS.md                # Reglas de operación para agentes de IA
@@ -157,7 +157,7 @@ flowchart LR
 └── VERSION                  # La única fuente de versión
 ```
 
-Cada módulo de funcionalidad contiene sus propias capas de Clean Architecture como paquetes: `domain`, `presentation` (compartidas) y `ui` (Android). La suite del contrato en vivo es un source set de `:core:data` que solo ejecuta el workflow semanal. Ver [`docs/DESIGN.md`](docs/DESIGN.md) §3.
+Cada módulo de funcionalidad contiene sus propias capas de Clean Architecture como paquetes: `domain`, `presentation` (compartidas) y `ui` (Android). La suite del contrato en vivo es un source set de `:core:data` que solo ejecuta el workflow programado; ese workflow está suspendido en GitHub desde el 2026-10-12 (`DEC-166`). Ver [`docs/DESIGN.md`](docs/DESIGN.md) §3.
 
 ## 6. Requisitos previos
 
@@ -217,7 +217,7 @@ Cada pull request debe pasar la suite completa en las dos plataformas antes de p
 | Formato y lint de Swift | `sh tools/swift-lint.sh iosApp` | Ejecutado el 2026-10-06: swift-format `--strict` queda limpio, y SwiftLint informa de 0 incidencias en 87 archivos |
 | Benchmarks de rendimiento (requiere dispositivo) | `./gradlew :benchmark:connectedCheck` | No definido: no existe módulo de benchmark y `PERF-Q1` sigue sin resolver, así que el comando es estado objetivo y no una tarea real |
 | Suite de contrato en modo fixture/replay en el target del simulador de Apple, y en ambos targets | `./gradlew :core:data:contractTestReplayIosSimulator` · `./gradlew :core:data:contractTestReplay` | Ejecutado el 2026-10-06: 35 casos de contrato en `iosSimulatorArm64Test`, y 70 entre ambos targets para el agregado. El trabajo `ios` ejecuta el punto de entrada del simulador en cada pull request. Cada punto de entrada verifica los informes de su propio target, así que un informe de host nunca cubre el nativo |
-| Sondas de observación en vivo contra la API (señal programada, no bloquea el merge) | `./gradlew :core:data:contractLiveProbe` | Ejecutado el 2026-10-02: registró los totales publicados y el número de páginas (`TASK-027`, `DEC-074`). `.github/workflows/contract-live.yml` lo ejecuta cada semana y sube las capturas, y ningún workflow de pull request ni de push puede alcanzarlo |
+| Sondas de observación en vivo contra la API (señal programada, no bloquea el merge) | `./gradlew :core:data:contractLiveProbe` | Ejecutado el 2026-10-02: registró los totales publicados y el número de páginas (`TASK-027`, `DEC-074`). `.github/workflows/contract-live.yml` lo ejecuta y sube las capturas; su programación semanal está suspendida en GitHub desde el 2026-10-12 (`DEC-166`), y ningún workflow de pull request ni de push puede alcanzarlo |
 
 El desarrollo sigue el protocolo TDD de [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): escribe el test que falla y confírmalo (`test:`), haz que pase y confírmalo (`feat:`/`fix:`), refactoriza y confírmalo (`refactor:`), y después haz push.
 
@@ -239,7 +239,7 @@ El desarrollo sigue el protocolo TDD de [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 4. **Solo teléfono en vertical.** No hay diseño para tablet, plegables ni horizontal (`DEC-027`).
 5. **Sin analítica.** No hay, de forma intencionada, ningún SDK de analítica, seguimiento ni publicidad (`REQ-OBS-003`).
 6. **Se entrega exactamente un artefacto preliminar.** Material 3 Expressive `1.5.0-alpha29` está fijado en el catálogo de versiones y lo declaran `:core:designsystem` y tres módulos de funcionalidad (`:feature:character-detail`, `:feature:discovery`, `:feature:settings`), así que la app Android lo contiene. El riesgo aceptado y el plan alternativo están en [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). Ese ADR dice que solo el sistema de diseño lo declara, una regla que esos tres módulos aún no cumplen (`CONF-84`, abierto con el propietario).
-7. **La API no tiene versiones.** Su forma puede cambiar sin aviso, así que la sonda del contrato en vivo se ejecuta cada semana fuera de la puerta de merge (`DEC-029`).
+7. **La API no tiene versiones.** Su forma puede cambiar sin aviso, así que la sonda del contrato en vivo se ejecuta fuera de la puerta de merge (`DEC-029`); su programación semanal está suspendida en GitHub desde el 2026-10-12 (`DEC-166`).
 8. **Los presupuestos de rendimiento en dispositivo aún no se han medido.** Los presupuestos y su método de medida existen, pero el dispositivo de referencia sigue siendo una suposición pendiente en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). La puerta de merge mide el tamaño del APK de release y comprueba cero llamadas de red con una página en caché (`DEC-115`).
 9. **iOS 18 es el mínimo declarado pero no se ha ejecutado.** La app apunta a iOS 18.0, y su alternativa sin vidrio tiene tests de captura mediante una costura en el simulador de iOS 27. No existe ninguna ejecución en simulador ni dispositivo con iOS 18, porque Xcode 27 no ofrece runtime de iOS 18 (`DEC-117`). La app iOS no está firmada ni distribuida.
 10. **Hay dos defectos de visualización abiertos.** Con el tamaño de texto dinámico más grande de iOS, el título "Sounds" de Ajustes se parte dentro de la palabra (`GAP-049`). El error a pantalla completa del detalle en Android, un fallo sin nada en caché, dibuja su ilustración sin el logotipo del portal (`GAP-050`). Ambos están registrados en [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md).
@@ -287,7 +287,7 @@ El trabajo se indexa en [`docs/BACKLOG.md`](docs/BACKLOG.md) y se sigue como Git
 | Área | Estado |
 | --- | --- |
 | Análisis de la prueba | Completo — [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) |
-| Contrato remoto | Completo, verificado contra la API en vivo y sondeado cada semana — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
+| Contrato remoto | Completo y verificado contra la API en vivo; la sonda semanal en vivo está suspendida desde el 2026-10-12 (`DEC-166`) — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
 | Arquitectura y decisiones | Completas — [`docs/DESIGN.md`](docs/DESIGN.md), 15 ADR en [`docs/adr/`](docs/adr/), y de `DEC-001` a `DEC-165` en [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Especificación visual | Completa — [`docs/UI_SPEC.md`](docs/UI_SPEC.md), con 32 exportaciones de Figma en [`docs/figma/`](docs/figma/README.md) |
 | Núcleo compartido y app Android | Terminados — bloques B1–B6; hito M1 etiquetado `v0.1.0` |

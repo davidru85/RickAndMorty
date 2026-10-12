@@ -149,7 +149,7 @@ flowchart LR
 ├── build-logic/             # Gradle convention plugins and the policy checks
 ├── gradle/                  # Version catalog, wrapper, daemon JDK, dependency-advice register
 ├── tools/                   # Swift tool pins, lint, version and release-note scripts
-├── .github/workflows/       # Pull-request gate and the weekly live-contract probe
+├── .github/workflows/       # Pull-request gate and the live-contract probe (weekly schedule suspended)
 ├── docs/                    # Specifications, process, decisions, design exports, screenshots (§12)
 ├── assessment.md            # The assignment (authoritative, frozen)
 ├── AGENTS.md                # Operating rules for AI agents
@@ -157,7 +157,7 @@ flowchart LR
 └── VERSION                  # The single version source
 ```
 
-Each feature module carries its own Clean Architecture layers as packages: `domain`, `presentation` (shared) and `ui` (Android). The live-contract suite is a source set of `:core:data` that only the weekly workflow runs. See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
+Each feature module carries its own Clean Architecture layers as packages: `domain`, `presentation` (shared) and `ui` (Android). The live-contract suite is a source set of `:core:data` that only the scheduled workflow runs; that workflow is suspended on GitHub since 2026-10-12 (`DEC-166`). See [`docs/DESIGN.md`](docs/DESIGN.md) §3.
 
 ## 6. Prerequisites
 
@@ -217,7 +217,7 @@ Every pull request must pass the full suite on both platforms before it can be a
 | Swift formatting and lint | `sh tools/swift-lint.sh iosApp` | Executed 2026-10-06: swift-format `--strict` is clean, and SwiftLint reports 0 violations in 87 files |
 | Performance benchmarks (requires a device) | `./gradlew :benchmark:connectedCheck` | Not defined: no benchmark module exists and `PERF-Q1` is unresolved, so the command is target state rather than a real task |
 | Contract suite in fixture/replay mode on the Apple simulator target, and on both targets | `./gradlew :core:data:contractTestReplayIosSimulator` · `./gradlew :core:data:contractTestReplay` | Executed 2026-10-06: 35 contract cases on `iosSimulatorArm64Test`, and 70 across both targets for the aggregate. The `ios` job runs the simulator entry point on every pull request. Each entry point verifies its own target's reports, so a host report never satisfies the native one |
-| Live observation probes against the API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractLiveProbe` | Executed 2026-10-02: recorded the published totals and page count (`TASK-027`, `DEC-074`). `.github/workflows/contract-live.yml` runs it weekly and uploads the captures, and no pull-request or push workflow may reach it |
+| Live observation probes against the API (scheduled signal, not a merge blocker) | `./gradlew :core:data:contractLiveProbe` | Executed 2026-10-02: recorded the published totals and page count (`TASK-027`, `DEC-074`). `.github/workflows/contract-live.yml` runs it and uploads the captures; its weekly schedule is suspended on GitHub since 2026-10-12 (`DEC-166`), and no pull-request or push workflow may reach it |
 
 Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): write the failing test and commit it (`test:`), make it pass and commit (`feat:`/`fix:`), refactor and commit (`refactor:`), then push.
 
@@ -239,7 +239,7 @@ Development follows the TDD protocol in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTI
 4. **Phone portrait only.** No tablet, foldable or landscape layout (`DEC-027`).
 5. **No analytics.** There is intentionally no analytics, tracking or advertising SDK (`REQ-OBS-003`).
 6. **Exactly one pre-release artifact ships.** Material 3 Expressive `1.5.0-alpha29` is pinned in the version catalog and declared by `:core:designsystem` and by three feature modules (`:feature:character-detail`, `:feature:discovery`, `:feature:settings`), so the Android app contains it. The accepted risk and the fallback plan are recorded in [`docs/adr/0008-alpha-dependencies.md`](docs/adr/0008-alpha-dependencies.md). That ADR says only the design system declares it, a rule the three feature modules do not yet meet (`CONF-84`, open with the owner).
-7. **The API is unversioned.** Its shape can change without notice, so the live contract probe runs weekly outside the merge gate (`DEC-029`).
+7. **The API is unversioned.** Its shape can change without notice, so the live contract probe runs outside the merge gate (`DEC-029`); its weekly schedule is suspended on GitHub since 2026-10-12 (`DEC-166`).
 8. **The device performance budgets are not measured yet.** The budgets and their measurement method exist, but the reference device is still a pending assumption in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). The merge gate measures the release APK size and asserts zero network calls on a cached page (`DEC-115`).
 9. **iOS 18 is the declared floor but has not been run.** The app targets iOS 18.0, and its non-glass fallback is snapshot-tested through a seam on the iOS 27 simulator. No iOS 18 simulator or device run exists, because Xcode 27 offers no iOS 18 runtime (`DEC-117`). The iOS app is not signed or distributed.
 10. **Two known display defects are open.** At the largest iOS Dynamic Type size, the Settings title "Sounds" breaks inside the word (`GAP-049`). The Android Detail's full-surface error, a failure with nothing cached, draws its illustration without the portal logo (`GAP-050`). Both are registered in [`docs/DOCUMENTATION_AUDIT.md`](docs/DOCUMENTATION_AUDIT.md).
@@ -287,7 +287,7 @@ Work is indexed in [`docs/BACKLOG.md`](docs/BACKLOG.md) and tracked as GitHub Is
 | Area | State |
 | --- | --- |
 | Assignment analysis | Complete — [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) |
-| Remote contract | Complete, verified against the live API, and probed weekly — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
+| Remote contract | Complete and verified against the live API; the weekly live probe is suspended since 2026-10-12 (`DEC-166`) — [`docs/API_SPECS.md`](docs/API_SPECS.md) |
 | Architecture and decisions | Complete — [`docs/DESIGN.md`](docs/DESIGN.md), 15 ADRs in [`docs/adr/`](docs/adr/), and `DEC-001`…`DEC-165` in [`docs/DECISION_BOARD.md`](docs/DECISION_BOARD.md) |
 | Visual specification | Complete — [`docs/UI_SPEC.md`](docs/UI_SPEC.md), with 32 Figma exports in [`docs/figma/`](docs/figma/README.md) |
 | Shared core and Android app | Done — blocks B1–B6; milestone M1 tagged `v0.1.0` |

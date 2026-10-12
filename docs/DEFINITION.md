@@ -1,7 +1,7 @@
 # DEFINITION.md — Gates: Ready, Done, Release and Documentation Completeness
 
 - **Status:** Active — target state
-- **Last verified:** 2026-10-04
+- **Last verified:** 2026-10-12
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the project's gates — Definition of Ready, Definition of Done, milestone exit criteria, release readiness, documentation completeness, the quality-gate inventory, and the waiver and escalation path when a gate cannot be met.
 - **Inputs:** `AGENTS.md`, `../assessment.md`, `REQUIREMENTS.md`, `DECISION_BOARD.md`, `TESTING.md`, `TECHNICAL_PLAN.md`, `BACKLOG.md`, `PERFORMANCE.md`, `SECURITY.md`, `GUIDELINES.md`, `CONTRIBUTING.md`, `DOCUMENTATION_AUDIT.md`, `PROJECT_LOG.md`
@@ -185,7 +185,7 @@ The table maps each gate to the file that defines it, states whether it blocks, 
 | Secret and permission hygiene (no secrets committed; permissions minimised) | `SECURITY.md` (`REQ-SEC-002`, `REQ-SEC-004`) | Yes | Scan output; permission manifest diff |
 | Dependency advisory triage | `SECURITY.md` advisory register (DEC-036, DEC-037) | No — findings are triaged and recorded, not gate-blocking on their own | Advisory register row with severity, mitigation and verification |
 | Performance budgets | `PERFORMANCE.md` (DEC-033) | Split: budget assertions run inside the mandatory set and block; measurement runs in the scheduled job as a signal | Benchmark report naming device, build type and method |
-| Live-network API contract tests and observation probes | `TESTING.md`, contract-test section | No — scheduled signal job only (DEC-054); failures are triaged, never merged around by weakening the gate | Scheduled job report |
+| Live-network API contract tests and observation probes | `TESTING.md`, contract-test section | No — scheduled signal job only (DEC-054); failures are triaged, never merged around by weakening the gate. The scheduled job is suspended on GitHub since 2026-10-12 (`DEC-166`); that is not a waiver, because the job is not in the required set | Scheduled job report |
 | Requirement → task → test traceability | `REQUIREMENTS.md` §15, `DOCUMENTATION_AUDIT.md` | Yes at milestone and release | Traceability rows, each with an existing task and test id |
 | Flake quarantine | `TESTING.md`, flaky-test policy | Enforced: a quarantined test is excluded from the required set only with a recorded justification, an owner and a deadline; retry-to-green is forbidden | Quarantine entry with owner, deadline and tracking issue |
 
@@ -234,6 +234,7 @@ Rules for the register:
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-12 | The live-network contract row of the quality-gate inventory records that the owner suspended its scheduled job on GitHub; no gate and no waiver change. | `DEC-166` |
 | 2026-09-29 | Created: ownership of gates separated from acceptance criteria; Definition of Ready, Definition of Done, milestone exit criteria for M1/M2, release readiness, documentation completeness, quality-gate inventory and the waiver/escalation path defined. Module names follow the feature-per-module layout. | DEC-023, DEC-032, DEC-040, DEC-042, DEC-043, DEC-046, DEC-052 |
 | 2026-09-29 | Amended for the TDD protocol: Ready gained the precondition that the first failing test is expressible (R11), Done replaced "a test exists" with observed red/green/refactor evidence plus the named exception classes, and milestone exit criteria gained the phase-history check. | DEC-053 |
 | 2026-09-29 | Amended for the mandatory CI decision: the Done gate, milestone criteria, release readiness and quality-gate table now require the full both-platform required-check set green with the contract suite in fixture/replay mode; test suites are explicitly not waivable and only individual flake quarantine is permitted. | DEC-054 |

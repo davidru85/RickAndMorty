@@ -294,7 +294,7 @@ Every behaviour change `MUST` follow the TDD protocol: write the failing test an
 The complete test suite `MUST` be executed and pass on both platforms before a pull request is approved or merged, and no test suite `MUST` be waived at release time.
 
 - `AC-REQ-NFR-011-1` The required checks include shared and platform unit tests, Compose semantics and accessibility tests, Roborazzi screenshot verification, Swift snapshot tests, formatting, static analysis and dependency analysis.
-- `AC-REQ-NFR-011-2` The contract suite runs inside the pull request in fixture/replay mode so the gate never depends on the live service; the live-network run is a separate scheduled signal.
+- `AC-REQ-NFR-011-2` The contract suite runs inside the pull request in fixture/replay mode so the gate never depends on the live service; the live-network run is a separate scheduled signal. Since 2026-10-12 the owner has suspended that scheduled run on GitHub (`DEC-166`): the live half of this criterion is not exercised until the workflow is re-enabled, and the fixture/replay half is unaffected.
 - `AC-REQ-NFR-011-3` The red commit of the TDD protocol is not a gate violation: the gate evaluates the final state of the pull request.
 - Reference: `DEFINITION.md` §3, `TESTING.md` §14 · Decision: `DEC-054` · Tests: `TEST-UNIT-044`, `TEST-UNIT-015`
 
@@ -413,7 +413,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 | RISK-001 | 300×300 portraits look soft in the detail hero (412 dp). | High | Medium | Scrims and the iOS progressive-blur treatment (`UI_SPEC.md` §5.3); stated as a source limit, not a defect. | UX |
 | RISK-002 | Pinned alpha toolchain components (`CON-004`) break on upgrade. | Medium | High | Pinned versions, upgrade note in `GUIDELINES.md`, build verification in CI. | IE |
 | RISK-003 | Dual-platform delivery doubles verification cost and slips M2. | Medium | High | Android-first milestone (DEC-040); `REQ-PLAT-004` makes M1 releasable alone. | PM |
-| RISK-004 | The unversioned API changes shape and silently breaks mapping. | Medium | Medium | Committed fixtures plus a scheduled contract-test job (DEC-029). | QA |
+| RISK-004 | The unversioned API changes shape and silently breaks mapping. | Medium | Medium | Committed fixtures plus a scheduled contract-test job (DEC-029). The scheduled job is suspended on GitHub since 2026-10-12 (`DEC-166`), so until it is re-enabled live drift is detected only by a manual `./gradlew :core:data:contractLiveProbe` run. | QA |
 | RISK-005 | The API marks filtered `404` responses cacheable for 90 days. | Certain | High | App-level cache never stores error outcomes; `API_SPECS.md` §7.1 requires `no-store` hardening and a test. | AA |
 | RISK-006 | Published totals (`826`/`42`) are quoted as constants and go stale. | Medium | Low | Requirement `AC-REQ-FUNC-001-3` forbids hardcoding; figures appear only as dated observations. | DOC |
 | RISK-007 | Liquid Glass fallback path diverges visually from the glass path. | Medium | Low | Both paths screenshot-tested; fallback documented in `UI_SPEC.md` §4.2. | UX |
@@ -438,6 +438,7 @@ Coverage is maintained in [`DOCUMENTATION_AUDIT.md`](DOCUMENTATION_AUDIT.md) §6
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-12 | `AC-REQ-NFR-011-2` and `RISK-004` record that the owner suspended the scheduled live contract run on GitHub; the criterion's text is unchanged, and its live half is not exercised while the suspension lasts. | `DEC-166` |
 | 2026-10-06 | `DEF-005` closed: the owner specified the sound set, so `REQ-FUNC-036` moves from §5.3 to §5.2 as a Should-have requirement with `AC-REQ-FUNC-036-1`…`-4`; `REQ-FUNC-033` no longer forbids sound, and `AC-REQ-FUNC-033-3` keeps no audio permission or dependency but admits `REQ-FUNC-036`'s one asset per app. | `DEC-162` |
 | 2026-10-05 | §1.3 re-read against the tree (`TASK-071`): `DEF-001`, `DEF-004` and `DEF-005` stay deferred with their conditions checked; `DEF-002`/`DEF-003` wait for M2's release by the owner's tag and a new decision; `DEF-004` re-verified on kotlinlang.org (Swift export Alpha) | `DEC-118` |
 | 2026-10-01 | `REQ-FUNC-014`'s task citation corrected from `TASK-014` to `TASK-028` (`CONF-36`); `AC-REQ-NFR-006-2`/`-3` split by `DEC-067` and `AC-REQ-NFR-009-3` restated under the `DEC-066` amendment; the `REQ-NFR-008` identifier gap recorded as deliberate. | `TASK-019`, `DEC-066`, `DEC-067` |
