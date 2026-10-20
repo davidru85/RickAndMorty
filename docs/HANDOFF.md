@@ -17,7 +17,7 @@ The branch `docs/suspend-contract-live` (`TASK-142`) is still pushed with its pu
 
 | Work | Branch | State |
 | --- | --- | --- |
-| `TASK-143` — the brief restated in the owner's words, and no third-party company named | `docs/restate-assignment-brief`, from `main` at `7978792` | **In review** (no issue; `LOG-0171`) |
+| `TASK-143` — the brief restated in the owner's words, and no third-party company named | `docs/restate-assignment-brief`, from `main` at `7978792` | **In review** (PR #259; no issue; `LOG-0171`) |
 
 ### Owner's task tags and local branch cleanup — 2026-10-06
 
