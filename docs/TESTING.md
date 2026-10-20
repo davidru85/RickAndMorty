@@ -1,7 +1,7 @@
 # TESTING.md — Test Strategy and Verification Plan
 
 - **Status:** Active — mixed. The build skeleton (TASK-014), the shared harness with its fixtures (TASK-024), the both-runner gate (TASK-025), the fixture/replay contract entry point (TASK-026) and the scheduled live signal (TASK-027) are merged, and the quality toolchain runs in `check` (TASK-029); there is **no product test yet** — the harness's own tests are the only cases that execute (§Preamble, *Current state vs target state*).
-- **Last verified:** 2026-10-06
+- **Last verified:** 2026-10-12
 - **Owner:** QA & Validation Engineer (see `AGENTS.md` §3.6)
 - **Authoritative for:** the test strategy, the test-ID inventory, the fixture inventory, the test source-set layout and naming, the test-first workflow as it applies to tests (`DEC-053`), and the requirement → test traceability matrix.
 - **Inputs:** [`REQUIREMENTS.md`](REQUIREMENTS.md), [`API_SPECS.md`](API_SPECS.md), [`DESIGN.md`](DESIGN.md), [`UI_SPEC.md`](UI_SPEC.md), [`DECISION_BOARD.md`](DECISION_BOARD.md), `ERROR_FLOW.md`, `CONTRACTS.md`, `PERFORMANCE.md`, `DEFINITION.md`, `CONTRIBUTING.md`, `GUIDELINES.md`, [`../AGENTS.md`](../AGENTS.md)
@@ -482,7 +482,7 @@ Completed once per milestone (M1, M2) on a real device and recorded as evidence 
 `DEC-029` split the test layers; `DEC-054` keeps that split while making the contract suite itself part of the required set. The two requirements — "the entire test suite is green before merge" and "no network-dependent flakiness in the gate" — are reconciled by running the same contract IDs in two modes:
 
 - **Fixture/replay mode — required on every pull request.** The contract tests run against the committed fixtures (§4.3) and open no socket. This is deterministic, it is required, and it fails the pull request when the client's decoding or mapping is wrong.
-- **Live-network mode — scheduled, non-blocking.** The same IDs run against `rickandmortyapi.com`. `CON-001` is why this mode is not a merge blocker (§11.2).
+- **Live-network mode — scheduled, non-blocking.** The same IDs run against `rickandmortyapi.com`. `CON-001` is why this mode is not a merge blocker (§11.2). **Suspended since 2026-10-12** (`DEC-166`): the owner disabled the workflow on GitHub, so no scheduled or manual live run happens until it is re-enabled.
 
 ### 11.1 What runs
 
@@ -516,7 +516,7 @@ The same split is **machine-enforced** by `TEST-UNIT-044` (`TASK-026`, `DEC-073`
 
 ### 11.4 Refreshing fixtures from a passing run
 
-Only a **passing** live run may refresh fixtures: the job uploads the captured bodies plus sidecars as build artifacts, and a human opens a PR that replaces the fixture files, updates the sidecars' capture dates, and adjusts the mapping or the owning document per §4.4. Fixtures are never copied from a failing run's partial output.
+Only a **passing** live run may refresh fixtures: the job uploads the captured bodies plus sidecars as build artifacts, and a human opens a PR that replaces the fixture files, updates the sidecars' capture dates, and adjusts the mapping or the owning document per §4.4. Fixtures are never copied from a failing run's partial output. While `DEC-166` suspends the workflow, a refresh first needs the owner to re-enable it (`gh workflow enable contract-live.yml`) and dispatch a run.
 
 ## 12. Coverage policy
 
@@ -641,7 +641,7 @@ The broad Linux `check` and its sanctioned native exclusion from `DEC-111` are n
 
 | Trigger | Test work | Blocking |
 | --- | --- | --- |
-| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11) — `.github/workflows/contract-live.yml` runs `./gradlew :core:data:contractLiveProbe` and `:core:data:contractLiveTest` weekly and uploads the captures (`TASK-027`, `TASK-096`, `DEC-074`; first run observed 2026-10-02 by `workflow_dispatch`, both steps green); Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
+| Scheduled (nightly/weekly) | Live-network contract run and observation probes (`TEST-CONTRACT-001`…`006` in live mode, §11) — `.github/workflows/contract-live.yml` runs `./gradlew :core:data:contractLiveProbe` and `:core:data:contractLiveTest` weekly and uploads the captures (`TASK-027`, `TASK-096`, `DEC-074`; first run observed 2026-10-02 by `workflow_dispatch`, both steps green; **suspended on GitHub since 2026-10-12**, state `disabled_manually`, so neither the weekly cron nor `workflow_dispatch` runs until the owner re-enables it, `DEC-166`); Macrobenchmark measurements (`TEST-PERF-001`, `TEST-PERF-002`), dependency update checks (`DEC-037`) | **No** — a signal to triage (§11.3), never a merge blocker |
 | On demand | The performance job, for milestone evidence | No |
 | Release | The release-readiness checklist in `DEFINITION.md`, over a green required set | Yes, at release time — a suite may not be waived |
 | Quarantine job | Quarantined cases only, with their tracking metadata (§15) | No — quarantined tests are excluded from the required set, with a recorded justification |
@@ -827,6 +827,7 @@ Ids are allocated here and nowhere else. A new case takes the next free number i
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-12 | The scheduled live contract workflow is suspended on GitHub by the owner: §11, §11.4 and §14.3 record that no live run happens until it is re-enabled, and that a fixture refresh needs it re-enabled first. No test or check changes. | `DEC-166`, `TASK-142` |
 | 2026-10-06 | `TASK-139`: `TEST-UNIT-109`, `TEST-UNIT-110`, `TEST-UI-051` and `TEST-UI-052` are allocated and implemented on both platforms, each observed red before its implementation (a missing `onStatusSelected`, `SelectionSound`, `R.raw.selection_sound`, `observeSoundsEnabled` or `selectStatus`); `REQ-FUNC-036` leaves the §16.1 Could list and gains its §16 row. | `DEC-162`, `LOG-0166` |
 | 2026-10-06 | `TASK-138`: `TEST-UI-050` is allocated and implemented, observed red with the Detail's Share control drawn 28 px wide instead of 40 half-way through the gesture. | `DEC-160`, `LOG-0164` |
 | 2026-10-06 | `TASK-137`: `TEST-UI-049` is allocated and implemented, observed red with the bar at Surface Container `#1A191F` after a scroll; `TEST-UI-016`'s `discovery-appending` pair re-records with the Surface bar. | `DEC-160`, `DEC-161`, `LOG-0163` |

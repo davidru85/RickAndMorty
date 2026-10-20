@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — Contribution Process
 
 - **Status:** Active — target state. The Gradle/KMP build skeleton exists (TASK-014); no feature code, tests or CI exist yet (`README.md` §14), so the feature and test commands below are the documented interface to work that has not landed.
-- **Last verified:** 2026-10-04
+- **Last verified:** 2026-10-20
 - **Owner:** Documentation Maintainer (see `../AGENTS.md` §3.9)
 - **Authoritative for:** the contribution process — prerequisites, branching, the TDD phase-and-commit protocol and the merge policy (DEC-053, amending DEC-041), Conventional Commits and how release notes are derived, the issue workflow, pull-request expectations including the required-check list, review, agent permissions, and the contribution completion checklist.
 - **Not authoritative for:** code conventions and tool-enforced rules (`GUIDELINES.md`); gates, Ready/Done and waivers (`DEFINITION.md`); test strategy, layers, ids and tooling (`TESTING.md`); the vulnerability-reporting route (`SECURITY.md` §10); module boundaries and dependency direction (`DESIGN.md`, `adr/0001-module-boundaries.md`, DEC-052); operating rules for agents (`../AGENTS.md`).
@@ -65,7 +65,7 @@ Development is **trunk-based** (DEC-041, retained after DEC-053). Branches are s
 | Direct commits | No direct commits or pushes to `main`. Every change arrives through a pull request (§5). |
 | Deletion | Delete the branch after merge; the phase commits (§3) remain in `main`'s history. |
 
-The owner-authorised PR #150-only exception to the branch-update rule is recorded in [`DECISION_BOARD.md`](DECISION_BOARD.md) `DEC-113`; its execution evidence is `PROJECT_LOG.md` LOG-0101.
+The owner-authorised one-off exceptions to the branch-update rule are recorded in [`DECISION_BOARD.md`](DECISION_BOARD.md): `DEC-113` for PR #150, with its execution evidence in `PROJECT_LOG.md` LOG-0101, and `DEC-168` for `TASK-142`'s branch, with its evidence in LOG-0172.
 
 The repository owner (human) may create branches and pull requests; an agent may open a pull request on a branch it created (DEC-049, `../AGENTS.md` §4.3). Branch protection on `main` is a repository setting and therefore a human-only action (`../AGENTS.md` §4.2).
 
@@ -442,6 +442,7 @@ The change-level completion rule in `../AGENTS.md` §11 governs if the two ever 
 
 | Date | Change | Decision |
 | --- | --- | --- |
+| 2026-10-20 | §2 names `DEC-168`, the owner's `TASK-142`-only rebase exception, next to `DEC-113`; the branch-update rule is unchanged. | `DEC-168`, `DEC-059` |
 | 2026-10-03 | §5.1 records B4 as the second block exception to one logical change per pull request: its tasks land in three phase pull requests, like B3's. | `DEC-096`, `DEC-082` |
 | 2026-10-01 | §5.3 states the staged activation of the required set (`DEC-071`, `CONF-53`) and that a pre-CI pull request is integrated and locally verified, never *Done under D2*. | `DEC-071`, `DEC-054` |
 | 2026-10-01 | §3.1 states the protocol as twelve ordered steps (Ready → red → observed failure → green → observed pass → refactor → preserve → push → green final state → review → merge commit) with the three exception classes; §2 states that bringing an open branch up to date merges `main` rather than rewriting its phase commits. | `DEC-053`, `DEC-059`, `REQ-NFR-010`, `TASK-072` |
