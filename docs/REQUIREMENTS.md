@@ -1,7 +1,7 @@
 # REQUIREMENTS.md — Product Requirements
 
 - **Status:** Active — target state (see `DOCUMENTATION_AUDIT.md` §5 for the drift rule)
-- **Last verified:** 2026-10-06
+- **Last verified:** 2026-10-20
 - **Owner:** Requirements Analyst (see `AGENTS.md`)
 - **Authoritative for:** *what* the product must do and *how well*. Not for *how* (see `DESIGN.md`, `API_SPECS.md`, `UI_SPEC.md`).
 - **Inputs:** [`assessment.md`](../assessment.md)
@@ -42,7 +42,7 @@ A client for the public [Rick and Morty API](https://rickandmortyapi.com/) that 
 
 | Actor | Description | Primary journey |
 | --- | --- | --- |
-| Reviewer (ZARA interviewer) | Reads the repository and runs the app | Clone → build → run → inspect structure and tests |
+| Reviewer | Reads the repository and runs the app | Clone → build → run → inspect structure and tests |
 | App user | Browses characters on a phone | Splash → browse/search/filter → open a character → favourite |
 | Maintainer / AI agent | Changes the code | Read docs by precedence (`AGENTS.md`) → implement → verify |
 
@@ -68,18 +68,18 @@ Conflicts MUST be reported, not silently resolved (see `AGENTS.md`).
 
 | `assessment.md` | Anchor text | Requirements |
 | --- | --- | --- |
-| l.4 | "review a list of all characters and retrieve information about the selected character" | `REQ-FUNC-001`, `REQ-FUNC-002` |
-| l.7 | "use them wisely, each third party library added is a dependency" | `REQ-NFR-002`, `CON-004` |
-| l.8 | "how did you structure the project, if you apply things like SOLID" | `REQ-NFR-001`, `REQ-NFR-005` |
-| l.9 | "very image oriented company, UX is important" | `REQ-FUNC-005`, `REQ-UX-002` |
-| l.10 | "we will talk about performance probably" | `REQ-NFR-003` |
-| l.16 | "Use Jetpack compose or SwiftUI" | `REQ-PLAT-002`, `REQ-PLAT-003` |
-| l.17 | "Cache images coming from network" | `REQ-FUNC-021` |
+| l.4 | "list all the characters and show the details of the character you pick" | `REQ-FUNC-001`, `REQ-FUNC-002` |
+| l.7 | "choose with care: every library you add is one more dependency" | `REQ-NFR-002`, `CON-004` |
+| l.8 | "how you structure the project and whether you follow principles like SOLID" | `REQ-NFR-001`, `REQ-NFR-005` |
+| l.9 | "The product is image-oriented, so UX matters" | `REQ-FUNC-005`, `REQ-UX-002` |
+| l.10 | "performance will probably come up" | `REQ-NFR-003` |
+| l.16 | "Jetpack Compose or SwiftUI" | `REQ-PLAT-002`, `REQ-PLAT-003` |
+| l.17 | "Caching of network images" | `REQ-FUNC-021` |
 | l.18 | "Error handling" | `REQ-FUNC-022` |
-| l.19 | "Response caching" | `REQ-FUNC-020` |
-| l.20 | "Implement tests" | `REQ-NFR-005` |
-| l.21 | "Possibility to filter or search" | `REQ-FUNC-003`, `REQ-FUNC-004` |
-| l.15 | "Be creative!" | `REQ-FUNC-007`, `REQ-FUNC-009` |
+| l.19 | "Caching of API responses" | `REQ-FUNC-020` |
+| l.20 | "Tests" | `REQ-NFR-005` |
+| l.21 | "Filtering or searching" | `REQ-FUNC-003`, `REQ-FUNC-004` |
+| l.15 | "Creativity is welcome!" | `REQ-FUNC-007`, `REQ-FUNC-009` |
 
 ## 5. Functional requirements
 
@@ -418,7 +418,7 @@ Formatting, static analysis, dependency analysis and the complete test suite for
 | RISK-006 | Published totals (`826`/`42`) are quoted as constants and go stale. | Medium | Low | Requirement `AC-REQ-FUNC-001-3` forbids hardcoding; figures appear only as dated observations. | DOC |
 | RISK-007 | Liquid Glass fallback path diverges visually from the glass path. | Medium | Low | Both paths screenshot-tested; fallback documented in `UI_SPEC.md` §4.2. | UX |
 | RISK-008 | The Figma file is unreachable for a reviewer, making `UI_SPEC.md` references unverifiable. | High | Low | Committed PNG exports (DEC-045) plus in-app screenshots in `README.md`. Mitigated 2026-10-03: every §1.1/§1.2 frame is committed and dimension-verified (`TASK-035`); the in-app screenshots remain open (`GAP-008`). | DOC |
-| RISK-009 | Reviewer perceives scope as exceeding the assignment ("deliver something"). | Medium | Medium | `REQUIREMENTS.md` §1 fixes MVP boundaries; `TECHNICAL_PLAN.md` sequences a releasable M1 early. | PM |
+| RISK-009 | Reviewer perceives scope as exceeding the assignment ("hand in something"). | Medium | Medium | `REQUIREMENTS.md` §1 fixes MVP boundaries; `TECHNICAL_PLAN.md` sequences a releasable M1 early. | PM |
 
 ## 14. Open questions
 

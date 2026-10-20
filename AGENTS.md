@@ -1,7 +1,7 @@
 # AGENTS.md — Master Instruction Manual
 
 - **Status:** Active
-- **Last verified:** 2026-10-03
+- **Last verified:** 2026-10-20
 - **Owner:** Documentation Maintainer
 - **Authoritative for:** operating rules for AI agents working in this repository — precedence, roles, permissions, workflow, escalation, completion.
 - **Not authoritative for:** product requirements (`docs/REQUIREMENTS.md`), architecture (`docs/DESIGN.md`), code conventions (`docs/GUIDELINES.md`), contribution process (`docs/CONTRIBUTING.md`), gates (`docs/DEFINITION.md`). Link to those; never restate them.
@@ -13,7 +13,7 @@ This file applies to every agent, human-supervised or autonomous, working in thi
 
 ## 1. Project context
 
-**Multiverse Explorer** — a Kotlin Multiplatform client for the public [Rick and Morty API](https://rickandmortyapi.com/). It is a recruitment deliverable for ZARA based on [`assessment.md`](assessment.md).
+**Multiverse Explorer** — a Kotlin Multiplatform client for the public [Rick and Morty API](https://rickandmortyapi.com/). It answers the mobile brief in [`assessment.md`](assessment.md).
 
 | Fact | Value |
 | --- | --- |
@@ -35,7 +35,7 @@ Agent writes stay limited to `docs/**`, `README.md`, `README.es.md` and `AGENTS.
 
 Read in this order. A source higher in the list overrides one below it on conflict.
 
-1. [`assessment.md`](assessment.md) — the assignment. Frozen and authoritative. Partially truncated at l.4 and l.10; record the interpretation instead of guessing (`docs/REQUIREMENTS.md` `CON-003`).
+1. [`assessment.md`](assessment.md) — the assignment. Frozen and authoritative; restated in the owner's words with its line layout kept (`DEC-167`). Partially truncated at l.4 and l.10; record the interpretation instead of guessing (`docs/REQUIREMENTS.md` `CON-003`).
 2. `docs/REQUIREMENTS.md` — what the product must do and how well, with acceptance criteria.
 3. `docs/API_SPECS.md` — the remote data contract. `docs/DESIGN.md` — architecture, modules, state contracts, navigation. `docs/UI_SPEC.md` — visual and interaction specification.
 4. `docs/CONTRACTS.md` — canonical internal Kotlin interfaces and invariants. `docs/ERROR_FLOW.md` — canonical failure→state→copy chain.

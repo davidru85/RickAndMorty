@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (GraphQL outcome amended by [ADR-0011](0011-runtime-remote-protocol.md))
 - **Date:** 2026-09-29
-- **Last verified:** 2026-09-29
+- **Last verified:** 2026-10-20
 - **Owner:** System Architect (see [`../../AGENTS.md`](../../AGENTS.md))
 - **Owners:** decision owner System Architect; implementation owner Implementation Engineer (Android); consulted Implementation Engineer (iOS) for the Darwin engine configuration
 - **Authoritative for:** which HTTP client and which serialization stack the project ships, and how error and mapping behaviour is kept in one place. Not the wire contract (`API_SPECS.md`), not the cache policy (ADR-0005) and not the pager (ADR-0009).
@@ -40,7 +40,7 @@ The error contract (`API_SPECS.md` §6) is protocol-aware but transport-agnostic
 
 - One multiplatform stack for one shared data layer — `REQ-PLAT-001`, `assessment.md:7`, `API_SPECS.md` §12.
 - One error and mapping path, so failure behaviour is uniform across features — `REQ-FUNC-022`, `REQ-NFR-004`, `API_SPECS.md` §6, ADR-0001.
-- Dependency restraint: no second solution for the same concern, no community SDK — `REQ-NFR-002`, `assessment.md:7` ("use them wisely, each third party library added is a dependency").
+- Dependency restraint: no second solution for the same concern, no community SDK — `REQ-NFR-002`, `assessment.md:7` ("choose with care: every library you add is one more dependency").
 - The cache interceptor and the dedup layer must sit on the same client that performs the request — `API_SPECS.md` §7.1, §8; ADR-0005.
 - Deterministic tests without a network: the client must be constructible with a mock engine — `REQ-NFR-005`, DEC-030.
 
