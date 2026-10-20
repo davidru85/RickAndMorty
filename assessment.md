@@ -1,24 +1,24 @@
-Hey there!
-At ZARA we are big fans of Rick and Morty and since we have some mobile development skills, we would like to develop an app allowing us to review every single character the TV show has.
-Fortunately, there is a web providing all this information https://rickandmortyapi.com/ (thanks, Internet).
-The MVP would be to have an app where you can review a list of all characters and retrieve information about the selected character. You can
+Hello!
+We love Rick and Morty and know our way around mobile development, so we would like an app that lets us review each and every character in the show.
+All the data we need is already public at https://rickandmortyapi.com/, which makes things easier.
+For the MVP, the app should list all the characters and show the details of the character you pick. Beyond that, you could
 
-Have in mind:
-- You can use any library out there but use them wisely, each third party library added is a dependency in your code.
-- Deliver something. We want to review how did you structure the project, if you apply things like SOLID…. This app will let us the chance to talk about actual code.
-- We are a very image oriented company, UX is important.
-- You can use any of the endpoints in https://rickandmortyapi.com/, we will talk about performance probably…
-- Shine at some aspect. If you think your strongs are about code, we will spend most of the time talking about code despite the app won’t run.
-- If you already have another app develop we can check, don’t spend time on this and send it to us. We will review it using the same criteria.
+Things to keep in mind:
+- Any library is allowed, but choose with care: every library you add is one more dependency to carry.
+- Hand in something we can look at. We want to see how you structure the project and whether you follow principles like SOLID; the app is our starting point for a conversation about real code.
+- The product is image-oriented, so UX matters.
+- Any endpoint of https://rickandmortyapi.com/ is fair game, and performance will probably come up…
+- Pick one area to excel in. If your strength is code, most of our conversation will be about code, even if the app does not run.
+- If you already have a comparable app we can look at, send that one instead of building this; we will assess it the same way.
 
 Extras:
-- Be creative!
-- Use Jetpack compose or SwiftUI
-- Cache images coming from network to improve performance
+- Creativity is welcome!
+- Jetpack Compose or SwiftUI
+- Caching of network images for better performance
 - Error handling
-- Response caching
-- Implement tests
-- Possibility to filter or search…
+- Caching of API responses
+- Tests
+- Filtering or searching
 
-Again, this test aims to know how you code an app, the technical decisions you take along the process and the overall cleanliness of your code and your mind. In the interview we will see how you fit within the team.
-So always send us something to starting a discussion!
+In short, the goal is to see how you build an app: the technical decisions you make along the way and how clean your code and your reasoning are. A later conversation will also show how you would fit in the team.
+Whatever you end up with, send it to us so we have something to discuss!

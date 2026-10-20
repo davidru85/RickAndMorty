@@ -1,13 +1,23 @@
 # HANDOFF.md — Current State and Continuation Guide
 
-- **Status:** Active. Describes the repository as of 2026-10-06: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the owner re-admitted the sound effects (`DEC-162`), delivered by `TASK-139` and merged (PR #253, `0eff567`); the owner's request for previews of every presentation-layer view is `TASK-140` (`DEC-164`), merged (PR #255, `24d2753`); the README pair is re-synchronised with the code and the repository's About updated in `TASK-141` (PR #257, merged as `7eefc87`, `DEC-165`); the owner requested task checkpoints, and `task/task-111`…`task/task-141` are annotated and pushed (`LOG-0169`); `v0.1.0` and `v0.2.0` are tagged, and publishing their GitHub Releases is the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
-- **Last verified:** 2026-10-06
+- **Status:** Active. Describes the repository as of 2026-10-20: B1–B9 are merged on `main`, and so are the code-review remediation's phase P0 (PR #192, `TASK-111`), the single launcher entry (PR #193, `TASK-117`) and the request logs (PR #201, `TASK-116`); `TASK-112`…`TASK-115` (PRs #202–#205) are merged; the owner decided `CONF-90` and `CONF-91` (`DEC-146`); `TASK-118`…`TASK-125` are merged (PRs #211–#215, #219–#221, and the bookkeeping in #222; `main` at `9f85e36`), and `TASK-126` (PR #224, `e86a3da`) pins `TASK-125`'s size check in the workflow guard under the owner's authorization (`DEC-152`), so the remediation programme has no open task; the owner's manual audit of 2026-10-05 is merged as `TASK-127`…`TASK-136` (PRs #236–#245, `main` at `77422f6`, `DEC-153`), and the owner's two further Android defects are merged as `TASK-137` and `TASK-138` (PRs #249 and #250, `main` at `5d246cc`, `DEC-160`); the owner re-admitted the sound effects (`DEC-162`), delivered by `TASK-139` and merged (PR #253, `0eff567`); the owner's request for previews of every presentation-layer view is `TASK-140` (`DEC-164`), merged (PR #255, `24d2753`); the README pair is re-synchronised with the code and the repository's About updated in `TASK-141` (PR #257, merged as `7eefc87`, `DEC-165`); the owner requested task checkpoints, and `task/task-111`…`task/task-141` are annotated and pushed (`LOG-0169`); `v0.1.0` and `v0.2.0` are tagged, and publishing their GitHub Releases is the owner's; must be updated on every handoff (`AGENTS.md` §5 step 7).
+- **Last verified:** 2026-10-20
 - **Owner:** Delivery Planner (see `AGENTS.md` §3.8)
 - **Authoritative for:** the current state of the project, what has and has not been verified, the next actions in priority order, handoff-specific operational risks, and the environment prerequisites for continuing.
 - **Not authoritative for:** the plan and its milestones (`TECHNICAL_PLAN.md`), task state and acceptance criteria (`BACKLOG.md`), decision status (`DECISION_BOARD.md`), requirements (`REQUIREMENTS.md`), test strategy and the CI check list (`TESTING.md`), the gate (`DEFINITION.md`).
 - **Inputs:** `README.md`, `docs/REQUIREMENTS.md`, `docs/DESIGN.md`, `docs/API_SPECS.md`, `docs/UI_SPEC.md`, `docs/DECISION_BOARD.md`, `docs/DOCUMENTATION_AUDIT.md`, `docs/TESTING.md`, `docs/DEFINITION.md`, the repository tree and its commit history.
 
 > Read this file first if you are taking over. Then read `AGENTS.md` (operating rules and precedence) and the authoritative document for the area you are about to touch. Do not start from memory or from a similar project (`AGENTS.md` §2.1).
+
+### Owner's restatement of the brief — 2026-10-20
+
+The owner asked for the repository to name no third-party company and approved the reviewed list of references item by item. `assessment.md` is restated in the owner's words with its 24-line layout kept, so every line citation keeps its meaning, including the "review" of `l.2` (`DEC-007`) and the truncations at `l.4` and `l.10` (`CON-003`). Every quotation of the brief now quotes the restated wording, and the company is no longer named in either README, `AGENTS.md`, `REQUIREMENTS.md` or the two log entries that named it. The git history is not rewritten, by the owner's choice (`DEC-167`, `LOG-0171`). Open for the owner: reviewing and merging the pull request.
+
+The branch `docs/suspend-contract-live` (`TASK-142`) is still pushed with its pull request deliberately unopened, and it reserves `DEC-166` and `LOG-0170`, so this change takes the next identifiers. Both branches edit the same header and log lines; whichever merges second needs `main` merged into it first.
+
+| Work | Branch | State |
+| --- | --- | --- |
+| `TASK-143` — the brief restated in the owner's words, and no third-party company named | `docs/restate-assignment-brief`, from `main` at `7978792` | **In review** (PR #259; no issue; `LOG-0171`) |
 
 ### Owner's task tags and local branch cleanup — 2026-10-06
 
@@ -205,10 +215,10 @@ Delivery model changed on 2026-10-01: `TASK-016` was the last task executed indi
 
 | Area | State | Notes |
 | --- | --- | --- |
-| Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`) |
+| Assignment | Present and frozen | `assessment.md`; partially truncated at l.4 and l.10 — its intent is recorded, not guessed (`CON-003`); restated in the owner's words on 2026-10-20 with its line layout kept (`DEC-167`) |
 | Documentation system | Merged | The set is integrated on `main` (TASK-032 PR #25, TASK-034 PR #32, TASK-090 PR #45); inventory and open gaps in `docs/DOCUMENTATION_AUDIT.md` §6 |
 | Requirements | Written, with acceptance criteria | `docs/REQUIREMENTS.md` — target state |
-| Decisions | Recorded | `DEC-001`…`DEC-165` in `docs/DECISION_BOARD.md`; rationale in `docs/adr/` |
+| Decisions | Recorded | `DEC-001`…`DEC-165` and `DEC-167` in `docs/DECISION_BOARD.md` (`DEC-166` is reserved by the pushed branch `docs/suspend-contract-live`); rationale in `docs/adr/` |
 | Remote contract | Documented and probed | `docs/API_SPECS.md`; live observations dated 2026-09-29 |
 | Visual specification | Written | `docs/UI_SPEC.md`; the 32 Figma exports and the token export are committed under `docs/figma/` |
 | Architecture | Documented as target | `docs/DESIGN.md`; module layout is DEC-052 (see §3) |

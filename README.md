@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
 - **Status:** Active. Both apps are built and verified on `main`, and this file describes the code as it is. [`docs/HANDOFF.md`](docs/HANDOFF.md) separates what was verified from what was not.
-- **Last verified:** 2026-10-06
+- **Last verified:** 2026-10-20
 - **Owner:** Delivery Planner (see [`AGENTS.md`](AGENTS.md))
 - **Authoritative for:** the developer entry point — prerequisites, build, run, test and quality commands, platform support, known limitations, documentation index.
 - **Not authoritative for:** requirements, architecture, the remote contract, the visual specification or process — each links below.
@@ -14,7 +14,7 @@
 
 A Kotlin Multiplatform client for the public [Rick and Morty API](https://rickandmortyapi.com/): browse every character, open one character, and keep your favourites. It ships two native apps, Jetpack Compose with Material 3 Expressive on Android and SwiftUI with Liquid Glass on iOS. Both run on one shared Kotlin core.
 
-Built as a recruitment deliverable for the ZARA mobile assignment described in [`assessment.md`](assessment.md).
+Built in response to the mobile take-home brief in [`assessment.md`](assessment.md).
 
 > **Project status: both apps are complete and verified. The milestones are tagged `v0.1.0` (Android) and `v0.2.0` (iOS), and publishing their GitHub Releases is the owner's step.**
 > Both apps have Discovery, Character detail, Favorites, Settings and the Episodes placeholder. They cover the offline, stale and error states, English and Spanish copy, and a REST or GraphQL data source chosen in Settings. Every view has its previews, and 54 Android and 18 iOS screenshot baselines are committed. Every quality and policy check runs on each pull request: 1,380 Gradle tests and 173 iOS tests, with 0 failures, on 2026-10-06. Some evidence only a reference device can give, and it is named rather than claimed (§11): the performance budgets, a run on iOS 18 and the iOS VoiceOver pass.
@@ -27,10 +27,10 @@ The assignment ([`assessment.md`](assessment.md)) asks for:
 | --- | --- |
 | List all characters and inspect the selected one | A paginated, searchable and filterable character list, and a character detail, on both platforms |
 | Review how the project is structured, whether SOLID is applied | 13 Gradle modules with inward-only dependencies, which `verifyModuleBoundaries` enforces on every build. Each feature has Clean Architecture layers. `:core:domain` is the API and `:core:data` the implementation (ADR-0014). Internal contracts are documented, and decisions are recorded in 15 ADRs |
-| "Very image oriented company, UX is important" | An image-first design system on each platform, portrait accents sampled from each image, the card → detail shared-element transition, and snapshot-tested screens |
+| "The product is image-oriented, so UX matters" | An image-first design system on each platform, portrait accents sampled from each image, the card → detail shared-element transition, and snapshot-tested screens |
 | Performance discussion | Numeric budgets with a measurement method in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). The release APK measures 2.26 MiB against its 12 MiB budget on every pull request; the device budgets await a reference device (§11) |
 | Extras: image caching, error handling, response caching, tests, filter/search | All delivered: memory and disk image caches, response caching with a freshness policy, a typed failure model with designed states, search with a status filter, and the test suites above |
-| "use them wisely, each third party library added is a dependency" | One library per concern (Ktor, kotlinx.serialization, Koin, Coil 3, DataStore), each justified in [`docs/DESIGN.md`](docs/DESIGN.md) §3.5 or an ADR; §15 lists every pinned version |
+| "choose with care: every library you add is one more dependency" | One library per concern (Ktor, kotlinx.serialization, Koin, Coil 3, DataStore), each justified in [`docs/DESIGN.md`](docs/DESIGN.md) §3.5 or an ADR; §15 lists every pinned version |
 | Use Jetpack Compose or SwiftUI | Both, as two native clients over a shared Kotlin core |
 
 ## 2. Supported platforms

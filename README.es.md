@@ -1,7 +1,7 @@
 # Multiverse Explorer
 
 - **Status / Estado:** Activo. Las dos apps están construidas y verificadas en `main`, y este archivo describe el código tal como es. [`docs/HANDOFF.md`](docs/HANDOFF.md) separa lo verificado de lo no verificado.
-- **Last verified:** 2026-10-06
+- **Last verified:** 2026-10-20
 - **Owner / Responsable:** Delivery Planner (ver [`AGENTS.md`](AGENTS.md))
 - **Authoritative for / Documento autoritativo para:** el punto de entrada del desarrollador — requisitos previos, comandos de compilación, ejecución, test y calidad, plataformas soportadas, limitaciones conocidas e índice de documentación.
 - **No autoritativo para:** requisitos, arquitectura, contrato remoto, especificación visual ni proceso; cada uno se enlaza más abajo.
@@ -14,7 +14,7 @@
 
 Cliente de [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) para la API pública de [Rick and Morty](https://rickandmortyapi.com/): explora todos los personajes, abre uno concreto y guarda tus favoritos. Incluye dos apps nativas, Jetpack Compose con Material 3 Expressive en Android y SwiftUI con Liquid Glass en iOS. Las dos funcionan sobre un núcleo Kotlin compartido.
 
-Proyecto realizado como prueba técnica de desarrollo móvil para ZARA, descrita en [`assessment.md`](assessment.md).
+Proyecto realizado a partir del enunciado de una prueba técnica de desarrollo móvil, recogido en [`assessment.md`](assessment.md).
 
 > **Estado del proyecto: las dos apps están completas y verificadas. Los hitos están etiquetados como `v0.1.0` (Android) y `v0.2.0` (iOS), y publicar sus GitHub Releases corresponde al propietario.**
 > Ambas apps tienen Discovery, el detalle de personaje, Favoritos, Ajustes y la pantalla provisional de Episodios. Cubren los estados sin conexión, desactualizado y de error, los textos en inglés y español, y una fuente de datos REST o GraphQL que se elige en Ajustes. Todas las vistas tienen sus previews, y hay 54 capturas de referencia Android y 18 iOS confirmadas. Todas las comprobaciones de calidad y de política se ejecutan en cada pull request: 1.380 tests de Gradle y 173 tests de iOS, con 0 fallos, el 2026-10-06. Hay evidencia que solo un dispositivo de referencia puede dar, y se nombra en lugar de afirmarse (§11): los presupuestos de rendimiento, una ejecución en iOS 18 y la revisión con VoiceOver en iOS.
@@ -27,10 +27,10 @@ La prueba ([`assessment.md`](assessment.md)) pide:
 | --- | --- |
 | Listar todos los personajes e inspeccionar el seleccionado | Un listado de personajes paginado, con búsqueda y filtro, y un detalle de personaje, en las dos plataformas |
 | Revisar cómo está estructurado el proyecto y si se aplica SOLID | 13 módulos de Gradle con dependencias solo hacia dentro, que `verifyModuleBoundaries` comprueba en cada build. Cada funcionalidad tiene capas de Clean Architecture. `:core:domain` es la API y `:core:data` la implementación (ADR-0014). Los contratos internos están documentados, y las decisiones se recogen en 15 ADR |
-| "Empresa muy orientada a la imagen; la UX es importante" | Un sistema de diseño centrado en la imagen en cada plataforma, acentos de color extraídos de cada retrato, la transición de elemento compartido de la tarjeta al detalle, y pantallas con tests de captura |
+| "El producto está orientado a la imagen, así que la UX importa" | Un sistema de diseño centrado en la imagen en cada plataforma, acentos de color extraídos de cada retrato, la transición de elemento compartido de la tarjeta al detalle, y pantallas con tests de captura |
 | Discusión de rendimiento | Presupuestos numéricos con su método de medida en [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). El APK de release mide 2,26 MiB frente a su presupuesto de 12 MiB en cada pull request; los presupuestos en dispositivo esperan un dispositivo de referencia (§11) |
 | Extras: caché de imágenes, gestión de errores, caché de respuestas, tests, filtro/búsqueda | Todos entregados: cachés de imágenes en memoria y disco, caché de respuestas con política de frescura, un modelo de fallos tipado con estados diseñados, búsqueda con filtro de estado, y las suites de tests anteriores |
-| "Úsalas con cabeza: cada librería de terceros es una dependencia" | Una librería por necesidad (Ktor, kotlinx.serialization, Koin, Coil 3, DataStore), cada una justificada en [`docs/DESIGN.md`](docs/DESIGN.md) §3.5 o en un ADR; §15 lista cada versión fijada |
+| "Elige con cuidado: cada librería que añades es una dependencia más" | Una librería por necesidad (Ktor, kotlinx.serialization, Koin, Coil 3, DataStore), cada una justificada en [`docs/DESIGN.md`](docs/DESIGN.md) §3.5 o en un ADR; §15 lista cada versión fijada |
 | Usar Jetpack Compose o SwiftUI | Ambos, como dos clientes nativos sobre un núcleo Kotlin compartido |
 
 ## 2. Plataformas soportadas
